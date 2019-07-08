@@ -5,13 +5,13 @@ ifeq ($(CFITSIO_INC)$(CFITSIO_LIB),)
 $(error To compile the ACTPOL likelihood you must activate the UPS package cfitsio or set the environment variables CFITSIO_INC and CFITSIO_LIB)
 endif
 
-ifeq ($(LAPACK_LINK),)
+ifeq ($(LAPACK_LIB),)
 $(error To compile the ACTPOL likelihood you must activate the UPS package LAPACK or set the environment variable LAPACK_LIB)
 endif
 
 F90C    = ${FC}
 INCS = -I$(CFITSIO_INC) 
-LIBS = -L ${LAPACK_LINK} -L ${CFITSIO_LIB} -lcfitsio
+LIBS = -L ${LAPACK_LIB} -llapack -lblas -L ${CFITSIO_LIB} -lcfitsio
 
 FFLAGS+=-DACTPOL_DATA_DIR='"$(ACTPOL_DATA_DIR)/"'
 FFLAGS+=  -ffree-line-length-none -cpp

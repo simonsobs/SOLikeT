@@ -4,6 +4,23 @@ module ACTPol_CMBonly
   private
   integer, parameter :: campc = KIND(1.d0)
 
+!  character(LEN=*), parameter,public :: data_dir='/users/renee/Likelihood/actpollite_s2_like/data/' !set path to data directory
+!  character(LEN=*), parameter, public :: ap_like='ACTPol_s2_cmbonly_like'
+
+  !Possible combinations: TT only, TE only, EE only, TT+TE+EE
+!  logical :: use_act_tt  = .true.
+!  logical :: use_act_te  = .true.
+!  logical :: use_act_ee  = .true.
+
+ ! integer, public :: tt_lmax = 6000
+ ! integer, parameter, public :: nbin = 132 ! total bins   
+ ! integer, public :: nbintt, nbinte, nbinee, b0
+!
+ ! integer :: lmax_win = 9000 !total ell in window functions
+ ! integer :: bmax = 53 !total bins in window functions
+  !real(campc) :: sigc = 0.01d0 !overall calibration uncertainty
+  !-------------------------------------------------------
+  !real(campc), parameter :: PI    = 3.14159265358979323846264d0
   real(campc), dimension(:), allocatable ::  bval,X_data,X_sig,diff_vec
   real(campc), dimension(:,:), allocatable :: win_func_tt,win_func_te,win_func_ee
   real(campc), dimension(:,:), allocatable :: covmat, fisher, cov_tot
