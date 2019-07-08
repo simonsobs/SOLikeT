@@ -1,0 +1,3 @@
+ACTPOL_DATA_DIR='/cosmosis/cosmosis-standard-library/likelihood/actpollite_s2_like/data/'
+#LDFLAGS += -lact
+#LDFLAGS+= -framework veclib 
