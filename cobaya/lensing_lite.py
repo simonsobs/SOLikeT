@@ -19,15 +19,24 @@ covfile = 'simulated_clkk_SO_Apr17_mv_nlkk_deproj0_SENS1_fsky_16000_iterOn_20191
 lmax = 2400
 
 class LensingLiteLikelihood(object):
+
     def __init__(self, bandpower_file=datafile, covfile=covfile):
         lefts, rights, bandpowers = np.loadtxt(bandpower_file, unpack=True)
         self.bandpowers = bandpowers
         self.bin_edges = np.append(lefts, [rights[-1]])
         self.cov = np.loadtxt(covfile)
-        
-    def __call__(self, _theory={'Cl': {'tt': lmax, 'pp': lmax}}):
-        cl = _theory.get_Cl(ell_factor=True)
-        _, theory_pp = binner(cl['ell'], cl['pp'], self.bin_edges)
+        self.invcov = np.linalg.inv(self.cov)
 
-        return multivariate_normal.logpdf(self.bandpowers, mean=theory_pp, cov=self.cov)        
+        self.ell = (lefts + rights)/2
+
+        self.theory_kk = None
+
+    def __call__(self, _theory={'Cl': {'pp': lmax}}):
+        cl = _theory.get_Cl(ell_factor=True)
+        _, theory_kk = binner(cl['ell'], cl['pp'], self.bin_edges)
+
+        # (y - mu).T x invcov (y - mu)
+        resid = self.bandpowers - theory_kk 
+        return -0.5 * np.dot(np.dot(resid.T, self.invcov), resid)
+        # return multivariate_normal.logpdf(self.bandpowers, mean=theory_kk, cov=self.cov)        
     
