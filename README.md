@@ -24,7 +24,7 @@ the file path/patterns to the $C_l$ and covariance files, and a simulation
 number (`'sim_number'`).  The main purpose for this is an exercise to
 demonstrate how to subclass a likelihood while changing its options.
 
-More likelihoods should be added!
+More likelihoods coming soon!
 
 ## Usage
 
