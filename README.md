@@ -1,6 +1,6 @@
-# Likelihoods
+# solike
 
-A central repository for **cobaya**-compatible likelihood functions for SO.
+A centralized package for **cobaya**-compatible likelihood functions for SO.
 
 ## Installation
 
@@ -29,9 +29,9 @@ More likelihoods should be added!
 ## Usage
 
 These likelihoods are designed for direct use with **cobaya**.  This means that 
-they may be specified directly when creating a **cobaya** `Model`.  E.g., imagine
-I wanted to compute the likelihood of the simulated lensing data with only 
-$log A$ and $n_s$ as free parameters, I could do the following:
+they may be specified directly when creating a **cobaya** `Model`.  E.g., if
+you wanted to compute the likelihood of the simulated lensing data with only 
+$log A$ and $n_s$ as free parameters, you could do the following:
 
 ```python
 
@@ -82,5 +82,6 @@ The likelihood could then be either directly computed as
 ```python
 model.loglike(dict(logA=3.0, n_s=0.98))
 ```
-or this same YAML setup (with an additional 'sampler' block specified) could be
-used as input to `cobaya-run` for sampling.
+and used outside of **cobaya** (e.g., directly passed to **emcee** or some other
+sampler), or this same YAML setup (with an additional 'sampler' block specified) 
+could be used as input to `cobaya-run` to have **cobaya** manage the sampling.
