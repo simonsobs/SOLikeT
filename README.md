@@ -83,5 +83,5 @@ The likelihood could then be either directly computed as
 model.loglike(dict(logA=3.0, n_s=0.98))
 ```
 and used outside of **cobaya** (e.g., directly passed to **emcee** or some other
-sampler), or this same YAML setup (with an additional 'sampler' block specified) 
+sampler or optimizer), or this same YAML setup (with an additional 'sampler' block specified) 
 could be used as input to `cobaya-run` to have **cobaya** manage the sampling.
