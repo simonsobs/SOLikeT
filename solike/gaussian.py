@@ -1,8 +1,13 @@
+from collections import ChainMap
+
 import numpy as np
 
 from cobaya.likelihood import Likelihood
+from cobaya.input import merge_info, merge_params_info
+from cobaya.tools import recursive_update
 
 from .gaussian_data import GaussianData, MultiGaussianData
+from .utils import get_likelihood
 
 
 class GaussianLikelihood(Likelihood):
@@ -26,23 +31,57 @@ class GaussianLikelihood(Likelihood):
         cov = np.loadtxt(self.covpath)
         return cov
 
-    def _get_theory(self):
+    def _get_theory(self, **kwargs):
         raise NotImplementedError
 
     def logp(self, **params_values):
-        theory = self._get_theory()
-        return self.data.norm.logpdf(theory)
+        theory = self._get_theory(**params_values)
+        return self.data.loglike(theory)
+
+
+class CrossCov(dict):
+    def save(self, path):
+        np.savez(path, **{str(k): v for k, v in self.items()})
+
+    @classmethod
+    def load(cls, path):
+        if path is None:
+            return None
+        return cls({eval(k): v for k, v in np.load(path).items()})
 
 
 class MultiGaussianLikelihood(GaussianLikelihood):
-    def __init__(self, likelihoods, cross_cov=None, **kwargs):
-        self.likelihoods = likelihoods
-        self.cross_cov = cross_cov
-        super().__init__(**kwargs)
+    class_options = {"components": None, "options": None, "cross_cov_path": None}
 
     def initialize(self):
+        self.likelihoods = [get_likelihood(*kv) for kv in zip(self.components, self.options)]
+
+        self.cross_cov = CrossCov.load(self.cross_cov_path)
+
+        # Why doesn't merge_params_info() work here?
+        all_params = [l.params for l in self.likelihoods if hasattr(l, "params")]
+        if all_params:
+            self.params = merge_info(*all_params)
+
         data_list = [l.data for l in self.likelihoods]
         self.data = MultiGaussianData(data_list, self.cross_cov)
 
-    def _get_theory(self):
-        return np.concatenate([l._get_theory() for l in self.likelihoods])
+    # def initialize_with_params(self):
+    #     for like in self.likelihoods:
+    #         like.initialize_with_params()
+    #     super().initialize_with_params()
+
+    def initialize_with_provider(self, provider):
+        for like in self.likelihoods:
+            like.initialize_with_provider(provider)
+        super().initialize_with_provider(provider)
+
+    def _get_theory(self, **kwargs):
+        return np.concatenate([l._get_theory(**kwargs) for l in self.likelihoods])
+
+    def get_requirements(self):
+        reqs = {}
+        for like in self.likelihoods:
+            reqs = recursive_update(reqs, like.get_requirements())
+        return reqs
+        # return merge_info(*[l.get_requirements() for l in self.likelihoods])

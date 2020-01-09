@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from sklearn.datasets import make_spd_matrix
 
-from solike.gaussian import GaussianData, MultiGaussianData
+from solike.gaussian import GaussianData, MultiGaussianData, CrossCov
 
 
 def toy_data():
@@ -31,11 +31,13 @@ def toy_data():
     data2 = GaussianData(name2, x2, y2, cov2)
     data3 = GaussianData(name3, x3, y3, cov3)
 
-    cross_cov = {
-        (name1, name2): full_cov[:n1, n1 : n1 + n2],
-        (name1, name3): full_cov[:n1, n1 + n2 :],
-        (name2, name3): full_cov[n1 : n1 + n2, n1 + n2 :],
-    }
+    cross_cov = CrossCov(
+        {
+            (name1, name2): full_cov[:n1, n1 : n1 + n2],
+            (name1, name3): full_cov[:n1, n1 + n2 :],
+            (name2, name3): full_cov[n1 : n1 + n2, n1 + n2 :],
+        }
+    )
 
     return [data1, data2, data3], cross_cov
 
@@ -43,6 +45,7 @@ def toy_data():
 def test_gaussian():
 
     datalist, cross_cov = toy_data()
+
     multi = MultiGaussianData(datalist, cross_cov)
 
     name1, name2, name3 = [d.name for d in datalist]

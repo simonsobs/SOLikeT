@@ -1,12 +1,15 @@
 import numpy as np
 from scipy.linalg import cholesky, LinAlgError
-from scipy.stats import multivariate_normal
+
+
+def multivariate_normal_logpdf(theory, data, cov, inv_cov, log_det):
+    const = np.log(2 * np.pi) * (-len(data) / 2) + log_det * (-1 / 2)
+    delta = data - theory
+    return -0.5 * np.dot(delta, inv_cov.dot(delta)) + const
 
 
 class GaussianData(object):
     """Named multivariate gaussian data
-
-    For CMB PS data, x will typically be l, and y will be power spectrum.
     """
 
     def __init__(self, name, x, y, cov):
@@ -23,10 +26,14 @@ class GaussianData(object):
             self.cholesky = cholesky(cov)
         except LinAlgError:
             raise ValueError("Covariance is not SPD!")
-        self.norm = multivariate_normal(self.y, cov=self.cov)
+        self.inv_cov = np.linalg.inv(self.cov)
+        self.log_det = np.linalg.slogdet(self.cov)[1]
 
     def __len__(self):
         return len(self.x)
+
+    def loglike(self, theory):
+        return multivariate_normal_logpdf(theory, self.y, self.cov, self.inv_cov, self.log_det)
 
 
 class MultiGaussianData(GaussianData):
@@ -79,9 +86,20 @@ class MultiGaussianData(GaussianData):
             self._assemble_data()
         return self._data
 
+    def loglike(self, theory):
+        return self.data.loglike(theory)
+
     @property
-    def norm(self):
-        return self.data.norm
+    def cov(self):
+        return self.data.cov
+
+    @property
+    def inv_cov(self):
+        return self.data.inv_cov
+
+    @property
+    def log_det(self):
+        return self.data.log_det
 
     def _index_range(self, name):
         if name not in self.names:

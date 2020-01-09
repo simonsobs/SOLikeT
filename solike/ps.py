@@ -6,20 +6,10 @@ from .gaussian import GaussianLikelihood
 
 class PSLikelihood(GaussianLikelihood):
 
-    class_options = {"name": "TT", "kind": "tt"}
+    class_options = {"name": "TT", "kind": "tt", "lmax": 6000}
 
     def initialize(self):
         super().initialize()
-        self._lmax = None
-
-    @property
-    def lmax(self):
-        if self._lmax is None:
-            self._lmax = self._get_lmax()
-        return self._lmax
-
-    def _get_lmax(self):
-        return int(self.data.x.max())
 
     def get_requirements(self):
         return {"Cl": {self.kind: self.lmax}}
@@ -27,7 +17,7 @@ class PSLikelihood(GaussianLikelihood):
     def _get_Cl(self):
         return self.theory.get_Cl(ell_factor=True)
 
-    def _get_theory(self):
+    def _get_theory(self, **params_values):
         cl_theory = self.get_Cl()
         return cl_theory[self.kind]
 
@@ -44,7 +34,7 @@ class BinnedPSLikelihood(PSLikelihood):
 
         return bin_centers, bandpowers
 
-    def _get_theory(self):
+    def _get_theory(self, **params_values):
         cl_theory = self._get_Cl()
         _, theory = binner(cl_theory["ell"], cl_theory[self.kind], self.bin_edges)
         return theory
