@@ -37,6 +37,6 @@ class LensingLiteLikelihood(object):
 
         # (y - mu).T x invcov (y - mu)
         resid = self.bandpowers - theory_kk 
-        return -0.5 * np.dot(np.dot(resid.T, self.invcov), resid)
-        # return multivariate_normal.logpdf(self.bandpowers, mean=theory_kk, cov=self.cov)        
+#         return -0.5 * np.dot(np.dot(resid.T, self.invcov), resid)
+        return multivariate_normal.logpdf(self.bandpowers, mean=theory_kk, cov=self.cov)        
     

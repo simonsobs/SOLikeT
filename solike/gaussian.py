@@ -66,11 +66,6 @@ class MultiGaussianLikelihood(GaussianLikelihood):
         data_list = [l.data for l in self.likelihoods]
         self.data = MultiGaussianData(data_list, self.cross_cov)
 
-    # def initialize_with_params(self):
-    #     for like in self.likelihoods:
-    #         like.initialize_with_params()
-    #     super().initialize_with_params()
-
     def initialize_with_provider(self, provider):
         for like in self.likelihoods:
             like.initialize_with_provider(provider)
