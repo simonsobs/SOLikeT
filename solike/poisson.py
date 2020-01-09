@@ -18,9 +18,13 @@ class PoissonLikelihood(Likelihood):
         return pd.read_csv(self.catalog_path)
 
     def _get_rate_fn(self, **kwargs):
+        """Returns a callable rate function that takes each of 'columns' as kwargs.
+        """
         raise NotImplementedError
 
     def _get_n_expected(self, **kwargs):
+        """Computes and returns the integral of the rate function 
+        """
         raise NotImplementedError
 
     def logp(self, **params_values):
