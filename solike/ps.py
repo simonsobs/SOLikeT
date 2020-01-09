@@ -8,9 +8,6 @@ class PSLikelihood(GaussianLikelihood):
 
     class_options = {"name": "TT", "kind": "tt", "lmax": 6000}
 
-    def initialize(self):
-        super().initialize()
-
     def get_requirements(self):
         return {"Cl": {self.kind: self.lmax}}
 
@@ -23,8 +20,8 @@ class PSLikelihood(GaussianLikelihood):
 
 
 class BinnedPSLikelihood(PSLikelihood):
-    def _get_lmax(self):
-        return int(self.bin_edges[-1])
+    # def _get_lmax(self):
+    #     return int(self.bin_edges[-1])
 
     def _get_data(self):
         lefts, rights, bandpowers = np.loadtxt(self.datapath, unpack=True)

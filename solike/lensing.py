@@ -1,12 +1,6 @@
 import os
 from pkg_resources import resource_filename
 
-import numpy as np
-from scipy.stats import multivariate_normal
-
-from cobaya.likelihood import Likelihood
-
-from .utils import binner
 from .ps import BinnedPSLikelihood
 
 
