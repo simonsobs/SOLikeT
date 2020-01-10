@@ -90,6 +90,10 @@ class MultiGaussianData(GaussianData):
         return self.data.loglike(theory)
 
     @property
+    def name(self):
+        return self.data.name
+
+    @property
     def cov(self):
         return self.data.cov
 
