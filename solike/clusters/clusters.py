@@ -15,7 +15,7 @@ from .survey import SurveyData
 class ClusterLikelihood(PoissonLikelihood):
     class_options = {
         "name": "Clusters",
-        "columns": ["tsz_signal", "z"],
+        "columns": ["tsz_signal", "z", "tsz_signal_err"],
         "data_path": resource_filename("solike.clusters", "data/selFn_equD56"),
         "data_name": resource_filename("solike.clusters", "data/ACTPol_Cond_scatv5.fits"),
     }
