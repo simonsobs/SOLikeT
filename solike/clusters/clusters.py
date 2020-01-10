@@ -4,6 +4,7 @@ requires extra: astlib
 """
 import numpy as np
 import pandas as pd
+from pkg_resources import resource_filename
 
 from solike.poisson import PoissonLikelihood
 import solike.clusters.massfunc as mf
@@ -15,8 +16,8 @@ class ClusterLikelihood(PoissonLikelihood):
     class_options = {
         "name": "Clusters",
         "columns": ["tsz_signal", "z"],
-        "data_path": "selFn_equD56",
-        "data_name": "ACTPol_Cond_scatv5.fits",
+        "data_path": resource_filename("solike.clusters", "data/selFn_equD56"),
+        "data_name": resource_filename("solike.clusters", "data/ACTPol_Cond_scatv5.fits"),
     }
 
     def initialize(self):
