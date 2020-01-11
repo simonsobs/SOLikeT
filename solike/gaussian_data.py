@@ -1,4 +1,9 @@
+import itertools
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
+import holoviews as hv
 from scipy.linalg import cholesky, LinAlgError
 
 
@@ -105,6 +110,10 @@ class MultiGaussianData(GaussianData):
     def log_det(self):
         return self.data.log_det
 
+    @property
+    def labels(self):
+        return [x for y in [[name] * len(d) for name, d in zip(self.names, self.data_list)] for x in y]
+
     def _index_range(self, name):
         if name not in self.names:
             raise ValueError(f"{name} not in {self.names}!")
@@ -135,3 +144,12 @@ class MultiGaussianData(GaussianData):
                 cov[self._slice(n1, n2)] = self.cross_covs[(n1, n2)]
 
         self._data = GaussianData(" + ".join(self.names), x, y, cov)
+
+    def plot_cov(self, **kwargs):
+        data = [
+            (f"{li}: {self.data.x[i]}", f"{lj}: {self.data.x[j]}", self.cov[i, j])
+            for i, li in zip(range(len(self.data)), self.labels)
+            for j, lj in zip(range(len(self.data)), self.labels)
+        ]
+
+        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800, invert_yaxis=True, xrotation=90)
