@@ -1,8 +1,9 @@
 import numpy as np
 import astropy.io.fits as pyfits
 from astLib import astWCS
-from nemo import signals
 from astropy.io import fits
+import astropy.table as atpy
+import os
 
 def read_clust_cat(fitsfile,qmin):
     list = fits.open(fitsfile)
@@ -61,6 +62,44 @@ def loadRMSmap(extName, DIR):
     areaImg.close()
 
     return areaMap, wcs
+
+def loadQ(source, tileNames = None):
+    """Load the filter mismatch function Q as a dictionary of spline fits.
+    
+    Args:
+        source (NemoConfig or str): Either the path to a .fits table (containing Q fits for all tiles - this
+            is normally selFn/QFit.fits), or a NemoConfig object (from which the path and tiles to use will
+            be inferred).
+        tileNames (optional, list): A list of tiles for which the Q function will be extracted. If 
+            source is a NemoConfig object, this should be set to None.
+    
+    Returns:
+        A dictionary (with tile names as keys), containing spline knots for the Q function for each tile.
+        
+    """
+
+    if type(source) == str:
+        combinedQTabFileName=source
+    else:
+        # We should add a check to confirm this is actually a NemoConfig object
+        combinedQTabFileName=source.selFnDir+os.path.sep+"QFit.fits"
+        tileNames=source.tileNames
+        
+    tckDict={}    
+    if os.path.exists(combinedQTabFileName) == True:
+        combinedQTab=atpy.Table().read(combinedQTabFileName)
+        for key in combinedQTab.keys():
+            if key != 'theta500Arcmin':
+                tckDict[key]=interpolate.splrep(combinedQTab['theta500Arcmin'], combinedQTab[key])
+    else:
+        if tileNames is None:
+            raise Exception("If source does not point to a complete QFit.fits file, you need to supply tileNames.")
+        for tileName in tileNames:
+            tab=atpy.Table().read(combinedQTabFileName.replace(".fits", "#%s.fits" % (tileName)))
+            tckDict[tileName]=interpolate.splrep(tab['theta500Arcmin'], tab['Q'])
+           
+    return tckDict
+
 
 class SurveyData(object):
     def __init__(self,nemoOutputDir,ClusterCat,qmin=5.6,szarMock=False,tiles=False):
