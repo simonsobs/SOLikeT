@@ -4,12 +4,14 @@ requires extra: astlib
 """
 import numpy as np
 import pandas as pd
+from scipy.interpolate import interp1d
 from pkg_resources import resource_filename
 
 from solike.poisson import PoissonLikelihood
 import solike.clusters.massfunc as mf
 
 from .survey import SurveyData
+from .sz_utils import szutils
 
 
 class ClusterLikelihood(PoissonLikelihood):
@@ -18,7 +20,7 @@ class ClusterLikelihood(PoissonLikelihood):
         "columns": ["tsz_signal", "z", "tsz_signal_err"],
         "data_path": resource_filename("solike.clusters", "data/selFn_equD56"),
         "data_name": resource_filename("solike.clusters", "data/ACTPol_Cond_scatv5.fits"),
-        "params": {""},
+        # "params": {""},
     }
 
     def initialize(self):
@@ -40,14 +42,15 @@ class ClusterLikelihood(PoissonLikelihood):
         }
 
     def _get_catalog(self):
-        catalog = SurveyData(self.data_path, self.data_name, szarMock=True)
-        self.catalog = catalog
+        self.survey = SurveyData(self.data_path, self.data_name, szarMock=True)
+
+        self.szutils = szutils(self.survey)
 
         df = pd.DataFrame(
             {
-                "z": self.catalog.clst_z.byteswap().newbyteorder(),
-                "tsz_signal": self.catalog.clst_y0.byteswap().newbyteorder(),
-                "tsz_signal_err": self.catalog.clst_y0err.byteswap().newbyteorder(),
+                "z": self.survey.clst_z.byteswap().newbyteorder(),
+                "tsz_signal": self.survey.clst_y0.byteswap().newbyteorder(),
+                "tsz_signal_err": self.survey.clst_y0err.byteswap().newbyteorder(),
             }
         )
         return df
@@ -62,6 +65,9 @@ class ClusterLikelihood(PoissonLikelihood):
 
     def _get_Ez(self):
         return self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
+
+    def _get_Ez_interpolator(self):
+        return interp1d(self.zarr, self._get_Ez())
 
     def _get_HMF(self):
 
@@ -84,42 +90,21 @@ class ClusterLikelihood(PoissonLikelihood):
         H0 = self.theory.get_param("H0")
         ob = self._get_ob()
         om = self._get_om()
-        params = {"om": om, "ob": ob, "H0": H0, "B0": B0, "scat": scat, "massbias": massbias}
+        param_vals = {"om": om, "ob": ob, "H0": H0, "B0": B0, "scat": scat, "massbias": massbias}
 
-        param_vals = ...
+        Ez_fn = self._get_Ez_interpolator()
 
         def Prob_per_cluster(z, tsz_signal, tsz_signal_err):
-            y = tsz_signal
-            y_err = tsz_signal_err
+            c_y = tsz_signal
+            c_yerr = tsz_signal_err
+            c_z = z
 
-            tempz = cluster_props[0, :]
-            zind = np.argsort(tempz)
-            tempz = 0.0
-            c_z = cluster_props[0, zind]
-            c_zerr = cluster_props[1, zind]
-            c_y = cluster_props[2, zind]
-            c_yerr = cluster_props[3, zind]
+            Pfunc_ind = self.szutils.Pfunc_per(
+                HMF.M[:, None], self.zarr[None, :], c_y, c_yerr, param_vals, Ez_fn
+            )
+            dn_dzdm = HMF.dn_dzdm(c_z, np.log10(HMF.M))
 
-            Marr = np.outer(int_HMF.M.copy(), np.ones([len(c_z)]))
-            zarr = np.outer(np.ones([len(int_HMF.M.copy())]), c_z)
-
-            if c_zerr.any() > 0:
-                # FIX THIS
-                z_arr = np.arange(-3.0 * c_zerr, (3.0 + 0.1) * c_zerr, c_zerr) + c_z
-                Pfunc_ind = self.Pfunc_per_zarr(int_HMF.M.copy(), z_arr, c_y, c_yerr, int_HMF, param_vals)
-                M200 = int_HMF.cc.Mass_con_del_2_del_mean200(int_HMF.M.copy(), 500, c_z)  # FIX THIS?
-                dn_dzdm = dn_dzdm_int(z_arr, np.log10(int_HMF.M.copy()))
-                N_z_ind = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(M200, axis=0), axis=0)
-                N_per = np.trapz(N_z_ind * gaussian(z_arr, c_z, c_zerr), dx=np.diff(z_arr))
-                ans = N_per
-            else:
-                Pfunc_ind = self.Pfunc_per(Marr, zarr, c_y, c_yerr, param_vals)
-                dn_dzdm = HMF.dn_dzdm(c_z, np.log10(int_HMF.M.copy()))
-                M200 = int_HMF.M200_int(c_z, int_HMF.M.copy())
-                N_z_ind = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(M200, axis=0), axis=0)
-                ans = N_z_ind
-
-            ans = ...
+            ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
 
             return ans
 
