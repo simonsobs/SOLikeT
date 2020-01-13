@@ -18,6 +18,7 @@ class ClusterLikelihood(PoissonLikelihood):
         "columns": ["tsz_signal", "z", "tsz_signal_err"],
         "data_path": resource_filename("solike.clusters", "data/selFn_equD56"),
         "data_name": resource_filename("solike.clusters", "data/ACTPol_Cond_scatv5.fits"),
+        "params": {""},
     }
 
     def initialize(self):
@@ -51,14 +52,23 @@ class ClusterLikelihood(PoissonLikelihood):
         )
         return df
 
+    def _get_om(self):
+        return (self.theory.get_param("omch2") + self.theory.get_param("ombh2")) / (
+            (self.theory.get_param("H0") / 100.0) ** 2
+        )
+
+    def _get_ob(self):
+        return (self.theory.get_param("ombh2")) / ((self.theory.get_param("H0") / 100.0) ** 2)
+
+    def _get_Ez(self):
+        return self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
+
     def _get_HMF(self):
 
         Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False).P
         pks = Pk_interpolator(self.zarr, self.k)
         Ez = self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
-        om = (self.theory.get_param("omch2") + self.theory.get_param("ombh2")) / (
-            (self.theory.get_param("H0") / 100.0) ** 2
-        )
+        om = self._get_om()
 
         hmf = mf.HMF(om, Ez, pk=pks, kh=self.k, zarr=self.zarr)
 
@@ -67,6 +77,15 @@ class ClusterLikelihood(PoissonLikelihood):
     def _get_rate_fn(self, **kwargs):
 
         HMF = self._get_HMF()
+
+        B0 = 0.08
+        scat = 0.2
+        massbias = 1.0
+        H0 = self.theory.get_param("H0")
+        ob = self._get_ob()
+        om = self._get_om()
+        params = {"om": om, "ob": ob, "H0": H0, "B0": B0, "scat": scat, "massbias": massbias}
+
         param_vals = ...
 
         def Prob_per_cluster(z, tsz_signal, tsz_signal_err):
