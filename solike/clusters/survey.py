@@ -7,7 +7,6 @@ from astLib import astWCS
 from astropy.io import fits
 import astropy.table as atpy
 
-
 def read_clust_cat(fitsfile, qmin):
     list = fits.open(fitsfile)
     data = list[1].data
@@ -19,7 +18,6 @@ def read_clust_cat(fitsfile, qmin):
     ind = np.where(SNR >= qmin)[0]
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
 
-
 def read_mock_cat(fitsfile, qmin):
     list = fits.open(fitsfile)
     data = list[1].data
@@ -30,7 +28,6 @@ def read_mock_cat(fitsfile, qmin):
     Y0err = data.field("err_fixed_y_c")
     ind = np.where(SNR >= qmin)[0]
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
-
 
 def read_matt_mock_cat(fitsfile, qmin):
     list = fits.open(fitsfile)
@@ -46,7 +43,6 @@ def read_matt_mock_cat(fitsfile, qmin):
     ind = np.where(SNR >= qmin)[0]
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
 
-
 def loadAreaMask(extName, DIR):
     """Loads the survey area mask (i.e., after edge-trimming and point source masking, produced by nemo).
     Returns map array, wcs
@@ -58,7 +54,6 @@ def loadAreaMask(extName, DIR):
 
     return areaMap, wcs
 
-
 def loadRMSmap(extName, DIR):
     """Loads the survey RMS map (produced by nemo).
     Returns map array, wcs
@@ -69,7 +64,6 @@ def loadRMSmap(extName, DIR):
     areaImg.close()
 
     return areaMap, wcs
-
 
 def loadQ(source, tileNames=None):
     """Load the filter mismatch function Q as a dictionary of spline fits.
@@ -103,7 +97,6 @@ def loadQ(source, tileNames=None):
             tab = atpy.Table().read(combinedQTabFileName.replace(".fits", "#%s.fits" % (tileName)))
             tckDict[tileName] = interpolate.splrep(tab["theta500Arcmin"], tab["Q"])
     return tckDict
-
 
 class SurveyData(object):
     def __init__(self, nemoOutputDir, ClusterCat, qmin=5.6, szarMock=False, tiles=False):
