@@ -73,6 +73,44 @@ class szutils(object):
         ans = np.trapz(P_Y*P_Y_sig, LgY, np.diff(LgY), axis=1) * np.log(10)
         return ans
 
+    def Y_prob (self,Y_c,LgY,YNoise):
+        Y = 10**(LgY)
+        print (Y.shape)
+        ans = gaussian(Y,Y_c,YNoise)
+        return ans
+
+   def Pfunc_per(self,Marr,zarr,Y_c,Y_err,param_vals):
+        LgY = self.LgY
+        LgYa = np.outer(np.ones(Marr.shape[0]),LgY)
+
+        LgYa = np.outer(np.ones([Marr.shape[0],Marr.shape[1]]),LgY)
+        LgYa2 = np.reshape(LgYa,(Marr.shape[0],Marr.shape[1],len(LgY)))
+
+        Yc_arr = np.outer(np.ones(Marr.shape[0]),Y_c)
+        Yerr_arr =  np.outer(np.ones(Marr.shape[0]),Y_err)
+
+        Yc_arr = np.repeat(Yc_arr[:, :, np.newaxis], len(LgY), axis=2)
+        Yerr_arr = np.repeat(Yerr_arr[:, :, np.newaxis], len(LgY), axis=2)
+
+        P_Y_sig = self.Y_prob(Yc_arr,LgYa2,Yerr_arr)
+        P_Y = np.nan_to_num(self.P_Yo(LgYa2,Marr,zarr,param_vals))
+
+        ans = np.trapz(P_Y*P_Y_sig,x=LgY,axis=2)
+
+        return ans
+
+    def Pfunc_per_zarr(self,MM,z_arr,Y_c,Y_err,int_HMF,param_vals):
+        LgY = self.LgY
+
+        P_func = np.outer(MM,np.zeros([len(z_arr)]))
+        M_arr =  np.outer(MM,np.ones([len(z_arr)]))
+        M200 = np.outer(MM,np.zeros([len(z_arr)]))
+        zarr = np.outer(np.ones([len(M)]),z_arr)
+
+        P_func = self.P_of_Y_per(LgY,M_arr,zarr,Y_c,Y_err,param_vals)
+
+        return P_func
+
 
 ###
 '''Routines from nemo (author: Matt Hilton ) to limit dependencies'''
