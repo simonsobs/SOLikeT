@@ -67,6 +67,9 @@ class ClusterLikelihood(PoissonLikelihood):
     def _get_rate_fn(self, **kwargs):
 
         HMF = self._get_HMF()
+
+
+
         param_vals = ...
 
         def Prob_per_cluster(z, tsz_signal, tsz_signal_err):
