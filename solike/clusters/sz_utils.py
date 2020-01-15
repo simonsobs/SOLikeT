@@ -25,10 +25,12 @@ class szutils(object):
         OL = 1.0 - Om
         H0 = param_vals["H0"]
 
+        Ma = np.outer(M,np.ones(len(LgY[0,:])))
+
         cosmoModel = FlatLambdaCDM(H0=H0, Om0=Om, Ob0=Ob, Tcmb0=2.725)
 
         Ytilde, theta0, Qfilt = y0FromLogM500(
-            np.log10(param_vals["massbias"] * M / (H0 / 100.0)),
+            np.log10(param_vals["massbias"] * Ma / (H0 / 100.0)),
             z,
             self.Survey.Q,
             sigma_int=param_vals["scat"],
@@ -38,7 +40,7 @@ class szutils(object):
         )
         Y = 10 ** LgY
 
-        Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
+        #Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
         ans = (
@@ -94,7 +96,17 @@ class szutils(object):
         ans = gaussian(Y, Y_c, YNoise)
         return ans
 
-    def Pfunc_per(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn):
+    def Pfunc_per(self,MM,zz,Y_c,Y_err,param_vals,Ez_fn):
+        LgY = self.LgY
+        LgYa = np.outer(np.ones(len(MM)),LgY)
+
+        P_Y_sig = self.Y_prob(Y_c,LgY,Y_err)
+        P_Y = np.nan_to_num(self.P_Yo(LgYa,MM,zz,param_vals,Ez_fn))
+        ans = np.trapz(P_Y*P_Y_sig,LgY,np.diff(LgY),axis=1)
+        return ans
+
+
+    def Pfunc_per_parallel(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn):
         # LgY = self.LgY
         # LgYa = np.outer(np.ones(Marr.shape[0]), LgY)
 
