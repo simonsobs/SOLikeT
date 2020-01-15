@@ -25,7 +25,7 @@ class szutils(object):
         OL = 1.0 - Om
         H0 = param_vals["H0"]
 
-        Ma = np.outer(M,np.ones(len(LgY[0,:])))
+        Ma = np.outer(M, np.ones(len(LgY[0, :])))
 
         cosmoModel = FlatLambdaCDM(H0=H0, Om0=Om, Ob0=Ob, Tcmb0=2.725)
 
@@ -40,7 +40,36 @@ class szutils(object):
         )
         Y = 10 ** LgY
 
-        #Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
+        # Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
+
+        numer = -1.0 * (np.log(Y / Ytilde)) ** 2
+        ans = (
+            1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) * np.exp(numer / (2.0 * param_vals["scat"] ** 2))
+        )
+        return ans
+
+    def P_Yo_vec(self, LgY, M, z, param_vals, Ez_fn):
+        Om = param_vals["om"]
+        Ob = param_vals["ob"]
+        OL = 1.0 - Om
+        H0 = param_vals["H0"]
+
+        # Ma = np.outer(M, np.ones(len(LgY[0, :])))
+
+        cosmoModel = FlatLambdaCDM(H0=H0, Om0=Om, Ob0=Ob, Tcmb0=2.725)
+
+        Ytilde, theta0, Qfilt = y0FromLogM500(
+            np.log10(param_vals["massbias"] * M / (H0 / 100.0)),
+            z,
+            self.Survey.Q,
+            sigma_int=param_vals["scat"],
+            B0=param_vals["B0"],
+            cosmoModel=cosmoModel,
+            Ez_fn=Ez_fn,
+        )
+        Y = 10 ** LgY
+
+        Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
         ans = (
@@ -54,7 +83,7 @@ class szutils(object):
         ans[Y - qmin * Ynoise > 0] = 1.0
         return ans
 
-    def P_of_gt_SN(self, LgY, MM, zz, Ynoise, param_vals):
+    def P_of_gt_SN(self, LgY, MM, zz, Ynoise, param_vals, Ez_fn):
         Y = 10 ** LgY
 
         sig_tr = np.outer(np.ones([MM.shape[0], MM.shape[1]]), self.Y_erf(Y, Ynoise))
@@ -63,18 +92,18 @@ class szutils(object):
         LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
         LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
 
-        P_Y = np.nan_to_num(self.P_Yo(LgYa2, MM, zz, param_vals))
+        P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, MM, zz, param_vals, Ez_fn))
 
         ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10)
         return ans
 
-    def PfuncY(self, YNoise, M, z_arr, param_vals):
+    def PfuncY(self, YNoise, M, z_arr, param_vals, Ez_fn):
         LgY = self.LgY
 
         P_func = np.outer(M, np.zeros([len(z_arr)]))
         M_arr = np.outer(M, np.ones([len(z_arr)]))
 
-        P_func = self.P_of_gt_SN(LgY, M_arr, z_arr, YNoise, param_vals)
+        P_func = self.P_of_gt_SN(LgY, M_arr, z_arr, YNoise, param_vals, Ez_fn)
         return P_func
 
     def P_of_Y_per(self, LgY, MM, zz, Y_c, Y_err, param_vals):
@@ -90,21 +119,20 @@ class szutils(object):
 
     def Y_prob(self, Y_c, LgY, YNoise):
         Y = 10 ** (LgY)
-        print(Y.shape)
-        print(Y_c.shape)
-        print(YNoise.shape)
+        # print(Y.shape)
+        # print(Y_c.shape)
+        # print(YNoise.shape)
         ans = gaussian(Y, Y_c, YNoise)
         return ans
 
-    def Pfunc_per(self,MM,zz,Y_c,Y_err,param_vals,Ez_fn):
+    def Pfunc_per(self, MM, zz, Y_c, Y_err, param_vals, Ez_fn):
         LgY = self.LgY
-        LgYa = np.outer(np.ones(len(MM)),LgY)
+        LgYa = np.outer(np.ones(len(MM)), LgY)
 
-        P_Y_sig = self.Y_prob(Y_c,LgY,Y_err)
-        P_Y = np.nan_to_num(self.P_Yo(LgYa,MM,zz,param_vals,Ez_fn))
-        ans = np.trapz(P_Y*P_Y_sig,LgY,np.diff(LgY),axis=1)
+        P_Y_sig = self.Y_prob(Y_c, LgY, Y_err)
+        P_Y = np.nan_to_num(self.P_Yo(LgYa, MM, zz, param_vals, Ez_fn))
+        ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
         return ans
-
 
     def Pfunc_per_parallel(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn):
         # LgY = self.LgY
@@ -129,15 +157,16 @@ class szutils(object):
 
         return ans
 
-    def Pfunc_per_zarr(self, MM, z_arr, Y_c, Y_err, int_HMF, param_vals):
+    def Pfunc_per_zarr(self, MM, z_c, Y_c, Y_err, int_HMF, param_vals):
         LgY = self.LgY
 
-        P_func = np.outer(MM, np.zeros([len(z_arr)]))
-        M_arr = np.outer(MM, np.ones([len(z_arr)]))
-        M200 = np.outer(MM, np.zeros([len(z_arr)]))
-        zarr = np.outer(np.ones([len(M)]), z_arr)
+        # old was z_arr
+        # P_func = np.outer(MM, np.zeros([len(z_arr)]))
+        # M_arr = np.outer(MM, np.ones([len(z_arr)]))
+        # M200 = np.outer(MM, np.zeros([len(z_arr)]))
+        # zarr = np.outer(np.ones([len(M)]), z_arr)
 
-        P_func = self.P_of_Y_per(LgY, M_arr, zarr, Y_c, Y_err, param_vals)
+        P_func = self.P_of_Y_per(LgY, MM, z_c, Y_c, Y_err, param_vals)
 
         return P_func
 

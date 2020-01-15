@@ -39,6 +39,7 @@ class ClusterLikelihood(PoissonLikelihood):
                 "vars_pairs": [["delta_nonu", "delta_nonu"]],
             },
             "Hubble": {"z": self.zarr},
+            "angular_diameter_distance": {"z": self.zarr},
         }
 
     def _get_catalog(self):
@@ -80,10 +81,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
         return hmf
 
-    def _get_rate_fn(self, **kwargs):
-
-        HMF = self._get_HMF()
-
+    def _get_param_vals(self):
         B0 = 0.08
         scat = 0.2
         massbias = 1.0
@@ -91,26 +89,63 @@ class ClusterLikelihood(PoissonLikelihood):
         ob = self._get_ob()
         om = self._get_om()
         param_vals = {"om": om, "ob": ob, "H0": H0, "B0": B0, "scat": scat, "massbias": massbias}
+        return param_vals
+
+    def _get_rate_fn(self, **kwargs):
+
+        HMF = self._get_HMF()
+        param_vals = self._get_param_vals()
 
         Ez_fn = self._get_Ez_interpolator()
+        dn_dzdm_interp = HMF.inter_dndmLogm(delta=500)
 
         def Prob_per_cluster(z, tsz_signal, tsz_signal_err):
             c_y = tsz_signal
             c_yerr = tsz_signal_err
             c_z = z
 
-            Pfunc_ind = self.szutils.Pfunc_per(
-                HMF.M[:, None], self.zarr[None, :], c_y, c_yerr, param_vals, Ez_fn
-            )
-            dn_dzdm = HMF.dn_dzdm(c_z, np.log10(HMF.M))
+            Pfunc_ind = self.szutils.Pfunc_per(HMF.M, c_z, c_y * 1e-4, c_yerr * 1e-4, param_vals, Ez_fn)
+
+            dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp(c_z, np.log10(HMF.M)))
 
             ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
+            # import pdb
 
+            # pdb.set_trace()
             return ans
 
         return Prob_per_cluster
         # Implement a function that returns a rate function (function of (tsz_signal, z))
 
+    def _get_dVdz(self):
+        """dV/dzdOmega
+        """
+        DA_z = self.theory.get_angular_diameter_distance(self.zarr)
+        dV_dz = DA_z ** 2 * (1.0 + self.zarr) ** 2 / self.theory.get_Hubble(self.zarr)
+
+        dV_dz *= (self.theory.get_param("H0") / 100.0) ** 3.0  # was h0
+        return dV_dz
+
     def _get_n_expected(self, **kwargs):
-        pass
-        # Implement integral of the above.
+        # def Ntot_survey(self,int_HMF,fsky,Ythresh,param_vals):
+
+        HMF = self._get_HMF()
+        param_vals = self._get_param_vals()
+        Ez_fn = self._get_Ez_interpolator()
+
+        z_arr = self.zarr
+        Ythresh = self.survey.Ythresh
+
+        Ntot = 0
+        dVdz = self._get_dVdz()
+        dn_dzdm = HMF.dn_dM(HMF.M, 500.0)
+
+        for Yt in Ythresh:
+            Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn)
+            N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None], axis=0), axis=0)
+            Ntot += np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * self.survey.fskytotal
+            import pdb
+
+            pdb.set_trace()
+
+        return Ntot

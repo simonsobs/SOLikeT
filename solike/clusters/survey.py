@@ -106,11 +106,12 @@ def loadQ(source, tileNames=None):
 
 
 class SurveyData(object):
-    def __init__(self, nemoOutputDir, ClusterCat, qmin=5.6, szarMock=False, tiles=False):
+    def __init__(self, nemoOutputDir, ClusterCat, qmin=5.6, szarMock=False, tiles=False, num_noise_bins=20):
         self.nemodir = nemoOutputDir
         self.tckQFit = loadQ(self.nemodir + "/QFit.fits")
         self.qmin = qmin
         self.tiles = tiles
+        self.num_noise_bins = num_noise_bins
 
         if szarMock:
             print("mock catalog")
@@ -149,6 +150,11 @@ class SurveyData(object):
             self.mask, self.mwcs = loadAreaMask("", self.nemodir)
             self.rmstotal = self.rms[self.rms > 0]
             self.fskytotal = 987.5 / 41252.9612
+
+        count_temp, bin_edge = np.histogram(np.log10(self.rmstotal), bins=self.num_noise_bins)
+
+        self.frac_of_survey = count_temp * 1.0 / np.sum(count_temp)
+        self.Ythresh = 10 ** ((bin_edge[:-1] + bin_edge[1:]) / 2.0)
 
     @property
     def Q(self):
