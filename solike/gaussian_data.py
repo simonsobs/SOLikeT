@@ -3,7 +3,11 @@ import itertools
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
-import holoviews as hv
+
+try:
+    import holoviews as hv
+except ImportError:
+    pass
 from scipy.linalg import cholesky, LinAlgError
 
 
