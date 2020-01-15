@@ -143,8 +143,5 @@ class ClusterLikelihood(PoissonLikelihood):
             Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn)
             N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None], axis=0), axis=0)
             Ntot += np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * self.survey.fskytotal * frac
-            import pdb
-
-            pdb.set_trace()
 
         return Ntot

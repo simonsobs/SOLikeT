@@ -37,3 +37,7 @@ def test_clusters():
     lnl = model_fiducial.loglikes({})[0]
 
     assert np.isfinite(lnl)
+
+    like = model_fiducial.likelihood["solike.ClusterLikelihood"]
+
+    assert like._get_n_expected() > 40
