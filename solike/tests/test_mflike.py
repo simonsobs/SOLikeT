@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 
-import camb
+# import camb  # check on this, and pass with message if not there
 from cobaya.model import get_model
 
 
