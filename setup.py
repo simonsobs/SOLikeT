@@ -13,7 +13,7 @@ setup(
     package_data={
         "solike": ["*.yaml", "*.bibtex"],
         "solike": ["data/simulated*/*.txt"],
-        "solike": ["clusters/data/*"],
+        "solike": ["clusters/data/*.fits"],
         "solike": ["clusters/data/selFn_equD56/*"],
     },
     # install_requires=['cobaya (>=2.0.5)'],
