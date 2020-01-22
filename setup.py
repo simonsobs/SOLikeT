@@ -9,7 +9,7 @@ setup(
     version="0.0",
     description="Prototype package for SO Likelihoods",
     zip_safe=False,
-    packages=["solike", "solike.tests"],
+    packages=["solike", "solike.tests" , "solike.clusters"],
     package_data={
         "solike": ["*.yaml", "*.bibtex"],
         "solike": ["data/simulated*/*.txt"],
