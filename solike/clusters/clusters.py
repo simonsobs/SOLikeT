@@ -13,6 +13,8 @@ import solike.clusters.massfunc as mf
 from .survey import SurveyData
 from .sz_utils import szutils
 
+C_KM_S = 2.99792e5
+
 
 class ClusterLikelihood(PoissonLikelihood):
     class_options = {
@@ -72,12 +74,17 @@ class ClusterLikelihood(PoissonLikelihood):
 
     def _get_HMF(self):
 
+        h = self.theory.get_param("H0")/100.
+
         Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False).P
-        pks = Pk_interpolator(self.zarr, self.k)
+        pks = Pk_interpolator(self.zarr, self.k )
+        #pkstest = Pk_interpolator(0.125, self.k )
+        #print (pkstest * h**3 )
+        
         Ez = self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
         om = self._get_om()
 
-        hmf = mf.HMF(om, Ez, pk=pks, kh=self.k, zarr=self.zarr)
+        hmf = mf.HMF(om, Ez, pk=pks*h**3, kh=self.k/h, zarr=self.zarr)
 
         return hmf
 
@@ -121,8 +128,9 @@ class ClusterLikelihood(PoissonLikelihood):
         """dV/dzdOmega
         """
         DA_z = self.theory.get_angular_diameter_distance(self.zarr)
-        dV_dz = DA_z ** 2 * (1.0 + self.zarr) ** 2 / self.theory.get_Hubble(self.zarr)
-
+        
+        dV_dz = DA_z ** 2 * (1.0 + self.zarr) ** 2 / (self.theory.get_Hubble(self.zarr) / C_KM_S)
+        
         dV_dz *= (self.theory.get_param("H0") / 100.0) ** 3.0  # was h0
         return dV_dz
 
@@ -143,5 +151,7 @@ class ClusterLikelihood(PoissonLikelihood):
             Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn)
             N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None], axis=0), axis=0)
             Ntot += np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * self.survey.fskytotal * frac
+
+        #print (Ntot)
 
         return Ntot
