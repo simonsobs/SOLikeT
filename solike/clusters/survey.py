@@ -108,6 +108,8 @@ def loadQ(source, tileNames=None):
 class SurveyData(object):
     def __init__(self, nemoOutputDir, ClusterCat, qmin=5.6, szarMock=False, tiles=False, num_noise_bins=20):
         self.nemodir = nemoOutputDir
+        print (nemoOutputDir)
+
         self.tckQFit = loadQ(self.nemodir + "/QFit.fits")
         self.qmin = qmin
         self.tiles = tiles
