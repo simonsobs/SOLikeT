@@ -1,4 +1,3 @@
-import unittest
 import pytest
 import numpy as np
 
@@ -23,7 +22,11 @@ def get_demo_lensing_model(theory):
             ns:
                 prior:
                   min: 0.8
-                  max: 1.2        
+                  max: 1.2
+            H0:
+                prior:
+                  min: 40
+                  max: 100        
         """
     elif theory == "classy":
         info_yaml = r"""
@@ -41,7 +44,12 @@ def get_demo_lensing_model(theory):
             n_s:
                 prior:
                   min: 0.8
-                  max: 1.2        
+                  max: 1.2
+            H0:
+                prior:
+                  min: 40
+                  max: 100        
+
         """
 
     info = yaml_load(info_yaml)
@@ -52,7 +60,7 @@ def get_demo_lensing_model(theory):
 @pytest.mark.parametrize("theory", ["camb", "classy"])
 def test_lensing(theory):
     model = get_demo_lensing_model(theory)
-    param = "ns" if theory == "camb" else "n_s"
-    lnl = model.loglike({param: 0.965})[0]
+    ns_param = "ns" if theory == "camb" else "n_s"
+    lnl = model.loglike({ns_param: 0.965, "H0": 70})[0]
 
     assert np.isfinite(lnl)
