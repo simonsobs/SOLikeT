@@ -147,6 +147,9 @@ class ClusterLikelihood(PoissonLikelihood):
         dVdz = self._get_dVdz()
         dn_dzdm = HMF.dn_dM(HMF.M, 500.0)
 
+        print (self.zarr)
+        print (dn_dzdm[:,0])
+
         for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
             Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn)
             N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None], axis=0), axis=0)

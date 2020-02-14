@@ -28,6 +28,9 @@ class HMF(object):
         self.rho_crit0H100 = 3. / (8. * np.pi) * (100 * 1.e5)**2. / G_CGS * MPC2CM / MSUN_CGS
         self.rhoc0om = self.rho_crit0H100 * self.om
 
+        print (self.rho_crit0H100)
+        print (self.rhoc0om,self.om)
+
         if pk is None:
             print ('this will not work')
         else:
@@ -37,7 +40,7 @@ class HMF(object):
 
     def rhoc(self):
         # critical density as a function of z
-        ans = self.rho_crit0H100*self.E_z #(z)**2.
+        ans = self.rho_crit0H100*self.E_z**2.
         return ans
 
     def rhom(self):
@@ -55,6 +58,7 @@ class HMF(object):
         M here is in MDeltam but we can convert
         '''
         delts = self.critdensThreshold(delta)
+        print ('delts',delts)
         dn_dlnm = dn_dlogM(M, self.zarr, self.rhoc0om, delts, self.kh, self.pk, 'comoving')
         dn_dm = dn_dlnm/M[:, None]
         return dn_dm
