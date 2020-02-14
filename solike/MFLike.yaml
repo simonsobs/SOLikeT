@@ -1,0 +1,89 @@
+# A simple cobaya likelihood for SO/LAT
+
+path: null
+data_folder: LAT_MFLike_data/like_products
+
+sim_id: null
+
+select: tt-te-ee
+
+experiments:
+  - LAT:
+    - 93  # GHz
+    - 145 # GHz
+    - 225 # GHz
+
+foregrounds:
+  normalisation:
+    nu_0: 150.0
+    ell_0: 3000
+    T_CMB: 2.725
+
+  components:
+    tt:
+      - kSZ
+      - cibp
+      - radio
+      - tSZ
+      - cibc
+    te: []
+    ee: []
+
+lmax: 6002
+
+params:
+  # Foregrounds
+  a_tSZ:
+    prior:
+      min: 3.0
+      max: 3.6
+    proposal: 0.05
+    latex: a_\mathrm{tSZ}
+  a_kSZ:
+    prior:
+      min: 1.4
+      max: 1.8
+    proposal: 0.1
+    latex: a_\mathrm{kSZ}
+  a_p:
+    prior:
+      min: 6.2
+      max: 7.6
+    proposal: 0.075
+    latex: a_p
+  beta_p:
+    prior:
+      min: 1.8
+      max: 2.2
+    proposal: 0.015
+    latex: \beta_p
+  a_c:
+    prior:
+      min: 4.4
+      max: 5.4
+    proposal: 0.12
+    latex: a_c
+  beta_c:
+    prior:
+      min: 2.0
+      max: 2.4
+    proposal: 0.03
+    latex: \beta_c
+  n_CIBC:
+    prior:
+      min: 1.0
+      max: 1.4
+    proposal: 0.045
+    latex: n_\mathrm{CIBC}
+  a_s:
+    prior:
+      min: 2.8
+      max: 3.4
+    proposal: 0.01
+    latex: a_s
+  T_d:
+    prior:
+      min:  8.60
+      max: 10.60
+    proposal: 0.6
+    latex: T_d

@@ -5,7 +5,6 @@ import os
 
 import numpy as np
 
-import camb
 from cobaya.model import get_model
 
 
