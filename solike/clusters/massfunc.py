@@ -4,7 +4,7 @@ from .tinker import dn_dlogM
 
 np.seterr(divide='ignore', invalid='ignore')
 
-MSUN_CGS=1.98900e+33
+MSUN_CGS=1.98840987e+33
 G_CGS=6.67259e-08
 MPC2CM=3.085678e+24
 
@@ -17,7 +17,8 @@ class HMF(object):
         else:
             self.zarr = zarr
 
-        self.M = 10**np.arange(13.5, 15.7, 0.02)
+        self.M = 10**np.arange(np.log10(5e13), 15.7, 0.02)
+        #self.M = 10**np.arange(13.5, 15.7, 0.02)
 
         assert len(Ez) == len(zarr), "Ez and z arrays do not match"
 
@@ -25,7 +26,7 @@ class HMF(object):
 
         #Initialize rho critical values for usage
         self.om = om
-        self.rho_crit0H100 = 3. / (8. * np.pi) * (100 * 1.e5)**2. / G_CGS * MPC2CM / MSUN_CGS
+        self.rho_crit0H100 = (3. / (8. * np.pi) * (100 * 1.e5)**2.) / G_CGS * MPC2CM / MSUN_CGS
         self.rhoc0om = self.rho_crit0H100 * self.om
 
         if pk is None:
@@ -37,7 +38,7 @@ class HMF(object):
 
     def rhoc(self):
         # critical density as a function of z
-        ans = self.rho_crit0H100*self.E_z #(z)**2.
+        ans = self.rho_crit0H100*self.E_z**2.
         return ans
 
     def rhom(self):

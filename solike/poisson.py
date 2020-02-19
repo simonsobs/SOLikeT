@@ -1,9 +1,9 @@
-import .survey as Survey
+import solike.clusters.survey as Survey
 
 from cobaya.likelihood import Likelihood
 
 from .poisson_data import PoissonData
-import .massfunc as mf
+import solike.clusters.massfunc as mf
 
 class PoissonLikelihood(Likelihood):
     class_options = {"name": "Cluster", "data_path": None, "data_name": None, "columns": None}
