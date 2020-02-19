@@ -168,6 +168,6 @@ class ClusterLikelihood(PoissonLikelihood):
         #Pfunc = 1.
         #N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None]/h, axis=0), axis=0)
         #Ntot = np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * (600./(4*np.pi * (180/np.pi)**2)) 
-        #print (Ntot)
+        print (Ntot)
 
         return Ntot

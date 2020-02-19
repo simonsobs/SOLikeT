@@ -48,7 +48,7 @@ class szutils(object):
         return ans
 
     def P_Yo_vec(self, LgY, M, z, param_vals, Ez_fn, Da_fn):
-
+        H0 = param_vals["H0"]
         # Ma = np.outer(M, np.ones(len(LgY[0, :])))
 
         Ytilde, theta0, Qfilt = y0FromLogM500(
