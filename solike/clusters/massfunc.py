@@ -18,7 +18,10 @@ class HMF(object):
             self.zarr = zarr
 
         #self.M = 10**np.arange(np.log10(5e13), 15.7, 0.02)
-        self.M = 10**np.arange(13.5, 15.7, 0.02)
+        #self.M = 10**np.arange(13.5, 15.7, 0.02)
+        M_edges = 10**np.arange(13.5, 15.72, 0.02)
+
+        self.M = (M_edges[1:]+M_edges[:-1])/2. #10**np.arange(13.5, 15.7, 0.02)
 
         assert len(Ez) == len(zarr), "Ez and z arrays do not match"
 

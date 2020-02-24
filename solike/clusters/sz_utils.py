@@ -6,6 +6,7 @@ from astropy.cosmology import FlatLambdaCDM
 from .massfunc import MPC2CM as Mpc_in_cm
 from .massfunc import MSUN_CGS as MSun_in_g
 from .massfunc import G_CGS as G_in_cgs
+#from .clusters import C_KM_S as C_in_kms
 
 rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
 
@@ -40,6 +41,9 @@ class szutils(object):
         Y = 10 ** LgY
 
         # Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
+
+        #ind = 20
+        #print ("M,z,y~",M[ind],z,Ytilde[ind,0])
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
         ans = (
@@ -109,13 +113,12 @@ class szutils(object):
 
         P_Y = np.nan_to_num(self.P_Yo(LgYa2, MM, zz, param_vals))
         ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1) * np.log(10)
+        
         return ans
 
     def Y_prob(self, Y_c, LgY, YNoise):
         Y = 10 ** (LgY)
-        # print(Y.shape)
-        # print(Y_c.shape)
-        # print(YNoise.shape)
+
         ans = gaussian(Y, Y_c, YNoise)
         return ans
 
@@ -126,6 +129,8 @@ class szutils(object):
         P_Y_sig = self.Y_prob(Y_c, LgY, Y_err)
         P_Y = np.nan_to_num(self.P_Yo(LgYa, MM, zz, param_vals, Ez_fn, Da_fn))
         ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
+
+        print ("Pfunc per", ans[50],zz)
         return ans
 
     def Pfunc_per_parallel(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
@@ -180,8 +185,8 @@ def calcR500Mpc(z, M500, Ez_fn, H0):
         )
 
     Ez = Ez_fn(z)
-    #criticalDensity = cosmoModel.critical_density(z).value
-    criticalDensity = rho_crit0H100 * (H0/100.)**2 ### NEED an h**2 #(criticalDensity * np.power(Mpc_in_cm, 3)) / MSun_in_g
+
+    criticalDensity = rho_crit0H100 * (H0/100.)**2 * Ez**2
     R500Mpc = np.power((3 * M500) / (4 * np.pi * 500 * criticalDensity), 1.0 / 3.0)
 
     return R500Mpc
@@ -195,6 +200,7 @@ def calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0):
 
     R500Mpc = calcR500Mpc(z, M500, Ez_fn, H0)
     DAz = Da_fn (z)
+
     theta500Arcmin = np.degrees(np.arctan(R500Mpc / DAz)) * 60.0
 
     return theta500Arcmin
@@ -228,6 +234,7 @@ def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
     me = 9.11e-31
     e = 1.6e-19
     c = 3e8
+    TCMB=2.72548
 
     # Using Arnaud et al. (2005) M-T to get temperature
     A = 3.84e14
@@ -372,18 +379,16 @@ def y0FromLogM500(
     theta500Arcmin = calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0)
     Q = calcQ(theta500Arcmin, tckQFit)
 
-    fRel = 1
-
     Ez = Ez_fn(z)
 
     # Relativistic correction: now a little more complicated, to account for fact y0~ maps are weighted sum
     # of individual frequency maps, and relativistic correction size varies with frequency
-    # fRels = []
-    # freqWeights = []
-    # for obsFreqGHz in fRelWeightsDict.keys():
-    #     fRels.append(calcFRel(z, M500, obsFreqGHz=obsFreqGHz, Ez_fn=Ez_fn))
-    #     freqWeights.append(fRelWeightsDict[obsFreqGHz])
-    # fRel = np.average(np.array(fRels), axis=0, weights=freqWeights)
+    fRels = []
+    freqWeights = []
+    for obsFreqGHz in fRelWeightsDict.keys():
+        fRels.append(calcFRel(z, M500, obsFreqGHz=obsFreqGHz, Ez_fn=Ez_fn))
+        freqWeights.append(fRelWeightsDict[obsFreqGHz])
+    fRel = np.average(np.array(fRels), axis=0, weights=freqWeights)
 
     # UPP relation according to H13
     # NOTE: m in H13 is M/Mpivot
