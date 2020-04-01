@@ -16,7 +16,7 @@ def test_clusters():
 
     info_fiducial = {
         "params": fiducial_params,
-        "likelihood": {"solike.ClusterLikelihood": {"stop_at_error": True,}},
+        "likelihood": {"solike.ClusterLikelihood": {"stop_at_error": True}},
         "theory": {
             "camb": {
                 "extra_args": {

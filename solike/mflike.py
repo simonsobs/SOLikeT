@@ -45,7 +45,7 @@ class MFLike(PSLikelihood, _InstallableLikelihood):
             getattr(self, "path", None) or os.path.join(self.packages_path, "data")
         )
 
-        self.data_folder = os.path.join(data_file_path, self.data_folder)
+        self.data_folder = os.path.normpath(os.path.join(data_file_path, self.data_folder))
         if not os.path.exists(self.data_folder):
             raise LoggedError(
                 self.log,

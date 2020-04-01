@@ -17,13 +17,13 @@ def test_multi():
     }
 
     info1 = {
-        "likelihood": {"solike.mflike.MFLike": {"sim_id": 0},},
+        "likelihood": {"solike.mflike.MFLike": {"sim_id": 0}},
         "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1}}},
         "params": {**cosmo_params, **nuisance_params},
     }
 
     info2 = {
-        "likelihood": {"solike.SimulatedLensingLikelihood": {"sim_number": 1},},
+        "likelihood": {"solike.SimulatedLensingLikelihood": {"sim_number": 1}},
         "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1}}},
         "params": {**cosmo_params},
     }

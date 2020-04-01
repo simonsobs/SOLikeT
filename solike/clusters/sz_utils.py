@@ -6,22 +6,25 @@ from astropy.cosmology import FlatLambdaCDM
 from .massfunc import MPC2CM as Mpc_in_cm
 from .massfunc import MSUN_CGS as MSun_in_g
 from .massfunc import G_CGS as G_in_cgs
-#from .clusters import C_KM_S as C_in_kms
 
-rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
+# from .clusters import C_KM_S as C_in_kms
+
+rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
+
 
 def gaussian(xx, mu, sig, noNorm=False):
-    if noNorm == True:
+    if noNorm:
         return np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
     else:
         return 1.0 / (sig * np.sqrt(2 * np.pi)) * np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
 
-class szutils(object):
+
+class szutils:
     def __init__(self, Survey):
         self.LgY = np.arange(-6, -2.5, 0.01)
         self.Survey = Survey
 
-        #self.rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
+        # self.rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
 
     def P_Yo(self, LgY, M, z, param_vals, Ez_fn, Da_fn):
         H0 = param_vals["H0"]
@@ -42,12 +45,12 @@ class szutils(object):
 
         # Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
 
-        #ind = 20
-        #print ("M,z,y~",M[ind],z,Ytilde[ind,0])
+        # ind = 20
+        # print ("M,z,y~",M[ind],z,Ytilde[ind,0])
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
         ans = (
-            1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) * np.exp(numer / (2.0 * param_vals["scat"] ** 2))
+                1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) * np.exp(numer / (2.0 * param_vals["scat"] ** 2))
         )
         return ans
 
@@ -61,7 +64,7 @@ class szutils(object):
             self.Survey.Q,
             sigma_int=param_vals["scat"],
             B0=param_vals["B0"],
-            H0 = param_vals["H0"],
+            H0=param_vals["H0"],
             Ez_fn=Ez_fn,
             Da_fn=Da_fn,
         )
@@ -71,7 +74,7 @@ class szutils(object):
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
         ans = (
-            1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) * np.exp(numer / (2.0 * param_vals["scat"] ** 2))
+                1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) * np.exp(numer / (2.0 * param_vals["scat"] ** 2))
         )
         return ans
 
@@ -113,7 +116,7 @@ class szutils(object):
 
         P_Y = np.nan_to_num(self.P_Yo(LgYa2, MM, zz, param_vals))
         ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1) * np.log(10)
-        
+
         return ans
 
     def Y_prob(self, Y_c, LgY, YNoise):
@@ -130,7 +133,7 @@ class szutils(object):
         P_Y = np.nan_to_num(self.P_Yo(LgYa, MM, zz, param_vals, Ez_fn, Da_fn))
         ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
 
-        print ("Pfunc per", ans[50],zz)
+        print("Pfunc per", ans[50], zz)
         return ans
 
     def Pfunc_per_parallel(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
@@ -173,6 +176,7 @@ class szutils(object):
 ###
 """Routines from nemo (author: Matt Hilton ) to limit dependencies"""
 
+
 # ------------------------------------------------------------------------------------------------------------
 def calcR500Mpc(z, M500, Ez_fn, H0):
     """Given z, M500 (in MSun), returns R500 in Mpc, with respect to critical density.
@@ -186,7 +190,7 @@ def calcR500Mpc(z, M500, Ez_fn, H0):
 
     Ez = Ez_fn(z)
 
-    criticalDensity = rho_crit0H100 * (H0/100.)**2 * Ez**2
+    criticalDensity = rho_crit0H100 * (H0 / 100.) ** 2 * Ez ** 2
     R500Mpc = np.power((3 * M500) / (4 * np.pi * 500 * criticalDensity), 1.0 / 3.0)
 
     return R500Mpc
@@ -199,7 +203,7 @@ def calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0):
     """
 
     R500Mpc = calcR500Mpc(z, M500, Ez_fn, H0)
-    DAz = Da_fn (z)
+    DAz = Da_fn(z)
 
     theta500Arcmin = np.degrees(np.arctan(R500Mpc / DAz)) * 60.0
 
@@ -234,7 +238,7 @@ def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
     me = 9.11e-31
     e = 1.6e-19
     c = 3e8
-    TCMB=2.72548
+    TCMB = 2.72548
 
     # Using Arnaud et al. (2005) M-T to get temperature
     A = 3.84e14
@@ -253,88 +257,88 @@ def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
     Y0 = -4 + Xtw
 
     Y1 = (
-        -10.0
-        + (47 / 2.0) * Xtw
-        - (42 / 5.0) * Xtw ** 2
-        + (7 / 10.0) * Xtw ** 3
-        + np.power(Stw, 2) * (-(21 / 5.0) + (7 / 5.0) * Xtw)
+            -10.0
+            + (47 / 2.0) * Xtw
+            - (42 / 5.0) * Xtw ** 2
+            + (7 / 10.0) * Xtw ** 3
+            + np.power(Stw, 2) * (-(21 / 5.0) + (7 / 5.0) * Xtw)
     )
 
     Y2 = (
-        -(15 / 2.0)
-        + (1023 / 8.0) * Xtw
-        - (868 / 5.0) * Xtw ** 2
-        + (329 / 5.0) * Xtw ** 3
-        - (44 / 5.0) * Xtw ** 4
-        + (11 / 30.0) * Xtw ** 5
-        + np.power(Stw, 2)
-        * (-(434 / 5.0) + (658 / 5.0) * Xtw - (242 / 5.0) * Xtw ** 2 + (143 / 30.0) * Xtw ** 3)
-        + np.power(Stw, 4) * (-(44 / 5.0) + (187 / 60.0) * Xtw)
+            -(15 / 2.0)
+            + (1023 / 8.0) * Xtw
+            - (868 / 5.0) * Xtw ** 2
+            + (329 / 5.0) * Xtw ** 3
+            - (44 / 5.0) * Xtw ** 4
+            + (11 / 30.0) * Xtw ** 5
+            + np.power(Stw, 2)
+            * (-(434 / 5.0) + (658 / 5.0) * Xtw - (242 / 5.0) * Xtw ** 2 + (143 / 30.0) * Xtw ** 3)
+            + np.power(Stw, 4) * (-(44 / 5.0) + (187 / 60.0) * Xtw)
     )
 
     Y3 = (
-        (15 / 2.0)
-        + (2505 / 8.0) * Xtw
-        - (7098 / 5.0) * Xtw ** 2
-        + (14253 / 10.0) * Xtw ** 3
-        - (18594 / 35.0) * Xtw ** 4
-        + (12059 / 140.0) * Xtw ** 5
-        - (128 / 21.0) * Xtw ** 6
-        + (16 / 105.0) * Xtw ** 7
-        + np.power(Stw, 2)
-        * (
-            -(7098 / 10.0)
-            + (14253 / 5.0) * Xtw
-            - (102267 / 35.0) * Xtw ** 2
-            + (156767 / 140.0) * Xtw ** 3
-            - (1216 / 7.0) * Xtw ** 4
-            + (64 / 7.0) * Xtw ** 5
-        )
-        + np.power(Stw, 4)
-        * (-(18594 / 35.0) + (205003 / 280.0) * Xtw - (1920 / 7.0) * Xtw ** 2 + (1024 / 35.0) * Xtw ** 3)
-        + np.power(Stw, 6) * (-(544 / 21.0) + (992 / 105.0) * Xtw)
+            (15 / 2.0)
+            + (2505 / 8.0) * Xtw
+            - (7098 / 5.0) * Xtw ** 2
+            + (14253 / 10.0) * Xtw ** 3
+            - (18594 / 35.0) * Xtw ** 4
+            + (12059 / 140.0) * Xtw ** 5
+            - (128 / 21.0) * Xtw ** 6
+            + (16 / 105.0) * Xtw ** 7
+            + np.power(Stw, 2)
+            * (
+                    -(7098 / 10.0)
+                    + (14253 / 5.0) * Xtw
+                    - (102267 / 35.0) * Xtw ** 2
+                    + (156767 / 140.0) * Xtw ** 3
+                    - (1216 / 7.0) * Xtw ** 4
+                    + (64 / 7.0) * Xtw ** 5
+            )
+            + np.power(Stw, 4)
+            * (-(18594 / 35.0) + (205003 / 280.0) * Xtw - (1920 / 7.0) * Xtw ** 2 + (1024 / 35.0) * Xtw ** 3)
+            + np.power(Stw, 6) * (-(544 / 21.0) + (992 / 105.0) * Xtw)
     )
 
     Y4 = (
-        -(135 / 32.0)
-        + (30375 / 128.0) * Xtw
-        - (62391 / 10.0) * Xtw ** 2
-        + (614727 / 40.0) * Xtw ** 3
-        - (124389 / 10.0) * Xtw ** 4
-        + (355703 / 80.0) * Xtw ** 5
-        - (16568 / 21.0) * Xtw ** 6
-        + (7516 / 105.0) * Xtw ** 7
-        - (22 / 7.0) * Xtw ** 8
-        + (11 / 210.0) * Xtw ** 9
-        + np.power(Stw, 2)
-        * (
-            -(62391 / 20.0)
-            + (614727 / 20.0) * Xtw
-            - (1368279 / 20.0) * Xtw ** 2
-            + (4624139 / 80.0) * Xtw ** 3
-            - (157396 / 7.0) * Xtw ** 4
-            + (30064 / 7.0) * Xtw ** 5
-            - (2717 / 7.0) * Xtw ** 6
-            + (2761 / 210.0) * Xtw ** 7
-        )
-        + np.power(Stw, 4)
-        * (
-            -(124389 / 10.0)
-            + (6046951 / 160.0) * Xtw
-            - (248520 / 7.0) * Xtw ** 2
-            + (481024 / 35.0) * Xtw ** 3
-            - (15972 / 7.0) * Xtw ** 4
-            + (18689 / 140.0) * Xtw ** 5
-        )
-        + np.power(Stw, 6)
-        * (-(70414 / 21.0) + (465992 / 105.0) * Xtw - (11792 / 7.0) * Xtw ** 2 + (19778 / 105.0) * Xtw ** 3)
-        + np.power(Stw, 8) * (-(682 / 7.0) + (7601 / 210.0) * Xtw)
+            -(135 / 32.0)
+            + (30375 / 128.0) * Xtw
+            - (62391 / 10.0) * Xtw ** 2
+            + (614727 / 40.0) * Xtw ** 3
+            - (124389 / 10.0) * Xtw ** 4
+            + (355703 / 80.0) * Xtw ** 5
+            - (16568 / 21.0) * Xtw ** 6
+            + (7516 / 105.0) * Xtw ** 7
+            - (22 / 7.0) * Xtw ** 8
+            + (11 / 210.0) * Xtw ** 9
+            + np.power(Stw, 2)
+            * (
+                    -(62391 / 20.0)
+                    + (614727 / 20.0) * Xtw
+                    - (1368279 / 20.0) * Xtw ** 2
+                    + (4624139 / 80.0) * Xtw ** 3
+                    - (157396 / 7.0) * Xtw ** 4
+                    + (30064 / 7.0) * Xtw ** 5
+                    - (2717 / 7.0) * Xtw ** 6
+                    + (2761 / 210.0) * Xtw ** 7
+            )
+            + np.power(Stw, 4)
+            * (
+                    -(124389 / 10.0)
+                    + (6046951 / 160.0) * Xtw
+                    - (248520 / 7.0) * Xtw ** 2
+                    + (481024 / 35.0) * Xtw ** 3
+                    - (15972 / 7.0) * Xtw ** 4
+                    + (18689 / 140.0) * Xtw ** 5
+            )
+            + np.power(Stw, 6)
+            * (-(70414 / 21.0) + (465992 / 105.0) * Xtw - (11792 / 7.0) * Xtw ** 2 + (19778 / 105.0) * Xtw ** 3)
+            + np.power(Stw, 8) * (-(682 / 7.0) + (7601 / 210.0) * Xtw)
     )
 
     deltaSZE = (
-        ((X ** 3) / (np.exp(X) - 1))
-        * ((thetae * X * np.exp(X)) / (np.exp(X) - 1))
-        * (Y0 + Y1 * thetae + Y2 * thetae ** 2 + Y3 * thetae ** 3 + Y4 * thetae ** 4)
+            ((X ** 3) / (np.exp(X) - 1))
+            * ((thetae * X * np.exp(X)) / (np.exp(X) - 1))
+            * (Y0 + Y1 * thetae + Y2 * thetae ** 2 + Y3 * thetae ** 3 + Y4 * thetae ** 4)
     )
 
     fRel = 1 + deltaSZE
@@ -344,17 +348,17 @@ def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
 
 # ------------------------------------------------------------------------------------------------------------
 def y0FromLogM500(
-    log10M500,
-    z,
-    tckQFit,
-    tenToA0=4.95e-5,
-    B0=0.08,
-    Mpivot=3e14,
-    sigma_int=0.2,
-    fRelWeightsDict={148.0: 1.0},
-    H0 = 70.,
-    Ez_fn=None,
-    Da_fn=None
+        log10M500,
+        z,
+        tckQFit,
+        tenToA0=4.95e-5,
+        B0=0.08,
+        Mpivot=3e14,
+        sigma_int=0.2,
+        fRelWeightsDict={148.0: 1.0},
+        H0=70.,
+        Ez_fn=None,
+        Da_fn=None
 ):
     """Predict y0~ given logM500 (in MSun) and redshift. Default scaling relation parameters are A10 (as in
     H13).

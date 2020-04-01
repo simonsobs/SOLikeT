@@ -19,6 +19,7 @@ tinker_data = np.transpose([[float(x) for x in line.split()]
 
 tinker_splines = None
 
+
 def tinker_params_spline(delta, z=None):
     global tinker_splines
     if tinker_splines is None:
@@ -27,7 +28,7 @@ def tinker_params_spline(delta, z=None):
         for y in data:
             # Extend to large Delta 
             p = np.polyfit(D[-2:], y[-2:], 1)
-            x = np.hstack((D, D[-1]+3.))
+            x = np.hstack((D, D[-1] + 3.))
             y = np.hstack((y, np.polyval(p, x[-1])))
             tinker_splines.append(iuSpline(x, y, k=2))
     A0, a0, b0, c0 = [ts(np.log(delta)) for ts in tinker_splines]
@@ -35,12 +36,13 @@ def tinker_params_spline(delta, z=None):
         return A0, a0, b0, c0
 
     z = np.asarray(z)
-    A = A0 * (1 + z)**-.14
-    a = a0 * (1 + z)**-.06
-    alpha = 10.**(-(((.75/np.log10(delta/75.)))**1.2))
-    b = b0 * (1 + z)**-alpha
+    A = A0 * (1 + z) ** -.14
+    a = a0 * (1 + z) ** -.06
+    alpha = 10. ** (-(((.75 / np.log10(delta / 75.))) ** 1.2))
+    b = b0 * (1 + z) ** -alpha
     c = np.zeros(np.shape(z)) + c0
     return A, a, b, c
+
 
 def tinker_params_analytic(delta, z=None):
     alpha = None
@@ -51,44 +53,46 @@ def tinker_params_analytic(delta, z=None):
             if delta < 75.:
                 alpha = 1.
             else:
-                alpha = 10.**(-(((.75/np.log10(delta/75.)))**1.2))
+                alpha = 10. ** (-(((.75 / np.log10(delta / 75.))) ** 1.2))
 
     else:
         log_delta = np.log10(delta)
-        A0 = 0.1*log_delta - 0.05
-        a0 = 1.43 + (log_delta - 2.3)**(1.5)
-        b0 = 1.0 + (log_delta - 1.6)**(-1.5)
+        A0 = 0.1 * log_delta - 0.05
+        a0 = 1.43 + (log_delta - 2.3) ** (1.5)
+        b0 = 1.0 + (log_delta - 1.6) ** (-1.5)
         c0 = log_delta - 2.35
         A0[delta > 1600] = .26
         a0[log_delta < 2.3] = 1.43
         b0[log_delta < 1.6] = 1.0
         c0[c0 < 0] = 0.
-        c0 = 1.2 + c0**1.6
+        c0 = 1.2 + c0 ** 1.6
     if z is None:
         return A0, a0, b0, c0
-    A = A0 * (1 + z)**-.14
-    a = a0 * (1 + z)**-.06
+    A = A0 * (1 + z) ** -.14
+    a = a0 * (1 + z) ** -.06
     if alpha is None:
-        alpha = 10.**(-(((.75/np.log10(delta/75.)))**1.2))
+        alpha = 10. ** (-(((.75 / np.log10(delta / 75.))) ** 1.2))
         alpha[delta < 75.] = 1.
-    b = b0 * (1 + z)**-alpha
+    b = b0 * (1 + z) ** -alpha
     c = np.zeros(np.shape(z)) + c0
     return A, a, b, c
 
 
 tinker_params = tinker_params_spline
 
+
 def tinker_f(sigma, params):
     A, a, b, c = params
-    return A * ((sigma/b)**-a + 1) * np.exp(-c/sigma**2)
+    return A * ((sigma / b) ** -a + 1) * np.exp(-c / sigma ** 2)
 
-# Sigma-evaluation, and top-hat functions. 
+
+# Sigma-evaluation, and top-hat functions.
 
 def radius_from_mass(M, rho):
     """
     Convert mass M to radius R assuming density rho.
     """
-    return (3.*M / (4.*np.pi*rho))**(1/3.)
+    return (3. * M / (4. * np.pi * rho)) ** (1 / 3.)
 
 
 def top_hatf(kR):
@@ -100,8 +104,9 @@ def top_hatf(kR):
     * This is called many times and costs a lot of runtime.
     * For small values, use Taylor series.
     """
-    out = np.nan_to_num(3*(np.sin(kR) - (kR)*np.cos(kR)))/((kR)**3)
+    out = np.nan_to_num(3 * (np.sin(kR) - (kR) * np.cos(kR))) / ((kR) ** 3)
     return out
+
 
 def sigma_sq_integral(R_grid, power_spt, k_val):
     """
@@ -112,13 +117,14 @@ def sigma_sq_integral(R_grid, power_spt, k_val):
       smarter way using numpy arrays.
     """
     to_integ = np.array(
-        [top_hatf(R_grid*k)**2 * np.tile(
+        [top_hatf(R_grid * k) ** 2 * np.tile(
             power_spt[:, i],
             (R_grid.shape[0], 1),
-        )*k**2 for k, i in zip(k_val, np.arange(len(k_val)))]
+        ) * k ** 2 for k, i in zip(k_val, np.arange(len(k_val)))]
     )
 
-    return simps(to_integ/(2*np.pi**2), x=k_val, axis=0)
+    return simps(to_integ / (2 * np.pi ** 2), x=k_val, axis=0)
+
 
 def dn_dlogM(M, z, rho, delta, k, P, comoving=False):
     """
@@ -138,9 +144,9 @@ def dn_dlogM(M, z, rho, delta, k, P, comoving=False):
     # Radius associated to mass, co-moving
     R = radius_from_mass(M, rho)
     if not comoving:  # if you do this make sure rho still has shape of z.
-        R = R * np.transpose(1+z)
+        R = R * np.transpose(1 + z)
     # Fluctuations on those scales (P and k are comoving)
-    sigma = sigma_sq_integral(R, P, k)**.5
+    sigma = sigma_sq_integral(R, P, k) ** .5
     # d log(sigma^-1)
     # gradient is broken.
     if R.shape[-1] == 1:
