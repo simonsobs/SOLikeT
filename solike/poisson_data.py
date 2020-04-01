@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-class PoissonData(object):
+class PoissonData:
     """Poisson-process-generated data.
 
     Parameters

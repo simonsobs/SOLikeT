@@ -8,11 +8,12 @@
 # Global
 import os
 import numpy as np
+from typing import Sequence, Optional
 
 # Local
 from cobaya.log import LoggedError
 from cobaya.tools import are_different_params_lists
-from cobaya.conventions import _path_install
+from cobaya.conventions import _packages_path
 from cobaya.likelihoods._base_classes import _InstallableLikelihood
 
 from .gaussian import GaussianData
@@ -22,20 +23,26 @@ from .ps import PSLikelihood
 class MFLike(PSLikelihood, _InstallableLikelihood):
     install_options = {"github_repository": "simonsobs/LAT_MFLike_data", "github_release": "v0.1"}
 
+    lmax: int
+    experiments: Sequence
+    select: str
+    sim_id: Optional[int]
+    foregrounds: dict
+
     def initialize(self):
         self.log.info("Initialising.")
-        if not getattr(self, "path", None) and not getattr(self, "path_install", None):
-            self.path_install = os.getenv("COBAYA_MODULES", None)
-            if self.path_install is None:
+        if not getattr(self, "path", None) and not getattr(self, _packages_path, None):
+            self.packages_path = os.getenv("COBAYA_PACKAGES_PATH", None)
+            if self.packages_path is None:
                 raise LoggedError(
                     self.log,
                     "No path given to MFLike data. Set the likelihood property "
-                    "'path' or the common property '%s', or set COBAYA_MODULES env variable.",
-                    _path_install,
+                    "'path' or the common property '%s', or set COBAYA_PACKAGES_PATH env variable.",
+                    _packages_path,
                 )
         # If no path specified, use the modules path
         data_file_path = os.path.normpath(
-            getattr(self, "path", None) or os.path.join(self.path_install, "data")
+            getattr(self, "path", None) or os.path.join(self.packages_path, "data")
         )
 
         self.data_folder = os.path.join(data_file_path, self.data_folder)
@@ -54,7 +61,7 @@ class MFLike(PSLikelihood, _InstallableLikelihood):
         self._prepare_data()  # defines self.ell, self.data_vec, self.cov_mat
 
         # Same lmax for different cls; lmax is available after data is prepared
-        self.l_maxs_cls = [self.lmax for i in self.requested_cls]
+        self.l_maxs_cls = [self.lmax for _ in self.requested_cls]
 
     def initialize_with_params(self):
         # Check that the parameters are the right ones
@@ -129,13 +136,13 @@ class MFLike(PSLikelihood, _InstallableLikelihood):
                 if self.select == s:
                     n_bins = int(cov_mat.shape[0])
                     cov_mat = cov_mat[
-                        count * n_bins // 3 : (count + 1) * n_bins // 3,
-                        count * n_bins // 3 : (count + 1) * n_bins // 3,
-                    ]
+                              count * n_bins // 3: (count + 1) * n_bins // 3,
+                              count * n_bins // 3: (count + 1) * n_bins // 3,
+                              ]
         # Store covariance matrix & inverse
         self.cov_mat = cov_mat
         self.logp_const = np.log(2 * np.pi) * (-len(self.data_vec) / 2) + np.linalg.slogdet(cov_mat)[1] * (
-            -1 / 2
+                -1 / 2
         )
         self.inv_cov = np.linalg.inv(cov_mat)
 

@@ -1,9 +1,8 @@
-from collections import ChainMap
-
 import numpy as np
+from typing import Optional, Sequence
 
 from cobaya.likelihood import Likelihood
-from cobaya.input import merge_info, merge_params_info
+from cobaya.input import merge_info
 from cobaya.tools import recursive_update
 
 from .gaussian_data import GaussianData, MultiGaussianData
@@ -11,12 +10,9 @@ from .utils import get_likelihood
 
 
 class GaussianLikelihood(Likelihood):
-
-    class_options = {
-        "name": "Gaussian",
-        "datapath": None,
-        "covpath": None,
-    }
+    name: str = "Guassian"
+    datapath: Optional[str] = None
+    covpath: Optional[str] = None
 
     def initialize(self):
         x, y = self._get_data()
@@ -51,7 +47,9 @@ class CrossCov(dict):
 
 
 class MultiGaussianLikelihood(GaussianLikelihood):
-    class_options = {"components": None, "options": None, "cross_cov_path": None}
+    components: Optional[Sequence] = None
+    options: Optional[Sequence] = None
+    cross_cov_path: Optional[str] = None
 
     def initialize(self):
         self.likelihoods = [get_likelihood(*kv) for kv in zip(self.components, self.options)]
