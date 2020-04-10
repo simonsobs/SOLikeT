@@ -89,7 +89,7 @@ def loadQ(source, tileNames=None):
         combinedQTabFileName = os.path.join(source.selFnDir, "QFit.fits")
         tileNames = source.tileNames
     tckDict = {}
-    if os.path.exists(combinedQTabFileName) == True:
+    if os.path.exists(combinedQTabFileName):
         combinedQTab = atpy.Table().read(combinedQTabFileName)
         for key in combinedQTab.keys():
             if key != "theta500Arcmin":
@@ -105,7 +105,7 @@ def loadQ(source, tileNames=None):
     return tckDict
 
 
-class SurveyData(object):
+class SurveyData:
     def __init__(self, nemoOutputDir, ClusterCat, qmin=5.6, szarMock=False, tiles=False, num_noise_bins=20):
         self.nemodir = nemoOutputDir
 

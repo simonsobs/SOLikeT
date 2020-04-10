@@ -1,7 +1,3 @@
-import itertools
-
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 import numpy as np
 
 try:
@@ -17,7 +13,7 @@ def multivariate_normal_logpdf(theory, data, cov, inv_cov, log_det):
     return -0.5 * np.dot(delta, inv_cov.dot(delta)) + const
 
 
-class GaussianData(object):
+class GaussianData:
     """Named multivariate gaussian data
     """
 
