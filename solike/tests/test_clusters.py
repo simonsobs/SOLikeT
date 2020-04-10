@@ -10,8 +10,7 @@ def test_clusters():
         "As": 2.2e-9,
         "ns": 0.96,
         "mnu": 0.06,
-        "nnu": 3.046,
-        "num_massive_neutrinos": 1,
+        "nnu": 3.046
     }
 
     info_fiducial = {
@@ -21,6 +20,7 @@ def test_clusters():
             "camb": {
                 "extra_args": {
                     "accurate_massive_neutrino_transfers": True,
+                    "num_massive_neutrinos": 1,
                     "redshifts": np.linspace(0, 2, 41),
                     "nonlinear": False,
                     "kmax": 10.0,

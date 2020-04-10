@@ -1,8 +1,9 @@
 import numpy as np
-
+import pytest
 from solike.tests.test_mflike import cosmo_params, nuisance_params
 
 
+@pytest.mark.skip(reason="still in development")
 def test_multi():
     info = {
         "likelihood": {

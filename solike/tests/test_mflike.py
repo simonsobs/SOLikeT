@@ -2,7 +2,7 @@
 Make sure that this returns the same result as original mflike.MFLike from LAT_MFlike repo
 """
 import os
-
+import pytest
 import numpy as np
 
 from cobaya.model import get_model
@@ -51,7 +51,7 @@ def get_demo_mflike_model(orig=False):
 
     return model
 
-
+@pytest.mark.skip(reason="still in development")
 def test_mflike():
     model_local = get_demo_mflike_model()
     model_orig = get_demo_mflike_model(orig=True)
