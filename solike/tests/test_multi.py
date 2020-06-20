@@ -53,13 +53,22 @@ def test_multi():
     model1 = get_model(info1)
     model2 = get_model(info2)
 
-    fg_values = {"a_tSZ": nuisance_params["a_tSZ"], "a_kSZ": nuisance_params["a_kSZ"]}
+    fg_values_a = {"a_tSZ": nuisance_params["a_tSZ"], "a_kSZ": nuisance_params["a_kSZ"]}
+    fg_values_b = {k: v * 1.1 for k, v in fg_values_a.items()}
 
-    logp = model.loglikes(fg_values, cached=False)[0].sum()
-    assert np.isfinite(logp)
+    logp_a = model.loglikes(fg_values_a, cached=False)[0].sum()
+    logp_b = model.loglikes(fg_values_b, cached=False)[0].sum()
+    d_logp = logp_b - logp_a
+    assert np.isfinite(d_logp)
 
-    model1_logp = model1.loglikes(fg_values, cached=False)[0].sum()
-    model2_logp = model2.loglikes({}, cached=False)[0].sum()
-    logp_sum = model1_logp + model2_logp
+    model1_logp_a = model1.loglikes(fg_values_a, cached=False)[0].sum()
+    model2_logp_a = model2.loglikes({}, cached=False)[0].sum()
 
-    assert np.isclose(logp, logp_sum)
+    model1_logp_b = model1.loglikes(fg_values_b, cached=False)[0].sum()
+    model2_logp_b = model2.loglikes({}, cached=False)[0].sum()
+
+    d_logp1 = model1_logp_b - model1_logp_a
+    d_logp2 = model2_logp_b - model2_logp_a
+    d_logp_sum = d_logp1 + d_logp2
+
+    assert np.isclose(d_logp, d_logp_sum)
