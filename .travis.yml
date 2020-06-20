@@ -3,6 +3,17 @@ python:
   # - "3.7"
   - "3.8"
 
+before_install:
+  # Configure right compilers version (from cobaya's .travis.yml)
+  - if [[ "$GCC_VERSION" != "bionic" ]]; then
+      mkdir -p gcc-symlinks;
+      ln -s /usr/bin/gfortran-$GCC_VERSION gcc-symlinks/gfortran;
+      ln -s /usr/bin/gcc-$GCC_VERSION gcc-symlinks/gcc;
+      ln -s /usr/bin/g++-$GCC_VERSION gcc-symlinks/g++;
+      export PATH=$PWD/gcc-symlinks:$PATH;
+    fi
+  - gfortran --version
+
 install:
   - pip install astropy
   - pip install cobaya
