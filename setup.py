@@ -18,6 +18,6 @@ setup(
             "clusters/data/selFn_equD56/*",
         ]
     },
-    install_requires=["cobaya (>=3.0)", "astropy"],
+    install_requires=["cobaya (>=3.0)", "astropy", "astLib"],
     test_suite="solike.tests",
 )
