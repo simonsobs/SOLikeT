@@ -66,7 +66,7 @@ def test_mflike():
     model_local = get_demo_mflike_model()
     model_orig = get_demo_mflike_model(orig=True)
 
-    loglike_local = model_local.loglikes({}, cached=False)[0][-1]  # should be -1384.34401843
-    loglike_orig = model_orig.loglikes({}, cached=False)[0]
+    loglike_local = model_local.loglikes({}, cached=False)[0].sum()  # [-1]  # should be -1384.34401843
+    loglike_orig = model_orig.loglikes({}, cached=False)[0].sum()  # [0]
 
     assert np.isclose(loglike_local, loglike_orig)

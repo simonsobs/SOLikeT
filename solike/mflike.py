@@ -323,7 +323,13 @@ class MFLike(GaussianLikelihood, _InstallableLikelihood):
         if "et" in self.lcuts:
             del self.lcuts["et"]
 
-        self.data = GaussianData("mflike", self.l_bpws[: len(self.data_vec)], self.data_vec, self.cov)
+        ell_vec = np.zeros_like(self.data_vec)
+        for m in self.spec_meta:
+            i = m["ids"]
+            ell_vec[i] = m["leff"]
+        self.ell_vec = ell_vec
+
+        self.data = GaussianData("mflike", self.ell_vec, self.data_vec, self.cov)
 
     def _get_power_spectra(self, cl, **params_values):
         # Get Cl's from the theory code
