@@ -15,7 +15,7 @@ class PSLikelihood(GaussianLikelihood):
         return self.theory.get_Cl(ell_factor=True)
 
     def _get_theory(self, **params_values):
-        cl_theory = self.get_Cl()
+        cl_theory = self._get_Cl()
         return cl_theory[self.kind]
 
 
