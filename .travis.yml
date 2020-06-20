@@ -1,8 +1,22 @@
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-9
+      env:
+        - MATRIX_EVAL="CC=gcc-9 && CXX=g++-9"
+
 language: python
 python:
   - "3.7"
   - "3.8"
 
+before_install:
+    - eval "${MATRIX_EVAL}"
 install:
   - pip install astropy
   - pip install cobaya
@@ -10,7 +24,6 @@ install:
   - git clone https://github.com/lesgourg/class_public
   - cd class_public
   - make
-  - cd
   - pip install git+https://github.com/simonsobs/lat_mflike
   - python setup.py install
 script:
