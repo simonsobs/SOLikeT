@@ -1,9 +1,0 @@
-This is the software used by the ACTPol collaboration to compute the likelihood of cosmological models, using the small-scale CMB power spectrum from 350 < l <4000 measured by ACTPol, derived from the 2 seasons of polarization data. This spectrum has already been marginalized over SZ and foreground emission, and an overall calibration error is propagated to the covariance matrix in the likelihood code. The polarization efficiency is the only nuisance parameter required to be sampled. It is based on the WMAP and ACT team's likelihood software.
-
-To build, modify the data path in ACTPol_s2_like.f90 and the Makefile to reflect your system's environment. Then
-
-> make # Compiles the likelihood software and builds a test program.
-
-> ./test # Runs the test program.
-
-Please reference Louis et al. 2016 if you use this code.

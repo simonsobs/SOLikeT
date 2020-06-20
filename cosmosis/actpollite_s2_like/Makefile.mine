@@ -1,3 +1,0 @@
-ACTPOL_DATA_DIR='/users/renee/Likelihood/actpollite_s2_like/data/'
-#LDFLAGS += -lact
-#LDFLAGS+= -framework veclib 
