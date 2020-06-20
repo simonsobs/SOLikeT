@@ -54,7 +54,7 @@ def get_demo_mflike_model(orig=False):
         "params": {**cosmo_params, **nuisance_params},
         "likelihood": mflike_config,
         "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1}}},
-        "modules": os.getenv("COBAYA_MODULES", "/Users/tmorton/cosmology/modules"),
+        "modules": os.getenv("COBAYA_PACKAGES_PATH", "/Users/tmorton/cosmology/modules"),
     }
 
     model = get_model(info)
@@ -66,7 +66,7 @@ def test_mflike():
     model_local = get_demo_mflike_model()
     model_orig = get_demo_mflike_model(orig=True)
 
-    loglike_local = model_local.loglikes({}, cached=False)[0].sum()  # [-1]  # should be -1384.34401843
-    loglike_orig = model_orig.loglikes({}, cached=False)[0].sum()  # [0]
+    loglike_local = model_local.loglikes({}, cached=False)[0].sum()
+    loglike_orig = model_orig.loglikes({}, cached=False)[0].sum()
 
     assert np.isclose(loglike_local, loglike_orig)

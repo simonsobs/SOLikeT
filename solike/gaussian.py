@@ -56,10 +56,10 @@ class MultiGaussianLikelihood(GaussianLikelihood):
 
         self.cross_cov = CrossCov.load(self.cross_cov_path)
 
-        # Why doesn't merge_params_info() work here?
-        all_params = [l.params for l in self.likelihoods if hasattr(l, "params")]
-        if all_params:
-            self.params = merge_info(*all_params)
+        # # Why doesn't merge_params_info() work here?
+        # all_params = [l.params for l in self.likelihoods if hasattr(l, "params")]
+        # if all_params:
+        #     self.params = merge_info(*all_params)
 
         data_list = [l.data for l in self.likelihoods]
         self.data = MultiGaussianData(data_list, self.cross_cov)
@@ -69,10 +69,19 @@ class MultiGaussianLikelihood(GaussianLikelihood):
             like.initialize_with_provider(provider)
         super().initialize_with_provider(provider)
 
+    def get_helper_theories(self):
+        helpers = {}
+        for like in self.likelihoods:
+            helpers.update(like.get_helper_theories())
+
+        return helpers
+
     def _get_theory(self, **kwargs):
         return np.concatenate([l._get_theory(**kwargs) for l in self.likelihoods])
 
     def get_requirements(self):
+
+        # Reqs with arguments like 'lmax', etc. may have to be carefully treated here to merge
         reqs = {}
         for like in self.likelihoods:
             reqs = recursive_update(reqs, like.get_requirements())
