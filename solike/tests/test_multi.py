@@ -54,7 +54,8 @@ def test_multi():
     model2 = get_model(info2)
 
     # To test here, the absolute values of the logps are not identical
-    # to the sum of components when combined; so here we test to make sure
+    # to the sum of components when combined (probably due to numerical issues of
+    # computing inv_cov); so here we test to make sure
     # that the change in logp between two different sets of params is identical
 
     fg_values_a = {"a_tSZ": nuisance_params["a_tSZ"], "a_kSZ": nuisance_params["a_kSZ"]}
