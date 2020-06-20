@@ -39,6 +39,7 @@ def get_demo_lensing_model(theory):
             classy:
                 extra_args:
                     output: lCl, tCl
+                path: global
 
         params:
             n_s:

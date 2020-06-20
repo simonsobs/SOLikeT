@@ -86,4 +86,3 @@ class MultiGaussianLikelihood(GaussianLikelihood):
         for like in self.likelihoods:
             reqs = recursive_update(reqs, like.get_requirements())
         return reqs
-        # return merge_info(*[l.get_requirements() for l in self.likelihoods])
