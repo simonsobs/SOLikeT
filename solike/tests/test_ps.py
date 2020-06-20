@@ -13,7 +13,12 @@ from solike.utils import get_likelihood
 
 
 class ToyLikelihood(PSLikelihood):
-    class_options = {"name": "toy", "n": 10, "sigma": 1, "off_diag_amp": 1e-3, "cov": None, "seed": 1234}
+    name = "toy"
+    n = 10
+    sigma = 1
+    off_diag_amp = 1e-3
+    cov = None
+    seed = 1234
 
     def initialize(self):
         np.random.seed(self.seed)
@@ -38,16 +43,16 @@ def test_toy():
     full_cov += np.diag(np.ones((n1 + n2 + n3)))
 
     cov1 = full_cov[:n1, :n1]
-    cov2 = full_cov[n1 : n1 + n2, n1 : n1 + n2]
-    cov3 = full_cov[n1 + n2 :, n1 + n2 :]
+    cov2 = full_cov[n1: n1 + n2, n1: n1 + n2]
+    cov3 = full_cov[n1 + n2:, n1 + n2:]
 
     name1, name2, name3 = ["A", "B", "C"]
 
     cross_cov = CrossCov(
         {
-            (name1, name2): full_cov[:n1, n1 : n1 + n2],
-            (name1, name3): full_cov[:n1, n1 + n2 :],
-            (name2, name3): full_cov[n1 : n1 + n2, n1 + n2 :],
+            (name1, name2): full_cov[:n1, n1: n1 + n2],
+            (name1, name3): full_cov[:n1, n1 + n2:],
+            (name2, name3): full_cov[n1: n1 + n2, n1 + n2:],
         }
     )
     tempdir = gettempdir()

@@ -5,8 +5,9 @@ from .gaussian import GaussianLikelihood
 
 
 class PSLikelihood(GaussianLikelihood):
-
-    class_options = {"name": "TT", "kind": "tt", "lmax": 6000}
+    name: str = "TT"
+    kind: str = "tt"
+    lmax: int = 6000
 
     def get_requirements(self):
         return {"Cl": {self.kind: self.lmax}}

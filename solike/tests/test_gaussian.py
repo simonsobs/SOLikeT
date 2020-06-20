@@ -24,8 +24,8 @@ def toy_data():
     # Generate arbitrary covariance matrix, partition into parts
     full_cov = make_spd_matrix(n1 + n2 + n3, random_state=1234)
     cov1 = full_cov[:n1, :n1]
-    cov2 = full_cov[n1 : n1 + n2, n1 : n1 + n2]
-    cov3 = full_cov[n1 + n2 :, n1 + n2 :]
+    cov2 = full_cov[n1: n1 + n2, n1: n1 + n2]
+    cov3 = full_cov[n1 + n2:, n1 + n2:]
 
     data1 = GaussianData(name1, x1, y1, cov1)
     data2 = GaussianData(name2, x2, y2, cov2)
@@ -33,9 +33,9 @@ def toy_data():
 
     cross_cov = CrossCov(
         {
-            (name1, name2): full_cov[:n1, n1 : n1 + n2],
-            (name1, name3): full_cov[:n1, n1 + n2 :],
-            (name2, name3): full_cov[n1 : n1 + n2, n1 + n2 :],
+            (name1, name2): full_cov[:n1, n1: n1 + n2],
+            (name1, name3): full_cov[:n1, n1 + n2:],
+            (name2, name3): full_cov[n1: n1 + n2, n1 + n2:],
         }
     )
 
@@ -43,7 +43,6 @@ def toy_data():
 
 
 def test_gaussian():
-
     datalist, cross_cov = toy_data()
 
     multi = MultiGaussianData(datalist, cross_cov)
