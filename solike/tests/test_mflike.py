@@ -19,16 +19,19 @@ cosmo_params = {
 }
 
 nuisance_params = {
-    "a_tSZ": 3.30,
-    "a_kSZ": 1.60,
-    "a_p": 6.90,
-    "beta_p": 2.08,
-    "a_c": 4.90,
-    "beta_c": 2.20,
+    "a_tSZ": 3.3044404448917724,
+    "a_kSZ": 1.6646620740058649,
+    "a_p": 6.912474322461401,
+    "beta_p": 2.077474196171309,
+    "a_c": 4.88617700670901,
+    "beta_c": 2.2030316332596014,
     "n_CIBC": 1.20,
-    "a_s": 3.10,
+    "a_s": 3.099214100532393,
     "T_d": 9.60,
 }
+
+chi2s = {"tt": 1368.5678, "te": 1438.9411, "ee": 1359.1418, "tt-te-et-ee": 2428.0971}
+pre = "data_sacc_"
 
 
 def get_demo_mflike_model(orig=False):
@@ -39,24 +42,31 @@ def get_demo_mflike_model(orig=False):
     else:
         lhood = "solike.mflike.MFLike"
 
-    mflike_config = {lhood: {"sim_id": 0, "select": "tt-te-ee", "stop_at_error": True}}
+    mflike_config = {
+        lhood: {
+            "input_file": pre + "00000.fits",
+            "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
+            "stop_at_error": True,
+        }
+    }
 
     info = {
         "params": {**cosmo_params, **nuisance_params},
         "likelihood": mflike_config,
-        "theory": {"camb": None},
+        "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1}}},
         "modules": os.getenv("COBAYA_MODULES", "/Users/tmorton/cosmology/modules"),
     }
+
     model = get_model(info)
 
     return model
 
-@pytest.mark.skip(reason="still in development")
+
 def test_mflike():
     model_local = get_demo_mflike_model()
     model_orig = get_demo_mflike_model(orig=True)
 
-    loglike_local = model_local.loglikes({}, cached=False)[0]  # should be -1384.34401843
+    loglike_local = model_local.loglikes({}, cached=False)[0][-1]  # should be -1384.34401843
     loglike_orig = model_orig.loglikes({}, cached=False)[0]
 
     assert np.isclose(loglike_local, loglike_orig)

@@ -1,17 +1,63 @@
 # A simple cobaya likelihood for SO/LAT
 
-path: null
-data_folder: LAT_MFLike_data/like_products
+data_folder: MFLike/v0.4
+# Path to the input SACC file, containing, minimally,
+# information about the different tracers (i.e. frequency
+# bands) and the set of power spectra.
+input_file: null
+# If cov_Bbl_file is null, then the previous file should
+# also contain bandpower window functions and covariance
+# matrix. Otherwise they'll be read from this file.
+# (The logic here is that you may have many different
+# realizations that share the same bandpowers and covariance)
+cov_Bbl_file: null
 
-sim_id: null
+# Specify default set of spectra and scale cuts
+# to be used
+defaults:
+  # Which spectra?
+  polarizations: ['TT', 'TE', 'ET', 'EE']
+  # Scale cuts (in ell) for each spectrum
+  scales:
+    TT: [2, 6002]
+    TE: [2, 6002]
+    ET: [2, 6002]
+    EE: [2, 6002]
+  # If True, TE' = (TE + ET) / 2 will be used
+  # instead of TE and ET separately.
+  symmetrize: False
 
-select: tt-te-ee
+data:
+  # List the names and frequencies of all the
+  # relevant experiments.
+  experiments:
+    LAT:
+      frequencies: [93, 145, 225]
+    # PlanckHFI:
+    #   frequencies: [545]
 
-experiments:
-  - LAT:
-    - 93  # GHz
-    - 145 # GHz
-    - 225 # GHz
+  spectra:
+    # Here, list all the different cross-correlations
+    # between experiments and bands you want to
+    # analyse.
+    # For each of them, you can specify which spectra
+    # and scale cuts you'd like to use. If you don't
+    # specify anything, the defaults will be used.
+    - experiments: ['LAT', 'LAT']
+      frequencies: [93, 93]
+      polarizations: ['TT','TE','EE']
+    - experiments: ['LAT', 'LAT']
+      frequencies: [93, 145]
+    - experiments: ['LAT', 'LAT']
+      frequencies: [93, 225]
+    - experiments: ['LAT', 'LAT']
+      frequencies: [145, 145]
+      polarizations: ['TT','TE','EE']
+    - experiments: ['LAT', 'LAT']
+      frequencies: [145, 225]
+    - experiments: ['LAT', 'LAT']
+      frequencies: [225, 225]
+      polarizations: ['TT','TE','EE']
 
 foregrounds:
   normalisation:
@@ -29,61 +75,3 @@ foregrounds:
     te: []
     ee: []
 
-lmax: 6002
-
-params:
-  # Foregrounds
-  a_tSZ:
-    prior:
-      min: 3.0
-      max: 3.6
-    proposal: 0.05
-    latex: a_\mathrm{tSZ}
-  a_kSZ:
-    prior:
-      min: 1.4
-      max: 1.8
-    proposal: 0.1
-    latex: a_\mathrm{kSZ}
-  a_p:
-    prior:
-      min: 6.2
-      max: 7.6
-    proposal: 0.075
-    latex: a_p
-  beta_p:
-    prior:
-      min: 1.8
-      max: 2.2
-    proposal: 0.015
-    latex: \beta_p
-  a_c:
-    prior:
-      min: 4.4
-      max: 5.4
-    proposal: 0.12
-    latex: a_c
-  beta_c:
-    prior:
-      min: 2.0
-      max: 2.4
-    proposal: 0.03
-    latex: \beta_c
-  n_CIBC:
-    prior:
-      min: 1.0
-      max: 1.4
-    proposal: 0.045
-    latex: n_\mathrm{CIBC}
-  a_s:
-    prior:
-      min: 2.8
-      max: 3.4
-    proposal: 0.01
-    latex: a_s
-  T_d:
-    prior:
-      min:  8.60
-      max: 10.60
-    proposal: 0.6
-    latex: T_d
