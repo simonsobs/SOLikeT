@@ -5,6 +5,8 @@ python:
   - "3.8"
 install:
   - pip install astropy
+  - pip install cobaya
+  - cobaya-install cosmo
   - pip install git+https://github.com/simonsobs/lat_mflike
   - python setup.py install
 script:
