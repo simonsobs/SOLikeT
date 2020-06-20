@@ -6,7 +6,7 @@ python:
 install:
   - pip install astropy
   - pip install cobaya
-  - cobaya-install cosmo
+  - cobaya-install cosmo -p ~/cosmology
   - pip install git+https://github.com/simonsobs/lat_mflike
   - python setup.py install
 script:
