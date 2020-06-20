@@ -10,8 +10,14 @@ setup(
     zip_safe=False,
     packages=["solike", "solike.tests", "solike.clusters"],
     package_data={
-        "solike": ["*.yaml", "*.bibtex", "data/simulated*/*.txt", "clusters/data/*", "clusters/data/selFn_equD56/*"]
+        "solike": [
+            "*.yaml",
+            "*.bibtex",
+            "data/simulated*/*.txt",
+            "clusters/data/*",
+            "clusters/data/selFn_equD56/*",
+        ]
     },
-    # install_requires=['cobaya (>=2.0.5)'],
+    install_requires=["cobaya (>=3.0)", "astropy"],
     test_suite="solike.tests",
 )
