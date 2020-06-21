@@ -1,4 +1,5 @@
 # solike
+[![Build Status](https://travis-ci.com/simonsobs/Likelihoods.svg?token=XsF5PBVv1xW2zmK74yrc&branch=master)](https://travis-ci.com/simonsobs/Likelihoods)
 
 A centralized package for **cobaya**-compatible likelihood functions for SO.
 
