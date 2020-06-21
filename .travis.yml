@@ -21,5 +21,5 @@ install:
   - pip install git+https://github.com/simonsobs/lat_mflike
   - pip install .
 script:
-  - cd tests
+  - cd solike/tests
   - pytest -vv .
