@@ -7,7 +7,6 @@ addons:
       - gfortran
 before_install:
   - gfortran --version  
-install:
   - pip install astropy
   - pip install cobaya
   - pip install camb
@@ -19,7 +18,8 @@ install:
   - make
   - cd $CWD
   - pip install git+https://github.com/simonsobs/lat_mflike
+install:
   - pip install .
 script:
-  - cd solike/tests
+  - python -c 'import solike; print(solike)'
   - pytest -vv .
