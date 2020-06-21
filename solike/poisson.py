@@ -1,5 +1,5 @@
 import numpy as np
-import solike.clusters.survey as Survey
+import pandas as pd
 
 from cobaya.likelihood import Likelihood
 
@@ -7,9 +7,8 @@ from .poisson_data import PoissonData
 
 
 class PoissonLikelihood(Likelihood):
-    name = "Cluster"
+    name = "Poisson"
     data_path = None
-    data_name = None
     columns = None
 
     def initialize(self):
@@ -19,13 +18,10 @@ class PoissonLikelihood(Likelihood):
         self.data = PoissonData(self.name, catalog, self.columns)
 
     def get_requirements(self):
-        return {'Pk_interpolator': {'z': np.linspace(0, 2, 41), 'k_max': 5.0,
-                                    'nonlinear': False, 'hubble_units': True, 'k_hunit': True,
-                                    'vars_pairs': [['delta_nonu', 'delta_nonu']]},
-                'H': {'z': np.linspace(0, 2, 41)}}
+        return {}
 
     def _get_catalog(self):
-        catalog = Survey.SurveyData(self.data_path, self.data_name)
+        catalog = pd.read_csv(self.data_path)
         return catalog
 
     def _get_rate_fn(self, **kwargs):

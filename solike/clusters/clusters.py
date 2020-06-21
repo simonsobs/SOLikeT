@@ -17,7 +17,7 @@ C_KM_S = 2.99792e5
 
 class ClusterLikelihood(PoissonLikelihood):
     name = "Clusters"
-    columna = ["tsz_signal", "z", "tsz_signal_err"]
+    columns = ["tsz_signal", "z", "tsz_signal_err"]
     data_path = resource_filename("solike", "clusters/data/selFn_equD56")
     data_name = resource_filename("solike", "clusters/data/ACTPol_Cond_scatv5.fits")
 

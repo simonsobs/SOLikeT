@@ -10,7 +10,7 @@ def test_clusters():
         "As": 2.2e-9,
         "ns": 0.96,
         "mnu": 0.06,
-        "nnu": 3.046
+        "nnu": 3.046,
     }
 
     info_fiducial = {
