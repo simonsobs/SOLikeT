@@ -21,7 +21,7 @@ before_install:
   - cd lat_mflike
   - pip install .
   - cd tests
-  - cobaya-install test_mflike_sacc.yaml
+  - cobaya-install test_mflike_sacc.yaml -p ~/packages
   - cd $CWD
 install:
   - pip install .
