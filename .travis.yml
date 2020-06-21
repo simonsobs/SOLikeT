@@ -16,10 +16,16 @@ before_install:
   - git clone https://github.com/lesgourg/class_public
   - cd class_public
   - make
+  - cd ..
+  - git clone https://github.com/simonsobs/lat_mflike
+  - cd lat_mflike
+  - pip install .
+  - cd tests
+  - cobaya-install test_mflike_sacc.yaml
   - cd $CWD
-  - pip install git+https://github.com/simonsobs/lat_mflike
 install:
   - pip install .
 script:
   - python -c 'import solike; print(solike)'
+  - python -c 'import classy; print(classy)'
   - pytest -vv .
