@@ -7,9 +7,8 @@ import pandas as pd
 from scipy.interpolate import interp1d
 from pkg_resources import resource_filename
 
-from solike.poisson import PoissonLikelihood
-import solike.clusters.massfunc as mf
-
+from ..poisson import PoissonLikelihood
+from . import massfunc as mf
 from .survey import SurveyData
 from .sz_utils import szutils
 
@@ -57,7 +56,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
     def _get_om(self):
         return (self.theory.get_param("omch2") + self.theory.get_param("ombh2")) / (
-                (self.theory.get_param("H0") / 100.0) ** 2
+            (self.theory.get_param("H0") / 100.0) ** 2
         )
 
     def _get_ob(self):
@@ -76,7 +75,7 @@ class ClusterLikelihood(PoissonLikelihood):
         return interp1d(self.zarr, self._get_DAz())
 
     def _get_HMF(self):
-        h = self.theory.get_param("H0") / 100.
+        h = self.theory.get_param("H0") / 100.0
 
         Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False).P
         pks = Pk_interpolator(self.zarr, self.k)
@@ -116,7 +115,9 @@ class ClusterLikelihood(PoissonLikelihood):
             c_yerr = tsz_signal_err
             c_z = z
 
-            Pfunc_ind = self.szutils.Pfunc_per(HMF.M, c_z, c_y * 1e-4, c_yerr * 1e-4, param_vals, Ez_fn, DA_fn)
+            Pfunc_ind = self.szutils.Pfunc_per(
+                HMF.M, c_z, c_y * 1e-4, c_yerr * 1e-4, param_vals, Ez_fn, DA_fn
+            )
 
             dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp(c_z, np.log10(HMF.M))) * h ** 4.0
 
