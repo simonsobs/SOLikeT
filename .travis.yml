@@ -6,17 +6,19 @@ addons:
     packages:
       - gfortran
 before_install:
-  - gfortran --version
+  - gfortran --version  
 install:
   - pip install astropy
   - pip install cobaya
   - pip install camb
   - pip install cython
+  - export CWD=`pwd`
+  - cd ..
   - git clone https://github.com/lesgourg/class_public
   - cd class_public
   - make
-  - cd ..
+  - cd $CWD
   - pip install git+https://github.com/simonsobs/lat_mflike
-  - python setup.py install
+  - pip install .
 script:
   - pytest -vv
