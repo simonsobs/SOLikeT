@@ -8,7 +8,7 @@ addons:
 before_install:
   - gfortran --version  
   - pip install astropy
-  - pip install cobaya
+  - pip install git+https://github.com/cobayasampler/cobaya
   - pip install camb
   - pip install cython
   - export CWD=`pwd`
@@ -26,6 +26,4 @@ before_install:
 install:
   - pip install .
 script:
-  - python -c 'import solike; print(solike)'
-  - python -c 'import classy; print(classy)'
   - pytest -vv .
