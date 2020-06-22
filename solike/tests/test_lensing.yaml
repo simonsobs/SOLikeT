@@ -1,0 +1,74 @@
+# A simple cobaya likelihood for SO
+
+debug: True
+
+likelihood:
+  solike.SimulatedLensingLikelihood:
+    sim_number: 1
+    stop_at_error: True
+
+params:
+  # Sampled
+  cosmomc_theta:
+    prior:
+      min: 0.0103
+      max: 0.0105
+    proposal: 1.5e-6
+    latex: \theta_\mathrm{MC}
+  logA:
+    prior:
+      min: 2.6
+      max: 3.5
+    proposal: 0.0036
+    drop: True
+    latex: \log(10^{10} A_\mathrm{s})
+  As:
+    value: "lambda logA: 1e-10*np.exp(logA)"
+    latex: A_\mathrm{s}
+  ns:
+    prior:
+      min: 0.9
+      max: 1.1
+    proposal: 0.0033
+    latex: n_\mathrm{s}
+  ombh2:
+    prior:
+      min: 0.017
+      max: 0.027
+    proposal: 6.5e-5
+    latex: \Omega_\mathrm{b}h^2
+  omch2:
+    prior:
+      min: 0.09
+      max: 0.15
+    proposal: 0.0011
+    latex: \Omega_\mathrm{c}h^2
+  Alens:
+    prior:
+      min: 0.5
+      max: 1.5
+    proposal: 0.022
+    latex: A_\mathrm{L}
+  tau:
+    prior:
+      dist: norm
+      loc: 0.0544
+      scale: 0.0073
+    proposal: 0.0073
+    latex: \tau_\mathrm{reio}
+  H0:
+    latex: H_0
+  sigma8:
+    latex: \sigma_8
+
+
+theory:
+  camb:
+    stop_at_error: False
+    extra_args:
+      lens_potential_accuracy: 1
+
+sampler:
+  evaluate:
+
+output: chains/test_lensing
