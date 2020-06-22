@@ -70,3 +70,14 @@ def test_mflike():
     loglike_orig = model_orig.loglikes({}, cached=False)[0].sum()
 
     assert np.isclose(loglike_local, loglike_orig)
+
+
+def test_run_mflike():
+    import pkgutil
+    from cobaya.yaml import yaml_load
+    from cobaya.run import run
+
+    info = yaml_load(pkgutil.get_data("solike", "tests/test_mflike.yaml"))
+    info["force"] = True
+
+    updated_info, sampler = run(info)
