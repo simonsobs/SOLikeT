@@ -26,7 +26,7 @@ def test_multi():
     info = {
         "likelihood": {
             "solike.gaussian.MultiGaussianLikelihood": {
-                "components": ["solike.mflike.MFLike", "solike.SimulatedLensingLikelihood"],
+                "components": ["solike.mflike.MFLike", "solike.LensingLiteLikelihood"],
                 "options": [mflike_options, lensing_options],
                 "stop_at_error": True,
             }
@@ -42,7 +42,7 @@ def test_multi():
     }
 
     info2 = {
-        "likelihood": {"solike.SimulatedLensingLikelihood": lensing_options},
+        "likelihood": {"solike.LensingLiteLikelihood": lensing_options},
         "theory": {"camb": camb_options},
         "params": {**lensing_params},
     }

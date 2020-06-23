@@ -6,7 +6,7 @@ likelihood:
   solike.gaussian.MultiGaussianLikelihood:
     components:
       - solike.mflike.MFLike
-      - solike.SimulatedLensingLikelihood
+      - solike.LensingLiteLikelihood
     options:
       - input_file: data_sacc_00044.fits
         cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
