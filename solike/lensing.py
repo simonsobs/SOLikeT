@@ -13,9 +13,9 @@ from .ps import BinnedPSLikelihood
 
 
 class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
-    _url = "https://portal.nersc.gov/project/act/jia_qu/likelihood.tar.gz"
+    _url = "https://portal.nersc.gov/project/act/jia_qu/likelihood-data/likelihood.tar.gz"
     install_options = {"download_url": _url}
-    data_folder = os.path.join("LensingLikelihood", "likelihood-data")
+    data_folder = "LensingLikelihood"
     data_filename = "binnedauto.txt"
     cov_filename = "binnedcov.txt"
 
@@ -96,10 +96,6 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
         self.n0 = np.loadtxt(os.path.join(self.data_folder, "n0mv.txt"))
 
         super().initialize()
-
-    def _get_cov(self):
-        cov = super()._get_cov()
-        return np.diag(cov)
 
     def _get_fiducial_Cls(self):
 
