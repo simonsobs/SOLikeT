@@ -3,10 +3,9 @@ import pytest
 from solike.tests.test_mflike import cosmo_params, nuisance_params
 
 
-# @pytest.mark.skip(reason="still in development")
 def test_multi():
 
-    lensing_options = {"sim_number": 1}
+    lensing_options = {"theory_lmax": 5000}
 
     pre = "data_sacc_"
     mflike_options = {
@@ -26,7 +25,7 @@ def test_multi():
     info = {
         "likelihood": {
             "solike.gaussian.MultiGaussianLikelihood": {
-                "components": ["solike.mflike.MFLike", "solike.LensingLiteLikelihood"],
+                "components": ["solike.mflike.MFLike", "solike.LensingLikelihood"],
                 "options": [mflike_options, lensing_options],
                 "stop_at_error": True,
             }
@@ -42,7 +41,7 @@ def test_multi():
     }
 
     info2 = {
-        "likelihood": {"solike.LensingLiteLikelihood": lensing_options},
+        "likelihood": {"solike.LensingLikelihood": lensing_options},
         "theory": {"camb": camb_options},
         "params": {**lensing_params},
     }

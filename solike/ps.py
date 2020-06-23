@@ -1,6 +1,6 @@
 import numpy as np
 
-from .utils import binner
+from . import utils
 from .gaussian import GaussianLikelihood
 
 
@@ -21,8 +21,9 @@ class PSLikelihood(GaussianLikelihood):
 
 
 class BinnedPSLikelihood(PSLikelihood):
-    # def _get_lmax(self):
-    #     return int(self.bin_edges[-1])
+    @classmethod
+    def binner(cls, x, y, bin_edges):
+        return utils.binner(x, y, bin_edges)
 
     def _get_data(self):
         lefts, rights, bandpowers = np.loadtxt(self.datapath, unpack=True)
@@ -34,5 +35,5 @@ class BinnedPSLikelihood(PSLikelihood):
 
     def _get_theory(self, **params_values):
         cl_theory = self._get_Cl()
-        _, theory = binner(cl_theory["ell"], cl_theory[self.kind], self.bin_edges)
+        _, theory = self.binner(cl_theory["ell"], cl_theory[self.kind], self.bin_edges)
         return theory

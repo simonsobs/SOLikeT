@@ -6,7 +6,7 @@ likelihood:
   solike.gaussian.MultiGaussianLikelihood:
     components:
       - solike.mflike.MFLike
-      - solike.LensingLiteLikelihood
+      - solike.LensingLikelihood
     options:
       - input_file: data_sacc_00044.fits
         cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
@@ -41,8 +41,8 @@ likelihood:
             - experiments: ['LAT', 'LAT']
               frequencies: [225, 225]
               polarizations: ['TT','TE','EE']
-      - sim_number: 1
-        stop_at_error: True
+      - theory_lmax: 5000
+        stop_at_error: true
     stop_at_error: True
 
 params:

@@ -4,6 +4,7 @@ from scipy.stats import binned_statistic as binnedstat
 import numpy as np
 
 from cobaya.likelihood import Likelihood
+from cobaya.likelihoods.one import one
 
 
 def binner(ls, cls, bin_edges):
@@ -27,3 +28,10 @@ def get_likelihood(name, options=None):
     if options is None:
         options = {}
     return t(options)
+
+
+class OneWithCls(one):
+    lmax = 10000
+
+    def get_requirements(self):
+        return {"Cl": {"pp": self.lmax, "tt": self.lmax, "te": self.lmax, "ee": self.lmax, "bb": self.lmax,}}

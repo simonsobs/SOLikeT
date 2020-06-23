@@ -9,8 +9,7 @@ def get_demo_lensing_model(theory):
     if theory == "camb":
         info_yaml = r"""
         likelihood:
-            solike.LensingLiteLikelihood:
-                sim_number: 1
+            solike.LensingLikelihood:
                 stop_at_error: True
 
         theory:
@@ -31,8 +30,7 @@ def get_demo_lensing_model(theory):
     elif theory == "classy":
         info_yaml = r"""
         likelihood:
-            solike.LensingLiteLikelihood:
-                sim_number: 1
+            solike.LensingLikelihood:
                 stop_at_error: True
 
         theory:
@@ -54,14 +52,29 @@ def get_demo_lensing_model(theory):
         """
 
     info = yaml_load(info_yaml)
+
+    test_point = {}
+    for par, pdict in info["params"].items():
+        if not isinstance(pdict, dict):
+            continue
+
+        if "ref" in pdict:
+            try:
+                value = float(pdict["ref"])
+            except TypeError:
+                value = (pdict["ref"]["min"] + pdict["ref"]["max"]) / 2
+            test_point[par] = value
+        elif "prior" in pdict:
+            value = (pdict["prior"]["min"] + pdict["prior"]["max"]) / 2
+            test_point[par] = value
+
     model = get_model(info)
-    return model
+    return model, test_point
 
 
 @pytest.mark.parametrize("theory", ["camb", "classy"])
 def test_lensing(theory):
-    model = get_demo_lensing_model(theory)
-    ns_param = "ns" if theory == "camb" else "n_s"
-    lnl = model.loglike({ns_param: 0.965, "H0": 70})[0]
+    model, test_point = get_demo_lensing_model(theory)
+    lnl = model.loglike(test_point)[0]
 
     assert np.isfinite(lnl)

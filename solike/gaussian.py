@@ -77,12 +77,28 @@ class MultiGaussianLikelihood(GaussianLikelihood):
         return helpers
 
     def _get_theory(self, **kwargs):
-        return np.concatenate([l._get_theory(**kwargs) for l in self.likelihoods])
+        return np.concatenate([like._get_theory(**kwargs) for like in self.likelihoods])
 
     def get_requirements(self):
 
         # Reqs with arguments like 'lmax', etc. may have to be carefully treated here to merge
         reqs = {}
         for like in self.likelihoods:
-            reqs = recursive_update(reqs, like.get_requirements())
+            new_reqs = like.get_requirements()
+
+            # Deal with special cases requiring careful merging
+            # Make sure the max of the lmax/union of Cls is taken.
+            # (should make a unit test for this)
+            if "Cl" in new_reqs and "Cl" in reqs:
+                new_cl_spec = new_reqs["Cl"]
+                old_cl_spec = reqs["Cl"]
+                merged_cl_spec = {}
+                all_keys = set(new_cl_spec.keys()).union(set(old_cl_spec.keys()))
+                for k in all_keys:
+                    new_lmax = new_cl_spec.get(k, 0)
+                    old_lmax = old_cl_spec.get(k, 0)
+                    merged_cl_spec[k] = max(new_lmax, old_lmax)
+                new_reqs["Cl"] = merged_cl_spec
+
+            reqs = recursive_update(reqs, new_reqs)
         return reqs

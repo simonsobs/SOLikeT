@@ -358,7 +358,7 @@ class Foreground(HelperTheory):
         self.ell = self.cobaya_lhood.l_bpws
         self.requested_cls = self.cobaya_lhood.requested_cls
 
-        self.speed = self.cobaya_lhood.speed  # figure this out
+        self.speed = self.cobaya_lhood.speed / 2.0  # is this OK?
 
         self.expected_params = ["a_tSZ", "a_kSZ", "a_p", "beta_p", "a_c", "beta_c", "n_CIBC", "a_s", "T_d"]
 
