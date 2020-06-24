@@ -1,38 +1,50 @@
 # solt
 [![Build Status](https://travis-ci.com/simonsobs/Likelihoods.svg?token=XsF5PBVv1xW2zmK74yrc&branch=master)](https://travis-ci.com/simonsobs/Likelihoods)
 
-A centralized package for **cobaya**-compatible likelihood functions for SO.
+A centralized package for likelihood and theory implementations for SO.
 
 ## Installation
 
-Clone this repository, then
 ```
-python setup.py install
+git clone https://github.com/simonsobs/solt
+cd solt
+pip install -e .
 ```
-will install the **solt** package.
+You will also need to either run
+```
+pip install camb
+```
+or, for a fuller cobaya install:
+```
+cobaya-install cosmo -p /your/path/to/cobaya/packages
+```
+To run tests, you will also need the original LAT_MFlike package:
+```
+pip install git+https://github.com/simonsobs/lat_mflike
+```
+Then, you can run tests with 
+```
+pip install pytest
+pytest -v .
+```
+
+Please raise an issue if you have trouble installing or any of the tests fail.
 
 ## Contains
 
-This repo implements the following likelihoods, as initial demonstrations:
+This repo currently implements the following specific likelihoods:
 
-* `LensingLiteLikelihood`: a $\chi^2$ lensing power spectrum likelihood function
-that takes as options the locations of a $C_l$ data file (`'datapath'`) and a
-covariance matrix (`'covpath'`).  The simulated data used in this likelihood
-is included in and installed with this package.
-* `SimulatedLensingLiteLikelihood`: This subclasses the above, with its options
-being the path to a directory that contains the simulations (`'dataroot'`),
-the file path/patterns to the $C_l$ and covariance files, and a simulation 
-number (`'sim_number'`).  The main purpose for this is an exercise to
-demonstrate how to subclass a likelihood while changing its options.
+* `MFLike`: the SO LAT multi-frequency TT-TE-EE power spectrum likelihood. (Adapted from, and tested against, the original implementation [here](https://github.com/simonsobs/lat_mflike)).
+* `ClusterLikelihood`: An SZ-cluster count likelihood based on the original ACT SZ clusters likelihood.
+* `LensingLikelihood`: Lensing power-spectrum likelihood, adapted from [here](https://github.com/simonsobs/so-lenspipe/blob/6abdc185764894cefa76fd4666243669d7e8a4b0/bin/SOlikelihood/cobayalike.py#L80).
+* `LensingLiteLikelihood`: A no-frills $\chi^2$ lensing power spectrum
 
-More likelihoods coming soon!
 
 ## Usage
 
 These likelihoods are designed for direct use with **cobaya**.  This means that 
 they may be specified directly when creating a **cobaya** `Model`.  E.g., if
-you wanted to compute the likelihood of the simulated lensing data with only 
-$log A$ and $n_s$ as free parameters, you could do the following:
+you wanted to compute the likelihood of the simulated lensing data, you could do the following:
 
 ```python
 
@@ -40,40 +52,39 @@ from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
 info_yaml = """
-likelihood: 
-    solt.SimulatedLensingLiteLikelihood:
-        sim_number: 1
-theory: 
-    classy:
-        extra_args:
-            output: lCl, tCl        
+debug: True
+
+likelihood:
+  solt.LensingLiteLikelihood:
+    sim_number: 1
+    stop_at_error: True
+
 params:
-    logA:
-        prior:
-          min: 1.61
-          max: 3.91
-        ref:
-          dist: norm
-          loc: 3.05
-          scale: 0.001
-        proposal: 0.001
-        latex: \log(10^{10} A_\mathrm{s})
-        drop: True
+  # Sampled
+  logA:
+    prior:
+      min: 2.6
+      max: 3.5
+    proposal: 0.0036
+    drop: True
+    latex: \log(10^{10} A_\mathrm{s})
+  As:
+    value: "lambda logA: 1e-10*np.exp(logA)"
+    latex: A_\mathrm{s}
+  ns:
+    prior:
+      min: 0.9
+      max: 1.1
+    proposal: 0.0033
+    latex: n_\mathrm{s}
 
-    A_s:
-        value: 'lambda logA: 1e-10*np.exp(logA)'
-        latex: A_\mathrm{s}
 
-    n_s:
-        prior:
-            min: 0.8
-            max: 1.2
-        ref:
-            dist: norm
-            loc: 0.965
-            scale: 0.004
-        proposal: 0.002
-        latex: n_\mathrm{s}
+theory:
+  camb:
+    stop_at_error: False
+    extra_args:
+      lens_potential_accuracy: 1
+
 """
 
 info = yaml_load(info_yaml)
@@ -81,8 +92,10 @@ model = get_model(info)
 ```
 The likelihood could then be either directly computed as 
 ```python
-model.loglike(dict(logA=3.0, n_s=0.98))
+model.loglike(dict(logA=3.0, ns=0.98))
 ```
 and used outside of **cobaya** (e.g., directly passed to **emcee** or some other
 sampler or optimizer), or this same YAML setup (with an additional 'sampler' block specified) 
 could be used as input to `cobaya-run` to have **cobaya** manage the sampling.
+
+For more information on how to use **cobaya**: cobaya.readthedocs.io.
