@@ -49,11 +49,14 @@ class MFLike(GaussianLikelihood, _InstallableLikelihood):
 
         self.data_folder = os.path.join(data_file_path, self.data_folder)
         if not os.path.exists(self.data_folder):
-            raise LoggedError(
-                self.log,
-                "The 'data_folder' directory does not exist. " "Check the given path [%s].",
-                self.data_folder,
-            )
+            if not getattr(self, "path", None):
+                self.install(path=self.packages_path)
+            else:
+                raise LoggedError(
+                    self.log,
+                    "The 'data_folder' directory does not exist. " "Check the given path [%s].",
+                    self.data_folder,
+                )
 
         # Read data
         self.prepare_data()
