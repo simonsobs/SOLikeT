@@ -98,4 +98,4 @@ and used outside of **cobaya** (e.g., directly passed to **emcee** or some other
 sampler or optimizer), or this same YAML setup (with an additional 'sampler' block specified) 
 could be used as input to `cobaya-run` to have **cobaya** manage the sampling.
 
-For more information on how to use **cobaya**: cobaya.readthedocs.io.
+For more information on how to use **cobaya**, check out its [documentation](http://cobaya.readthedocs.io).
