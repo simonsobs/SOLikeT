@@ -37,7 +37,7 @@ This repo currently implements the following specific likelihoods:
 * `MFLike`: the SO LAT multi-frequency TT-TE-EE power spectrum likelihood. (Adapted from, and tested against, the original implementation [here](https://github.com/simonsobs/lat_mflike)).
 * `ClusterLikelihood`: An SZ-cluster count likelihood based on the original ACT SZ clusters likelihood.
 * `LensingLikelihood`: Lensing power-spectrum likelihood, adapted from [here](https://github.com/simonsobs/so-lenspipe/blob/6abdc185764894cefa76fd4666243669d7e8a4b0/bin/SOlikelihood/cobayalike.py#L80).
-* `LensingLiteLikelihood`: A no-frills $\chi^2$ lensing power spectrum
+* `LensingLiteLikelihood`: A no-frills, simple $\chi^2$ lensing power spectrum.
 
 
 ## Usage
