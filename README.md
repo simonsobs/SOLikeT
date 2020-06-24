@@ -1,5 +1,7 @@
-# SOLikeT: SO Likelihoods and Theories 
+# SOLikeT
 [![Build Status](https://travis-ci.com/simonsobs/Likelihoods.svg?token=XsF5PBVv1xW2zmK74yrc&branch=master)](https://travis-ci.com/simonsobs/Likelihoods)
+
+**SO Likelihoods and Theories**
 
 A centralized package for likelihood and theory implementations for SO.
 
