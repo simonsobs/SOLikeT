@@ -4,13 +4,13 @@
 from setuptools import setup
 
 setup(
-    name="solike",
+    name="solt",
     version="0.0",
     description="Prototype package for SO Likelihoods",
     zip_safe=False,
-    packages=["solike", "solike.tests", "solike.clusters"],
+    packages=["solt", "solt.tests", "solt.clusters"],
     package_data={
-        "solike": [
+        "solt": [
             "*.yaml",
             "*.bibtex",
             "data/simulated*/*.txt",
@@ -19,5 +19,5 @@ setup(
         ]
     },
     install_requires=["cobaya (>=3.0)", "astropy", "astLib", "scikit-learn"],
-    test_suite="solike.tests",
+    test_suite="solt.tests",
 )

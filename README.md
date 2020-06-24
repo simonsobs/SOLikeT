@@ -1,4 +1,4 @@
-# solike
+# solt
 [![Build Status](https://travis-ci.com/simonsobs/Likelihoods.svg?token=XsF5PBVv1xW2zmK74yrc&branch=master)](https://travis-ci.com/simonsobs/Likelihoods)
 
 A centralized package for **cobaya**-compatible likelihood functions for SO.
@@ -9,7 +9,7 @@ Clone this repository, then
 ```
 python setup.py install
 ```
-will install the **solike** package.
+will install the **solt** package.
 
 ## Contains
 
@@ -41,7 +41,7 @@ from cobaya.model import get_model
 
 info_yaml = """
 likelihood: 
-    solike.SimulatedLensingLiteLikelihood:
+    solt.SimulatedLensingLiteLikelihood:
         sim_number: 1
 theory: 
     classy:

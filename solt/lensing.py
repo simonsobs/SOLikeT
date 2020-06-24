@@ -101,7 +101,7 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
 
         info_fiducial = {
             "params": self.fiducial_params,
-            "likelihood": {"solike.utils.OneWithCls": {"lmax": self.theory_lmax}},
+            "likelihood": {"solt.utils.OneWithCls": {"lmax": self.theory_lmax}},
             "theory": {"camb": {"extra_args": {"kmax": 0.9}}},
             # "modules": modules_path,
         }
@@ -169,7 +169,7 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
 class LensingLiteLikelihood(BinnedPSLikelihood):
     kind = "pp"
     dataroot = resource_filename(
-        "solike", "data/simulated_clkk_SO_Apr17_mv_nlkk_deproj0_SENS1_fsky_16000_iterOn_20191109"
+        "solt", "data/simulated_clkk_SO_Apr17_mv_nlkk_deproj0_SENS1_fsky_16000_iterOn_20191109"
     )
     cl_file = (
         "simulated_clkk_SO_Apr17_mv_nlkk_deproj0_SENS1_fsky_16000_iterOn_20191109_sim_{:02d}_bandpowers.txt"

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from functools import partial
 
-from solike.poisson_data import PoissonData
+from solt.poisson_data import PoissonData
 
 x_min = 0
 x_max = 10

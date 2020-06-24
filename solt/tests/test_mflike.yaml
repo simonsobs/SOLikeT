@@ -3,47 +3,40 @@
 debug: True
 
 likelihood:
-  solike.gaussian.MultiGaussianLikelihood:
-    components:
-      - solike.mflike.MFLike
-      - solike.LensingLikelihood
-    options:
-      - input_file: data_sacc_00044.fits
-        cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
-        defaults:
-          # Which spectra?
-          polarizations: ['TT', 'TE', 'ET', 'EE']
-          # Scale cuts (in ell) for each spectrum
-          scales:
-            TT: [2, 6002]
-            TE: [2, 6002]
-            ET: [2, 6002]
-            EE: [2, 6002]
-          symmetrize: False
-        data:
-          experiments:
-            LAT:
-              frequencies: [93, 145, 225]
+  solt.mflike.MFLike:
+    input_file: data_sacc_00044.fits
+    cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
+    defaults:
+      # Which spectra?
+      polarizations: ['TT', 'TE', 'ET', 'EE']
+      # Scale cuts (in ell) for each spectrum
+      scales:
+        TT: [2, 6002]
+        TE: [2, 6002]
+        ET: [2, 6002]
+        EE: [2, 6002]
+      symmetrize: False
+    data:
+      experiments:
+        LAT:
+          frequencies: [93, 145, 225]
 
-          spectra:
-            - experiments: ['LAT', 'LAT']
-              frequencies: [93, 93]
-              polarizations: ['TT','TE','EE']
-            - experiments: ['LAT', 'LAT']
-              frequencies: [93, 145]
-            - experiments: ['LAT', 'LAT']
-              frequencies: [93, 225]
-            - experiments: ['LAT', 'LAT']
-              frequencies: [145, 145]
-              polarizations: ['TT','TE','EE']
-            - experiments: ['LAT', 'LAT']
-              frequencies: [145, 225]
-            - experiments: ['LAT', 'LAT']
-              frequencies: [225, 225]
-              polarizations: ['TT','TE','EE']
-      - theory_lmax: 5000
-        stop_at_error: true
-    stop_at_error: True
+      spectra:
+        - experiments: ['LAT', 'LAT']
+          frequencies: [93, 93]
+          polarizations: ['TT','TE','EE']
+        - experiments: ['LAT', 'LAT']
+          frequencies: [93, 145]
+        - experiments: ['LAT', 'LAT']
+          frequencies: [93, 225]
+        - experiments: ['LAT', 'LAT']
+          frequencies: [145, 145]
+          polarizations: ['TT','TE','EE']
+        - experiments: ['LAT', 'LAT']
+          frequencies: [145, 225]
+        - experiments: ['LAT', 'LAT']
+          frequencies: [225, 225]
+          polarizations: ['TT','TE','EE']
 
 params:
   # Sampled
@@ -160,4 +153,4 @@ theory:
 sampler:
   evaluate:
 
-output: chains/test_multi
+output: chains/test_mflike

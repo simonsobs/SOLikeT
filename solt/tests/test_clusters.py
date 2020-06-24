@@ -15,7 +15,7 @@ def test_clusters():
 
     info_fiducial = {
         "params": fiducial_params,
-        "likelihood": {"solike.ClusterLikelihood": {"stop_at_error": True}},
+        "likelihood": {"solt.ClusterLikelihood": {"stop_at_error": True}},
         "theory": {
             "camb": {
                 "extra_args": {
@@ -38,6 +38,6 @@ def test_clusters():
 
     assert np.isfinite(lnl)
 
-    like = model_fiducial.likelihood["solike.ClusterLikelihood"]
+    like = model_fiducial.likelihood["solt.ClusterLikelihood"]
 
     assert like._get_n_expected() > 40

@@ -3,7 +3,7 @@
 debug: True
 
 likelihood:
-  solike.LensingLiteLikelihood:
+  solt.LensingLiteLikelihood:
     sim_number: 1
     stop_at_error: True
 

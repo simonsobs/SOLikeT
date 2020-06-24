@@ -7,7 +7,7 @@ from cobaya.run import run
 
 @pytest.mark.parametrize("lhood", ["mflike", "lensing", "lensing_lite", "multi"])
 def test_run(lhood):
-    info = yaml_load(pkgutil.get_data("solike", f"tests/test_{lhood}.yaml"))
+    info = yaml_load(pkgutil.get_data("solt", f"tests/test_{lhood}.yaml"))
     info["force"] = True
 
     updated_info, sampler = run(info)

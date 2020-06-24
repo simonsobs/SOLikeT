@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from sklearn.datasets import make_spd_matrix
 
-from solike.gaussian import GaussianData, MultiGaussianData, CrossCov
+from solt.gaussian import GaussianData, MultiGaussianData, CrossCov
 
 
 def toy_data():

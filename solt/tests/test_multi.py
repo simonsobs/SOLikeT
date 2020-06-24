@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from solike.tests.test_mflike import cosmo_params, nuisance_params
+from solt.tests.test_mflike import cosmo_params, nuisance_params
 
 
 def test_multi():
@@ -24,8 +24,8 @@ def test_multi():
 
     info = {
         "likelihood": {
-            "solike.gaussian.MultiGaussianLikelihood": {
-                "components": ["solike.mflike.MFLike", "solike.LensingLikelihood"],
+            "solt.gaussian.MultiGaussianLikelihood": {
+                "components": ["solt.mflike.MFLike", "solt.LensingLikelihood"],
                 "options": [mflike_options, lensing_options],
                 "stop_at_error": True,
             }
@@ -35,13 +35,13 @@ def test_multi():
     }
 
     info1 = {
-        "likelihood": {"solike.mflike.MFLike": mflike_options},
+        "likelihood": {"solt.mflike.MFLike": mflike_options},
         "theory": {"camb": camb_options},
         "params": {**mflike_params},
     }
 
     info2 = {
-        "likelihood": {"solike.LensingLikelihood": lensing_options},
+        "likelihood": {"solt.LensingLikelihood": lensing_options},
         "theory": {"camb": camb_options},
         "params": {**lensing_params},
     }
