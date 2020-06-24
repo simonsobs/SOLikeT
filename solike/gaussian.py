@@ -10,7 +10,7 @@ from .utils import get_likelihood
 
 
 class GaussianLikelihood(Likelihood):
-    name: str = "Guassian"
+    name: str = "Gaussian"
     datapath: Optional[str] = None
     covpath: Optional[str] = None
 
@@ -53,13 +53,7 @@ class MultiGaussianLikelihood(GaussianLikelihood):
 
     def initialize(self):
         self.likelihoods = [get_likelihood(*kv) for kv in zip(self.components, self.options)]
-
         self.cross_cov = CrossCov.load(self.cross_cov_path)
-
-        # # Why doesn't merge_params_info() work here?
-        # all_params = [l.params for l in self.likelihoods if hasattr(l, "params")]
-        # if all_params:
-        #     self.params = merge_info(*all_params)
 
         data_list = [l.data for l in self.likelihoods]
         self.data = MultiGaussianData(data_list, self.cross_cov)
