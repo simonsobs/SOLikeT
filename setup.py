@@ -6,7 +6,7 @@ from setuptools import setup
 setup(
     name="solt",
     version="0.0",
-    description="Prototype package for SO Likelihoods",
+    description="SO Likelihoods & Theories",
     zip_safe=False,
     packages=["solt", "solt.tests", "solt.clusters"],
     package_data={
@@ -23,7 +23,7 @@ setup(
         "astLib",
         "scikit-learn",
         "fgspectra @ git+https://github.com/simonsobs/fgspectra@master#egg=fgspectra",
-        "cobaya>=3.0",
+        "cobaya @ git+https://github.com/cobayasampler/cobaya",  # for now
         "sacc @ git+https://github.com/simonsobs/sacc@mflike_current#egg=sacc",
     ],
     test_suite="solt.tests",
