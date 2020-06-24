@@ -9,7 +9,7 @@ def get_demo_lensing_model(theory):
     if theory == "camb":
         info_yaml = r"""
         likelihood:
-            solt.LensingLiteLikelihood:
+            soliket.LensingLiteLikelihood:
                 sim_number: 1
                 stop_at_error: True
 
@@ -31,7 +31,7 @@ def get_demo_lensing_model(theory):
     elif theory == "classy":
         info_yaml = r"""
         likelihood:
-            solt.LensingLiteLikelihood:
+            soliket.LensingLiteLikelihood:
                 sim_number: 1
                 stop_at_error: True
 

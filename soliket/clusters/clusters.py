@@ -18,8 +18,8 @@ C_KM_S = 2.99792e5
 class ClusterLikelihood(PoissonLikelihood):
     name = "Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err"]
-    data_path = resource_filename("solt", "clusters/data/selFn_equD56")
-    data_name = resource_filename("solt", "clusters/data/ACTPol_Cond_scatv5.fits")
+    data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
+    data_name = resource_filename("soliket", "clusters/data/ACTPol_Cond_scatv5.fits")
 
     def initialize(self):
         self.zarr = np.arange(0, 2, 0.05)

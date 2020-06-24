@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 from cobaya.likelihood import Likelihood
@@ -30,7 +29,7 @@ class PoissonLikelihood(Likelihood):
         raise NotImplementedError
 
     def _get_n_expected(self, **kwargs):
-        """Computes and returns the integral of the rate function 
+        """Computes and returns the integral of the rate function
         """
         raise NotImplementedError
 

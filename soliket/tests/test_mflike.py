@@ -40,7 +40,7 @@ def get_demo_mflike_model(orig=False):
     if orig:
         lhood = "mflike.MFLike"
     else:
-        lhood = "solt.mflike.MFLike"
+        lhood = "soliket.mflike.MFLike"
 
     mflike_config = {
         lhood: {

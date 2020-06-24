@@ -1,4 +1,4 @@
-# solt
+# SOLikeT: SO Likelihoods and Theories 
 [![Build Status](https://travis-ci.com/simonsobs/Likelihoods.svg?token=XsF5PBVv1xW2zmK74yrc&branch=master)](https://travis-ci.com/simonsobs/Likelihoods)
 
 A centralized package for likelihood and theory implementations for SO.
@@ -6,8 +6,8 @@ A centralized package for likelihood and theory implementations for SO.
 ## Installation
 
 ```
-git clone https://github.com/simonsobs/solt
-cd solt
+git clone https://github.com/simonsobs/soliket
+cd soliket
 pip install -e .
 ```
 You will also need to either run
@@ -55,7 +55,7 @@ info_yaml = """
 debug: True
 
 likelihood:
-  solt.LensingLiteLikelihood:
+  soliket.LensingLiteLikelihood:
     sim_number: 1
     stop_at_error: True
 

@@ -4,13 +4,13 @@
 from setuptools import setup
 
 setup(
-    name="solt",
+    name="soliket",
     version="0.0",
     description="SO Likelihoods & Theories",
     zip_safe=False,
-    packages=["solt", "solt.tests", "solt.clusters"],
+    packages=["soliket", "soliket.tests", "soliket.clusters"],
     package_data={
-        "solt": [
+        "soliket": [
             "*.yaml",
             "*.bibtex",
             "data/simulated*/*.txt",
@@ -26,5 +26,5 @@ setup(
         "cobaya @ git+https://github.com/cobayasampler/cobaya",  # for now
         "sacc @ git+https://github.com/simonsobs/sacc@mflike_current#egg=sacc",
     ],
-    test_suite="solt.tests",
+    test_suite="soliket.tests",
 )

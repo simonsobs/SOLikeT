@@ -5,11 +5,11 @@ import numpy as np
 from sklearn.datasets import make_spd_matrix
 from scipy.stats import multivariate_normal
 
-from solt.gaussian import GaussianData, CrossCov
-from solt import GaussianLikelihood, MultiGaussianLikelihood
-from solt import PSLikelihood
+from soliket.gaussian import GaussianData, CrossCov
+from soliket import GaussianLikelihood, MultiGaussianLikelihood
+from soliket import PSLikelihood
 
-from solt.utils import get_likelihood
+from soliket.utils import get_likelihood
 
 
 class ToyLikelihood(PSLikelihood):
@@ -63,7 +63,7 @@ def test_toy():
     info2 = {"name": name2, "n": n2, "cov": cov2, "seed": 234}
     info3 = {"name": name3, "n": n3, "cov": cov3, "seed": 345}
 
-    lhood = "solt.tests.test_ps.ToyLikelihood"
+    lhood = "soliket.tests.test_ps.ToyLikelihood"
     components = [lhood] * 3
     options = [info1, info2, info3]
     multilike1 = MultiGaussianLikelihood({"components": components, "options": options})

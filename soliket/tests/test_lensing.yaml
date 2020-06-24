@@ -1,7 +1,7 @@
 debug: true
 
 likelihood:
-  solt.LensingLikelihood:
+  soliket.LensingLikelihood:
     theory_lmax: 5000
 
 params:
