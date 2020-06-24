@@ -18,6 +18,13 @@ setup(
             "clusters/data/selFn_equD56/*",
         ]
     },
-    install_requires=["cobaya (>=3.0)", "astropy", "astLib", "scikit-learn"],
+    install_requires=[
+        "astropy",
+        "astLib",
+        "scikit-learn",
+        "fgspectra @ git+https://github.com/simonsobs/fgspectra@master#egg=fgspectra",
+        "cobaya>=3.0",
+        "sacc @ git+https://github.com/simonsobs/sacc@mflike_current#egg=sacc",
+    ],
     test_suite="solt.tests",
 )
