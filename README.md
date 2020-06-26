@@ -1,5 +1,5 @@
 # SOLikeT
-[![Build Status](https://travis-ci.com/simonsobs/Likelihoods.svg?token=XsF5PBVv1xW2zmK74yrc&branch=master)](https://travis-ci.com/simonsobs/Likelihoods)
+[![Build Status](https://travis-ci.com/simonsobs/SOLikeT.svg?branch=master)](https://travis-ci.com/simonsobs/SOLikeT)
 
 **SO Likelihoods and Theories**
 
