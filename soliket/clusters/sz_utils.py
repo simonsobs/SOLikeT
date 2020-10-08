@@ -133,7 +133,6 @@ class szutils:
         P_Y = np.nan_to_num(self.P_Yo(LgYa, MM, zz, param_vals, Ez_fn, Da_fn))
         ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
 
-        print("Pfunc per", ans[50], zz)
         return ans
 
     def Pfunc_per_parallel(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
