@@ -31,4 +31,5 @@ into **SOLikeT**, alongside `GaussianLikelihood` and `PoissonLikelihood`.
     `Theory` objects (current example of this is the `Foreground` object in `soliket.mflike`.)
 
 
-Development regarding **newlike** in the soliket repository should happen in a branch named `dev-newlike`.
+Development regarding **newlike** in the soliket repository should either happen in a branch named `dev-newlike`.  
+Submit a pull request and request review to merge to master.

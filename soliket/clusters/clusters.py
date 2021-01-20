@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 from pkg_resources import resource_filename
+import pyccl as ccl
 
 from ..poisson import PoissonLikelihood
 from . import massfunc as mf
@@ -13,6 +14,10 @@ from .survey import SurveyData
 from .sz_utils import szutils
 
 C_KM_S = 2.99792e5
+
+
+class SZModel:
+    pass
 
 
 class ClusterLikelihood(PoissonLikelihood):
@@ -24,6 +29,8 @@ class ClusterLikelihood(PoissonLikelihood):
     def initialize(self):
         self.zarr = np.arange(0, 2, 0.05)
         self.k = np.logspace(-4, np.log10(5), 200)
+        # self.mdef = ccl.halos.MassDef(500, 'critical')
+
         super().initialize()
 
     def get_requirements(self):
@@ -38,7 +45,17 @@ class ClusterLikelihood(PoissonLikelihood):
             },
             "Hubble": {"z": self.zarr},
             "angular_diameter_distance": {"z": self.zarr},
+            "comoving_radial_distance": {"z": self.zarr}
+            # "CCL": {"methods": {"sz_model": self._get_sz_model}, "kmax": 10},
         }
+
+    def _get_sz_model(self, cosmo):
+        model = SZModel()
+        model.hmf = ccl.halos.MassFuncTinker08(cosmo, mass_def=self.mdef)
+        model.hmb = ccl.halos.HaloBiasTinker10(cosmo, mass_def=self.mdef, mass_def_strict=False)
+        model.hmc = ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
+        model.szk = SZTracer(cosmo)
+        return model
 
     def _get_catalog(self):
         self.survey = SurveyData(self.data_path, self.data_name, szarMock=True)
@@ -165,6 +182,9 @@ class ClusterLikelihood(PoissonLikelihood):
         # Pfunc = 1.
         # N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None]/h, axis=0), axis=0)
         # Ntot = np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * (600./(4*np.pi * (180/np.pi)**2))
-        print("Ntot", Ntot)
+        # print("Ntot", Ntot)
 
         return Ntot
+
+    # def logp(self, *args, **kwargs):
+    #     return super().logp(*args, **kwargs)

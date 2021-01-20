@@ -26,13 +26,17 @@ def test_clusters():
                     "kmax": 10.0,
                     "dark_energy_model": "ppf",
                 }
-            }
+            },
+            "soliket.CCL": {"stop_at_error": True},
         },
     }
 
     from cobaya.model import get_model
 
     model_fiducial = get_model(info_fiducial)
+
+    # import pdb
+    # pdb.set_trace()
 
     lnl = model_fiducial.loglikes({})[0]
 
