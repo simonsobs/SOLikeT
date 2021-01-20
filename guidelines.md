@@ -14,6 +14,7 @@ into **SOLikeT**, alongside `GaussianLikelihood` and `PoissonLikelihood`.
     * Is there a minimal test suite for the orignal implementation?  A bare minimum test is a demo
     `test_newlike.yaml` file specifying a test model, and corresponding
     `test_newlike.py` test file that loads that model and compares the computed likelihood to a fiducial value.
+    See, e.g., `soliket/tests/test_mflike.py` or `soliket/tests/test_lensing.py` for examples.
 
 * Port **newlike** into **soliket**:
     * Put `test_newlike.yaml` and `test_newlike.py` files into `soliket/tests`.  These should be the same 
