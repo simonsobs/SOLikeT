@@ -10,7 +10,7 @@ into **SOLikeT**, alongside `GaussianLikelihood` and `PoissonLikelihood`.
 
 * Test **newlike** *in situ*:
     * Is there a minimal installation procedure available for the original likelihood? 
-      (i.e., can install & use likelihood without heavy dependencies?) 
+      (i.e., can a new user install & use **newlike** without heavy dependencies?) 
     * Is there a minimal test suite for the orignal implementation?  A bare minimum test is a demo
     `test_newlike.yaml` file specifying a test model, and corresponding
     `test_newlike.py` test file that loads that model and compares the computed likelihood to a fiducial value.
