@@ -41,6 +41,9 @@ This repo currently implements the following specific likelihoods:
 * `LensingLikelihood`: Lensing power-spectrum likelihood, adapted from [here](https://github.com/simonsobs/so-lenspipe/blob/6abdc185764894cefa76fd4666243669d7e8a4b0/bin/SOlikelihood/cobayalike.py#L80).
 * `LensingLiteLikelihood`: A no-frills, simple $\chi^2$ lensing power spectrum.
 
+## Extending
+
+Please see [these guidelines](guidelines.md) for instructions on bringing a new likelihood into **soliket**.
 
 ## Usage
 
@@ -102,6 +105,3 @@ could be used as input to `cobaya-run` to have **cobaya** manage the sampling.
 
 For more information on how to use **cobaya**, check out its [documentation](http://cobaya.readthedocs.io).
 
-## Extending
-
-Please see [these guidelines](guidelines.md) for instructions on bringing a new likelihood into **soliket**.
