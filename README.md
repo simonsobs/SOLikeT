@@ -101,3 +101,7 @@ sampler or optimizer), or this same YAML setup (with an additional 'sampler' blo
 could be used as input to `cobaya-run` to have **cobaya** manage the sampling.
 
 For more information on how to use **cobaya**, check out its [documentation](http://cobaya.readthedocs.io).
+
+## Extending
+
+Please see [these guidelines](guidelines.md) for instructions on bringing a new likelihood into **soliket**.
