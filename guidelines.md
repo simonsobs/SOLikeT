@@ -28,7 +28,7 @@ into **SOLikeT**, alongside `GaussianLikelihood` and `PoissonLikelihood`.
     `_get_theory()` methods, etc.
     * Also, if there is substantial data to be used by the likelihood, have it also extend 
     `_InstallableLikelihood` (see `soliket.mflike` and `soliket.lensing` for examples).
-    * Factor out all calculations necessary to compute the "theory vector" into separate standalone
+    * Factor out all cosmological/astrophysical calculations necessary to compute the "theory vector" into separate standalone
     `Theory` objects (current example of this is the `Foreground` object in `soliket.mflike`.)
 
 
