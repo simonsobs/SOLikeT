@@ -4,7 +4,7 @@ The following lays out what needs to be done to bring a new likelihood (e.g., **
 into the **soliket** framework.  Note that at present not all of these have yet been done
 as stated below for the currently implemented likelihoods, but this will come.
 
-[ ] Is **newlike** Gaussian or Poisson?  If so, great; if not, then we need to do some
+* Is **newlike** Gaussian or Poisson?  If so, great; if not, then we need to do some
 prep work to implement a generic version of the new likelihood form 
 into **SOLikeT**, alongside `GaussianLikelihood` and `PoissonLikelihood`.
 
