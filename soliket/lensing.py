@@ -7,7 +7,7 @@ from cobaya.likelihoods._base_classes import _InstallableLikelihood
 from cobaya.conventions import _packages_path
 from cobaya.model import get_model
 from cobaya.log import LoggedError
-from cobaya.install import NotInstalledError
+# from cobaya.install import NotInstalledError
 
 from .ps import BinnedPSLikelihood
 

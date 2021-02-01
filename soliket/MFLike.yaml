@@ -1,6 +1,6 @@
 # A simple cobaya likelihood for SO/LAT
 
-data_folder: MFLike/v0.4
+data_folder: MFLike/v0.6
 # Path to the input SACC file, containing, minimally,
 # information about the different tracers (i.e. frequency
 # bands) and the set of power spectra.
@@ -19,10 +19,10 @@ defaults:
   polarizations: ['TT', 'TE', 'ET', 'EE']
   # Scale cuts (in ell) for each spectrum
   scales:
-    TT: [2, 6002]
-    TE: [2, 6002]
-    ET: [2, 6002]
-    EE: [2, 6002]
+    TT: [2, 5000]
+    TE: [2, 5000]
+    ET: [2, 5000]
+    EE: [2, 5000]
   # If True, TE' = (TE + ET) / 2 will be used
   # instead of TE and ET separately.
   symmetrize: False
@@ -75,3 +75,59 @@ foregrounds:
     te: []
     ee: []
 
+params:
+  # Foregrounds
+  a_tSZ:
+    prior:
+      min: 3.0
+      max: 3.6
+    proposal: 0.05
+    latex: a_\mathrm{tSZ}
+  a_kSZ:
+    prior:
+      min: 1.4
+      max: 1.8
+    proposal: 0.1
+    latex: a_\mathrm{kSZ}
+  a_p:
+    prior:
+      min: 6.2
+      max: 7.6
+    proposal: 0.075
+    latex: a_p
+  beta_p:
+    prior:
+      min: 1.8
+      max: 2.2
+    proposal: 0.015
+    latex: \beta_p
+  a_c:
+    prior:
+      min: 4.4
+      max: 5.4
+    proposal: 0.12
+    latex: a_c
+  beta_c:
+    prior:
+      min: 2.0
+      max: 2.4
+    proposal: 0.03
+    latex: \beta_c
+  n_CIBC:
+    prior:
+      min: 1.0
+      max: 1.4
+    proposal: 0.045
+    latex: n_\mathrm{CIBC}
+  a_s:
+    prior:
+      min: 2.8
+      max: 3.4
+    proposal: 0.01
+    latex: a_s
+  T_d:
+    prior:
+      min:  8.60
+      max: 10.60
+    proposal: 0.6
+    latex: T_d
