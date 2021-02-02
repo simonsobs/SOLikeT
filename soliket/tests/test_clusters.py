@@ -1,6 +1,8 @@
 import numpy as np
+import pytest
 
 
+@pytest.mark.skip(reason="Under development")
 def test_clusters():
     fiducial_params = {
         "ombh2": 0.02225,

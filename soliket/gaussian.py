@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 from cobaya.likelihood import Likelihood
 from cobaya.input import merge_info
 from cobaya.tools import recursive_update
+from cobaya.conventions import empty_dict
 
 from .gaussian_data import GaussianData, MultiGaussianData
 from .utils import get_likelihood
@@ -51,17 +52,28 @@ class MultiGaussianLikelihood(GaussianLikelihood):
     options: Optional[Sequence] = None
     cross_cov_path: Optional[str] = None
 
+    def __init__(self, info=empty_dict, **kwargs):
+
+        if 'components' in info:
+            self.likelihoods = [get_likelihood(*kv) for kv in zip(info['components'], info['options'])]
+
+        default_info = merge_info(*[like.get_defaults() for like in self.likelihoods])
+        default_info.update(info)
+
+        super().__init__(info=default_info, **kwargs)
+
     def initialize(self):
-        self.likelihoods = [get_likelihood(*kv) for kv in zip(self.components, self.options)]
         self.cross_cov = CrossCov.load(self.cross_cov_path)
 
-        data_list = [l.data for l in self.likelihoods]
+        data_list = [like.data for like in self.likelihoods]
         self.data = MultiGaussianData(data_list, self.cross_cov)
+
+        self.log.info('Initialized.')
 
     def initialize_with_provider(self, provider):
         for like in self.likelihoods:
             like.initialize_with_provider(provider)
-        super().initialize_with_provider(provider)
+        # super().initialize_with_provider(provider)
 
     def get_helper_theories(self):
         helpers = {}
