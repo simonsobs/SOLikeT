@@ -102,3 +102,11 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# ymap
+.DS_Store
+soliket/ymap/chains/*
+soliket/ymap/run_scripts/*
+soliket/ymap/notebooks/*
+soliket/ymap/input_files/*
+soliket/ymap/data/*
