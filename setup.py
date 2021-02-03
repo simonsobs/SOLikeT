@@ -20,11 +20,11 @@ setup(
     },
     install_requires=[
         "astropy",
-        "astLib",
         "scikit-learn",
         "fgspectra @ git+https://github.com/simonsobs/fgspectra@master#egg=fgspectra",
         "cobaya @ git+https://github.com/cobayasampler/cobaya",  # for now
         "sacc @ git+https://github.com/simonsobs/sacc@mflike_current#egg=sacc",
+        "mflike @ git+https://github.com/simonsobs/lat_mflike"
     ],
     test_suite="soliket.tests",
 )
