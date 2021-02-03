@@ -23,6 +23,7 @@ setup(
         "scikit-learn",
         "cobaya",
         "sacc",
+        "ccl",
         "fgspectra @ git+https://github.com/simonsobs/fgspectra@master#egg=fgspectra",
         "mflike @ git+https://github.com/simonsobs/lat_mflike"
     ],
