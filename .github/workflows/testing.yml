@@ -21,23 +21,23 @@ jobs:
         channel-priority: strict
         show-channel-urls: true
 
-    - name: install dependencies  # this from CCL CI workflow
-        run: |
-          conda install \
-            pip \
-            numpy nose coveralls flake8 pyyaml gsl fftw cmake swig scipy \
-            compilers pkg-config setuptools_scm pytest pandas pytest-cov \
-            cython "camb>=1" isitgr traitlets fast-pt
-          if [[ ${MATRIX_OS} == "macos-latest" ]]; then
-            conda install llvm-openmp
-            echo "DYLD_FALLBACK_LIBRARY_PATH=${CONDA_PREFIX}/lib" >> $GITHUB_ENV
-            SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-            echo "SDKROOT: ${SDKROOT}"
-            echo "SDKROOT=${SDKROOT}" >> $GITHUB_ENV
-            echo "CONDA_BUILD_SYSROOT=${SDKROOT}" >> $GITHUB_ENV
-          fi
-        env:
-          MATRIX_OS: ${{ matrix.os }}    
+    - name: install deps
+      run: |
+        conda install \
+          pip \
+          numpy nose coveralls flake8 pyyaml gsl fftw cmake swig scipy \
+          compilers pkg-config setuptools_scm pytest pandas pytest-cov \
+          cython "camb>=1" isitgr traitlets fast-pt
+        if [[ ${MATRIX_OS} == "macos-latest" ]]; then
+          conda install llvm-openmp
+          echo "DYLD_FALLBACK_LIBRARY_PATH=${CONDA_PREFIX}/lib" >> $GITHUB_ENV
+          SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          echo "SDKROOT: ${SDKROOT}"
+          echo "SDKROOT=${SDKROOT}" >> $GITHUB_ENV
+          echo "CONDA_BUILD_SYSROOT=${SDKROOT}" >> $GITHUB_ENV
+        fi
+      env:
+        MATRIX_OS: ${{ matrix.os }}
 
     - name: Install classy
       run: |
