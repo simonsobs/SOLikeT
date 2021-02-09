@@ -57,6 +57,5 @@ jobs:
 
     - name: Unit tests
       run: |
-        pip install camb
-        pip install pytest
+        conda install pytest
         pytest -vv soliket
