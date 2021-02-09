@@ -12,17 +12,18 @@ jobs:
         python-version: [3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v2
 
-    - uses: conda-incubator/setup-miniconda@v3
+    - uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.py }}
+        auto-update-conda: true
         channels: conda-forge,defaults
         channel-priority: strict
         show-channel-urls: true
 
     - name: install ccl/camb
-      run: | 
+      run: |
         conda install pyccl
 
     # - name: install deps
