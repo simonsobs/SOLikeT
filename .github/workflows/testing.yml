@@ -22,9 +22,9 @@ jobs:
         channel-priority: strict
         show-channel-urls: true
 
-    - name: install ccl/camb
+    - name: install reqs
       run: |
-        conda install pyccl
+        conda install pip pytest pyccl
 
     # - name: install deps
     #   run: |
@@ -58,5 +58,4 @@ jobs:
 
     - name: Unit tests
       run: |
-        pip install pytest
         pytest -vv soliket
