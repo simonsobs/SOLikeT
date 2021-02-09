@@ -21,9 +21,10 @@ jobs:
         channel-priority: strict
         show-channel-urls: true
 
-    - name: install ccl
+    - name: install reqs
       run: | 
         conda install pyccl
+        conda install pytest
 
     # - name: install deps
     #   run: |
@@ -43,9 +44,9 @@ jobs:
     #   env:
     #     MATRIX_OS: ${{ matrix.os }}
 
-    - name: Install camb
-      run: |
-        conda install camb
+    # - name: Install camb
+    #   run: |
+    #     conda install camb
 
     # - name: Install classy
     #   run: |
@@ -57,5 +58,4 @@ jobs:
 
     - name: Unit tests
       run: |
-        conda install pytest
         pytest -vv soliket
