@@ -43,7 +43,7 @@ jobs:
     #   env:
     #     MATRIX_OS: ${{ matrix.os }}
 
-    -name: Install camb
+    - name: Install camb
       run: |
         conda install camb
 
