@@ -63,6 +63,9 @@ jobs:
       env:
         MATRIX_OS: ${{ matrix.os }}
 
+    - name: install
+      pip install .
+
     - name: Unit tests
       run: |
         pytest -vv soliket
