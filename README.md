@@ -1,5 +1,5 @@
 # SOLikeT
-[![Build Status](https://github.com/simonsobs/soliket/workflows/Testing/badge.svg)]](https://github.com/simonsobs/SOLikeT/actions?query=workflow%3ATesting)
+[![Build Status][https://github.com/simonsobs/soliket/workflows/Testing/badge.svg]][https://github.com/simonsobs/SOLikeT/actions?query=workflow%3ATesting]
 
 **SO Likelihoods and Theories**
 
