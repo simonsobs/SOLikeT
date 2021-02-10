@@ -37,6 +37,7 @@ jobs:
         else
           . ci_scripts/install_class_linux.sh
         fi
+        python -c "import classy; print(classy)"
       env:
         MATRIX_OS: ${{ matrix.os }}
 
