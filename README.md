@@ -1,5 +1,5 @@
 # SOLikeT
-![Build Status](https://github.com/simonsobs/soliket/workflows/testing/badge.svg)
+![Build Status](https://github.com/simonsobs/soliket/workflows/.github/workflows/testing.yml/badge.svg)
 
 **SO Likelihoods and Theories**
 
