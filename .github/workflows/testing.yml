@@ -27,7 +27,7 @@ jobs:
 
     - name: install reqs
       run: |
-        conda install pip gsl pytest pyccl cython
+        conda install pip gsl compilers pytest pyccl cython
         pip install cobaya
 
     # - name: install deps
