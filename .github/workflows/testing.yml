@@ -27,7 +27,8 @@ jobs:
 
     - name: install reqs
       run: |
-        conda install pip pytest pyccl
+        conda install pip pytest pyccl cython
+        pip install cobaya
 
     # - name: install deps
     #   run: |
@@ -51,13 +52,12 @@ jobs:
     #   run: |
     #     conda install camb
 
-    # - name: Install classy
-    #   run: |
-    #     conda install cython
-    #     git clone https://github.com/lesgourg/class_public
-    #     cd class_public
-    #     make
-    #     cd ..
+    - name: Install classy
+      run: |
+        git clone https://github.com/lesgourg/class_public
+        cd class_public
+        make
+        cd ..
 
     - name: Unit tests
       run: |
