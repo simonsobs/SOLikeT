@@ -52,12 +52,16 @@ jobs:
     #   run: |
     #     conda install camb
 
+
     - name: Install classy
-      run: |
-        git clone https://github.com/lesgourg/class_public
-        cd class_public
-        make
-        cd ..
+        run: |
+          if [[ ${MATRIX_OS} == "macos-latest" ]]; then
+            . ci_scripts/install_class_osx.sh
+          else
+            . ci_scripts/install_class_linux.sh
+          fi
+        env:
+          MATRIX_OS: ${{ matrix.os }}
 
     - name: Unit tests
       run: |
