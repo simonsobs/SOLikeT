@@ -60,7 +60,7 @@ def get_demo_lensing_model(theory):
     info = yaml_load(info_yaml)
 
     from cobaya.install import install
-    install(info, path=packages_path)
+    install(info, path=packages_path, skip_global=True)
 
     test_point = {}
     for par, pdict in info["params"].items():
