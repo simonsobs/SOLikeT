@@ -64,7 +64,8 @@ jobs:
         MATRIX_OS: ${{ matrix.os }}
 
     - name: install
-      pip install .
+      run: |
+        pip install .
 
     - name: Unit tests
       run: |
