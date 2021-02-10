@@ -54,14 +54,14 @@ jobs:
 
 
     - name: Install classy
-        run: |
-          if [[ ${MATRIX_OS} == "macos-latest" ]]; then
-            . ci_scripts/install_class_osx.sh
-          else
-            . ci_scripts/install_class_linux.sh
-          fi
-        env:
-          MATRIX_OS: ${{ matrix.os }}
+      run: |
+        if [[ ${MATRIX_OS} == "macos-latest" ]]; then
+          . ci_scripts/install_class_osx.sh
+        else
+          . ci_scripts/install_class_linux.sh
+        fi
+      env:
+        MATRIX_OS: ${{ matrix.os }}
 
     - name: Unit tests
       run: |
