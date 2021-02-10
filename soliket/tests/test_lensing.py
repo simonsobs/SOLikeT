@@ -53,6 +53,9 @@ def get_demo_lensing_model(theory):
 
     info = yaml_load(info_yaml)
 
+    from cobaya.install import install
+    install(info)
+
     test_point = {}
     for par, pdict in info["params"].items():
         if not isinstance(pdict, dict):
