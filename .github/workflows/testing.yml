@@ -1,0 +1,55 @@
+name: Testing
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -l {0}    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.8, 3.9]
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        python-version: ${{ matrix.py }}
+        auto-update-conda: true
+        channels: conda-forge,defaults
+        channel-priority: strict
+        show-channel-urls: true
+
+    - name: install reqs
+      run: |
+        conda install pip compilers pytest pyccl cython
+        pip install cobaya
+
+      env:  
+        MATRIX_OS: ${{ matrix.os }}
+
+    - name: Install classy
+      run: |
+        if [[ ${MATRIX_OS} == "macos-latest" ]]; then
+          . ci_scripts/install_class_osx.sh
+        else
+          . ci_scripts/install_class_linux.sh
+        fi
+        python -c "import classy; print(classy)"
+      env:
+        MATRIX_OS: ${{ matrix.os }}
+
+    - name: install
+      run: |
+        pip install .
+
+    - name: Unit tests
+      run: |
+        pytest -vv soliket
+      env:
+        PYTEST_ADDOPTS: "--color=yes"
