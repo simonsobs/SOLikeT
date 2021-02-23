@@ -25,12 +25,17 @@ class Collector(NamedTuple):
 
 class classy_sz(classy):
     def must_provide(self, **requirements):
-        for k, v in requirements.items():
-            if k == "Cl_sz":
-                self.collectors[k] = Collector(
-                        method="cl_sz",
-                        args_names=[],
-                        args=[])
+        print('new must provide')
+        if requirements.pop("Cl_sz", None):
+            print('cl_sz rquired')
+            exit(0)
+            self._must_provide["Cl_sz"] = self._must_provide.get("Cl_sz", {})
+            for k, v in requirements.items():
+                if k == "Cl_sz":
+                    self.collectors[k] = Collector(
+                            method="cl_sz",
+                            args_names=[],
+                            args=[])
         super().must_provide(**requirements)
 
 

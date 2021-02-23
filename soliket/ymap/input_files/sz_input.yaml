@@ -209,3 +209,5 @@ theory:
           create reference trispectrum for likelihood code: 'NO'
           append_name_trispectrum_ref: 'total-planck-collab-15_step_1'
           path to reference trispectrum for likelihood code: '/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/'
+
+# debug : True
