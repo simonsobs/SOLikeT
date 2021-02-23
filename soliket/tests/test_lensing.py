@@ -1,9 +1,15 @@
+import os
+import tempfile
+
 import pytest
 import numpy as np
 
 from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
+packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
+    tempfile.gettempdir(), "lensing_packages"
+)
 
 def get_demo_lensing_model(theory):
     if theory == "camb":
@@ -52,6 +58,9 @@ def get_demo_lensing_model(theory):
         """
 
     info = yaml_load(info_yaml)
+
+    from cobaya.install import install
+    install(info, path=packages_path, skip_global=True)
 
     test_point = {}
     for par, pdict in info["params"].items():

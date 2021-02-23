@@ -3,7 +3,7 @@ import numpy as np
 
 from scipy import interpolate
 import astropy.io.fits as pyfits
-from astLib import astWCS
+# from astLib import astWCS
 from astropy.io import fits
 import astropy.table as atpy
 
