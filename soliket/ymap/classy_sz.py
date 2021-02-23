@@ -11,7 +11,7 @@ from cobaya.theory import Theory
 #         super().must_provide(**requirements)
 #
 
-class classy_sz(classy,BoltzmannBase):
+class classy_sz(classy):
     def must_provide(self, **requirements):
         for k, v in requirements.items():
             if k == "Cl_sz":
