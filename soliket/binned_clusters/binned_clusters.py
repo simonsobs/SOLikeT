@@ -1,4 +1,4 @@
-from soliket.binned_poisson import BinnedPoissonLikelihood
+from soliket.binned_clusters.binned_poisson import BinnedPoissonLikelihood
 from scipy import interpolate, integrate, special
 from typing import Optional
 import numpy as np

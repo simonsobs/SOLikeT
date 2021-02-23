@@ -8,7 +8,7 @@ setup(
     version="0.0",
     description="SO Likelihoods & Theories",
     zip_safe=False,
-    packages=["soliket", "soliket.tests", "soliket.clusters"],
+    packages=["soliket", "soliket.tests", "soliket.clusters", "soliket.binned_clusters"],
     package_data={
         "soliket": [
             "*.yaml",
