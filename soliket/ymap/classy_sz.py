@@ -1,20 +1,28 @@
 from cobaya.theories.classy import classy
-# from cobaya.theories.classy import Collector
 from copy import deepcopy
-from cobaya.theories._cosmo import BoltzmannBase
-from cobaya.theory import Theory
 from typing import NamedTuple, Sequence, Union, Optional
-import pdb
 
-# class BoltzmannBase_sz(BoltzmannBase):
-#     def must_provide(self, **requirements):
-#         for k, v in requirements.items():
-#             if k == "Cl_sz":
-#                 self._must_provide["Cl_sz"] = self._must_provide.get("Cl_sz", {})
-#         super().must_provide(**requirements)
-#
 
-# Result collector
+class classy_sz(classy):
+
+    def must_provide(self, **requirements):
+        if "Cl_sz" in requirements:
+             # make sure cobaya still runs as it does for standard classy
+            requirements.pop("Cl_sz")
+            # specify the method to collect the new observable
+            self.collectors["Cl_sz"] = Collector(
+                    method="cl_sz", # name of the method in classy.pyx
+                    args_names=[],
+                    args=[])
+        super().must_provide(**requirements)
+
+    # get the required new observable
+    def get_Cl_sz(self):
+        cls = {}
+        cls = deepcopy(self._current_state["Cl_sz"])
+        return cls
+
+# this just need to be there as it's used to fill-in self.collector:
 class Collector(NamedTuple):
     method: str
     args: Sequence = []
@@ -22,29 +30,3 @@ class Collector(NamedTuple):
     kwargs: dict = {}
     arg_array: Union[int, Sequence] = None
     post: Optional[callable] = None
-
-
-class classy_sz(classy):
-    def must_provide(self, **requirements):
-        if "Cl_sz" in requirements:
-            requirements.pop("Cl_sz")
-            self.collectors["Cl_sz"] = Collector(
-                    method="cl_sz",
-                    args_names=[],
-                    args=[])
-        super().must_provide(**requirements)
-
-
-    def get_Cl_sz(self):
-        cls = {}
-        cls = deepcopy(self._current_state["Cl_sz"])
-        return cls
-
-
-
-
-    # elif k == "Cl_sz":
-    #     self.collectors[k] = Collector(
-    #         method="cl_sz",
-    #         args_names=[],
-    #         args=[])
