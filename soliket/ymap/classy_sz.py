@@ -4,6 +4,7 @@ from copy import deepcopy
 from cobaya.theories._cosmo import BoltzmannBase
 from cobaya.theory import Theory
 from typing import NamedTuple, Sequence, Union, Optional
+import pdb
 
 # class BoltzmannBase_sz(BoltzmannBase):
 #     def must_provide(self, **requirements):
@@ -25,17 +26,12 @@ class Collector(NamedTuple):
 
 class classy_sz(classy):
     def must_provide(self, **requirements):
-        print('new must provide')
-        if requirements.pop("Cl_sz", None):
-            print('cl_sz rquired')
-            exit(0)
-            self._must_provide["Cl_sz"] = self._must_provide.get("Cl_sz", {})
-            for k, v in requirements.items():
-                if k == "Cl_sz":
-                    self.collectors[k] = Collector(
-                            method="cl_sz",
-                            args_names=[],
-                            args=[])
+        if "Cl_sz" in requirements:
+            requirements.pop("Cl_sz")
+            self.collectors["Cl_sz"] = Collector(
+                    method="cl_sz",
+                    args_names=[],
+                    args=[])
         super().must_provide(**requirements)
 
 
