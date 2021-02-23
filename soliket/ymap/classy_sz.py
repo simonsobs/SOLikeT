@@ -7,7 +7,7 @@ class classy_sz(classy):
 
     def must_provide(self, **requirements):
         if "Cl_sz" in requirements:
-             # make sure cobaya still runs as it does for standard classy
+            # make sure cobaya still runs as it does for standard classy
             requirements.pop("Cl_sz")
             # specify the method to collect the new observable
             self.collectors["Cl_sz"] = Collector(
@@ -22,7 +22,7 @@ class classy_sz(classy):
         cls = deepcopy(self._current_state["Cl_sz"])
         return cls
 
-# this just need to be there as it's used to fill-in self.collector:
+# this just need to be there as it's used to fill-in self.collectors in must_provide:
 class Collector(NamedTuple):
     method: str
     args: Sequence = []
