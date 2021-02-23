@@ -163,7 +163,7 @@ theory:
 
 
 
-  soliket.ymap.ymap_ps.classy:
+  soliket.ymap.ymap_ps.classy_sz:
   # classy:
      path: '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
      extra_args:
