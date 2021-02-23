@@ -14,11 +14,12 @@
 
 from cobaya.theory import Theory
 from cobaya.conventions import _packages_path
-from solike.gaussian import GaussianLikelihood
+from soliket.gaussian import GaussianLikelihood
 import numpy as np
 import os
 from scipy.ndimage.interpolation import shift
 from typing import Optional, Sequence
+# from soliket.ymap.classy_sz import classy_sz
 
 
 class SZLikelihood(GaussianLikelihood):
@@ -31,6 +32,8 @@ class SZLikelihood(GaussianLikelihood):
 
 
     def initialize(self):
+        # print('Initialize')
+        # exit(0)
         self.data_directory = self.sz_data_directory
         self.datafile = self.ymap_ps_file
 
@@ -128,6 +131,7 @@ class SZLikelihood(GaussianLikelihood):
 
     def _get_theory(self, **params_values):
         theory = self.theory.get_Cl_sz()
+        # theory = classy_sz.get_Cl_sz()
         cl_1h_theory = theory['1h']
         cl_2h_theory = theory['2h']
         Cl_sz = np.asarray(list(cl_1h_theory)) + np.asarray(list(cl_2h_theory))

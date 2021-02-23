@@ -8,14 +8,14 @@ setup(
     version="0.0",
     description="SO Likelihoods & Theories",
     zip_safe=False,
-    packages=["soliket", "soliket.tests", "soliket.clusters"],
+    packages=["soliket", "soliket.tests", "soliket.clusters", "soliket.ymap"],
     package_data={
         "soliket": [
             "*.yaml",
             "*.bibtex",
             "data/simulated*/*.txt",
             "clusters/data/*",
-            "clusters/data/selFn_equD56/*",
+            "clusters/data/selFn_equD56/*"
         ]
     },
     install_requires=[

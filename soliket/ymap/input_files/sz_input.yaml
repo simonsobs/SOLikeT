@@ -1,7 +1,7 @@
 output: /Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/sz_total-planck-collab-15_step_1_test
 
 likelihood:
-  solike.SZLikelihood:
+  soliket.ymap.ymap_ps.SZLikelihood:
     sz_data_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/data/planck_2015_ymap/"
     ymap_ps_file: "data_ps-ell-y2-erry2_total-planck-collab-15.txt"
     f_sky: 0.47 #sky_fraction of Planck y-map (communicated by Barbara Commis)
@@ -156,14 +156,15 @@ sampler:
 
 
 theory:
-  solike.SZForegroundTheory:
+  soliket.ymap.ymap_ps.SZForegroundTheory:
     speed: 2
     foreground_data_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/data/planck_2015_ymap"
     foreground_data_file: "data_fg-ell-cib_rs_ir_cn-total-planck-collab-15.txt"
 
 
 
-  classy:
+  soliket.ymap.ymap_ps.classy:
+  # classy:
      path: '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
      extra_args:
           non linear: 'halofit'
@@ -175,6 +176,7 @@ theory:
           mass function : 'M500'
           pressure profile : 'A10'
           multipoles_sz : 'P15'
+          nlSZ : 18
 
           M1SZ : 1e11
           M2SZ : 1e16
@@ -191,13 +193,15 @@ theory:
 
           HMF_prescription_NCDM: 'CDM'
 
+          input_verbose : 0
           background_verbose: 0
           perturbations_verbose: 0
-          sz_verbose: 1
+          sz_verbose: 0
           # following parameters (50,50) give less than 1% difference w.r.t. ndimSZ = 100 and n_arraySZ=1000
           # [relevant for tabulation of sigma(R,z)]
-          ndimSZ: 50
-          n_arraySZ: 50
+          # ndimSZ: 50
+          # n_arraySZ: 50
+          #write parameters : 'yeap'
 
           #integration method (mass) : 'gsl_qags'
 
