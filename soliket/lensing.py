@@ -13,13 +13,14 @@ from .ps import BinnedPSLikelihood
 
 
 class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
-    _url = "https://portal.nersc.gov/project/act/jia_qu/likelihood-data/likelihood.tar.gz"
+    _url = "https://portal.nersc.gov/project/act/jia_qu/lensing_like/likelihood.tar.gz"
     install_options = {"download_url": _url}
     data_folder = "LensingLikelihood"
     data_filename = "binnedauto.txt"
     cov_filename = "binnedcov.txt"
 
     kind = "pp"
+    sim_number = 0
     lmax = 3000
     theory_lmax = 10000
 

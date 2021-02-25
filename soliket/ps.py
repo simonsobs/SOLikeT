@@ -21,9 +21,19 @@ class PSLikelihood(GaussianLikelihood):
 
 
 class BinnedPSLikelihood(PSLikelihood):
+
+    binning_matrix_file: str = ""
+
+    def initialize(self):
+        super().initialize()
+        self.binning_matrix = self._get_binning_matrix()
+
     @classmethod
     def binner(cls, x, y, bin_edges):
         return utils.binner(x, y, bin_edges)
+
+    def _get_binning_matrix(self):
+        return np.loadtxt(self.binning_matrix_file)
 
     def _get_data(self):
         lefts, rights, bandpowers = np.loadtxt(self.datapath, unpack=True)
