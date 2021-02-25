@@ -7,6 +7,66 @@ likelihood:
     f_sky: 0.47 #sky_fraction of Planck y-map (communicated by Barbara Commis)
     trispectrum_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/"
     trispectrum_ref: "tSZ_trispectrum_ref_total-planck-collab-15_step_1.txt"
+
+
+
+theory:
+  soliket.ymap.ymap_ps.SZForegroundTheory:
+    speed: 2
+    foreground_data_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/data/planck_2015_ymap"
+    foreground_data_file: "data_fg-ell-cib_rs_ir_cn-total-planck-collab-15.txt"
+
+
+
+  soliket.ymap.classy_sz:
+  # classy:
+     path: '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
+     extra_args:
+          non linear: 'halofit'
+          output : 'tSZ_1h'
+          units for tSZ spectrum : 'dimensionless'
+          component of tSZ power spectrum : 'total'
+          path_to_class : '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
+          write sz results to files : 'no'
+          mass function : 'M500'
+          pressure profile : 'A10'
+          multipoles_sz : 'P15'
+          nlSZ : 18
+
+          M1SZ : 1e11
+          M2SZ : 1e16
+
+          z1SZ : 1e-5
+          z2SZ : 4.
+          z_max_pk : 4.
+
+          N_ur : 0.00641
+          N_ncdm : 1
+          deg_ncdm : 3
+          m_ncdm : 0.02
+          T_ncdm : 0.71611
+
+          HMF_prescription_NCDM: 'CDM'
+
+          input_verbose : 0
+          background_verbose: 0
+          perturbations_verbose: 0
+          sz_verbose: 0
+          # following parameters (50,50) give less than 1% difference w.r.t. ndimSZ = 100 and n_arraySZ=1000
+          # [relevant for tabulation of sigma(R,z)]
+          # ndimSZ: 50
+          # n_arraySZ: 50
+          #write parameters : 'yeap'
+
+          #integration method (mass) : 'gsl_qags'
+
+
+          create reference trispectrum for likelihood code: 'NO'
+          append_name_trispectrum_ref: 'total-planck-collab-15_step_1'
+          path to reference trispectrum for likelihood code: '/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/'
+
+
+
 params:
   A_CIB:
       prior:
@@ -117,7 +177,7 @@ params:
       loc: 67.27
       scale: 0.6
     proposal: 0.6
-    latex: \tau_\mathrm{reio}
+    latex: H_0
 
   # add derived parameter, e.g.:
   Omega_m:
@@ -154,60 +214,5 @@ sampler:
       A_RS: 0.0004
 
 
-
-theory:
-  soliket.ymap.ymap_ps.SZForegroundTheory:
-    speed: 2
-    foreground_data_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/data/planck_2015_ymap"
-    foreground_data_file: "data_fg-ell-cib_rs_ir_cn-total-planck-collab-15.txt"
-
-
-
-  soliket.ymap.classy_sz:
-  # classy:
-     path: '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
-     extra_args:
-          non linear: 'halofit'
-          output : 'tSZ_1h'
-          units for tSZ spectrum : 'dimensionless'
-          component of tSZ power spectrum : 'total'
-          path_to_class : '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
-          write sz results to files : 'no'
-          mass function : 'M500'
-          pressure profile : 'A10'
-          multipoles_sz : 'P15'
-          nlSZ : 18
-
-          M1SZ : 1e11
-          M2SZ : 1e16
-
-          z1SZ : 1e-5
-          z2SZ : 4.
-          z_max_pk : 4.
-
-          N_ur : 0.00641
-          N_ncdm : 1
-          deg_ncdm : 3
-          m_ncdm : 0.02
-          T_ncdm : 0.71611
-
-          HMF_prescription_NCDM: 'CDM'
-
-          input_verbose : 0
-          background_verbose: 0
-          perturbations_verbose: 0
-          sz_verbose: 0
-          # following parameters (50,50) give less than 1% difference w.r.t. ndimSZ = 100 and n_arraySZ=1000
-          # [relevant for tabulation of sigma(R,z)]
-          # ndimSZ: 50
-          # n_arraySZ: 50
-          #write parameters : 'yeap'
-
-          #integration method (mass) : 'gsl_qags'
-
-
-          create reference trispectrum for likelihood code: 'NO'
-          append_name_trispectrum_ref: 'total-planck-collab-15_step_1'
-          path to reference trispectrum for likelihood code: '/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/'
 
 # debug : True
