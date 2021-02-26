@@ -1,9 +1,31 @@
 from cobaya.theories.classy import classy
 from copy import deepcopy
 from typing import NamedTuple, Sequence, Union, Optional
-
+from cobaya.tools import load_module
+import logging
+import os
 
 class classy_sz(classy):
+    def initialize(self):
+        """Importing CLASS from the correct path, if given, and if not, globally."""
+        self.classy_module = self.is_installed()
+        if not self.classy_module:
+            raise NotInstalledError(
+                self.log, "Could not find CLASS_SZ. Check error message above.")
+        from classy_sz import Class, CosmoSevereError, CosmoComputationError
+        global CosmoComputationError, CosmoSevereError
+        self.classy = Class()
+        super(classy,self).initialize()
+        # Add general CLASS stuff
+        self.extra_args["output"] = self.extra_args.get("output", "")
+        if "sBBN file" in self.extra_args:
+            self.extra_args["sBBN file"] = (
+                self.extra_args["sBBN file"].format(classy=self.path))
+        # Derived parameters that may not have been requested, but will be necessary later
+        self.derived_extra = []
+        self.log.info("Initialized!")
+
+
 
     def must_provide(self, **requirements):
         if "Cl_sz" in requirements:
@@ -22,21 +44,10 @@ class classy_sz(classy):
         cls = deepcopy(self._current_state["Cl_sz"])
         return cls
 
-    # @classmethod
-    # def is_installed(cls, **kwargs):
-    #     try:
-    #         return load_module(
-    #             'classy_sz', path=classy_build_path, min_version=cls._classy_repo_version)
-    #     except ImportError:
-    #         if path is not None and path.lower() != "global":
-    #             log.error("Couldn't find the CLASS python interface at '%s'. "
-    #                       "Are you sure it has been installed there?", path)
-    #         else:
-    #             log.error("Could not import global CLASS installation. "
-    #                       "Specify a Cobaya or CLASS installation path, "
-    #                       "or install the CLASS Python interface globally with "
-    #                       "'cd /path/to/class/python/ ; python setup.py install'")
-    #         return False
+    @classmethod
+    def is_installed(cls, **kwargs):
+        return load_module('classy_sz')
+
 # this just need to be there as it's used to fill-in self.collectors in must_provide:
 class Collector(NamedTuple):
     method: str

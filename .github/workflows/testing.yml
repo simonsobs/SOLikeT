@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        shell: bash -l {0}    
+        shell: bash -l {0}
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +30,7 @@ jobs:
         conda install pip compilers pytest pyccl cython
         pip install cobaya
 
-      env:  
+      env:
         MATRIX_OS: ${{ matrix.os }}
 
     - name: Install classy
@@ -41,6 +41,17 @@ jobs:
           . ci_scripts/install_class_linux.sh
         fi
         python -c "import classy; print(classy)"
+      env:
+        MATRIX_OS: ${{ matrix.os }}
+
+    - name: Install classy_sz
+      run: |
+        if [[ ${MATRIX_OS} == "macos-latest" ]]; then
+          . ci_scripts/install_class_sz_osx.sh
+        else
+          . ci_scripts/install_class_sz_linux.sh
+        fi
+        python -c "import classy_sz; print(classy_sz)"
       env:
         MATRIX_OS: ${{ matrix.os }}
 

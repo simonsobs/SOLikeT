@@ -7,9 +7,9 @@ import numpy as np
 from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
-packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
-    tempfile.gettempdir(), "ymap_packages"
-)
+# packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
+#     tempfile.gettempdir(), "ymap_packages"
+# )
 
 # print(packages_path)
 # exit(0)
@@ -51,7 +51,6 @@ def get_demo_ymap_ps_model():
 
 
       soliket.ymap.classy_sz:
-         path: '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
          extra_args:
               non linear: 'halofit'
               output : 'tSZ_1h'
@@ -161,13 +160,12 @@ def get_demo_ymap_ps_model():
         ref: 67.27
         proposal: 0.6
         latex: H_0
-
     """
 
     info = yaml_load(info_yaml)
 
-    from cobaya.install import install
-    install(info, path=packages_path, skip_global=True)
+    # from cobaya.install import install
+    # install(info, path=packages_path, skip_global=True)
 
     test_point = {}
 
@@ -196,5 +194,3 @@ def test_ymap_ps():
     lnl = model.loglike(test_point)[0]
     print('lnl ymap_ps :', lnl)
     assert np.isfinite(lnl)
-
-test_ymap_ps()
