@@ -41,7 +41,7 @@ def get_demo_ymap_ps_model():
     info_yaml = r"""
 
     likelihood:
-      soliket.ymap.ymap_ps.SZLikelihood
+      soliket.ymap.ymap_ps.SZLikelihood:
 
 
     theory:
@@ -190,11 +190,11 @@ def get_demo_ymap_ps_model():
     return model, test_point
 
 
-@pytest.mark.parametrize("theory", ["camb", "classy"])
-def test_ymap_ps(theory):
-    model, test_point = get_demo_ymap_ps_model(theory)
+# @pytest.mark.parametrize("theory", ["camb", "classy"])
+def test_ymap_ps():
+    model, test_point = get_demo_ymap_ps_model()
     lnl = model.loglike(test_point)[0]
     print('lnl ymap_ps :', lnl)
     assert np.isfinite(lnl)
 
-test_ymap_ps('classy')
+test_ymap_ps()

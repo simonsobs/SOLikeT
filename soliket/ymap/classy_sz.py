@@ -22,6 +22,21 @@ class classy_sz(classy):
         cls = deepcopy(self._current_state["Cl_sz"])
         return cls
 
+    # @classmethod
+    # def is_installed(cls, **kwargs):
+    #     try:
+    #         return load_module(
+    #             'classy_sz', path=classy_build_path, min_version=cls._classy_repo_version)
+    #     except ImportError:
+    #         if path is not None and path.lower() != "global":
+    #             log.error("Couldn't find the CLASS python interface at '%s'. "
+    #                       "Are you sure it has been installed there?", path)
+    #         else:
+    #             log.error("Could not import global CLASS installation. "
+    #                       "Specify a Cobaya or CLASS installation path, "
+    #                       "or install the CLASS Python interface globally with "
+    #                       "'cd /path/to/class/python/ ; python setup.py install'")
+    #         return False
 # this just need to be there as it's used to fill-in self.collectors in must_provide:
 class Collector(NamedTuple):
     method: str
