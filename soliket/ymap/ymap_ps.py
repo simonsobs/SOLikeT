@@ -1,5 +1,5 @@
 """
-.. module:: sz power spectrm likelihood (in progress)
+.. module:: sz power spectrum likelihood (in progress)
 
 """
 
@@ -14,21 +14,27 @@
 
 from cobaya.theory import Theory
 from cobaya.conventions import _packages_path
+# from cobaya.likelihoods._base_classes import _InstallableLikelihood
 from soliket.gaussian import GaussianLikelihood
 import numpy as np
 import os
 from scipy.ndimage.interpolation import shift
 from typing import Optional, Sequence
-# from soliket.ymap.classy_sz import classy_sz
+from pkg_resources import resource_filename
+
 
 
 class SZLikelihood(GaussianLikelihood):
-    sz_data_directory: Optional[str] = None
-    ymap_ps_file: Optional[str] = None
-    f_sky: Optional[str] = None
-    trispectrum_directory: Optional[str] = None
-    trispectrum_ref: Optional[str] = None
-    use_trispectrum: Optional[str] = None
+    sz_data_directory: Optional[str] = resource_filename(
+        "soliket", "ymap/data/"
+    )
+    ymap_ps_file: Optional[str] = 'data_ps-ell-y2-erry2_total-planck-collab-15.txt'
+    f_sky: Optional[str] = 0.47
+    trispectrum_directory: Optional[str] = resource_filename(
+        "soliket", "ymap/data/"
+    )
+    trispectrum_ref: Optional[str] = 'tSZ_trispectrum_ref_total-planck-collab-15_step_1.txt'
+    use_trispectrum: Optional[str] = 'no'
 
 
     def initialize(self):
@@ -60,7 +66,7 @@ class SZLikelihood(GaussianLikelihood):
         self.fiducial_file_params = fiducial_file_params
         self.fiducial_file_cell = fiducial_file_cell
         self.fiducial_file_covmat = fiducial_file_covmat
-        #If reference trispectrun is available -> read in the values
+        #If reference trispectrum is available -> read in the values
         if os.path.exists(os.path.join(self.trispectrum_directory, self.fiducial_file_params)):
             self.fid_values_exist = True
             #read-in the fiducial data
@@ -144,8 +150,10 @@ class SZForegroundTheory(Theory):
 
     params = {"A_CIB": 0, "A_RS": 0, "A_IR": 0}
 
-    foreground_data_directory: Optional[str] = None
-    foreground_data_file: Optional[str] = None
+    foreground_data_directory: Optional[str] =  resource_filename(
+        "soliket", "ymap/data/"
+    )
+    foreground_data_file: Optional[str] = "data_fg-ell-cib_rs_ir_cn-total-planck-collab-15.txt"
 
     def initialize(self):
         self.datafile = self.foreground_data_file

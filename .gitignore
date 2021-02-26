@@ -109,7 +109,6 @@ soliket/ymap/chains/*
 soliket/ymap/run_scripts/*
 soliket/ymap/notebooks/*
 #soliket/ymap/input_files/
-soliket/ymap/data/*
 soliket/ymap/input_files/total-planck-collab-15_benchmark_montepython-3.3_evaluate_trispectrum.input.yaml
 soliket/ymap/input_files/total-planck-collab-15_benchmark_montepython-3.3.input.yaml
 soliket/ymap/input_files/sz_ps_template_evaluate_trispectrum_and_sz_template.yaml
