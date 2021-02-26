@@ -25,6 +25,11 @@ class classy_sz(classy):
         self.derived_extra = []
         self.log.info("Initialized!")
 
+        # class_sz default params for lkl
+        self.extra_args["output"] = 'tSZ_1h'
+        self.extra_args["multipoles_sz"] = 'P15'
+        self.extra_args['nlSZ'] = 18
+
 
 
     def must_provide(self, **requirements):
