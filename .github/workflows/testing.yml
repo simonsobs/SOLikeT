@@ -27,7 +27,7 @@ jobs:
 
     - name: install reqs
       run: |
-        conda install pip compilers pytest pyccl cython
+        conda install pip compilers pytest pyccl cython gsl
         pip install cobaya
 
       env:
