@@ -10,6 +10,7 @@ make
 make install
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/runner/work/SOLikeT/SOLikeT/gsl-2.6/lib/
 export LD_LIBRARY_PATH
+cd ..
 dpkg -L libgsl-dev
 git clone https://github.com/borisbolliet/class_sz.git
 cd class_sz
