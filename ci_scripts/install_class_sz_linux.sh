@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo apt-get install libgsl-dev
-
+dpkg -L libgsl-dev
 git clone https://github.com/borisbolliet/class_sz.git
 cd class_sz
 make -j4
