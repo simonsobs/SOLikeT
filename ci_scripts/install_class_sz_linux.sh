@@ -2,11 +2,12 @@
 
 sudo apt-get install libgsl-dev
 dpkg -L libgsl-dev
-ls /usr/share/miniconda/envs/test/lib/gsl*
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/share/miniconda/envs/test/lib/
 export LD_LIBRARY_PATH
 git clone https://github.com/borisbolliet/class_sz.git
 cd class_sz
+export DYLD_PRINT_LIBRARIES=1
+export DYLD_PRINT_RPATHS=1
 make -j4
 
 # at this point the make file leaves you in the python dir
