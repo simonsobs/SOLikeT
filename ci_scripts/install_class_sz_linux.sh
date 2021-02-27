@@ -2,6 +2,7 @@
 
 sudo apt-get install libgsl-dev
 dpkg -L libgsl-dev
+ls /usr/share/miniconda/envs/test/lib/gsl*
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/share/miniconda/envs/test/lib/
 export LD_LIBRARY_PATH
 git clone https://github.com/borisbolliet/class_sz.git
