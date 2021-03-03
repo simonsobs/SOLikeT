@@ -9,7 +9,7 @@ from cobaya.model import get_model
 from cobaya.log import LoggedError
 # from cobaya.install import NotInstalledError
 
-from .ps import BinnedPSLikelihood
+from ..ps import BinnedPSLikelihood
 
 
 class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
