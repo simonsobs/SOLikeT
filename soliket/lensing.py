@@ -16,8 +16,9 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
     _url = "https://portal.nersc.gov/project/act/jia_qu/lensing_like/likelihood.tar.gz"
     install_options = {"download_url": _url}
     data_folder = "LensingLikelihood"
-    data_filename = "binnedauto.txt"
+    data_filename = "clkk_binned.txt"
     cov_filename = "binnedcov.txt"
+    binning_matrix_filename = "lensing_binning_matrix.txt"
 
     kind = "pp"
     sim_number = 0
@@ -66,13 +67,13 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
         # Set files where data/covariance are loaded from
         self.datapath = os.path.join(self.data_folder, self.data_filename)
         self.covpath = os.path.join(self.data_folder, self.cov_filename)
+        self.binning_matrix_path = os.path.join(self.data_folder, self.binning_matrix_filename)
+
+        cov = np.loadtxt(self.covpath)
+        self.n_bins = cov.shape[0]
 
         # Initialize fiducial PS
         Cls = self._get_fiducial_Cls()
-
-        # same bin edges to the one used for auto bandpowers
-        # TODO: make this information part of the data product!
-        self.bin_edges = np.linspace(20, 3000, 10)
 
         # Set the fiducial spectra
         self.ls = np.arange(0, self.lmax)
@@ -97,6 +98,10 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
         self.n0 = np.loadtxt(os.path.join(self.data_folder, "n0mv.txt"))
 
         super().initialize()
+
+    def _get_binning_matrix(self):
+        binning_matrix = super()._get_binning_matrix()
+        return binning_matrix[:self.n_bins, :]
 
     def _get_fiducial_Cls(self):
 
@@ -125,10 +130,8 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
         }
 
     def _get_data(self):
-        bandpowers = np.loadtxt(self.datapath)
-        bin_centers = (self.bin_edges[:-1] + self.bin_edges[1:]) / 2
-
-        return bin_centers, bandpowers
+        bandpowers = np.loadtxt(self.datapath)[self.sim_number, :self.n_bins]
+        return self.bin_centers[:self.n_bins], bandpowers
 
     def _get_theory(self, **params_values):
         cl = self.provider.get_Cl(ell_factor=False)
@@ -142,8 +145,8 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
         ls = self.ls
         Clkk_theo = (ls * (ls + 1)) ** 2 * Cl_theo * 0.25
 
-        _, Clkk_binned = self.binner(ls, Clkk_theo, self.bin_edges)
-        _, Cltt_binned = self.binner(ls, Cl_tt, self.bin_edges)
+        Clkk_binned = self.binning_matrix.dot(Clkk_theo)
+        Cltt_binned = self.binning_matrix.dot(Cl_tt)
 
         correction = (
             2
@@ -162,23 +165,15 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
         )
 
         # put the correction term into bandpowers
-        _, correction = self.binner(ls, correction, self.bin_edges)
+        correction = self.binning_matrix.dot(correction)
 
         return Clkk_binned + correction
 
 
 class LensingLiteLikelihood(BinnedPSLikelihood):
-    kind = "pp"
-    dataroot = resource_filename(
-        "soliket", "data/simulated_clkk_SO_Apr17_mv_nlkk_deproj0_SENS1_fsky_16000_iterOn_20191109"
-    )
-    cl_file = (
-        "simulated_clkk_SO_Apr17_mv_nlkk_deproj0_SENS1_fsky_16000_iterOn_20191109_sim_{:02d}_bandpowers.txt"
-    )
-    cov_file = "simulated_clkk_SO_Apr17_mv_nlkk_deproj0_SENS1_fsky_16000_iterOn_20191109_binned_covmat.txt"
-    sim_number = 0
+    kind: str = "pp"
+    lmax: int = 3000
+    datapath: str = resource_filename("soliket", "lensing/data/binnedauto.txt")
+    covpath: str = resource_filename("soliket", "lensing/data/binnedcov.txt")
+    binning_matrix_path: str = resource_filename("soliket", "lensing/data/binningmatrix.txt")
 
-    def initialize(self):
-        self.datapath = os.path.join(self.dataroot, self.cl_file.format(self.sim_number))
-        self.covpath = os.path.join(self.dataroot, self.cov_file)
-        super().initialize()
