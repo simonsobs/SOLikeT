@@ -70,7 +70,6 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
         self.binning_matrix_path = os.path.join(self.data_folder, self.binning_matrix_filename)
 
         cov = np.loadtxt(self.covpath)
-        self.n_bins = cov.shape[0]
 
         # Initialize fiducial PS
         Cls = self._get_fiducial_Cls()
@@ -99,10 +98,6 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
 
         super().initialize()
 
-    def _get_binning_matrix(self):
-        binning_matrix = super()._get_binning_matrix()
-        return binning_matrix[:self.n_bins, :]
-
     def _get_fiducial_Cls(self):
 
         info_fiducial = {
@@ -130,8 +125,8 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
         }
 
     def _get_data(self):
-        bandpowers = np.loadtxt(self.datapath)[self.sim_number, :self.n_bins]
-        return self.bin_centers[:self.n_bins], bandpowers
+        bandpowers = np.loadtxt(self.datapath)[self.sim_number, :]
+        return self.bin_centers, bandpowers
 
     def _get_theory(self, **params_values):
         cl = self.provider.get_Cl(ell_factor=False)
