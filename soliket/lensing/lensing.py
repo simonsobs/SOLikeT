@@ -17,7 +17,7 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
     install_options = {"download_url": _url}
     data_folder = "LensingLikelihood"
     data_filename = "clkk_binned.txt"
-    cov_filename = "binnedcov.txt"
+    cov_filename = "lensingbinnedcov.txt"
     binning_matrix_filename = "lensing_binning_matrix.txt"
 
     kind = "pp"
