@@ -26,6 +26,10 @@ case it will be up to the Likelihood to cache the results appropriately itself.
 Note that this approach preclude sharing results other than the cosmo object itself between different likelihoods.
 
 Also note lots of things still cannot be done consistently in CCL, so this is far from general.
+
+April 2021:
+-----------
+Second version by PL. Using CCL's newly implemented cosmology calculator. 
 """
 
 # For Cobaya docs see
@@ -36,7 +40,6 @@ import numpy as np
 from typing import Sequence, Union
 from cobaya.theory import Theory
 from cobaya.likelihood import Likelihood
-import pyccl as ccl
 
 
 class CCL(Theory):
@@ -54,6 +57,7 @@ class CCL(Theory):
     #_default_z_sampling[-1] = 1100
 
     def initialize(self):
+        self.ccl = __import__("pyccl")
         self._var_pairs = set()
         self._required_results = {}
 
@@ -138,7 +142,7 @@ class CCL(Theory):
 
         # Create a CCL cosmology object. Because we are giving it background 
         # quantities, it should not depend on the cosmology parameters given
-        cosmo = ccl.CosmologyCalculator(
+        cosmo = self.ccl.CosmologyCalculator(
             Omega_c=Omega_c, Omega_b=Omega_b, h=h, sigma8=0.8, n_s=0.96,
             background={'a': a,
                     'chi': distance,
@@ -213,6 +217,7 @@ class Tester(Likelihood):
     #dcl_file: str = "/Users/Pablo/Code/SOLikeT/soliket/data/simulated_ccl/dcls.npy"
 
     def initialize(self):
+        self.ccl = __import__("pyccl")
         #self.cl_data = np.load(self.cl_file)
         #self.dcl_data = np.load(self.dcl_file)
         #self.ell_data = np.load(self.ell_file)
@@ -238,14 +243,14 @@ class Tester(Likelihood):
         cosmo = self.provider.get_CCL()['cosmo']
         #cosmo = results['theory']
 
-        tracer_g = ccl.NumberCountsTracer(cosmo, has_rsd=False, dndz = self.dndz.T, 
+        tracer_g = self.ccl.NumberCountsTracer(cosmo, has_rsd=False, dndz = self.dndz.T, 
                                             bias =(self.dndz[:,0], pars['b1']*np.ones(len(self.dndz[:,0]))), 
                                             mag_bias = (self.dndz[:,0], pars['s1']*np.ones(len(self.dndz[:,0])))
                                             )
-        tracer_k = ccl.CMBLensingTracer(cosmo, z_source = 1060)
+        tracer_k = self.ccl.CMBLensingTracer(cosmo, z_source = 1060)
 
-        cl_gg = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto) #+ 1e-7
-        cl_kg = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)        
+        cl_gg = self.ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto) #+ 1e-7
+        cl_kg = self.ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)        
         
         #cl_gg, cl_kg = results['theory']
         delta = np.concatenate([cl_gg - self.cl_auto, cl_kg - self.cl_cross])
