@@ -200,8 +200,10 @@ class CCL(Theory):
 class Tester(Likelihood):
     # Cross and auto data
 
-    auto_file: str = 'input/clgg.txt'
-    cross_file: str = 'input/clkg.txt'
+    auto_file: str = 'input/clgg_noiseless.txt'
+    cross_file: str = 'input/clkg_noiseless.txt'
+    #auto_file: str = 'input/clgg.txt'
+    #cross_file: str = 'input/clkg.txt'
     dndz_file: str = 'input/dndz.txt'
 
     params = {'b1': 1, 's1': 0.4} 
@@ -225,7 +227,7 @@ class Tester(Likelihood):
 
         self.ell_cross = data_cross[0]
         self.cl_cross = data_cross[1]
-        self.cl_cross_err = data_cross[2]   
+        self.cl_cross_err = data_cross[2]  
 
     def get_requirements(self):
         return {'CCL': {#"methods": {'theory': self._get_theory},
@@ -242,7 +244,7 @@ class Tester(Likelihood):
                                             )
         tracer_k = ccl.CMBLensingTracer(cosmo, z_source = 1060)
 
-        cl_gg = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto)
+        cl_gg = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto) #+ 1e-7
         cl_kg = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)        
         
         #cl_gg, cl_kg = results['theory']
