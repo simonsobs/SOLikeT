@@ -51,11 +51,9 @@ class CCL(Theory):
     z: Union[Sequence, np.ndarray] = []  # redshift sampling
     extra_args: dict = {}  # extra (non-parameter) arguments passed to ccl.Cosmology()
 
-    #_default_z_sampling = np.linspace(0, 10, 150)
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10**_logz
     _default_z_sampling[0] = 0
-    #_default_z_sampling[-1] = 1100
 
     def initialize(self):
         self._var_pairs = set()
@@ -64,15 +62,12 @@ class CCL(Theory):
     def get_requirements(self):
         # These are currently required to construct a CCL cosmology object.
         # Ultimately CCL should depend only on observable not parameters
-        # 'As' could be substituted by sigma8.
         return {'omch2', 'ombh2'}
 
     def must_provide(self, **requirements):
         # requirements is dictionary of things requested by likelihoods
         # Note this may be called more than once
 
-        # CCL currently has no way to infer the required inputs from the required outputs
-        # So a lot of this is fixed
         if 'CCL' not in requirements:
             return {}
         options = requirements.get('CCL') or {}
@@ -92,10 +87,10 @@ class CCL(Theory):
             # general as placeholder
             self._var_pairs.update(
                 set((x, y) for x, y in
-                    options.get('vars_pairs', [('delta_nonu', 'delta_nonu')])))
+                    options.get('vars_pairs', [('delta_tot', 'delta_tot')])))
 
             needs['Pk_grid'] = {
-                'vars_pairs': self._var_pairs or [('delta_nonu', 'delta_nonu')],
+                'vars_pairs': self._var_pairs or [('delta_tot', 'delta_tot')],
                 'nonlinear': (True, False) if self.nonlinear else False,
                 'z': self.z,
                 'k_max': self.kmax
@@ -182,19 +177,9 @@ class CCL(Theory):
             state['CCL'][required_result] = method(cosmo)
 
     def get_CCL(self):
-        """
-        Get dictionary of CCL computed quantities.
-        results['cosmo'] contains the initialized CCL Cosmology object.
-        Other entries are computed by methods passed in as the requirements
-
-        :return: dict of results
-        """
         return self._current_state['CCL']
 
 class CrossCorrelationLikelihood(GaussianLikelihood):
-    # Cross and auto data
-    # Requires some 
-
     auto_file: str = 'soliket/data/xcorr_simulated/clgg_noiseless.txt'
     cross_file: str = 'soliket/data/xcorr_simulated/clkg_noiseless.txt'
     dndz_file: str = 'soliket/data/xcorr_simulated/dndz.txt'
