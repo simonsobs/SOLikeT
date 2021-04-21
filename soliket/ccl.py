@@ -40,12 +40,7 @@ import numpy as np
 from typing import Sequence, Union
 from cobaya.theory import Theory
 from cobaya.likelihood import Likelihood
-try:
-    import pyccl as ccl
-except ImportError:
-    print('pyCCL is not installed')
-    pass
-
+import pyccl as ccl
 
 
 class CCL(Theory):
@@ -206,25 +201,17 @@ class CCL(Theory):
         """
         return self._current_state['CCL']
 
-class Tester(Likelihood):
+class CrossCorrelationLikelihood(Likelihood):
     # Cross and auto data
+    # Requires some 
 
-    auto_file: str = 'input/clgg_noiseless.txt'
-    cross_file: str = 'input/clkg_noiseless.txt'
-    #auto_file: str = 'input/clgg.txt'
-    #cross_file: str = 'input/clkg.txt'
-    dndz_file: str = 'input/dndz.txt'
+    auto_file: str = 'soliket/data/xcorr_simulated/clgg_noiseless.txt'
+    cross_file: str = 'soliket/data/xcorr_simulated/clkg_noiseless.txt'
+    dndz_file: str = 'soliket/data/xcorr_simulated/dndz.txt'
 
     params = {'b1': 1, 's1': 0.4} 
 
-    #ell_file: str = "/Users/Pablo/Code/SOLikeT/soliket/data/simulated_ccl/ell.npy"
-    #cl_file: str = "/Users/Pablo/Code/SOLikeT/soliket/data/simulated_ccl/cls.npy"
-    #dcl_file: str = "/Users/Pablo/Code/SOLikeT/soliket/data/simulated_ccl/dcls.npy"
-
     def initialize(self):
-        #self.cl_data = np.load(self.cl_file)
-        #self.dcl_data = np.load(self.dcl_file)
-        #self.ell_data = np.load(self.ell_file)
         data_auto = np.loadtxt(self.auto_file)
         data_cross = np.loadtxt(self.cross_file)
         self.dndz = np.loadtxt(self.dndz_file)
@@ -239,13 +226,11 @@ class Tester(Likelihood):
         self.cl_cross_err = data_cross[2]  
 
     def get_requirements(self):
-        return {'CCL': {#"methods": {'theory': self._get_theory},
-                        "kmax": 10,
+        return {'CCL': {"kmax": 10,
                         "nonlinear": True}}
 
     def logp(self, **pars):
         cosmo = self.provider.get_CCL()['cosmo']
-        #cosmo = results['theory']
 
         tracer_g = ccl.NumberCountsTracer(cosmo, has_rsd=False, dndz = self.dndz.T, 
                                             bias =(self.dndz[:,0], pars['b1']*np.ones(len(self.dndz[:,0]))), 
@@ -256,7 +241,6 @@ class Tester(Likelihood):
         cl_gg = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto) #+ 1e-7
         cl_kg = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)        
         
-        #cl_gg, cl_kg = results['theory']
         delta = np.concatenate([cl_gg - self.cl_auto, cl_kg - self.cl_cross])
         sigma = np.concatenate([self.cl_auto_err, self.cl_cross_err])
         chi2 = delta**2/sigma**2.
