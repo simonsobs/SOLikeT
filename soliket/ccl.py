@@ -140,52 +140,42 @@ class CCL(Theory):
         #growth = ccl.background.growth_factor(cosmo, a)
         #fgrowth = ccl.background.growth_rate(cosmo, a)
 
-        # Create a CCL cosmology object. Because we are giving it background 
-        # quantities, it should not depend on the cosmology parameters given
-        cosmo = ccl.CosmologyCalculator(
-            Omega_c=Omega_c, Omega_b=Omega_b, h=h, sigma8=0.8, n_s=0.96,
-            background={'a': a,
-                    'chi': distance,
-                    'h_over_h0': E_of_z},
-        )
 
         if self.kmax:
             for pair in self._var_pairs:
                 # Get the matter power spectrum:
                 k, z, Pk_lin = self.provider.get_Pk_grid(var_pair=pair, nonlinear=False)
-                fs8 = self.provider.get_fsigma8(self.z)
-                s8 = self.provider.get_sigma8_z(self.z)
-                growth = np.mean(Pk_lin/Pk_lin[0], axis = -1)
-                fgrowth = fs8/s8
-                growth = np.flip(growth)
-                fgrowth = np.flip(fgrowth)
-
-                # Undo h units
-                #k = kh*h
-                #Pk_lin = Pk_lin/h**3.
-
-                # np.flip(arr, axis=0) flips the rows of arr, thus making Pk with z
-                # in descending order.
                 Pk_lin = np.flip(Pk_lin, axis=0)
-                cosmo._init_pklin({'a': a,
-                        'k': k,
-                        'delta_matter:delta_matter': Pk_lin})
-                cosmo._init_growth({'a': a,
-                        'growth_factor': growth,
-                        'growth_rate': fgrowth})
 
                 if self.nonlinear:
                     _, z, Pk_nonlin = self.provider.get_Pk_grid(var_pair=pair, nonlinear=True)
                     Pk_nonlin = np.flip(Pk_nonlin, axis=0)
-                    #cosmo._set_nonlin_power_from_arrays(a, k, Pk_nonlin)
 
-                    # Undo h units
-                    #Pk_nonlin = Pk_nonlin/h**3.
-
-                    cosmo._init_pknl({'a': a,
+                    # Create a CCL cosmology object. Because we are giving it background 
+                    # quantities, it should not depend on the cosmology parameters given
+                    cosmo = ccl.CosmologyCalculator(
+                        Omega_c=Omega_c, Omega_b=Omega_b, h=h, sigma8=0.8, n_s=0.96,
+                        background={'a': a,
+                                'chi': distance,
+                                'h_over_h0': E_of_z},
+                        pk_linear={'a': a,
                         'k': k,
-                        'delta_matter:delta_matter': Pk_nonlin}, 
-                        has_nonlin_model = False)
+                        'delta_matter:delta_matter': Pk_lin}, 
+                        pk_nonlin={'a': a,
+                        'k': k,
+                        'delta_matter:delta_matter': Pk_nonlin}
+                    )
+                
+                else:
+                    cosmo = ccl.CosmologyCalculator(
+                        Omega_c=Omega_c, Omega_b=Omega_b, h=h, sigma8=0.8, n_s=0.96,
+                        background={'a': a,
+                                'chi': distance,
+                                'h_over_h0': E_of_z},
+                        pk_linear={'a': a,
+                        'k': k,
+                        'delta_matter:delta_matter': Pk_lin}
+                    )                    
 
         state['CCL'] = {'cosmo': cosmo}
         for required_result, method in self._required_results.items():
