@@ -6,6 +6,7 @@ from .mflike import MFLike
 try:
     import pyccl as ccl
     from .ccl import CCL
+    from .cross_correlation import CrossCorrelationLikelihood
 except ImportError:
     print('Skipping CCL module as pyCCL is not installed')
     pass
