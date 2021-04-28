@@ -10,7 +10,6 @@ def get_demo_lensing_model(theory):
         info_yaml = r"""
         likelihood:
             soliket.LensingLiteLikelihood:
-                sim_number: 1
                 stop_at_error: True
 
         theory:
@@ -32,7 +31,6 @@ def get_demo_lensing_model(theory):
         info_yaml = r"""
         likelihood:
             soliket.LensingLiteLikelihood:
-                sim_number: 1
                 stop_at_error: True
 
         theory:
