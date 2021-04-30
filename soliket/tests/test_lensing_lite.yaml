@@ -4,8 +4,7 @@ debug: True
 
 likelihood:
   soliket.LensingLiteLikelihood:
-    sim_number: 1
-    stop_at_error: True
+      stop_at_error: True
 
 params:
   # Sampled

@@ -13,9 +13,10 @@ setup(
         "soliket": [
             "*.yaml",
             "*.bibtex",
-            "data/simulated*/*.txt",
+            # "data/simulated*/*.txt",
             "clusters/data/*",
             "clusters/data/selFn_equD56/*",
+            "lensing/data/*.txt",
         ]
     },
     install_requires=[
