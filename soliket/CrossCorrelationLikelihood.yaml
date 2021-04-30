@@ -1,3 +1,7 @@
+auto_file: soliket/data/xcorr_simulated/clgg_noiseless.txt
+cross_file: soliket/data/xcorr_simulated/clkg_noiseless.txt
+dndz_file: soliket/data/xcorr_simulated/dndz.txt
+
 params:
   b1: 
     prior:

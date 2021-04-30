@@ -11,10 +11,6 @@ import pyccl as ccl
 
 class CrossCorrelationLikelihood(GaussianLikelihood):
     def initialize(self):
-        self.auto_file: str = 'soliket/data/xcorr_simulated/clgg_noiseless.txt'
-        self.cross_file: str = 'soliket/data/xcorr_simulated/clkg_noiseless.txt'
-        self.dndz_file: str = 'soliket/data/xcorr_simulated/dndz.txt'
-
         self.dndz = np.loadtxt(self.dndz_file)
 
         x,y,dy = self._get_data()
