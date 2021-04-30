@@ -105,6 +105,7 @@ class MFLikeTest(unittest.TestCase):
         mflike_type = self.get_mflike_type(as_string=True)
 
         params = dict(cosmo_params)
+        params['bandint_shift_93'] = 0.
         # params['a_tSZ'] = 3.3
 
         info = {
@@ -116,10 +117,14 @@ class MFLikeTest(unittest.TestCase):
             },
             "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1},
                                 "stop_at_error": True}},
-            "params": cosmo_params,
+            "params": params,
             "modules": packages_path,
             "debug": True,
         }
+
+        if not self.orig:
+            info['theory']['soliket.LAT'] = {'stop_at_error': True}
+
         from cobaya.model import get_model
 
         model = get_model(info)
