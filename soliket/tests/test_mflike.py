@@ -105,7 +105,8 @@ class MFLikeTest(unittest.TestCase):
         mflike_type = self.get_mflike_type(as_string=True)
 
         params = dict(cosmo_params)
-        params['bandint_shift_93'] = 0.
+        if not self.orig:
+            params['bandint_shift_93'] = 0.
         # params['a_tSZ'] = 3.3
 
         info = {

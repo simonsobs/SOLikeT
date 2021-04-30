@@ -26,10 +26,10 @@ class Instrument(Theory):
 
 
 class LAT(Instrument):
-    bandint_width = 0.3
-    bandint_nstep = 100
+    bandint_width = 0
+    bandint_nstep = 1
 
-    freqs = [93, 145, 225]
+    freqs = [145,225,93]
     params = dict(bandint_shift_93=0.0, bandint_shift_145=0.0, bandint_shift_225=0.0)
 
     def _calculate_bandint_freqs(self, **params_values):
@@ -60,4 +60,6 @@ class LAT(Instrument):
             for ifr, fr in enumerate(self.freqs):
                 bandpar = "bandint_shift_" + str(fr)
                 self.bandint_freqs[ifr] = fr + params_values[bandpar]
+
+        return self.bandint_freqs  
 
