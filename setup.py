@@ -26,7 +26,7 @@ setup(
         "cobaya",
         "sacc",
         "pyccl",
-        "fgspectra @ git+https://github.com/simonsobs/fgspectra@master#egg=fgspectra",
+        # "fgspectra @ git+https://github.com/simonsobs/fgspectra@master#egg=fgspectra",
         # "mflike @ git+https://github.com/simonsobs/LAT_MFLike"
     ],
     test_suite="soliket.tests",
