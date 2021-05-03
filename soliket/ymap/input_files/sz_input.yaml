@@ -20,7 +20,7 @@ theory:
 
   soliket.ymap.classy_sz:
   # classy:
-     path: '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
+     # path: '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
      extra_args:
           non linear: 'halofit'
           output : 'tSZ_1h'
