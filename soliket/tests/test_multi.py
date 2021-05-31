@@ -19,6 +19,7 @@ def test_multi():
     fg_params = {"a_tSZ": {"prior": {"min": 3.0, "max": 3.6}}, "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}}}
     mflike_params = {**cosmo_params, **nuisance_params}
     mflike_params.update(fg_params)
+    mflike_params['bandint_shift_93'] = 0.
 
     lensing_params = {**cosmo_params}
 
@@ -33,12 +34,14 @@ def test_multi():
         "theory": {"camb": camb_options},
         "params": {**mflike_params},
     }
+    info['theory']['soliket.LAT'] = {'stop_at_error': True}
 
     info1 = {
         "likelihood": {"soliket.mflike.MFLike": mflike_options},
         "theory": {"camb": camb_options},
         "params": {**mflike_params},
     }
+    info1['theory']['soliket.LAT'] = {'stop_at_error': True}
 
     info2 = {
         "likelihood": {"soliket.LensingLikelihood": lensing_options},
