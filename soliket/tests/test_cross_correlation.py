@@ -29,4 +29,5 @@ def test_cross_correlation():
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
-    assert np.isclose(loglikes[0], 87, atol = 3., rtol = 0.)
+    assert np.isclose(loglikes[0], 88.2, atol = .2, rtol = 0.)
+
