@@ -4,3 +4,4 @@ from .ps import PSLikelihood, BinnedPSLikelihood
 from .clusters import ClusterLikelihood
 from .mflike import MFLike
 from .ccl import CCL
+from .instrument import LAT

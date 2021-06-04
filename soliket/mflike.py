@@ -67,6 +67,8 @@ class MFLike(GaussianLikelihood, _InstallableLikelihood):
         self.expected_params = ["a_tSZ", "a_kSZ", "a_p", "beta_p",
                                 "a_c", "beta_c", "n_CIBC", "a_s", "T_d"]
 
+        self.bandint_freqs = None
+
     # def get_helper_theories(self):
     #     """
     #     Foreground model is a helper theory
@@ -90,6 +92,7 @@ class MFLike(GaussianLikelihood, _InstallableLikelihood):
 
     def get_requirements(self):
         reqs = dict(Cl={k: max(c, 9000) for k, c in self.lcuts.items()})
+        reqs['bandint_freqs'] = {}
         # reqs["foreground_model"] = {}
         return reqs
 
@@ -371,9 +374,13 @@ class MFLike(GaussianLikelihood, _InstallableLikelihood):
         return ps_vec
 
     def _get_foreground_model(self, fg_params):
+        if np.any(self.bandint_freqs == None):
+            self.bandint_freqs = self.provider.get_result('bandint_freqs')
+
         return get_foreground_model(fg_params=fg_params,
                                     fg_model=self.foregrounds,
                                     frequencies=self.freqs,
+                                    bandint_freqs=self.bandint_freqs, 
                                     ell=self.l_bpws,
                                     requested_cls=self.requested_cls)
         
@@ -381,7 +388,7 @@ class MFLike(GaussianLikelihood, _InstallableLikelihood):
 # Standalone function to return the foregroung model
 # given the nuisance parameters
 def get_foreground_model(fg_params, fg_model,
-                         frequencies, ell,
+                         frequencies, bandint_freqs, ell,
                          requested_cls=["tt", "te", "ee"]):
     normalisation = fg_model["normalisation"]
     nu_0 = normalisation["nu_0"]
@@ -405,20 +412,20 @@ def get_foreground_model(fg_params, fg_model,
 
     model = {}
     model["tt", "kSZ"] = fg_params["a_kSZ"] * ksz(
-        {"nu": frequencies},
+        {"nu": bandint_freqs},
         {"ell": ell, "ell_0": ell_0})
     model["tt", "cibp"] = fg_params["a_p"] * cibp(
-        {"nu": frequencies, "nu_0": nu_0,
+        {"nu": bandint_freqs, "nu_0": nu_0,
          "temp": fg_params["T_d"], "beta": fg_params["beta_p"]},
         {"ell": ell, "ell_0": ell_0, "alpha": 2})
     model["tt", "radio"] = fg_params["a_s"] * radio(
-        {"nu": frequencies, "nu_0": nu_0, "beta": -0.5 - 2},
+        {"nu": bandint_freqs, "nu_0": nu_0, "beta": -0.5 - 2},
         {"ell": ell, "ell_0": ell_0, "alpha": 2})
     model["tt", "tSZ"] = fg_params["a_tSZ"] * tsz(
-        {"nu": frequencies, "nu_0": nu_0},
+        {"nu": bandint_freqs, "nu_0": nu_0},
         {"ell": ell, "ell_0": ell_0})
     model["tt", "cibc"] = fg_params["a_c"] * cibc(
-        {"nu": frequencies, "nu_0": nu_0,
+        {"nu": bandint_freqs, "nu_0": nu_0,
          "temp": fg_params["T_d"], "beta": fg_params["beta_c"]},
         {"ell": ell, "ell_0": ell_0, "alpha": 2 - fg_params["n_CIBC"]})
 

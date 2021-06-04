@@ -10,6 +10,7 @@ import camb
 import mflike
 import soliket
 
+import numpy as np
 
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "LAT_packages"
@@ -96,6 +97,12 @@ class MFLikeTest(unittest.TestCase):
                     },
                 }
             )
+
+            if not self.orig:
+#                my_mflike.bandint_freqs = np.array([145,225,93])
+                params_shifts = dict(bandint_shift_93=0.0, bandint_shift_145=0.0, bandint_shift_225=0.0)
+                instr = soliket.LAT()
+                my_mflike.bandint_freqs = instr._calculate_bandint_freqs(**params_shifts) 
             
             loglike = my_mflike.loglike(cl_dict, **nuisance_params)
 
@@ -105,6 +112,8 @@ class MFLikeTest(unittest.TestCase):
         mflike_type = self.get_mflike_type(as_string=True)
 
         params = dict(cosmo_params)
+        if not self.orig:
+            params['bandint_shift_93'] = 0.
         # params['a_tSZ'] = 3.3
 
         info = {
@@ -116,10 +125,14 @@ class MFLikeTest(unittest.TestCase):
             },
             "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1},
                                 "stop_at_error": True}},
-            "params": cosmo_params,
+            "params": params,
             "modules": packages_path,
             "debug": True,
         }
+
+        if not self.orig:
+            info['theory']['soliket.LAT'] = {'stop_at_error': True}
+
         from cobaya.model import get_model
 
         model = get_model(info)
