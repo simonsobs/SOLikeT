@@ -112,3 +112,11 @@ soliket/ymap/notebooks/*
 soliket/ymap/input_files/total-planck-collab-15_benchmark_montepython-3.3_evaluate_trispectrum.input.yaml
 soliket/ymap/input_files/total-planck-collab-15_benchmark_montepython-3.3.input.yaml
 soliket/ymap/input_files/sz_ps_template_evaluate_trispectrum_and_sz_template.yaml
+
+#cluster counts
+dndzdm_bins_m_center.txt
+dndzdy.txt
+dndzdy_bins_y_center.txt
+dndzdy_bins_z_center.txt
+soliket/sz_binned_cluster_counts/chains
+soliket/sz_binned_cluster_counts/data

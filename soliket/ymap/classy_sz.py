@@ -25,10 +25,10 @@ class classy_sz(classy):
         self.derived_extra = []
         self.log.info("Initialized!")
 
-        # class_sz default params for lkl
-        self.extra_args["output"] = 'tSZ_1h'
-        self.extra_args["multipoles_sz"] = 'P15'
-        self.extra_args['nlSZ'] = 18
+        # # class_sz default params for lkl
+        # self.extra_args["output"] = 'tSZ_1h'
+        # self.extra_args["multipoles_sz"] = 'P15'
+        # self.extra_args['nlSZ'] = 18
 
 
 
@@ -41,6 +41,16 @@ class classy_sz(classy):
                     method="cl_sz", # name of the method in classy.pyx
                     args_names=[],
                     args=[])
+
+        if "sz_binned_cluster_counts" in requirements:
+            # make sure cobaya still runs as it does for standard classy
+            requirements.pop("sz_binned_cluster_counts")
+            # specify the method to collect the new observable
+            self.collectors["sz_binned_cluster_counts"] = Collector(
+                    method="dndzdy_theoretical", # name of the method in classy.pyx
+                    args_names=[],
+                    args=[])
+
         super().must_provide(**requirements)
 
     # get the required new observable
@@ -49,9 +59,18 @@ class classy_sz(classy):
         cls = deepcopy(self._current_state["Cl_sz"])
         return cls
 
+
+    # get the required new observable
+    def get_sz_binned_cluster_counts(self):
+        cls = {}
+        cls = deepcopy(self._current_state["sz_binned_cluster_counts"])
+        return cls
+
+
     @classmethod
     def is_installed(cls, **kwargs):
         return load_module('classy_sz')
+
 
 # this just need to be there as it's used to fill-in self.collectors in must_provide:
 class Collector(NamedTuple):
