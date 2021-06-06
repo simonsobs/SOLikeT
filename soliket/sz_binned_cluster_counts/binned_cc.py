@@ -15,14 +15,14 @@ from typing import Optional, Sequence
 from pkg_resources import resource_filename
 from astropy.io import fits
 
-path_to_catalogue = '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz_external_data_and_scripts/MFMF_SOSim_3freq_tiles/'
-
-#"fits_image_filename = fits.util.get_testdata_filepath(path_to_catalogue+'MFMF_SOSim_3freq_tiles_M500.fits')
-tcat = path_to_catalogue+'MFMF_SOSim_3freq_tiles_M500.fits'
-list = fits.open(tcat)
-data = list[1].data
-z = data.field("redshift")
-snr = data.field("SNR")
+# path_to_catalogue = '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz_external_data_and_scripts/MFMF_SOSim_3freq_tiles/'
+#
+# #"fits_image_filename = fits.util.get_testdata_filepath(path_to_catalogue+'MFMF_SOSim_3freq_tiles_M500.fits')
+# tcat = path_to_catalogue+'MFMF_SOSim_3freq_tiles_M500.fits'
+# list = fits.open(tcat)
+# data = list[1].data
+# z = data.field("redshift")
+# snr = data.field("SNR")
 
 
 
