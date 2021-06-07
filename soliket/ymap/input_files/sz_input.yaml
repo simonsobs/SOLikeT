@@ -2,31 +2,31 @@ output: /Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps
 
 likelihood:
   soliket.ymap.ymap_ps.SZLikelihood:
-    sz_data_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/data/planck_2015_ymap/"
-    ymap_ps_file: "data_ps-ell-y2-erry2_total-planck-collab-15.txt"
-    f_sky: 0.47 #sky_fraction of Planck y-map (communicated by Barbara Commis)
-    trispectrum_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/"
-    trispectrum_ref: "tSZ_trispectrum_ref_total-planck-collab-15_step_1.txt"
+    # sz_data_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/data/planck_2015_ymap/"
+    # ymap_ps_file: "data_ps-ell-y2-erry2_total-planck-collab-15.txt"
+    # f_sky: 0.47 #sky_fraction of Planck y-map (communicated by Barbara Commis)
+    # trispectrum_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/"
+    # trispectrum_ref: "tSZ_trispectrum_ref_total-planck-collab-15_step_1.txt"
 
 
 
 theory:
   soliket.ymap.ymap_ps.SZForegroundTheory:
-    speed: 2
-    foreground_data_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/data/planck_2015_ymap"
-    foreground_data_file: "data_fg-ell-cib_rs_ir_cn-total-planck-collab-15.txt"
+    # speed: 2
+    # foreground_data_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/data/planck_2015_ymap"
+    # foreground_data_file: "data_fg-ell-cib_rs_ir_cn-total-planck-collab-15.txt"
 
 
 
   soliket.ymap.classy_sz:
      extra_args:
-          non linear: 'halofit'
+
           output : 'tSZ_1h'
           units for tSZ spectrum : 'dimensionless'
           component of tSZ power spectrum : 'total'
-          path_to_class : '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz'
-          write sz results to files : 'no'
+          # write sz results to files : 'no'
           mass function : 'M500'
+          integrate_wrt_m500c : 1
           pressure profile : 'A10'
           multipoles_sz : 'P15'
           nlSZ : 18
@@ -37,6 +37,13 @@ theory:
           z1SZ : 1e-5
           z2SZ : 4.
           z_max_pk : 4.
+
+          non linear: 'halofit'
+          k_per_decade_class_sz : 20.
+          k_min_for_pk_class_sz : 1e-3
+          k_max_for_pk_class_sz : 1e1
+
+          P_k_max_h/Mpc : 1e1
 
           N_ur : 0.00641
           N_ncdm : 1
@@ -49,19 +56,17 @@ theory:
           input_verbose : 0
           background_verbose: 0
           perturbations_verbose: 0
-          sz_verbose: 0
+          sz_verbose: 3
           # following parameters (50,50) give less than 1% difference w.r.t. ndimSZ = 100 and n_arraySZ=1000
           # [relevant for tabulation of sigma(R,z)]
           # ndimSZ: 50
           # n_arraySZ: 50
           #write parameters : 'yeap'
 
-          #integration method (mass) : 'gsl_qags'
 
-
-          create reference trispectrum for likelihood code: 'NO'
-          append_name_trispectrum_ref: 'total-planck-collab-15_step_1'
-          path to reference trispectrum for likelihood code: '/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/'
+          # create reference trispectrum for likelihood code: 'NO'
+          # append_name_trispectrum_ref: 'total-planck-collab-15_step_1'
+          # path to reference trispectrum for likelihood code: '/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/'
 
 
 

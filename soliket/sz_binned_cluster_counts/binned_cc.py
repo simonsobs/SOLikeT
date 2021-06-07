@@ -42,6 +42,7 @@ class binned_cc_likelihood(Likelihood):
 
         tcat = os.path.join(self.data_directory, self.tcat_file)
         list = fits.open(tcat)
+        data = list[1].data
         z = data.field("redshift")
         snr = data.field("SNR")
         self.z = z[snr > self.snrcut]
@@ -72,7 +73,7 @@ class binned_cc_likelihood(Likelihood):
     def logp(self, **params_values):
         theory = self._get_theory(**params_values)
         dNdzdy_theoretical,z_edges,log10y_edges = theory
-        dNdzdy_catalog, zedges, yedges = np.histogram2d(z,np.log10(snr), bins=[z_edges,log10y_edges])
+        dNdzdy_catalog, zedges, yedges = np.histogram2d(self.z,np.log10(self.snr), bins=[z_edges,log10y_edges])
         SZCC_Cash = 0.
         N_z,N_y = np.shape(dNdzdy_theoretical)
         for index_z in range(N_z):
