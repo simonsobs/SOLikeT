@@ -5,7 +5,7 @@ import numpy as np
 import math as m
 import time as t
 import os
-#from astropy.io import fits # will be used eventually!
+from astropy.io import fits # will be used eventually!
 import sys
 import multiprocessing
 from functools import partial
@@ -27,16 +27,15 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
     test_Q_file: Optional[str] = None
     test_rms_file: Optional[str] = None
     cat_file: Optional[str] = None
-    mock_file : Optional[str] = None
-    mock2D_file : Optional[str] = None
     Q_file: Optional[str] = None
-    meanQ_file: Optional[str] = None
-    theta_file: Optional[str] = None
+    tile_file: Optional[str] = None
     rms_file: Optional[str] = None
-    mock_test: Optional[str] = None
     choose_dim: Optional[str] = None
     single_tile_test: Optional[str] = None
     Q_optimise: Optional[str] = None
+
+    params = {"scatter_sz":None, "bias_sz":None}
+
 
     def initialize(self):
 
@@ -44,20 +43,14 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         print('\r :::::: reading catalogue')
 
         self.qcut = 5.
-        self.scatter = 0.2
-        print("\r intrinsic scatter = ", self.scatter)
-
-        # redshift bin for N(z)
-        zarr = np.linspace(0, 2, 21)
-        if zarr[0] == 0 :zarr[0] = 1e-5
-        self.zarr = zarr
-        print(" Nz for this analysis = ", len(zarr) - 1)
+        #self.scatter = 0.2
+        #print("\r intrinsic scatter = ", self.scatter)
 
         # redshift bin for P(z,k)
-        zpk = np.linspace(0, 2, 141)
+        zpk = np.linspace(0, 2.5, 141)
         if zpk[0] == 0. : zpk[0] = 1e-5
         self.zpk = zpk
-        print(" Nz for matter power spectrum = ", len(zpk))
+        #print(" Nz for matter power spectrum = ", len(zpk))
 
         self.k = np.logspace(-4, np.log10(5), 200, endpoint=False)
         #self.k = np.logspace(-4, np.log10(5), 50, endpoint=False) # for comparison with f90 output
@@ -70,9 +63,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         self.marr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
 
         single_tile = self.single_tile_test
-        Q_opt = self.Q_optimise
         dimension = self.choose_dim
-
+        Q_opt = self.Q_optimise
         self.data_directory = self.data_path
 
         if single_tile == 'yes':
@@ -87,67 +79,71 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         else:
             print(" 1D likelihood as a function of redshift")
 
-        cat = np.loadtxt(os.path.join(self.data_directory, self.datafile))
-        zcat = cat[:,0]
-        qcat = cat[:,2]
+        list = fits.open(os.path.join(self.data_directory, self.datafile))
+        data = list[1].data
+        zcat = data.field("redshift")
+        qcat = data.field("SNR") # fixed_SNR for old catalogue
+        qcut = self.qcut
+        #ycat = data.field("y_c")
+        #ycat = self.ycat
 
         Ncat = len(zcat)
         print('\r Number of clusters in catalogue = ', Ncat)
-        print('\r SNR cut = ', self.qcut)
+        print('\r SNR cut = ', qcut)
 
-        znew = []
-        snrnew = []
-        i = 0
-        for i in range(Ncat):
-            if qcat[i] > self.qcut:
-                znew.append(zcat[i])
-                snrnew.append(qcat[i])
-
-        z = np.array(znew)
-        snr = np.array(snrnew)
+        z = zcat[qcat >= qcut]
+        snr = qcat[qcat >= qcut]
 
         Ncat = len(z)
         print('\r Number of clusters above the SNR cut = ', Ncat)
+        print('\r The highest redshift = %.2f' %z.max())
+
+        # redshift bin for N(z)
+        zarr = np.linspace(0, 2.5, 26) # [0, 0.1, 0.2, ... 2.3, 2.4, 2.5] # 26
+        if zarr[0] == 0 :zarr[0] = 1e-5
+        self.zarr = zarr
+        print("\r Number of redshift bins = ", len(zarr)-1) # 25 bins
 
        # 1D catalogue
-        zmin = zarr[0]
-        dz = zarr[1] - zarr[0]
+        zmin = 0.
+        dz = zarr[2] - zarr[1]
         zmax = zmin + dz
         delNcat = np.zeros(len(zarr))
 
         i = 0
         j = 0
-        for i in range(len(zarr)):
-            for j in range(Ncat):
-                if z[j] >= zmin and z[j] < zmax :
+        for i in range(len(zarr)-2): # i = 0, 1, ... 22, 23
+            for j in range(Ncat): # filling redshift bins except for the last bin
+                if z[j] >= zmin and z[j] < zmax : # [0, 0.1] [0.1, 0.2] ... [2.3, 2.4]
                     delNcat[i] += 1.
             zmin = zmin + dz
             zmax = zmax + dz
 
+        i = len(zarr) - 2 # i = 24, the last bin contains all z greater than what in the previous bin
+        zmin = zmax - dz # last bin is supposed to contain [2.4, 2.5] but this will be [2.4, -]
+        #print(i, zmin)
+        j = 0
+        for j in range(Ncat):
+            if z[j] >= zmin :
+                delNcat[i] += 1
+
         print("\r Catalogue N")
-        print("", delNcat)
+        for i in range(len(zarr)):
+            print(i, delNcat[i])
+        print(delNcat.sum())
+        #print("", np.array(delNcat[:-1], dtype=int))
 
-        if self.mock_test == 'yes' and dimension == "1D" :
-            self.datafile_mock = self.mock_file
-            delNmock = np.loadtxt(os.path.join(self.data_directory, self.datafile_mock))
-            self.delNcat = zarr, delNmock
-            print("\r Using mock catalogue")
-            print("\r Mock catalogue N")
-            print(delNmock)
-        else:
-            self.delNcat = zarr, delNcat
+        self.delNcat = zarr, delNcat
+
+        #np.logspace(np.log10(snrcut), np.log10(round(snr.max())+1), 10)
 
 
-        # 2D catalogue
-        logqmin = 0.6  # log10(4)  = 0.602 --- min snr = 4.11
-        logqmax = 1.6  # log10(35) = 1.544 --- max snr = 34.73
-        dlogq = 0.25
+      # 2D catalogue
+        logqmin = 0.6 #np.log10(qcut)  # min snr = 5   log10(5) = 0.69897
+        logqmax = 1.6  # max snr = 63.92709419
+        dlogq = 0.25 #0.1
 
         Nq = int((logqmax - logqmin)/dlogq) + 1  ########
-
-        if dimension == "2D":
-            print("\r Number of SNR bins = ", Nq+1)
-
         qi = logqmin + dlogq/2.
         qarr = np.zeros(Nq+1)
 
@@ -156,18 +152,22 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             qarr[i] = qi
             qi = qi + dlogq
 
-        #if self.choose_dim == "2D":
-        #    print("\r Center of SNR bins = ", 10**qarr)
+        if dimension == "2D":
+            print("\r Number of SNR bins = ", Nq)
+            print("\r Edges of SNR bins = ", 10**(qarr- dlogq/2.))
 
-        zmin = zarr[0]
+        #print(10**qarr)
+
+        #qarr = np.logspace(np.log10(snrcut), np.log10(round(snr.max())+1), 10)
+
+        zmin = 0.
         zmax = zmin + dz
 
         delN2Dcat = np.zeros((len(zarr), Nq+1))
 
         i = 0
         j = 0
-        k = 0
-        for i in range(len(zarr)):
+        for i in range(len(zarr)-1):
            for j in range(Nq):
                 qmin = qarr[j] - dlogq/2.
                 qmax = qarr[j] + dlogq/2.
@@ -178,7 +178,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                     if z[k] >= zmin and z[k] < zmax and snr[k] >= qmin and snr[k] < qmax :
                         delN2Dcat[i,j] += 1
 
-           j = Nq + 1 # the last bin contains all S/N greater than what in the previous bin
+           j = Nq - 1 # the last bin contains all S/N greater than what in the previous bin
            qmin = qmax
 
            for k in range(Ncat):
@@ -188,71 +188,177 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
            zmin = zmin + dz
            zmax = zmax + dz
 
+        for k in range(Ncat): # the last bin contains all z greater than what in the previous bin
+            for j in range(Nq): # last bin is supposed to contain [2.4, 2.5] but this will be [2.4, -]
+                 qmin = qarr[j] - dlogq/2.
+                 qmax = qarr[j] + dlogq/2.
+                 qmin = 10.**qmin
+                 qmax = 10.**qmax
+                 if z[k] >= zarr[-1] and snr[k] >= qmin and snr[k] < qmax :
+                     delN2Dcat[len(zarr)-2,j] += 1
+
+
         if dimension == "2D":
-            print("\r Catalogue N")
+            print("\r Catalogue N in SNR bins")
             j = 0
             for j in range(Nq+1):
                     print("", j, delN2Dcat[:,j].sum())
+
+        print(np.array(delN2Dcat[:-1,:-1], dtype=int))
+        print(delN2Dcat.sum())
 
         self.Nq = Nq
         self.qarr = qarr
         self.dlogq = dlogq
 
-        if self.mock_test == 'yes' and dimension == "2D" :
-            self.datafile_mock = self.mock2D_file
-            delN2Dmock = np.loadtxt(os.path.join(self.data_directory, self.datafile_mock))
-            self.delN2Dcat = zarr, qarr, delN2Dmock
-            print("\r Using mock catalogue N")
-            print("\r Mock catalogue N (2D)")
-            j = 0
-            for j in range(Nq+1):
-                    print(j, delN2Dmock[:,j].sum())
-        else:
-            self.delN2Dcat = zarr, qarr, delN2Dcat
+        self.delN2Dcat = zarr, qarr, delN2Dcat
+
+
+
+
+
 
         print('\r :::::: loading files describing selection function')
-        print('\r :::::: reading theta and Q')
-        if single_tile =='yes' or Q_opt == 'yes':
-            self.datafile_Q = self.test_Q_file if single_tile == 'yes' else self.meanQ_file
-            file_Q = np.loadtxt(os.path.join(self.data_directory, self.datafile_Q))
-            self.tt500 = file_Q[:,0]
-            self.Q = file_Q[:,1]
-            print("\r Number of thetas = ", len(self.tt500))
-            if single_tile == 'yes':
-                print("\r Number of Q function = ", len(file_Q[0])-1)
-            else:
-                print("\r Number of Q function = ", len(file_Q[0])-1)
-                print("\r Using one averaged Q function for optimisation")
+        print('\r :::::: reading Q as a function of theta')
+        if single_tile =='yes':
+            self.datafile_Q = self.test_Q_file
+            list = fits.open(os.path.join(self.data_directory, self.datafile_Q))
+            data = list[1].data
+            self.tt500 = data.field("theta500Arcmin")
+            self.Q = data.field("PRIMARY")
+            assert len(self.tt500) == len(self.Q)
+            print("\r Number of Q function = ", self.Q.ndim)
 
         else:
-            self.datafile_theta = self.theta_file
-            self.tt500 = np.loadtxt(os.path.join(self.data_directory, self.datafile_theta))
+            tilefile = np.genfromtxt(os.path.join(self.data_directory, self.tile_file), dtype=str)
+            tilename = tilefile[:,0]
+            Nt = len(tilename)
+            print("\r Number of tiles = ", Nt)
+
             self.datafile_Q = self.Q_file
-            file_Q = np.loadtxt(os.path.join(self.data_directory, self.datafile_Q))
-            NQ = len(file_Q[0])
-            print("\r Number of thetas = ", len(self.tt500))
-            print("\r Number of Q functions = ", NQ)
-            i = 0
-            self.Q = np.zeros((len(self.tt500), NQ))
-            for i in range(NQ):
-                self.Q[:,i] = file_Q[:,i]
+            list = fits.open(os.path.join(self.data_directory, self.datafile_Q))
+            data = list[1].data
+            self.tt500 = data.field("theta500Arcmin")
+
+            # reading in all Q functions
+            allQ = np.zeros((len(self.tt500),Nt))
+            for i in range(Nt):
+                allQ[:,i] = data.field(tilename[i])
+            assert len(self.tt500) == len(allQ[:,0])
+
+            if Q_opt == 'yes':
+                meanQ = np.delete(allQ, np.s_[103,328], axis=1) # manually for now
+                self.Q = np.mean(meanQ, axis=1)
+                print("\r Number of Q functions = ", self.Q.ndim)
+                print("\r Using one averaged Q function for optimisation")
+            else:
+                self.Q = allQ
+                print("\r Number of Q functions = ", len(self.Q[0]))
 
         print('\r :::::: reading noise data')
         if single_tile == 'yes':
             self.datafile_rms = self.test_rms_file
-            file_rms = np.loadtxt(os.path.join(self.data_directory, self.datafile_rms))
-            self.skyfracs = file_rms[:,0]*3.046174198e-4
-            self.noise = file_rms[:,1]
+            list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
+            data = list[1].data
+            self.skyfracs = data.field("areaDeg2")*np.deg2rad(1.)**2.
+            self.noise = data.field("y0RMS")
+            print("\r Number of sky patches = ", self.skyfracs.size)
         else:
+            # for convenience,
+            # save a down sampled version of rms txt file and read it directly
+            # this way is a lot faster
+            # could recreate this file with different downsampling as well
+            # tile name is replaced by consecutive number from now on
+
             self.datafile_rms = self.rms_file
             file_rms = np.loadtxt(os.path.join(self.data_directory, self.datafile_rms))
-            self.skyfracs = file_rms[:,0]*3.046174198e-4
-            self.noise = file_rms[:,1]
-            self.tilenames = file_rms[:,2]
-            print("\r Number of tiles = ", len(np.unique(self.tilenames)))
+            self.noise = file_rms[:,0]
+            self.skyfracs = file_rms[:,1]
+            self.tname = file_rms[:,2]
+            #print("\r Number of tiles = ", len(np.unique(self.tname)))
 
-        print("\r Number of sky patches = ", self.skyfracs.size)
-        print("\r Entire survey area = ", self.skyfracs.sum()/3.046174198e-4, "deg2")
+            downsample = 50
+            print("\r Noise map is downsampled to speed up a completeness compuation by %d" %downsample)
+            print("\r Number of sky patches = ", self.skyfracs.size)
+
+
+            '''
+            self.datafile_rms = self.rms_file
+            list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
+            data = list[1].data
+            noise    = data.field("y0RMS")
+            skyfracs = data.field("areaDeg2")
+            tname    = data.field("tileName")
+            print("\r Number of sky patches = ", skyfracs.size)
+
+            # downsampling
+            skyfracs0 = []
+            noise0 = []
+            tname0 = []
+
+            downsample = 50
+            stepSize = downsample*1e-7
+            binEdges = np.arange(min(noise), max(noise)+stepSize, stepSize)
+            #print(len(binEdges)-1)
+
+            for i in range(len(tilename)):
+
+                 noise_tile = []
+                 skyfracs_tile = []
+                 tname_tile = []
+
+                 for j in range(len(noise)):
+                     if tname[j] == tilename[i]:
+                         noise_tile.append(noise[j])
+                         skyfracs_tile.append(skyfracs[j])
+                         tname_tile.append(tname[j])
+
+                 noise_arr = np.array(noise_tile)
+                 skyfracs_arr = np.array(skyfracs_tile)
+                 tname_arr = np.array(tname_tile)
+
+                 skyfracs_masked = []
+                 noise_masked = []
+                 tname_masked = []
+
+                 for k in range(len(binEdges)-1):
+                     mask = np.logical_and(noise_arr >= binEdges[k], noise_arr < binEdges[k+1])
+                     if mask.sum() > 0:
+                         noise_masked.append(np.average(noise_arr[mask], weights=skyfracs_arr[mask]))
+                         skyfracs_masked.append(np.sum(skyfracs_arr[mask]))
+                         tname_masked.append(tilename[i])
+
+                 noise0.append(noise_masked)
+                 skyfracs0.append(skyfracs_masked)
+                 tname0.append(tname_masked)
+
+            #print(len(noise0))
+            self.noise = np.array([item for singleList in noise0 for item in singleList])
+            self.skyfracs = np.array([item for singleList in skyfracs0 for item in singleList])*np.deg2rad(1.)**2.
+            tname_reduced = np.array([item for singleList in tname0 for item in singleList])
+
+            tname = []
+
+            for i in range(len(tname_reduced)):
+                for j in range(len(tilename)):
+                    if tname_reduced[i] == tilename[j]:
+                        tname.append(j+1)
+
+            self.tname = np.array(tname)
+
+            # out = open('/Users/eunseonglee/Likelihoods_sz/solike/binned_clusters/data/so/MFMF_SOSim_3freq_tiles/selFn/downsampled.txt', 'w')
+            #
+            # for i in range(len(self.noise)):
+            #     out.write(str(self.noise[i]) + "\t")
+            #     out.write(str(self.skyfracs[i]) + "\t")
+            #     out.write(str(self.tname[i]) + str("\n"))
+            #
+            # out.close()
+
+            '''
+
+
+        print("\r Entire survey area = ", self.skyfracs.sum()/(np.deg2rad(1.)**2.), "deg2")
 
         super().initialize()
 
@@ -265,14 +371,16 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                     "hubble_units": False,
                                     "k_hunit": False,
                                     "vars_pairs": [["delta_nonu", "delta_nonu"]]},
-                "ombh2":None, "H0":None, "omch2":None, "omegam":None, "sigma8":None}
-                # why are they not just in param_vals?
+                "omnu":None, "As":None, #"cosmomc_theta":None,
+                "ombh2":None, "omch2":None, "H0":None, "omegam":None, "sigma8":None}
+                # why are they not just in param_vals? "cosmomc_theta":None, "theta_MC_100":None,
 
     def _get_data(self):
         return self.delNcat, self.delN2Dcat
 
     def _get_om(self):
         return (self.theory.get_param("omch2") + self.theory.get_param("ombh2"))/((self.theory.get_param("H0")/100.0)**2)
+        #return (self.theory.get_param("omch2") + self.theory.get_param("ombh2") + self.theory.get_param("omnuh2"))/((self.theory.get_param("H0")/100.0)**2)
 
     def _get_Ez(self):
         return self.theory.get_Hubble(self.zarr)/self.theory.get_param("H0")
@@ -280,8 +388,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
     def _get_DAz(self):
         return self.theory.get_angular_diameter_distance(self.zarr)
 
-    def _get_dndlnm(self, pk_intp, **kwargs):
-        print("get dndlnm kwargs = ", kwargs) # still not printing out derived params! -_-
+    def _get_dndlnm(self, pk_intp, **params_values_dict):
+        #print("get dndlnm kwargs = ", kwargs) # still not printing out derived params! -_-
 
         h = self.theory.get_param("H0")/100.0
         Ez = self._get_Ez()
@@ -308,12 +416,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 newpks[:,i] = interpolate.splev(newz, tck)
             return newpks
         pks = pks_zbins(zarr)
-        #print("peak P(k) value = ", pks.max(), pks.min())
-        #print(pks.shape)
 
         pks *= h**3.
         k /= h
-        #np.savetxt("pk_re_check.txt", pks)
 
         def radius(M):
             return (0.75*M/pi/rhom0)**(1./3.)
@@ -336,6 +441,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             return integrate.simps(integral, k, axis=0)/(2.*pi**2.)
 
         def sigma_sq_prime(R, k):
+            # this is derivative of sigmaR squared
+            # so 2 * sigmaR * dsigmaR/dR
             integral = np.zeros((len(k), len(marr), len(zarr)))
             i = 0
             for i in range(k.size):
@@ -444,23 +551,27 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         dVdzdO = (c_ms/1e3)*(((1. + self.zarr)*dAz)**2.)/Hz
         dVdzdO *= h**3.
 
+        dVdzdO[0] *= 1e-6 ######################## come back here
+
         return dVdzdO
 
-    def _get_integrated(self, pk_intp, **kwargs):
+    def _get_integrated(self, pk_intp, **params_values_dict):
         #print("hellooooo this is get_integrated")
+
+        h = self.theory.get_param("H0") / 100.0
 
         zarr = self.zarr
         marr = np.exp(self.marr)
         dlnm = self.dlnm
 
-        y0 = self._get_y0(marr)
+        y0 = self._get_y0(marr, **params_values_dict)
         dVdzdO = self._get_dVdzdO()
-        dndlnm = self._get_dndlnm(pk_intp, **kwargs)
+        dndlnm = self._get_dndlnm(pk_intp, **params_values_dict)
         surveydeg2 = self.skyfracs.sum()
         intgr = dndlnm*dVdzdO*surveydeg2
         intgr = intgr.T
 
-        c = self._get_completeness(marr, zarr, y0)
+        c = self._get_completeness(marr, zarr, y0, **params_values_dict)
 
         delN = np.zeros(len(zarr))
         i = 0
@@ -469,13 +580,17 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             for j in range(len(marr)-1):
                 delN[i] += 0.5*(intgr[i,j]*c[i,j] + intgr[i+1,j]*c[i+1,j])*(zarr[i+1] - zarr[i])*dlnm
                 #delN[i] += 0.5*(intgr[i,j] + intgr[i+1,j])*(zarr[i+1] - zarr[i])*dlnm
-            print(i, delN[i])
+            #print(i, delN[i])
         print("\r Total predicted N = ", delN.sum())
+
+        for i in range(len(zarr)):
+            print(i, delN[i])
+
 
         return delN
 
 
-    def _get_integrated2D(self, pk_intp, **kwargs):
+    def _get_integrated2D(self, pk_intp, **params_values_dict):
         #print("hellooooo this is get_integrated2D")
 
         zarr = self.zarr
@@ -483,18 +598,18 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         dlnm = self.dlnm
         Nq = self.Nq
 
-        y0 = self._get_y0(marr)
+        y0 = self._get_y0(marr, **params_values_dict)
         dVdzdO = self._get_dVdzdO()
-        dndlnm = self._get_dndlnm(pk_intp, **kwargs)
+        dndlnm = self._get_dndlnm(pk_intp, **params_values_dict)
         surveydeg2 = self.skyfracs.sum()
         intgr = dndlnm*dVdzdO*surveydeg2
         intgr = intgr.T
 
-        print("2D completeness calculation starts now!")
+        print("2D completeness calculation starts now!") # you are a problem
         cc = []
         kk = 0
-        for kk in range(Nq+1):
-            cc.append(self._get_completeness2D(marr, zarr, y0, kk))
+        for kk in range(Nq):
+            cc.append(self._get_completeness2D(marr, zarr, y0, kk, **params_values_dict))
         cc = np.asarray(cc)
         #print(cc.shape)
 
@@ -502,31 +617,36 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         i = 0
         j = 0
         kk = 0
-        for kk in range(Nq+1):
+        for kk in range(Nq):
             for i in range(len(zarr)-1):
                 for j in range(len(marr)-1):
                     delN2D[i,kk] += 0.5*(intgr[i,j]*cc[kk,i,j] + intgr[i+1,j]*cc[kk,i+1,j])*(zarr[i+1] - zarr[i])*dlnm
+                    #delN2D[i,kk] += 0.5*(intgr[i,j] + intgr[i+1,j])*(zarr[i+1] - zarr[i])*dlnm
                 #print(i, delN2D[i,:].sum())
             #print(kk, delN2D[:,kk], delN2D[:,kk].sum())
             print(kk, delN2D[:,kk].sum())
-        print("\r Total predicted 2D N = ", delN2D.sum())
 
-        for i in range(len(zarr)-1):
+        np.set_printoptions(suppress=True)
+        print(delN2D[:-1,:-1])
+        np.set_printoptions(suppress=False)
+
+        for i in range(len(zarr)):
             print(i, delN2D[i,:].sum())
 
+        print("\r Total predicted 2D N = ", delN2D.sum())
 
         return delN2D
 
 
-    def _get_theory(self, pk_intp, **kwargs):
-        print("hellooooo this is get_theory")
+    def _get_theory(self, pk_intp, **params_values_dict):
+        #print("hellooooo this is get_theory")
 
         start = t.time()
 
         if self.choose_dim == '1D':
-            delN = self._get_integrated(pk_intp, **kwargs)
+            delN = self._get_integrated(pk_intp, **params_values_dict)
         else:
-            delN = self._get_integrated2D(pk_intp, **kwargs)
+            delN = self._get_integrated2D(pk_intp, **params_values_dict)
 
         elapsed = t.time() - start
         print("\r ::: theory N calculation took %.1f seconds" %elapsed)
@@ -535,13 +655,20 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
 
     # y-m scaling relation for completeness
-    def _get_y0(self, mass):
+    def _get_y0(self, mass, **params_values_dict):
 
         single_tile = self.single_tile_test
         Q_opt = self.Q_optimise
 
+        bias = params_values_dict["bias_sz"]
+
         A0 = 4.95e-5
         B0 = 0.08
+        #A0 = 2.65e-5
+        #B0 = 0.0
+
+
+        mpivot = 3e14
 
         Ez = self._get_Ez()
 
@@ -551,12 +678,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             h = self.theory.get_param("H0") / 100.0
             DAz = self._get_DAz() ###################
 
-            #DAz[0] = 2.99999995e-05/h  # value from f90
-            m = m*msun
+            m = m*bias*msun/(70./self.theory.get_param("H0"))
             Hz = Hz[:,None] * 1e3/Mpc
             DAz = DAz[:,None] * Mpc
             theta = np.rad2deg((G*m/250.)**(1./3) * (Hz**(-2./3))/DAz)*60.
-
             theta[theta > 500.] = 500.   # check this again
             #theta[theta < 0.5] = 0.5
 
@@ -577,35 +702,33 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             return newQ
 
         def rel(m):
-            Ez = self._get_Ez()
-            m = m*msun/m_pivot
+            m = m*bias/mpivot/(70./self.theory.get_param("H0"))
             t = -0.008488*(m*Ez[:,None])**(-0.585)
             rel = 1 + 3.79*t - 28.2*(t**2.)
             return rel
 
+        m = mass[:,None]*bias/mpivot/(70./self.theory.get_param("H0"))
+
         if single_tile == 'yes' or Q_opt == 'yes':
-            m = mass[:,None]*msun/m_pivot
             y0 = A0*(Ez**2.) * m**(1. + B0) * splQ(theta(mass)).T * rel(mass).T
             y0 = y0.T
         else:
-            m = mass[:,None]*msun/m_pivot
             arg = A0*(Ez**2.) * m**(1. + B0)
             y0 = arg[:,:,None] * splQ(theta(mass)).T * rel(mass).T[:,:,None]
-
         return y0
 
     # completeness 1D
-    def _get_completeness(self, marr, zarr, y0):
+    def _get_completeness(self, marr, zarr, y0, **params_values_dict):
         print("completeness calculation starts now!")
 
-        scatter = self.scatter
+        scatter = params_values_dict["scatter_sz"]
         noise = self.noise
         qcut = self.qcut
         skyfracs = self.skyfracs/self.skyfracs.sum()
         Npatches = len(skyfracs)
         single_tile = self.single_tile_test
         Q_opt = self.Q_optimise
-        if single_tile == 'no' and Q_opt == 'no': tilename = self.tilenames
+        if single_tile == 'no' and Q_opt == 'no': tilename = self.tname
 
         if scatter == 0.:
             a_pool = multiprocessing.Pool()
@@ -692,17 +815,17 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         return comp
 
     # completeness 2D
-    def _get_completeness2D(self, marr, zarr, y0, qbin):
+    def _get_completeness2D(self, marr, zarr, y0, qbin, **params_values_dict):
         #print("2D completeness calculation starts now!")
 
-        scatter = self.scatter
+        scatter = params_values_dict["scatter_sz"]
         noise = self.noise
         qcut = self.qcut
         skyfracs = self.skyfracs/self.skyfracs.sum()
         Npatches = len(skyfracs)
         single_tile = self.single_tile_test
         Q_opt = self.Q_optimise
-        if single_tile == 'no' and Q_opt == 'no': tilename = self.tilenames
+        if single_tile == 'no' and Q_opt == 'no': tilename = self.tname
 
         Nq = self.Nq
         qarr = self.qarr
@@ -747,23 +870,29 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 for i in range(Ny):
                     yy0 = np.exp(lny)
 
-                    kk = qbin
+                    kk = qbin # 0,1,2,..8,9
                     qmin = qarr[kk] - dlogq/2.
                     qmax = qarr[kk] + dlogq/2.
                     qmin = 10.**qmin
                     qmax = 10.**qmax
 
+                    #print(kk, qcut)
+
                     if kk == 0:
+                        #print("first",kk)
                         cc = get_erf(yy0, noise, qcut)*(1. - get_erf(yy0, noise, qmax))
-                    elif kk == Nq:
+                    elif kk == Nq-1:
+                        #print("last",kk)
                         cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)
                     else:
+                        #print("middle",kk)
                         cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)*(1. - get_erf(yy0, noise, qmax))
 
                     temp.append(np.dot(cc.T, skyfracs))
                     yy.append(yy0)
                     lnyy.append(lny)
                     dyy.append(np.exp(lny + dlny*0.5) - np.exp(lny - dlny*0.5))
+                    #dyy.append(dlny) #?
                     lny += dlny
 
                 temp = np.asarray(temp)
@@ -801,6 +930,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 yy = np.asarray(np.array_split(yy, Npatches))
                 lnyy = np.asarray(np.array_split(lnyy, Npatches))
                 dyy = np.asarray(np.array_split(dyy, Npatches))
+
+
 
             a_pool = multiprocessing.Pool()
             completeness = a_pool.map(partial(get_comp_zarr2D,
@@ -861,7 +992,7 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, s
                 j = 0
                 args = 0.
                 for j in range(len(skyfracs)):
-                    #rint("second loop", j) # most of time takes here
+                    #print("second loop", j) # most of time takes here !!!!!!!!
                     arg = (lnyy[j,:] - mu[i, index_z, int(tile[j])-1])/(np.sqrt(2.)*scatter)
                     args += np.dot(temp[j,:], fac*np.exp(-arg**2.)*dyy[j,:]/yy[j,:])
                 res.append(args)
@@ -937,6 +1068,8 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
     plc_ylims_file: Optional[str] = None
     choose_dim: Optional[str] = None
 
+    params = {"alpha_sz":None, "ystar_sz":None, "beta_sz":None, "scatter_sz":None, "bias_sz":None}
+
     def initialize(self):
 
         print('\r :::::: this is initialisation in binned_clusters.py')
@@ -947,13 +1080,13 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
         # signal-to-noise threshold
         self.qcut = 6.
 
-        # y-m scaling relation parameters FIXME : this should be from yaml!
-        self.alpha = 1.789
-        ystar = -0.186
-        self.ystar = (10.**ystar)/(2.**self.alpha)*0.00472724 ##########
-        self.beta = 0.6666666
-        self.scatter = 0.075 ##########
-        print("\r intrinsic scatter = ", self.scatter)
+        # # y-m scaling relation parameters FIXME : this should be from yaml!
+        # self.alpha = 1.789
+        # ystar = -0.186
+        # self.ystar = (10.**ystar)/(2.**self.alpha)*0.00472724 ##########
+        # self.beta = 0.6666666
+        # self.scatter = 0.075 ##########
+        # print("\r intrinsic scatter = ", self.scatter)
 
         self.k = np.logspace(-4, np.log10(5), 200, endpoint=False)
 
@@ -1208,13 +1341,14 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
                                     "hubble_units": False,
                                     "k_hunit": False,
                                     "vars_pairs": [["delta_nonu", "delta_nonu"]]},
-                "ombh2":None, "H0":None, "omch2":None, "omegam":None, "sigma8":None}
+                "H0": None, "omnu": None,
+                "ombh2":None, "omch2":None, "As":None, "cosmomc_theta":None}
 
     def _get_data(self):
         return self.delNcat, self.delN2Dcat
 
     def _get_om(self):
-        return (self.theory.get_param("omch2") + self.theory.get_param("ombh2"))/((self.theory.get_param("H0")/100.0)**2)
+        return (self.theory.get_param("omch2") + self.theory.get_param("ombh2"))/((self.theory.get_param("H0")/100.0)**2) + self.theory.get_param("omnu")
 
     def _get_Hz(self, z):
         return self.theory.get_Hubble(z)
@@ -1236,7 +1370,7 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
         hres_z = zi + dzi
         return hres_z
 
-    def _get_dndlnm(self, z, pk_intp, **kwargs):
+    def _get_dndlnm(self, z, pk_intp, **params_values_dict):
 
         h = self.theory.get_param("H0")/100.0
         Ez = self._get_Ez(z)
@@ -1371,8 +1505,6 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
             b     = par3*((1. + z)**(-alpha))
             c     = par4*np.ones(z.size)
 
-            #print("hereeeeeeee", dsoz)
-
             return A * (1. + (sgm/b)**(-a)) * np.exp(-c/(sgm**2.))
 
         dRdM = radius(np.exp(marr))/(3.*np.exp(marr))
@@ -1399,7 +1531,7 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
 
         return dVdzdO
 
-    def _get_integrated(self, pk_intp, **kwargs):
+    def _get_integrated(self, pk_intp, **params_values_dict):
 
         print("hellooooo this is get_integrated")
 
@@ -1412,16 +1544,16 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
         zarr = self.zarr
         zz = self.zz
 
-        y500 = self._get_y500(marr, zz)
-        theta500 = self._get_theta500(marr, zz)
+        y500 = self._get_y500(marr, zz, **params_values_dict)
+        theta500 = self._get_theta500(marr, zz, **params_values_dict)
         dVdzdO = self._get_dVdzdO(zz)
-        dndlnm = self._get_dndlnm(zz, pk_intp, **kwargs)
+        dndlnm = self._get_dndlnm(zz, pk_intp, **params_values_dict)
 
         surveydeg2 = 41253.0*3.046174198e-4
         intgr = dndlnm*dVdzdO*surveydeg2
         intgr = intgr.T
 
-        c = self._get_completeness(marr, zz, y500, theta500)
+        c = self._get_completeness(marr, zz, y500, theta500, **params_values_dict)
 
         delN = np.zeros(len(zarr))
         i = 0
@@ -1451,7 +1583,7 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
         return delN
 
 
-    def _get_integrated2D(self, pk_intp, **kwargs):
+    def _get_integrated2D(self, pk_intp, **params_values_dict):
 
         print("hellooooo this is get_integrated2D")
 
@@ -1466,16 +1598,23 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
         qarr = self.qarr
         dlogq = self.dlogq
 
-        y500 = self._get_y500(marr, zz)
-        theta500 = self._get_theta500(marr, zz)
+        y500 = self._get_y500(marr, zz, **params_values_dict)
+        theta500 = self._get_theta500(marr, zz, **params_values_dict)
         dVdzdO = self._get_dVdzdO(zz)
-        dndlnm = self._get_dndlnm(zz, pk_intp, **kwargs)
+
+        start0 = t.time()
+        dndlnm = self._get_dndlnm(zz, pk_intp, **params_values_dict)
+        elapsed0 = t.time() - start0
+        print("\r ::: here dndlnm took %.1f seconds" %elapsed0)
 
         surveydeg2 = 41253.0*3.046174198e-4
         intgr = dndlnm*dVdzdO*surveydeg2
         intgr = intgr.T
 
-        cc = self._get_completeness2D(marr, zz, y500, theta500)
+        cc = self._get_completeness2D(marr, zz, y500, theta500, **params_values_dict)
+        #print(cc.shape) # (280,120,5)  Nz, Nm, Nq
+
+        start0 = t.time()
 
         delN2D = np.zeros((len(zarr), Nq+1))
         kk = 0
@@ -1497,27 +1636,39 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
                     j = 0
                     for j in range(len(marr)-1):
                         sumzs[ii,kk] += 0.5*(intgr[ii,j]*cc[ii,j,kk] + intgr[ii,j+1]*cc[ii,j+1,kk])*dlnm
-                        #sumzs[ii,kk] += 0.5*(intgr[ii,j]*cc[kk,ii,j] + intgr[ii,j+1]*cc[kk,ii,j+1])*dlnm
                     sum += sumzs[ii,kk]*(zz[ii+1] - zz[ii])
                 delN2D[i,kk] = sum
 
-            #print(kk, delN2D[:,kk], delN2D[:,kk].sum())
             print(kk, delN2D[:,kk].sum())
 
+
+        elapsed0 = t.time() - start0
+        print("\r ::: here delN2D took %.1f seconds" %elapsed0)
+
         print("\r Total predicted 2D N = ", delN2D.sum())
+
+        i = 0
+        for i in range(len(zarr)-1):
+            print(i, delN2D[i,:].sum())
 
         return delN2D
 
 
-    def _get_theory(self, pk_intp, **kwargs):
+    def _get_theory(self, pk_intp, **params_values_dict):
         print("hellooooo this is get_theory")
+        print(params_values_dict)
 
+        # DAz = self._get_DAz()
+        # print(DAz)
+        #res = self._get_theta500(np.exp(self.marr))
+        #print(res)
+        #res = self._get_y500(np.exp(self.marr))
         start = t.time()
 
         if self.choose_dim == '1D':
-            res = self._get_integrated(pk_intp, **kwargs)
+            res = self._get_integrated(pk_intp, **params_values_dict)
         else:
-            res = self._get_integrated2D(pk_intp, **kwargs)
+            res = self._get_integrated2D(pk_intp, **params_values_dict)
 
         elapsed = t.time() - start
         print("\r ::: theory N calculation took %.1f seconds" %elapsed)
@@ -1527,11 +1678,12 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
 
     # y-m scaling relation for completeness
 
-    def _get_theta500(self, m, z):
+    def _get_theta500(self, m, z, **params_values_dict):
+
+        bias = params_values_dict["bias_sz"]
 
         thetastar = 6.997
         alpha_theta = 1./3.
-        bias = 1
 
         #Hz = Hz[:,None] * 1e3/Mpc
         #DAz = DAz[:,None] * Mpc
@@ -1548,12 +1700,14 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
 
         return theta500
 
-    def _get_y500(self, m, z): # come back here
+    def _get_y500(self, m, z, **params_values_dict): # come back here
 
-        bias = 1
-        ystar = self.ystar
-        alpha = self.alpha
-        beta = self.beta
+        bias = params_values_dict["bias_sz"]
+        logystar = params_values_dict["ystar_sz"]
+        alpha = params_values_dict["alpha_sz"]
+        beta = params_values_dict["beta_sz"]
+
+        ystar = (10.**logystar)/(2.**alpha)*0.00472724
 
         H0 = self.theory.get_param("H0")
         h = self.theory.get_param("H0") / 100.0
@@ -1569,14 +1723,15 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
 
     # completeness
 
-    def _get_completeness(self, marr, zarr, y500, theta500):
+    def _get_completeness(self, marr, zarr, y500, theta500, **params_values_dict):
 
-        scatter = self.scatter
+        scatter = params_values_dict["scatter_sz"]
         qcut = self.qcut
         thetas = self.thetas
         ylims = self.ylims
         skyfracs = self.skyfracs
         fsky = skyfracs.sum()
+        dim = self.choose_dim
 
         lnymin = -11.5     #ln(1e-10) = -23
         lnymax = 10.       #ln(1e-2) = -4.6
@@ -1607,12 +1762,14 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
         a_pool = multiprocessing.Pool()
         completeness = a_pool.map(partial(get_comp_zarr_plc,
                                             Nm=len(marr),
-                                            qcut=qcut,
+                                            dim=dim,
                                             thetas=thetas,
                                             ylims=ylims,
                                             skyfracs=skyfracs,
                                             y500=y500,
                                             theta500=theta500,
+                                            qcut=qcut,
+                                            qqarr=None,
                                             lnyy=lnyy,
                                             dyy=dyy,
                                             yy=yy,
@@ -1626,14 +1783,15 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
         return comp
 
 
-    def _get_completeness2D(self, marr, zarr, y500, theta500):
+    def _get_completeness2D(self, marr, zarr, y500, theta500, **params_values_dict):
 
-        scatter = self.scatter
+        scatter = params_values_dict["scatter_sz"]
         qcut = self.qcut
         thetas = self.thetas
         skyfracs = self.skyfracs
         ylims = self.ylims
         fsky = skyfracs.sum()
+        dim = self.choose_dim
 
         Nq = self.Nq
         qarr = self.qarr
@@ -1642,65 +1800,96 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
         th0 = theta500.T
         y0 = y500.T
 
+        k = 0
+        qqarr = []
+        qmin = qarr[0] - dlogq/2.
+        for k in range(Nq+2):
+            qqarr.append(10.**qmin)
+            qmin += dlogq
+        qqarr = np.asarray(qqarr)
+        qqarr[0] = qcut
+        qqarr = np.delete(qqarr, 5)
+
         if scatter == 0:
+
+            start1 = t.time()
+
             a_pool = multiprocessing.Pool()
-            completeness = a_pool.map(partial(get_comp_zarr_plc2D,
+            completeness = a_pool.map(partial(get_comp_zarr_plc,
                                                 Nm=len(marr),
-                                                qcut=qcut,
+                                                dim=dim,
                                                 thetas=thetas,
                                                 ylims=ylims,
                                                 skyfracs=skyfracs,
                                                 y500=y500,
                                                 theta500=theta500,
+                                                qcut=qcut,
                                                 qqarr=qqarr,
-                                                qqmin=qqmin,
-                                                qqmax=qqmax,
                                                 lnyy=None,
                                                 dyy=None,
                                                 yy=None,
                                                 yylims=None,
                                                 scatter=scatter),range(len(zarr)))
+
+
+
         else:
 
 
             start0 = t.time()
 
+
+            lnymin = -11.5     #ln(1e-10) = -23
+            lnymax = 10.       #ln(1e-2) = -4.6
+            dlny = 0.05
+            Ny = m.floor((lnymax - lnymin)/dlny) # 430
+
+            yy = []
+            lnyy = []
+            dyy = []
+            lny = lnymin
+            i = 0
+            for i in range(Ny):
+                yy0 = np.exp(lny)
+                yy.append(yy0)
+                lnyy.append(lny)
+                dyy.append(np.exp(lny + dlny*0.5) - np.exp(lny - dlny*0.5))
+                lny += dlny
+
+            yy = np.asarray(yy)
+            lnyy = np.asarray(lnyy)
+            dyy = np.asarray(dyy) #(430)
+
             b_pool = multiprocessing.Pool()
-            yylims, yy, lnyy, dyy = zip(*b_pool.map(partial(get_comp_qarr_plc2D,
-                                                qarr=qarr,
-                                                dlogq=dlogq,
+            yylims = b_pool.map(partial(get_comp_yarr_plc2D,
+                                                qqarr=qqarr,
                                                 ylims=ylims,
-                                                qcut=qcut,
-                                                zarr=zarr,
-                                                marr=marr,
-                                                skyfracs=skyfracs,
-                                                thetas=thetas),range(Nq+1)))
+                                                yy=yy,
+                                                skyfracs=skyfracs),range(Ny))
 
             b_pool.close()
 
-
-            #print(yylims.shape, yy.shape) #(430, 5, 80) (430,)
-            elapsed0 = t.time() - start0
-            print("\r ::: here took %.1f seconds" %elapsed0)
-
             yylims = np.asarray(yylims)
-            yy = np.asarray(yy)
-            lnyy = np.asarray(lnyy)
-            dyy = np.asarray(dyy)
-            print(yylims.shape, lnyy.shape, yy.shape) #(4, 430, 80) (4, 430) (4, 430)
+
+            elapsed0 = t.time() - start0
+            print("\r ::: here 1st pool took %.1f seconds" %elapsed0)
+
+
+
+
+            start1 = t.time()
 
             a_pool = multiprocessing.Pool()
-            completeness = a_pool.map(partial(get_comp_zarr_plc2D,
+            completeness = a_pool.map(partial(get_comp_zarr_plc,
                                                 Nm=len(marr),
-                                                qcut=qcut,
+                                                dim=dim,
                                                 thetas=thetas,
                                                 ylims=ylims,
                                                 skyfracs=skyfracs,
                                                 y500=y500,
                                                 theta500=theta500,
+                                                qcut=None,
                                                 qqarr=None,
-                                                qqmin=None,
-                                                qqmax=None,
                                                 lnyy=lnyy,
                                                 dyy=dyy,
                                                 yy=yy,
@@ -1711,70 +1900,29 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
         comp[comp < 0.] = 0.
         comp[comp > fsky] = fsky
         #comp[comp > 1.] = 1.
-        #print("hmmmm", comp.shape)
+
+        elapsed1 = t.time() - start1
+        print("\r ::: here 2nd pool took %.1f seconds" %elapsed1)
 
         return comp
 
-def get_comp_qarr_plc2D(qbin, qarr, dlogq, ylims, qcut, zarr, marr, skyfracs, thetas):
 
-    lnymin = -11.5     #ln(1e-10) = -23
-    lnymax = 10.       #ln(1e-2) = -4.6
-    dlny = 0.05
-    Ny = m.floor((lnymax - lnymin)/dlny)
+def get_comp_yarr_plc2D(y_index, qqarr, ylims, yy, skyfracs):
 
-    yylims = []
-    yy = []
-    lnyy = []
-    dyy = []
-    lny = lnymin
-    i = 0
+    a0 = get_erf(yy[y_index], ylims, qqarr[0])
+    a1 = get_erf(yy[y_index], ylims, qqarr[1])
+    a2 = get_erf(yy[y_index], ylims, qqarr[2])
+    a3 = get_erf(yy[y_index], ylims, qqarr[3])
+    a4 = get_erf(yy[y_index], ylims, qqarr[4])
+    #print(a0.shape) # (417, 80)
 
-    #cc = np.zeros((len(zarr), len(marr), len(qarr)))
-    #cc = np.zeros((len(skyfracs), len(thetas), len(qarr)))
+    cc = np.array((a0*(1. - a1), a0*a1*(1. - a2), a0*a2*(1. - a3), a0*a3*(1. - a4), a0*a4))
+    #print(cc.shape) # (5, 417, 80)
+    yylims = np.dot(cc.transpose(0,2,1), skyfracs)  # (5, 80, 417)
 
-    for i in range(Ny): # okay most time takes here - let's make here faster!
-        yy0 = np.exp(lny) # what can i do here ... can i get rid of this loop? hmmm
-        #maybe trying to optimise this cc computation first?
+    return yylims  #(430, 5, 80))
 
-        kk = qbin
-        qmin = qarr[kk] - dlogq/2.
-        qmax = qarr[kk] + dlogq/2.
-        qmin = 10.**qmin
-        qmax = 10.**qmax
-        Nq = len(qarr)
-
-        #aaa = get_erf(yy0, ylims, qcut)*get_erf(yy0, ylims, qmin)*(1. - get_erf(yy0, ylims, qmax))
-        #aaa.shape = 417, 80 -> Nskypatches, Nthetas
-        # 417, 80, 5 -> transposed - 5, 80, 417
-
-        #print("yo yo yo i am")
-
-        cc = get_erf(yy0, ylims, qcut)*get_erf(yy0, ylims, qmin)*(1. - get_erf(yy0, ylims, qmax))
-        if kk == 0:
-            cc = get_erf(yy0, ylims, qcut)*(1. - get_erf(yy0, ylims, qmax))
-        if kk == Nq:
-            cc = get_erf(yy0, ylims, qcut)*get_erf(yy0, ylims, qmin)
-
-        ##yylims.append(np.dot(cc.transpose(0,2,1), skyfracs))
-        yylims.append(np.dot(cc.T, skyfracs))
-        yy.append(yy0)
-        lnyy.append(lny)
-        dyy.append(np.exp(lny + dlny*0.5) - np.exp(lny - dlny*0.5))
-        lny += dlny
-
-    yylims = np.asarray(yylims)
-    yy = np.asarray(yy)
-    lnyy = np.asarray(lnyy)
-    dyy = np.asarray(dyy)
-
-    #print("heyyyyyy i am", yylims.shape, yy.shape, lnyy.shape, qbin) #(430, 80) (430,)
-    #print("helllllllllooooo", yylims.shape, (430, 5, 80) yy.shape, lnyy.shape, dyy.shape)
-
-    return yylims, yy, lnyy, dyy
-
-
-def get_comp_zarr_plc(index_z, Nm, qcut, thetas, ylims, skyfracs, y500, theta500, lnyy, dyy, yy, yylims, scatter):
-
+def get_comp_zarr_plc(index_z, Nm, dim, thetas, ylims, skyfracs, y500, theta500, qcut, qqarr, lnyy, dyy, yy, yylims, scatter):
     Nthetas = len(thetas)
     min_thetas = thetas.min()
     max_thetas = thetas.max()
@@ -1804,73 +1952,42 @@ def get_comp_zarr_plc(index_z, Nm, qcut, thetas, ylims, skyfracs, y500, theta500
             if th1 > th0[index_z,i] : l2 = l1 - 1
             th2 = thetas[l2]
 
-        if scatter == 0:
-            y1 = ylims[:,l1]
-            y2 = ylims[:,l2]
-            y = y1 + (y2 - y1)/(th2 - th1)*(th0[index_z,i] - th1)
-            arg = get_erf(y0[index_z, i], y, qcut)
-            res.append(np.dot(arg, skyfracs))
+        if dim == "1D":
+            if scatter == 0:
+                y1 = ylims[:,l1]
+                y2 = ylims[:,l2]
+                y = y1 + (y2 - y1)/(th2 - th1)*(th0[index_z,i] - th1)
+                arg = get_erf(y0[index_z, i], y, qcut)
+                res.append(np.dot(arg, skyfracs))
+            else:
+                y1 = yylims[:,l1]
+                y2 = yylims[:,l2]
+                y = y1 + (y2 - y1)/(th2 - th1)*(th0[index_z,i] - th1)
+                fac = 1./np.sqrt(2.*pi*scatter**2)
+                arg = (lnyy - mu[index_z,i])/(np.sqrt(2.)*scatter)
+                res.append(np.dot(y, fac*np.exp(-arg**2.)*dyy/yy))
+
         else:
-            y1 = yylims[:,l1]
-            y2 = yylims[:,l2]
-            y = y1 + (y2 - y1)/(th2 - th1)*(th0[index_z,i] - th1)
-            fac = 1./np.sqrt(2.*pi*scatter**2)
-            arg = (lnyy - mu[index_z,i])/(np.sqrt(2.)*scatter)
-            res.append(np.dot(y, fac*np.exp(-arg**2.)*dyy/yy))
+            if scatter == 0:
+                y1 = ylims[:,l1]
+                y2 = ylims[:,l2]
+                y = y1 + (y2 - y1)/(th2 - th1)*(th0[index_z,i] - th1)
+                a0 = get_erf(y0[index_z,i], y, qqarr[0])
+                a1 = get_erf(y0[index_z,i], y, qqarr[1])
+                a2 = get_erf(y0[index_z,i], y, qqarr[2])
+                a3 = get_erf(y0[index_z,i], y, qqarr[3])
+                a4 = get_erf(y0[index_z,i], y, qqarr[4])
+                cc = np.array((a0*(1. - a1), a0*a1*(1. - a2), a0*a2*(1. - a3), a0*a3*(1. - a4), a0*a4))
+                #print(cc.shape) #(5, 417)
+                #print(skyfracs.shape) # 417
+                res.append(np.dot(cc, skyfracs))
 
-    return res
-
-def get_comp_zarr_plc2D(index_z, Nm, qcut, thetas, ylims, skyfracs, y500, theta500, qqarr, qqmin, qqmax, lnyy, dyy, yy, yylims, scatter):
-    Nthetas = len(thetas)
-    min_thetas = thetas.min()
-    max_thetas = thetas.max()
-    dif_theta = np.zeros(Nthetas)
-    th0 = theta500.T
-    y0 = y500.T
-    mu = np.log(y0)
-
-    res = []
-    i = 0
-    for i in range(Nm):
-        if th0[index_z,i] > max_thetas:
-            l1 = Nthetas - 1
-            l2 = Nthetas - 2
-            th1 = thetas[l1]
-            th2 = thetas[l2]
-        elif th0[index_z,i] < min_thetas:
-            l1 = 0
-            l2 = 1
-            th1 = thetas[l1]
-            th2 = thetas[l2]
-        else:
-            dif_theta = np.abs(thetas - th0[index_z,i])
-            l1 = np.argmin(dif_theta)
-            th1 = thetas[l1]
-            l2 = l1 + 1
-            if th1 > th0[index_z,i] : l2 = l1 - 1
-            th2 = thetas[l2]
-
-        if scatter == 0:
-            y1 = ylims[:,l1]
-            y2 = ylims[:,l2]
-            y = y1 + (y2 - y1)/(th2 - th1)*(th0[index_z,i] - th1)
-            erf0 = get_erf(y0[index_z,i], y, qcut)*(1. - get_erf(y0[index_z,i], y, qqarr[1]))
-            erf1 = get_erf(y0[index_z,i], y, qcut)*get_erf(y0[index_z,i], y, qqmin[:,None])*(1. -  get_erf(y0[index_z,i], y, qqmax[:,None]))
-            erf2 = get_erf(y0[index_z,i], y, qcut)*get_erf(y0[index_z,i], y, qqarr[-2])
-            erfunc = np.column_stack((erf0, erf1.T, erf2))
-            res.append(np.dot(erfunc.T, skyfracs))
-
-        else: # another 1-2 sec takes here but here is already optimised
-            y1 = yylims[:,:,l1]
-            y2 = yylims[:,:,l2]
-            y = y1 + (y2 - y1)/(th2 - th1)*(th0[index_z,i] - th1)
-            fac = 1./np.sqrt(2.*pi*scatter**2)
-            arg = (lnyy - mu[index_z,i])/(np.sqrt(2.)*scatter)
-            #print(y.shape, arg.shape, dyy.shape) # (4, 430) (4, 430) (4, 430)
-            #res.append(np.dot(y.T, fac*np.exp(-arg**2.)*dyy/yy))
-            fac *= np.exp(-arg**2.)*dyy/yy
-            res.append(np.diagonal(np.dot(y, fac.T))) #-> 430, 430
-
-            #print(res.shape, res.diagonal())
+            else:
+                y1 = yylims[:,:,l1]
+                y2 = yylims[:,:,l2]
+                y = y1 + (y2 - y1)/(th2 - th1)*(th0[index_z,i] - th1)
+                fac = 1./np.sqrt(2.*pi*scatter**2)
+                arg = (lnyy - mu[index_z,i])/(np.sqrt(2.)*scatter)
+                res.append(np.dot(y.T, fac*np.exp(-arg**2.)*dyy/yy))
 
     return res
