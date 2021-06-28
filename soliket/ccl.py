@@ -26,6 +26,10 @@ case it will be up to the Likelihood to cache the results appropriately itself.
 Note that this approach preclude sharing results other than the cosmo object itself between different likelihoods.
 
 Also note lots of things still cannot be done consistently in CCL, so this is far from general.
+
+April 2021:
+-----------
+Second version by PL. Using CCL's newly implemented cosmology calculator. 
 """
 
 # For Cobaya docs see
@@ -35,7 +39,7 @@ Also note lots of things still cannot be done consistently in CCL, so this is fa
 import numpy as np
 from typing import Sequence, Union
 from cobaya.theory import Theory
-
+import pyccl as ccl
 
 class CCL(Theory):
     # Options for Pk.
@@ -45,7 +49,9 @@ class CCL(Theory):
     z: Union[Sequence, np.ndarray] = []  # redshift sampling
     extra_args: dict = {}  # extra (non-parameter) arguments passed to ccl.Cosmology()
 
-    _default_z_sampling = np.linspace(0, 5, 100)
+    _logz = np.linspace(-3, np.log10(1100), 150)
+    _default_z_sampling = 10**_logz
+    _default_z_sampling[0] = 0
 
     def initialize(self):
         self._var_pairs = set()
@@ -54,15 +60,12 @@ class CCL(Theory):
     def get_requirements(self):
         # These are currently required to construct a CCL cosmology object.
         # Ultimately CCL should depend only on observable not parameters
-        # 'As' could be substituted by sigma8.
-        return {'omch2', 'ombh2', 'ns', 'As'}
+        return {'omch2', 'ombh2'}
 
     def must_provide(self, **requirements):
         # requirements is dictionary of things requested by likelihoods
         # Note this may be called more than once
 
-        # CCL currently has no way to infer the required inputs from the required outputs
-        # So a lot of this is fixed
         if 'CCL' not in requirements:
             return {}
         options = requirements.get('CCL') or {}
@@ -94,6 +97,9 @@ class CCL(Theory):
         needs['Hubble'] = {'z': self.z}
         needs['comoving_radial_distance'] = {'z': self.z}
 
+        needs['fsigma8'] = {'z': self.z}
+        needs['sigma8_z'] = {'z': self.z}
+
         assert len(self._var_pairs) < 2, "CCL doesn't support other Pk yet"
         return needs
 
@@ -109,7 +115,11 @@ class CCL(Theory):
         distance = self.provider.get_comoving_radial_distance(self.z)
         hubble_z = self.provider.get_Hubble(self.z)
         H0 = hubble_z[0]
+        h = H0/100
         E_of_z = hubble_z / H0
+
+        Omega_c = self.provider.get_param('omch2') / h ** 2
+        Omega_b = self.provider.get_param('ombh2') / h ** 2
         # Array z is sorted in ascending order. CCL requires an ascending scale factor
         # as input
         # Flip the arrays to make them a function of the increasing scale factor.
@@ -117,61 +127,52 @@ class CCL(Theory):
         distance = np.flip(distance)
         E_of_z = np.flip(E_of_z)
 
-        # Create a CCL cosmology object
-        import pyccl as ccl
-        h = H0 / 100.
-        Omega_c = self.provider.get_param('omch2') / h ** 2
-        Omega_b = self.provider.get_param('ombh2') / h ** 2
-
-        # Currently, CCL requires the (ill-defined) linear "matter" perturbation
-        # growth factor and rate. Because it's ill-defined, we can't get it from
-        # Boltzmann code in general; ultimately CCL should use more physical
-        # inputs for anything of use in general models.
-        # For now just compute from CCL itself to keep it happy:
-        cosmo = ccl.Cosmology(Omega_c=Omega_c, Omega_b=Omega_b, h=h,
-                              n_s=self.provider.get_param('ns'),
-                              A_s=self.provider.get_param('As'))
         # Array z is sorted in ascending order. CCL requires an ascending scale
         # factor as input
         a = 1. / (1 + self.z[::-1])
-        growth = ccl.background.growth_factor(cosmo, a)
-        fgrowth = ccl.background.growth_rate(cosmo, a)
-        # In order to use CCL with input arrays, the cosmology object needs
-        # to be reset. This should be improved...
-        cosmo = ccl.Cosmology(Omega_c=Omega_c, Omega_b=Omega_b, h=h,
-                              n_s=self.provider.get_param('ns'),
-                              A_s=self.provider.get_param('As'), **self.extra_args)
-        cosmo._set_background_from_arrays(a_array=a,
-                                          chi_array=distance,
-                                          hoh0_array=E_of_z,
-                                          growth_array=growth,
-                                          fgrowth_array=fgrowth)
+        #growth = ccl.background.growth_factor(cosmo, a)
+        #fgrowth = ccl.background.growth_rate(cosmo, a)
+
 
         if self.kmax:
             for pair in self._var_pairs:
                 # Get the matter power spectrum:
                 k, z, Pk_lin = self.provider.get_Pk_grid(var_pair=pair, nonlinear=False)
-
-                # np.flip(arr, axis=0) flips the rows of arr, thus making Pk with z
-                # in descending order.
                 Pk_lin = np.flip(Pk_lin, axis=0)
-                cosmo._set_linear_power_from_arrays(a, k, Pk_lin)
 
                 if self.nonlinear:
-                    k, z, Pk_nonlin = self.provider.get_Pk_grid(var_pair=pair, nonlinear=True)
+                    _, z, Pk_nonlin = self.provider.get_Pk_grid(var_pair=pair, nonlinear=True)
                     Pk_nonlin = np.flip(Pk_nonlin, axis=0)
-                    cosmo._set_nonlin_power_from_arrays(a, k, Pk_nonlin)
+
+                    # Create a CCL cosmology object. Because we are giving it background 
+                    # quantities, it should not depend on the cosmology parameters given
+                    cosmo = ccl.CosmologyCalculator(
+                        Omega_c=Omega_c, Omega_b=Omega_b, h=h, sigma8=0.8, n_s=0.96,
+                        background={'a': a,
+                                'chi': distance,
+                                'h_over_h0': E_of_z},
+                        pk_linear={'a': a,
+                        'k': k,
+                        'delta_matter:delta_matter': Pk_lin}, 
+                        pk_nonlin={'a': a,
+                        'k': k,
+                        'delta_matter:delta_matter': Pk_nonlin}
+                    )
+                
+                else:
+                    cosmo = ccl.CosmologyCalculator(
+                        Omega_c=Omega_c, Omega_b=Omega_b, h=h, sigma8=0.8, n_s=0.96,
+                        background={'a': a,
+                                'chi': distance,
+                                'h_over_h0': E_of_z},
+                        pk_linear={'a': a,
+                        'k': k,
+                        'delta_matter:delta_matter': Pk_lin}
+                    )                    
 
         state['CCL'] = {'cosmo': cosmo}
         for required_result, method in self._required_results.items():
             state['CCL'][required_result] = method(cosmo)
 
     def get_CCL(self):
-        """
-        Get dictionary of CCL computed quantities.
-        results['cosmo'] contains the initialized CCL Cosmology object.
-        Other entries are computed by methods passed in as the requirements
-
-        :return: dict of results
-        """
         return self._current_state['CCL']
