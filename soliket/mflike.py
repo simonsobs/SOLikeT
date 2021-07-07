@@ -67,6 +67,8 @@ class MFLike(GaussianLikelihood, _InstallableLikelihood):
         self.expected_params = ["a_tSZ", "a_kSZ", "a_p", "beta_p",
                                 "a_c", "beta_c", "n_CIBC", "a_s", "T_d"]
 
+        self.bandint_freqs = None
+
     # def get_helper_theories(self):
     #     """
     #     Foreground model is a helper theory
@@ -372,12 +374,13 @@ class MFLike(GaussianLikelihood, _InstallableLikelihood):
         return ps_vec
 
     def _get_foreground_model(self, fg_params):
-        bandint_freqs = self.provider.get_result('bandint_freqs')
+        if np.any(self.bandint_freqs == None):
+            self.bandint_freqs = self.provider.get_result('bandint_freqs')
 
         return get_foreground_model(fg_params=fg_params,
                                     fg_model=self.foregrounds,
                                     frequencies=self.freqs,
-                                    bandint_freqs=bandint_freqs, 
+                                    bandint_freqs=self.bandint_freqs, 
                                     ell=self.l_bpws,
                                     requested_cls=self.requested_cls)
         

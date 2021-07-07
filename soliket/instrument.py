@@ -35,7 +35,7 @@ class LAT(Instrument):
     def _calculate_bandint_freqs(self, **params_values):
         # Bandpass construction
         if not hasattr(self.bandint_width, "__len__"):
-            self.bandint_width = np.full_like(np.array(self.freqs), self.bandint_width, dtype=np.float)
+            self.bandint_width = np.full_like(np.array(self.freqs), self.bandint_width, dtype=float)
         if np.any(np.array(self.bandint_width) > 0):
             assert self.bandint_nstep > 1, "bandint_width and bandint_nstep not coherent"
             assert np.all(

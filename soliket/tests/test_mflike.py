@@ -10,6 +10,7 @@ import camb
 import mflike
 import soliket
 
+import numpy as np
 
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "LAT_packages"
@@ -96,6 +97,12 @@ class MFLikeTest(unittest.TestCase):
                     },
                 }
             )
+
+            if not self.orig:
+#                my_mflike.bandint_freqs = np.array([145,225,93])
+                params_shifts = dict(bandint_shift_93=0.0, bandint_shift_145=0.0, bandint_shift_225=0.0)
+                instr = soliket.LAT()
+                my_mflike.bandint_freqs = instr._calculate_bandint_freqs(**params_shifts) 
             
             loglike = my_mflike.loglike(cl_dict, **nuisance_params)
 
