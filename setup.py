@@ -1,4 +1,4 @@
-#iexample cobaya-compliant SO likelihood package;
+# example cobaya-compliant SO likelihood package;
 # adapted from github.com/cobayasampler/example_external_likelihood
 
 from setuptools import setup
