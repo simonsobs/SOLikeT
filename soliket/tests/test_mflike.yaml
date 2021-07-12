@@ -92,6 +92,47 @@ params:
   sigma8:
     latex: \sigma_8
 
+  # Sampled params manually added in
+  a_pste:
+    prior:
+      min: -1
+      max: 1
+    proposal: 0.05
+    latex: a_\mathrm{ps}^\mathrm{TE}
+  a_psee:
+    prior:
+      min: 0
+    proposal: 0.05
+    latex: a_\mathrm{ps}^\mathrm{EE}
+  a_gtt:
+    prior:
+      dist: norm
+      loc: 2.79
+      scale: 0.45
+    proposal: 0.4
+    latex: a_\mathrm{dust}^{TT}
+  a_gte:
+    prior:
+      dist: norm
+      loc: 0.36
+      scale: 0.04
+    proposal: 0.04
+    latex: a_\mathrm{dust}^\mathrm{TE}
+  a_gee:
+    prior:
+      dist: norm
+      loc: 0.13
+      scale: 0.03
+    proposal: 0.03
+    latex: a_\mathrm{dust}^\mathrm{EE}
+  xi:
+    prior:
+      min: 0
+      max: 0.2
+    proposal: 0.05
+    latex: \xi  
+
+
   # Sampled nuisance params
   a_tSZ:
     prior:

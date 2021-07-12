@@ -9,7 +9,10 @@
 import os
 from typing import Optional
 import numpy as np
-from cobaya.conventions import _packages_path
+
+# from cobaya.conventions import _packages_path
+_packages_path = 'packages_path'
+
 from cobaya.likelihoods._base_classes import _InstallableLikelihood
 from cobaya.log import LoggedError
 from cobaya.tools import are_different_params_lists

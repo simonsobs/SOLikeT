@@ -4,7 +4,8 @@ from pkg_resources import resource_filename
 import numpy as np
 
 from cobaya.likelihoods._base_classes import _InstallableLikelihood
-from cobaya.conventions import _packages_path
+# from cobaya.conventions import _packages_path
+_packages_path = 'packages_path'
 from cobaya.model import get_model
 from cobaya.log import LoggedError
 # from cobaya.install import NotInstalledError
