@@ -5,7 +5,8 @@
 
 
 from cobaya.theory import Theory
-from cobaya.conventions import _packages_path
+# from cobaya.conventions import _packages_path
+_packages_path = 'packages_path'
 from cobaya.likelihood import Likelihood
 # from cobaya.likelihoods._base_classes import _InstallableLikelihood
 import numpy as np

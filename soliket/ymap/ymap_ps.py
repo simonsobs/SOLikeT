@@ -13,7 +13,8 @@
 
 
 from cobaya.theory import Theory
-from cobaya.conventions import _packages_path
+# from cobaya.conventions import _packages_path
+_packages_path = 'packages_path'
 # from cobaya.likelihoods._base_classes import _InstallableLikelihood
 from soliket.gaussian import GaussianLikelihood
 import numpy as np
