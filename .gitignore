@@ -120,3 +120,6 @@ dndzdy_bins_y_center.txt
 dndzdy_bins_z_center.txt
 soliket/sz_binned_cluster_counts/chains
 soliket/sz_binned_cluster_counts/data
+
+
+soliket/clusters/data
