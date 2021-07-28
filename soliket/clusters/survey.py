@@ -4,6 +4,7 @@ import numpy as np
 from scipy import interpolate
 import astropy.io.fits as pyfits
 # from astLib import astWCS
+from astropy.wcs import WCS
 from astropy.io import fits
 import astropy.table as atpy
 
@@ -52,8 +53,11 @@ def loadAreaMask(extName, DIR):
     Returns map array, wcs
     """
     areaImg = pyfits.open(os.path.join(DIR, "areaMask%s.fits.gz" % (extName)))
+    print(os.path.join(DIR, "areaMask%s.fits.gz" % (extName)))
     areaMap = areaImg[0].data
-    wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    # wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    wcs = WCS(areaImg[0].header)
+    # print(areaImg[0].column)
     areaImg.close()
 
     return areaMap, wcs
@@ -65,7 +69,8 @@ def loadRMSmap(extName, DIR):
     """
     areaImg = pyfits.open(os.path.join(DIR, "RMSMap_Arnaud_M2e14_z0p4%s.fits.gz" % (extName)))
     areaMap = areaImg[0].data
-    wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    # wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    wcs = WCS(areaImg[0].header) #in both loadRMSmap and loadAreaMask
     areaImg.close()
 
     return areaMap, wcs

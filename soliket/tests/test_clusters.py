@@ -4,6 +4,7 @@ import pytest
 
 @pytest.mark.skip(reason="Under development")
 def test_clusters():
+    print('testing clusters')
     fiducial_params = {
         "ombh2": 0.02225,
         "omch2": 0.1198,
@@ -41,9 +42,12 @@ def test_clusters():
     # pdb.set_trace()
 
     lnl = model_fiducial.loglikes({})[0]
+    print('like:',lnl)
 
     assert np.isfinite(lnl)
 
     like = model_fiducial.likelihood["soliket.ClusterLikelihood"]
+    print('like:',like)
 
     assert like._get_n_expected() > 40
+test_clusters()

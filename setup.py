@@ -9,7 +9,7 @@ setup(
     description="SO Likelihoods & Theories",
     zip_safe=False,
     # packages=["soliket", "soliket.tests", "soliket.clusters", "soliket.ymap"],
-    packages=["soliket", "soliket.tests","soliket.ymap"],
+    packages=["soliket", "soliket.tests","soliket.clusters","soliket.ymap"],
     package_data={
         "soliket": [
             "*.yaml",
