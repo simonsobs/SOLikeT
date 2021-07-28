@@ -1,0 +1,13 @@
+auto_file: soliket/data/xcorr_simulated/clgg_noiseless.txt
+cross_file: soliket/data/xcorr_simulated/clkg_noiseless.txt
+dndz_file: soliket/data/xcorr_simulated/dndz.txt
+
+params:
+  b1: 
+    prior:
+      min: 0.
+      max: 10.
+    latex: b_1
+  s1: 
+    value: 0.4
+    latex: s_1

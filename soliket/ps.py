@@ -17,23 +17,27 @@ class PSLikelihood(GaussianLikelihood):
 
     def _get_theory(self, **params_values):
         cl_theory = self._get_Cl()
-        return cl_theory[self.kind]
+        return cl_theory[self.kind][:self.lmax]
 
 
 class BinnedPSLikelihood(PSLikelihood):
+    binning_matrix_path: str = ""
+
+    def initialize(self):
+        self.binning_matrix = self._get_binning_matrix()
+        self.bin_centers = self.binning_matrix.dot(np.arange(self.binning_matrix.shape[1]))
+        super().initialize()
+
     @classmethod
     def binner(cls, x, y, bin_edges):
         return utils.binner(x, y, bin_edges)
 
+    def _get_binning_matrix(self):
+        return np.loadtxt(self.binning_matrix_path)
+
     def _get_data(self):
-        lefts, rights, bandpowers = np.loadtxt(self.datapath, unpack=True)
-
-        bin_centers = (lefts + rights) / 2
-        self.bin_edges = np.append(lefts, [rights[-1]])
-
-        return bin_centers, bandpowers
+        return self.bin_centers, np.loadtxt(self.datapath)
 
     def _get_theory(self, **params_values):
         cl_theory = self._get_Cl()
-        _, theory = self.binner(cl_theory["ell"], cl_theory[self.kind], self.bin_edges)
-        return theory
+        return self.binning_matrix.dot(cl_theory[self.kind][:self.lmax])
