@@ -4,7 +4,6 @@ import pytest
 
 @pytest.mark.skip(reason="Under development")
 def test_clusters():
-    print('testing clusters')
     fiducial_params = {
         "ombh2": 0.02225,
         "omch2": 0.1198,
@@ -30,7 +29,7 @@ def test_clusters():
                     "dark_energy_model": "ppf",
                 }
             },
-            "soliket.CCL": {"stop_at_error": True},
+#            "soliket.CCL": {"stop_at_error": False},
         },
     }
 
