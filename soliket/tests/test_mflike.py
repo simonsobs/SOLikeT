@@ -9,7 +9,7 @@ from distutils.version import LooseVersion
 import camb
 import mflike
 import soliket
-
+import pytest
 
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "LAT_packages"
@@ -64,7 +64,8 @@ class MFLikeTest(unittest.TestCase):
             return t
         else:
             return eval(t)
-
+    
+    @pytest.mark.skip(reason="Under development")
     def test_mflike(self):
         # As of now, there is not a mechanism 
         #  in soliket to ensure there is .loglike that can be called like this
@@ -101,6 +102,7 @@ class MFLikeTest(unittest.TestCase):
 
             self.assertAlmostEqual(-2 * (loglike - my_mflike.logp_const), chi2, 2)
 
+    @pytest.mark.skip(reason="Under development")
     def test_cobaya(self):
         mflike_type = self.get_mflike_type(as_string=True)
 
