@@ -11,7 +11,7 @@ params:
     prior:
       min: 0.
       max: 10.
-      latex: b_1
+    latex: b_1
   s1: 
     value: 0.4
     latex: s_1

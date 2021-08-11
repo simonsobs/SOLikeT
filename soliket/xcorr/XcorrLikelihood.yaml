@@ -20,6 +20,6 @@ params:
   omk:
     value: 0.0
   ns:
-    value: 0.96
+    value: 0.965
   As:
     value: 2.111534442254061e-09

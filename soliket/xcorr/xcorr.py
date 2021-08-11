@@ -20,12 +20,8 @@ class XcorrLikelihood(GaussianLikelihood):
         self.dndz = np.loadtxt(self.dndz_file)
 
         # TODO is this resolution limit on zarray a CAMB problem?
-        # TODO see also the zmax
-        # TODO allow calculation of chistar
-        #self.zarray = np.append(np.linspace(self.dndz[:,0].min(), self.dndz[:,0].max(), 149), [1200.]) #self.dndz[:,0]
-        self.zarray = np.linspace(self.dndz[:,0].min(), self.dndz[:,0].max(), 149) #self.dndz[:,0]
-        self.zbgdarray = np.concatenate([self.zarray, [1100.]])
-        #self.zbgdarray = np.linspace(self.dndz[:,0].min(), 1100, 149) #self.dndz[:,0]
+        self.zarray = np.linspace(self.dndz[:,0].min(), self.dndz[:,0].max(), 149)
+        self.zbgdarray = np.concatenate([self.zarray, [1100]]) # TODO: unfix zstar
         self.Nchi = 149
         self.Nchi_mag = 149
 

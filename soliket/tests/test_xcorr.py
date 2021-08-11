@@ -7,6 +7,7 @@ from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
 import os
+import pdb
 
 def get_demo_xcorr_model(theory):
     if theory == "camb":
@@ -18,15 +19,20 @@ def get_demo_xcorr_model(theory):
         theory:
             camb:
                 extra_args:
-                    lens_potential_accuracy: 1
+                  lens_potential_accuracy: 1
 
         params:
+            tau: 0.05
+            mnu: 0.0
+            nnu: 3.046
             b1: 
                 prior:
                     min: 0.
                     max: 10.
             s1: 
-                value: 0.4
+                prior:
+                    min: 0.1
+                    max: 1.0
         """
     elif theory == "classy":
         info_yaml = r"""
@@ -46,7 +52,9 @@ def get_demo_xcorr_model(theory):
                     min: 0.
                     max: 10.
             s1: 
-                value: 0.4
+                prior:
+                    min: 0.1
+                    max: 1.0
 
         """
 
@@ -58,7 +66,7 @@ def get_demo_xcorr_model(theory):
 @pytest.mark.parametrize("theory", ["camb"])#, "classy"])
 def test_xcorr(theory):
 
-    params = {"b1": 1.0, "s1": 0.4}
+    params = {'b1': 1.0, 's1': 0.5}
 
     model = get_demo_xcorr_model(theory)
     lnl = model.loglike(params)[0]
@@ -95,26 +103,41 @@ def test_xcorr(theory):
     from matplotlib import pyplot as plt
     test_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # c_ells = xcorr_lhood.theory.get_Cl(ell_factor=False)
-    # Cl_theo = c_ells["pp"][0 : xcorr_lhood.high_ell+1]
-    # Clkk_theo = (xcorr_lhood.ell_range * (xcorr_lhood.ell_range + 1)) ** 2 * Cl_theo * 0.25
+    import pyccl as ccl
+    cosmo = ccl.Cosmology(Omega_c=xcorr_lhood.provider.get_param('omch2') / (xcorr_lhood.provider.get_param('H0') / 100 * xcorr_lhood.provider.get_param('H0') / 100),
+                          Omega_b=xcorr_lhood.provider.get_param('ombh2') / (xcorr_lhood.provider.get_param('H0') / 100 * xcorr_lhood.provider.get_param('H0') / 100),
+                          h=xcorr_lhood.provider.get_param('H0') / 100,
+                          n_s=xcorr_lhood.provider.get_param('ns'),
+                          A_s=xcorr_lhood.provider.get_param('As'),
+                          Omega_k=xcorr_lhood.provider.get_param('omk'),
+                          Neff=xcorr_lhood.provider.get_param('nnu'),
+                          matter_power_spectrum='linear')
 
-    N_ell_auto = xcorr_lhood.ell_auto.shape[0]
-    N_ell_cross = xcorr_lhood.ell_cross.shape[0]
+    tracer_g = ccl.NumberCountsTracer(cosmo,
+                                      has_rsd=False,
+                                      dndz = xcorr_lhood.dndz.T,
+                                      bias =(xcorr_lhood.dndz[:,0], params['b1']*np.ones(len(xcorr_lhood.dndz[:,0]))), 
+                                      mag_bias = (xcorr_lhood.dndz[:,0], params['s1']*np.ones(len(xcorr_lhood.dndz[:,0])))
+                                      )
+
+    tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1100)
+
+    cl_gg_ccl = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, xcorr_lhood.ell_range)
+    cl_kappag_ccl = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, xcorr_lhood.ell_range)
 
     plt.close('all')
     plt.figure(1, figsize=(2*4.5, 3.75))
     plt.subplot(121)
-    plt.plot(xcorr_lhood.ell_range, 1.e5*cl_gg, '--', color='C1', label='soliket.xcorr')
-    plt.plot(xcorr_lhood.data.x[:N_ell_auto], 1.e5*xcorr_lhood.data.y[:N_ell_auto], 'o', color='C2', label='simonsobs/xcorr')
+    plt.plot(xcorr_lhood.ell_range, 1.e5*cl_gg_ccl, '+', color='C2', label='CCL (soliket.cross_correlation)')
+    plt.plot(xcorr_lhood.ell_range, 1.e5*cl_gg, '-', color='C1', label='soliket.xcorr')
     plt.xlabel('$\\ell$')
     plt.ylabel('$C_{\\ell}$')
     plt.xlim([0,600])
     plt.title('$gg$')
     plt.legend(loc='upper right', fontsize='small')
     plt.subplot(122)
-    plt.plot(xcorr_lhood.ell_range, xcorr_lhood.ell_range*1.e5*cl_kappag, '--', color='C1')
-    plt.plot(xcorr_lhood.data.x[:-N_ell_cross], xcorr_lhood.ell_cross*1.e5*xcorr_lhood.data.y[:-N_ell_cross], 'o', color='C2')
+    plt.plot(xcorr_lhood.ell_range, xcorr_lhood.ell_range*1.e5*cl_kappag_ccl, '+', color='C2')
+    plt.plot(xcorr_lhood.ell_range, xcorr_lhood.ell_range*1.e5*cl_kappag, '-', color='C1')
     plt.ylabel('$\\ell C_{\\ell}$')
     plt.xlabel('$\\ell$')
     plt.xlim([0,600])
