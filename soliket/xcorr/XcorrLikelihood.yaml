@@ -2,6 +2,10 @@ auto_file: soliket/xcorr/data/clgg.txt
 cross_file: soliket/xcorr/data/clkg.txt
 dndz_file: soliket/xcorr/data/dndz.txt
 
+k_tracer_name: ck_so
+gc_tracer_name: gc_unwise
+# tracer_combinations: gc_unwise-ck_so, gc_unwise-gc_unwise
+
 params:
   b1: 
     prior:
@@ -22,4 +26,4 @@ params:
   ns:
     value: 0.965
   As:
-    value: 2.111534442254061e-09
+    value: 2.11e-9

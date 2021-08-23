@@ -1,4 +1,5 @@
 import numpy as np
+import sacc
 import pdb
 
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
@@ -13,11 +14,34 @@ class XcorrLikelihood(GaussianLikelihood):
         name: str = "Xcorr"
         self.log.info('Initialising.')
 
-        dndz_file: Optional[str]
-        auto_file: Optional[str]
-        cross_file: Optional[str]
+        if self.datapath is None:
 
-        self.dndz = np.loadtxt(self.dndz_file)
+            dndz_file: Optional[str]
+            auto_file: Optional[str]
+            cross_file: Optional[str]
+
+            self.dndz = np.loadtxt(self.dndz_file)
+
+            x, y, dy = self._get_data()
+            if self.covpath is None:
+                self.log.info('No xcorr covariance specified. Using diag(dy^2).')
+                cov = np.diag(dy**2)
+            else:
+                cov = self._get_cov()
+
+        else:
+            
+            k_tracer_name: Optional[str]
+            gc_tracer_name: Optional[str]
+            # tracer_combinations: Optional[str] # TODO: implement this along with keep_selection
+            
+            sacc_data = self._get_sacc_data()
+
+            x = sacc_data['x']
+            y = sacc_data['y']
+            cov = sacc_data['cov']
+            self.dndz = sacc_data['dndz']
+            self.ngal = sacc_data['ngal']
 
         # TODO is this resolution limit on zarray a CAMB problem?
         self.zarray = np.linspace(self.dndz[:,0].min(), self.dndz[:,0].max(), 149)
@@ -27,18 +51,12 @@ class XcorrLikelihood(GaussianLikelihood):
 
        # TODO expose these defaults
         self.high_ell = 600
-        self.ell_range = np.linspace(20, self.high_ell, int(self.high_ell+1))
+        self.ell_range = np.linspace(1, self.high_ell, int(self.high_ell+1))
 
         # TODO expose these defaults
         self.alpha_auto = 0.9981
         self.alpha_cross = 0.9977
 
-        x, y, dy = self._get_data()
-        if self.covpath is None:
-            self.log.info('No Xcorr covariance specified. Using diag(dy^2).')
-            cov = np.diag(dy**2)
-        else:
-            cov = self._get_cov()
         self.data = GaussianData(self.name, x, y, cov)
 
 
@@ -73,6 +91,31 @@ class XcorrLikelihood(GaussianLikelihood):
         for i in range(len(lmin)):
             binned_theory_cl[i] = np.mean(theory_cl[(self.ell_range >= lmin[i]) & (self.ell_range < lmax[i])])
         return binned_theory_cl
+
+    def _get_sacc_data(self, **params_values):
+
+        data_sacc = sacc.Sacc.load_fits(self.datapath)
+
+        data_sacc.remove_selection(tracers=(self.k_tracer_name, self.k_tracer_name)) # TODO: would be better to use keep_selection
+
+        ell_auto, cl_auto = data_sacc.get_ell_cl('cl_00', self.gc_tracer_name, self.gc_tracer_name)
+        ell_cross, cl_cross = data_sacc.get_ell_cl('cl_00', self.gc_tracer_name, self.k_tracer_name) #TODO: be robust to ordering
+        cov = data_sacc.covariance.covmat
+
+        x = np.concatenate([ell_auto, ell_cross])
+        y = np.concatenate([cl_auto, cl_cross])
+
+        dndz = np.column_stack([data_sacc.tracers[self.gc_tracer_name].z, data_sacc.tracers[self.gc_tracer_name].nz])
+        ngal = data_sacc.tracers[self.gc_tracer_name].metadata['ngal']
+
+        data = {'x' : x,
+                'y' : y,
+                'cov': cov,
+                'dndz': dndz,
+                'ngal': ngal}
+
+        return data
+
 
     def _get_data(self, **params_values):
 

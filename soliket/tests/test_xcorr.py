@@ -15,6 +15,9 @@ def get_demo_xcorr_model(theory):
         likelihood:
             soliket.XcorrLikelihood:
                 stop_at_error: True
+                datapath: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits
+                k_tracer_name: ck_so
+                gc_tracer_name: gc_unwise
 
         theory:
             camb:
@@ -39,6 +42,9 @@ def get_demo_xcorr_model(theory):
         likelihood:
             soliket.XcorrLikelihood:
                 stop_at_error: True
+                datapath: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits
+                k_tracer_name: ck_so
+                gc_tracer_name: gc_unwise
 
         theory:
             classy:
@@ -66,9 +72,10 @@ def get_demo_xcorr_model(theory):
 @pytest.mark.parametrize("theory", ["camb"])#, "classy"])
 def test_xcorr(theory):
 
-    params = {'b1': 1.0, 's1': 0.5}
+    params = {'b1': 1.0, 's1': 0.4}
 
     model = get_demo_xcorr_model(theory)
+    
     lnl = model.loglike(params)[0]
     assert np.isfinite(lnl)
 
@@ -99,9 +106,20 @@ def test_xcorr(theory):
                                    setup_chi_flag=True,
                                    setup_chi_out=setup_chi_out)
 
+    ell_load = xcorr_lhood.data.x
+    cl_load = xcorr_lhood.data.y
+    cov_load = xcorr_lhood.data.cov
+    cl_err_load = np.sqrt(np.diag(cov_load))
+    n_ell = len(ell_load) // 2
 
-    from matplotlib import pyplot as plt
-    test_dir = os.path.dirname(os.path.abspath(__file__))
+    ell_obs_gg = ell_load[n_ell:]
+    ell_obs_kappag = ell_load[:n_ell]
+
+    cl_obs_gg = cl_load[:n_ell]
+    cl_obs_kappag = cl_load[n_ell:]
+
+    Nell_unwise_g = np.ones_like(cl_gg) / (xcorr_lhood.ngal * (60 * 180 / np.pi)**2)
+    Nell_obs_unwise_g = np.ones_like(cl_obs_gg) / (xcorr_lhood.ngal * (60 * 180 / np.pi)**2)
 
     import pyccl as ccl
     cosmo = ccl.Cosmology(Omega_c=xcorr_lhood.provider.get_param('omch2') / (xcorr_lhood.provider.get_param('H0') / 100 * xcorr_lhood.provider.get_param('H0') / 100),
@@ -125,29 +143,45 @@ def test_xcorr(theory):
     cl_gg_ccl = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, xcorr_lhood.ell_range)
     cl_kappag_ccl = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, xcorr_lhood.ell_range)
 
-    plt.close('all')
-    plt.figure(1, figsize=(2*4.5, 3.75))
-    plt.subplot(121)
-    plt.plot(xcorr_lhood.ell_range, 1.e5*cl_gg_ccl, '+', color='C2', label='CCL (soliket.cross_correlation)')
-    plt.plot(xcorr_lhood.ell_range, 1.e5*cl_gg, '-', color='C1', label='soliket.xcorr')
-    plt.xlabel('$\\ell$')
-    plt.ylabel('$C_{\\ell}$')
-    plt.xlim([0,600])
-    plt.title('$gg$')
-    plt.legend(loc='upper right', fontsize='small')
-    plt.subplot(122)
-    plt.plot(xcorr_lhood.ell_range, xcorr_lhood.ell_range*1.e5*cl_kappag_ccl, '+', color='C2')
-    plt.plot(xcorr_lhood.ell_range, xcorr_lhood.ell_range*1.e5*cl_kappag, '-', color='C1')
-    plt.ylabel('$\\ell C_{\\ell}$')
-    plt.xlabel('$\\ell$')
-    plt.xlim([0,600])
-    plt.title('$\\kappa g$')
-    # plt.subplot(133)
-    # plt.plot(xcorr_lhood.ell_range, xcorr_lhood.ell_range*1.e5*cl_kappakappa, '--', color='C1', label='soliket.xcorr')
-    # #plt.plot(xcorr_lhood.ell_range[::10], xcorr_lhood.ell_range[::10]*1.e5*Clkk_theo[::10], 'x', color='C0', label='camb')
+    assert np.allclose(cl_gg_ccl, cl_gg)
+    assert np.allclose(cl_kappag_ccl, cl_kappag)
+
+    cl_obs_gg_ccl = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, ell_obs_gg)
+    cl_obs_kappag_ccl = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, ell_obs_kappag)
+
+    assert np.allclose(cl_obs_gg_ccl + Nell_obs_unwise_g, cl_obs_gg)
+    assert np.allclose(cl_obs_kappag_ccl, cl_obs_kappag)
+
+    # from matplotlib import pyplot as plt
+    # test_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # plt.close('all')
+    # plt.figure(1, figsize=(2*4.5, 3.75))
+    # plt.subplot(121)
+    # plt.plot(xcorr_lhood.ell_range, 1.e5*(cl_gg_ccl + Nell_unwise_g), '+', color='C2', label='CCL (soliket.cross_correlation)')
+    # plt.plot(xcorr_lhood.ell_range, 1.e5*(cl_gg + Nell_unwise_g), '-', color='C1', label='soliket.xcorr')
+    # plt.plot(ell_load[:n_ell], 1.e5*cl_load[:n_ell], 'o', ms=3, color='C0', label='sacc file')
+    # plt.errorbar(ell_load[:n_ell], 1.e5*cl_load[:n_ell], yerr=1.e5*cl_err_load[:n_ell], fmt='none', color='C0')
+    # plt.xlabel('$\\ell$')
+    # plt.ylabel('$C_{\\ell}$')
+    # plt.xlim([0,600])
+    # plt.title('$gg$')
+    # plt.legend(loc='upper right', fontsize='small')
+    # plt.subplot(122)
+    # plt.plot(xcorr_lhood.ell_range, xcorr_lhood.ell_range*1.e5*cl_kappag_ccl, '+', color='C2')
+    # plt.plot(xcorr_lhood.ell_range, xcorr_lhood.ell_range*1.e5*cl_kappag, '-', color='C1')
+    # plt.plot(ell_load[n_ell:], 1.e5*ell_load[n_ell:]*cl_load[n_ell:], 'o', ms=3, color='C0')
+    # plt.errorbar(ell_load[n_ell:], 1.e5*ell_load[n_ell:]*cl_load[n_ell:], yerr=1.e5*ell_load[n_ell:]*cl_err_load[n_ell:], fmt='none', color='C0')
     # plt.ylabel('$\\ell C_{\\ell}$')
     # plt.xlabel('$\\ell$')
     # plt.xlim([0,600])
-    # plt.legend(loc='upper right', fontsize='small')
-    # plt.title('$\\kappa\\kappa$')
-    plt.savefig(os.path.join(test_dir, 'xcorr_dv.png'), dpi=300, bbox_inches='tight')
+    # plt.title('$\\kappa g$')
+    # # plt.subplot(133)
+    # # plt.plot(xcorr_lhood.ell_range, xcorr_lhood.ell_range*1.e5*cl_kappakappa, '--', color='C1', label='soliket.xcorr')
+    # # #plt.plot(xcorr_lhood.ell_range[::10], xcorr_lhood.ell_range[::10]*1.e5*Clkk_theo[::10], 'x', color='C0', label='camb')
+    # # plt.ylabel('$\\ell C_{\\ell}$')
+    # # plt.xlabel('$\\ell$')
+    # # plt.xlim([0,600])
+    # # plt.legend(loc='upper right', fontsize='small')
+    # # plt.title('$\\kappa\\kappa$')
+    # plt.savefig(os.path.join(test_dir, 'xcorr_dv.png'), dpi=300, bbox_inches='tight')
