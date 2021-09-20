@@ -26,7 +26,8 @@ setup(
         "sacc",
         "pyccl",
         "fgspectra @ git+https://github.com/simonsobs/fgspectra@act_sz_x_cib#egg=fgspectra",
-        "mflike @ git+https://github.com/simonsobs/lat_mflike"
+        "mflike @ git+https://github.com/simonsobs/lat_mflike@master"
     ],
     test_suite="soliket.tests",
+    include_package_data=True,
 )
