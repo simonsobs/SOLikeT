@@ -6,6 +6,13 @@ k_tracer_name: ck_so
 gc_tracer_name: gc_unwise
 # tracer_combinations: gc_unwise-ck_so, gc_unwise-gc_unwise
 
+high_ell: 600
+nz: 149
+Nchi: 149
+Nchi_mag: 149
+
+Pk_interp_kmax: 10.0
+
 params:
   b1: 
     prior:

@@ -22,42 +22,45 @@ class XcorrLikelihood(GaussianLikelihood):
 
             self.dndz = np.loadtxt(self.dndz_file)
 
-            x, y, dy = self._get_data()
+            self.x, self.y, self.dy = self._get_data()
             if self.covpath is None:
                 self.log.info('No xcorr covariance specified. Using diag(dy^2).')
-                cov = np.diag(dy**2)
+                self.cov = np.diag(self.dy**2)
             else:
-                cov = self._get_cov()
+                self.cov = self._get_cov()
 
         else:
             
-            k_tracer_name: Optional[str]
-            gc_tracer_name: Optional[str]
+            self.k_tracer_name: Optional[str]
+            self.gc_tracer_name: Optional[str]
             # tracer_combinations: Optional[str] # TODO: implement this along with keep_selection
             
-            sacc_data = self._get_sacc_data()
+            self.sacc_data = self._get_sacc_data()
 
-            x = sacc_data['x']
-            y = sacc_data['y']
-            cov = sacc_data['cov']
-            self.dndz = sacc_data['dndz']
-            self.ngal = sacc_data['ngal']
+            self.x = self.sacc_data['x']
+            self.y = self.sacc_data['y']
+            self.cov = self.sacc_data['cov']
+            self.dndz = self.sacc_data['dndz']
+            self.ngal = self.sacc_data['ngal']
 
         # TODO is this resolution limit on zarray a CAMB problem?
-        self.zarray = np.linspace(self.dndz[:,0].min(), self.dndz[:,0].max(), 149)
+        self.nz: Optional[int]
+        assert self.nz <= 149, "CAMB limitations requires nz <= 149"
+        self.zarray = np.linspace(self.dndz[:,0].min(), self.dndz[:,0].max(), self.nz)
         self.zbgdarray = np.concatenate([self.zarray, [1100]]) # TODO: unfix zstar
-        self.Nchi = 149
-        self.Nchi_mag = 149
+        self.Nchi: Optional[int]
+        self.Nchi_mag: Optional[int]
 
-       # TODO expose these defaults
-        self.high_ell = 600
+        self.Pk_interp_kmax: Optional[float]
+
+        self.high_ell: Optional[float]
         self.ell_range = np.linspace(1, self.high_ell, int(self.high_ell+1))
 
         # TODO expose these defaults
         self.alpha_auto = 0.9981
         self.alpha_cross = 0.9977
 
-        self.data = GaussianData(self.name, x, y, cov)
+        self.data = GaussianData(self.name, self.x, self.y, self.cov)
 
 
     def get_requirements(self):
@@ -65,14 +68,14 @@ class XcorrLikelihood(GaussianLikelihood):
                 'Cl': {'lmax': self.high_ell,
                         'pp': self.high_ell},
                 "Pk_interpolator": {
-                    "z": self.zarray[:-1],
-                    "k_max": 10.0, #TODO fix this
-                    #"extrap_kmax": 20.0,
-                    "nonlinear": False,
-                    "hubble_units": False,  # cobaya told me to
-                    "k_hunit": False,  # cobaya told me to
-                    "vars_pairs": [["delta_nonu", "delta_nonu"]],
-                },
+                                    "z": self.zarray[:-1],
+                                    "k_max": self.Pk_interp_kmax,
+                                    #"extrap_kmax": 20.0,
+                                    "nonlinear": False,
+                                    "hubble_units": False,  # cobaya told me to
+                                    "k_hunit": False,  # cobaya told me to
+                                    "vars_pairs": [["delta_nonu", "delta_nonu"]],
+                                    },
                 "Hubble": {"z": self.zarray},
                 "angular_diameter_distance": {"z": self.zbgdarray},
                 "comoving_radial_distance": {"z": self.zbgdarray},
@@ -160,23 +163,23 @@ class XcorrLikelihood(GaussianLikelihood):
         Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), extrap_kmax=1.e8, nonlinear=False).P
 
         cl_gg, cl_kappag = do_limber(self.ell_range,
-                                       self.provider,
-                                       self.dndz,
-                                       self.dndz,
-                                       params_values['s1'],
-                                       params_values['s1'],
-                                       Pk_interpolator,
-                                       params_values['b1'],
-                                       params_values['b1'],
-                                       self.alpha_auto,
-                                       self.alpha_cross,
-                                       Nchi=self.Nchi,
-                                       autoCMB=False,
-                                       use_zeff=False,
-                                       dndz1_mag=self.dndz,
-                                       dndz2_mag=self.dndz,
-                                       setup_chi_flag=True,
-                                       setup_chi_out=setup_chi_out)
+                                     self.provider,
+                                     self.dndz,
+                                     self.dndz,
+                                     params_values['s1'],
+                                     params_values['s1'],
+                                     Pk_interpolator,
+                                     params_values['b1'],
+                                     params_values['b1'],
+                                     self.alpha_auto,
+                                     self.alpha_cross,
+                                     Nchi=self.Nchi,
+                                     autoCMB=False,
+                                     use_zeff=False,
+                                     dndz1_mag=self.dndz,
+                                     dndz2_mag=self.dndz,
+                                     setup_chi_flag=True,
+                                     setup_chi_out=setup_chi_out)
 
         # TODO: this is not the correct binning, but there needs to be a consistent way to specify it
         bin_edges = np.linspace(20, self.high_ell, self.data.x.shape[0]//2 + 1)
