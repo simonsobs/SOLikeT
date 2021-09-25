@@ -3,30 +3,6 @@ import pdb
 
 oneover_chmpc = 1./2997.92458
 
-def pk_dummy(dummy_halofit, kval,zz,b1_HF,b2_HF,one_loop=True,shear=True):
-        # TODO remove this!
-        """Returns power spectra at k=kval and z=zz.
-        pars is a dict telling you which method to use (halozeldovich, zeft, halofit)
-        and the bias/1-halo parameters for 2 tracers.  
-        ex: pars = {'method': 'halofit', 'tracer1': {'b': lambda z: 1.5},
-        'tracer2': {'b': lambda z: 2.0}}.
-        Note that biases must be functions of redshift.
-        This function then returns all 4 spectra needed for CMB lensing:
-        tracer1 x tracer2 , tracer1 x matter, tracer2 x matter, and matter x matter.
-        If you want auto-spectra, just use the same bias coefficients for tracer1 and tracer2."""
-        # Get the interpolating coefficients then just weigh each P(k,z).
-        # t0 = time.time()
-        
-        p_mm = np.zeros((1,len(kval)))
-        p_gm_HF = np.zeros((1,len(kval)))
-        p_gg_HF = np.zeros((1,len(kval)))
-
-        p_mm[0,:] = dummy_halofit(zz, kval)
-        p_gm_HF[0,:] = dummy_halofit(zz, kval)
-        p_gg_HF[0,:] = dummy_halofit(zz, kval)
-
-        return(p_gg_HF, p_gm_HF, p_mm)
-
 def mag_bias_kernel(cosmo, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_arr):
 
         dndzprime = np.interp(zprime_arr, dndz[:,0], dndz[:,1], left=0, right=0)
