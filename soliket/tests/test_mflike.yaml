@@ -135,14 +135,90 @@ params:
       max: 3.4
     proposal: 0.01
     latex: a_s
-
-  # Fixed values of nuisance
-  n_CIBC:
-    value: 1.20
-    latex: n_\mathrm{CIBC}
+  a_gtt:
+    prior:
+      dist: norm
+      loc: 2.79
+      scale: 0.45
+    proposal: 0.4
+    latex: a_\mathrm{dust}^\mathrm{TT}
+  a_gte:
+    prior:
+      dist: norm
+      loc: 0.36
+      scale: 0.04
+    proposal: 0.04
+    latex: a_\mathrm{dust}^\mathrm{TE}
+  a_gee:
+    prior:
+      dist: norm
+      loc: 0.13
+      scale: 0.03
+    proposal: 0.03
+    latex: a_\mathrm{dust}^\mathrm{EE}
+  a_psee:
+    prior:
+      min: 0
+    proposal: 0.05
+    latex: a_\mathrm{ps}^\mathrm{EE}
+  a_pste:
+    prior:
+      min: -1
+      max: 1
+    proposal: 0.05
+    latex: a_\mathrm{ps}^\mathrm{TE}
+  xi:
+    prior:
+      min: 0
+      max: 0.2
+    proposal: 0.05
+    latex: \xi
   T_d:
-    value: 9.60
+    prior:
+      min:  8.60
+      max: 10.60
+    proposal: 0.6
     latex: T_d
+  # Systematics
+  bandint_shift_93:
+    value: 0
+    latex: \Delta_{\rm band}^{93}
+  bandint_shift_145:
+    value: 0
+    latex: \Delta_{\rm band}^{145}
+  bandint_shift_225:
+    value: 0
+    latex: \Delta_{\rm band}^{225}
+  calT_93:
+    value: 1
+    latex: \mathrm{Cal}_{\rm T}^{93}
+  calE_93:
+    value: 1
+    latex: \mathrm{Cal}_{\rm E}^{93}
+  calT_145:
+    value: 1
+    latex: \mathrm{Cal}_{\rm T}^{145}
+  calE_145:
+    value: 1
+    latex: \mathrm{Cal}_{\rm E}^{145}
+  calT_225:
+    value: 1
+    latex: \mathrm{Cal}_{\rm T}^{225}
+  calE_225:
+    value: 1
+    latex: \mathrm{Cal}_{\rm E}^{225}
+  calG_all:
+    value: 1
+    latex: \mathrm{Cal}_{\rm G}^{\rm All}
+  alpha_93:
+    value: 0 #deg
+    latex: \alpha^{93}
+  alpha_145:
+    value: 0 #deg
+    latex: \alpha^{145}
+  alpha_225:
+    value: 0 #deg
+    latex: \alpha^{225}
 
 theory:
   camb:

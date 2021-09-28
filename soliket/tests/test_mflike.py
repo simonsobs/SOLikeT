@@ -32,16 +32,34 @@ nuisance_params = {
     "beta_p": 2.077474196171309,
     "a_c": 4.88617700670901,
     "beta_c": 2.2030316332596014,
-    "n_CIBC": 1.20,
     "a_s": 3.099214100532393,
     "T_d": 9.60,
+    "a_gtt": 0,
+    "a_gte": 0,
+    "a_gee": 0,
+    "a_psee": 0,
+    "a_pste": 0,
+    "xi": 0,
+    "bandint_shift_93" : 0,
+    "bandint_shift_145" : 0,
+    "bandint_shift_225" : 0,
+    "calT_93": 1,
+    "calE_93": 1,
+    "calT_145": 1,
+    "calE_145": 1,
+    "calT_225": 1,
+    "calE_225": 1,
+    "calG_all": 1,
+    "alpha_93": 0,
+    "alpha_145": 0,
+    "alpha_225": 0,
 }
 
 
 if LooseVersion(camb.__version__) < LooseVersion('1.3'):
     chi2s = {"tt": 1384.5669, "te": 1400.2760, "ee": 1428.7597, "tt-te-et-ee": 2412.9275}
 else:
-    chi2s = {"tt": 1384.8184, "te": 1400.4507, "ee": 1428.8454, "tt-te-et-ee": 2413.10375}
+    chi2s = {"tt": 737.8571537677649, "te-et": 998.2730263280033, "ee": 716.4015196388742, "tt-te-et-ee": 2459.7250}
 
 pre = "data_sacc_"
 
