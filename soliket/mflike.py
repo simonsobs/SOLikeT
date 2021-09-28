@@ -38,8 +38,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             raise LoggedError(self.log,
                               "No path given to MFLike data. "
                               "Set the likelihood property "
-                              "'path' or the common property '%s'.",
-                              _packages_path)
+                              "'path' or 'packages_path'"
+                              )
         # If no path specified, use the modules path
         data_file_path = os.path.normpath(getattr(self, "path", None) or
                                           os.path.join(self.packages_path,

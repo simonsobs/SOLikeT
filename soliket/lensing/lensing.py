@@ -44,8 +44,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
                 self.log,
                 "No path given to LensingLikelihood data. "
                 "Set the likelihood property "
-                "'path' or the common property '%s'.",
-                _packages_path,
+                "'path' or 'packages_path'"
             )
 
         # If no path specified, use the modules path
