@@ -3,8 +3,7 @@ from pkg_resources import resource_filename
 
 import numpy as np
 
-from cobaya.likelihoods._base_classes import _InstallableLikelihood
-from cobaya.conventions import _packages_path
+from cobaya.likelihoods.base_classes import InstallableLikelihood
 from cobaya.model import get_model
 from cobaya.log import LoggedError
 # from cobaya.install import NotInstalledError
@@ -12,7 +11,7 @@ from cobaya.log import LoggedError
 from ..ps import BinnedPSLikelihood
 
 
-class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
+class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     _url = "https://portal.nersc.gov/project/act/jia_qu/lensing_like/likelihood.tar.gz"
     install_options = {"download_url": _url}
     data_folder = "LensingLikelihood"
@@ -39,13 +38,13 @@ class LensingLikelihood(BinnedPSLikelihood, _InstallableLikelihood):
     def initialize(self):
         self.log.info("Initialising.")
         # Set path to data
-        if (not getattr(self, "path", None)) and (not getattr(self, _packages_path, None)):
+        if ((not getattr(self, "path", None)) and
+                (not getattr(self, "packages_path", None))):
             raise LoggedError(
                 self.log,
                 "No path given to LensingLikelihood data. "
                 "Set the likelihood property "
-                "'path' or the common property '%s'.",
-                _packages_path,
+                "'path' or 'packages_path'"
             )
 
         # If no path specified, use the modules path

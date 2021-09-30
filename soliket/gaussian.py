@@ -4,7 +4,7 @@ from typing import Optional, Sequence
 from cobaya.likelihood import Likelihood
 from cobaya.input import merge_info
 from cobaya.tools import recursive_update
-from cobaya.conventions import empty_dict
+from cobaya.typing import empty_dict
 
 from .gaussian_data import GaussianData, MultiGaussianData
 from .utils import get_likelihood
