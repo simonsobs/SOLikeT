@@ -71,7 +71,8 @@ class MultiGaussianData(GaussianData):
                     cov = cross_covs[key]
                     if not cov.shape == (len(d1), len(d2)):
                         raise ValueError(
-                            f"Cross-covariance (for {d1.name} x {d2.name}) has wrong shape: {cov.shape}!"
+                            f"Cross-covariance (for {d1.name} x {d2.name}) \
+                              has wrong shape: {cov.shape}!"
                         )
                 elif rev_key in cross_covs:
                     cross_covs[key] = cross_covs[rev_key].T
@@ -112,7 +113,8 @@ class MultiGaussianData(GaussianData):
 
     @property
     def labels(self):
-        return [x for y in [[name] * len(d) for name, d in zip(self.names, self.data_list)] for x in y]
+        return [x for y in [[name] * len(d) for
+                name, d in zip(self.names, self.data_list)] for x in y]
 
     def _index_range(self, name):
         if name not in self.names:
@@ -152,4 +154,5 @@ class MultiGaussianData(GaussianData):
             for j, lj in zip(range(len(self.data)), self.labels)
         ]
 
-        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800, invert_yaxis=True, xrotation=90)
+        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800, invert_yaxis=True,
+                                     xrotation=90)
