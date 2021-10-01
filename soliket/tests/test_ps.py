@@ -3,10 +3,10 @@ from tempfile import gettempdir
 
 import numpy as np
 from sklearn.datasets import make_spd_matrix
-from scipy.stats import multivariate_normal
+# from scipy.stats import multivariate_normal
 
 from soliket.gaussian import GaussianData, CrossCov
-from soliket import GaussianLikelihood, MultiGaussianLikelihood
+from soliket import MultiGaussianLikelihood
 from soliket import PSLikelihood
 
 from soliket.utils import get_likelihood
@@ -75,5 +75,5 @@ def test_toy():
     like2 = get_likelihood(lhood, info2)
     like3 = get_likelihood(lhood, info3)
 
-    assert np.isclose(multilike1.logp(), sum([l.logp() for l in [like1, like2, like3]]))
-    assert not np.isclose(multilike2.logp(), sum([l.logp() for l in [like1, like2, like3]]))
+    assert np.isclose(multilike1.logp(), sum([likex.logp() for likex in [like1, like2, like3]]))
+    assert not np.isclose(multilike2.logp(), sum([likex.logp() for likex in [like1, like2, like3]]))

@@ -17,6 +17,7 @@ from .theoryforge_MFLike import TheoryForge_MFLike
 
 from .gaussian import GaussianData, GaussianLikelihood
 
+
 class MFLike(GaussianLikelihood, InstallableLikelihood):
     _url = "https://portal.nersc.gov/cfs/sobs/users/MFLike_data"
     _release = "v0.6"
@@ -63,20 +64,19 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         self.lmax_theory = 9000
         self.requested_cls = ["tt", "te", "ee"]
 
-
         self.expected_params_fg = ["a_tSZ", "a_kSZ", "a_p", "beta_p",
-                                "a_c", "beta_c", "a_s", "a_gtt", "a_gte", "a_gee",
-                                "a_psee", "a_pste", "xi", "T_d"]
-   
+                                   "a_c", "beta_c", "a_s", "a_gtt", "a_gte", "a_gee",
+                                   "a_psee", "a_pste", "xi", "T_d"]
+
         self.expected_params_nuis = ["bandint_shift_93",
                                      "bandint_shift_145",
                                      "bandint_shift_225",
-                                     "calT_93","calE_93",
-                                     "calT_145","calE_145",
-                                     "calT_225","calE_225",
+                                     "calT_93", "calE_93",
+                                     "calT_145", "calE_145",
+                                     "calT_225", "calE_225",
                                      "calG_all",
-                                     "alpha_93","alpha_145","alpha_225",
-                                    ]
+                                     "alpha_93", "alpha_145", "alpha_225",
+                                     ]
 
         self.ThFo = TheoryForge_MFLike(self)
         self.log.info("Initialized!")
@@ -96,7 +96,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
     def _get_theory(self, **params_values):
         cl = self.provider.get_Cl(ell_factor=True)
-        params_values_nocosmo = {k: params_values[k] for k in self.expected_params_fg + self.expected_params_nuis}
+        params_values_nocosmo = {k: params_values[k] for
+                                 k in self.expected_params_fg + self.expected_params_nuis}
         return self._get_power_spectra(cl, **params_values_nocosmo)
 
     def loglike(self, cl, **params_values_nocosmo):
@@ -159,10 +160,10 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             freq_1, freq_2 = spec["frequencies"]
             # Read off polarization channel combinations
             pols = spec.get("polarizations",
-                                default_cuts["polarizations"]).copy()
+                            default_cuts["polarizations"]).copy()
             # Read off scale cuts
             scls = spec.get("scales",
-                                default_cuts["scales"]).copy()
+                            default_cuts["scales"]).copy()
 
             # For the same two channels, do not include ET and TE, only TE
             if (exp_1 == exp_2) and (freq_1 == freq_2):
@@ -176,7 +177,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                 # Symmetrization
                 if ("TE" in pols) and ("ET" in pols):
                     symm = spec.get("symmetrize",
-                                        default_cuts["symmetrize"])
+                                    default_cuts["symmetrize"])
                 else:
                     symm = False
 
@@ -319,13 +320,13 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                                                np.arange(cls.size,
                                                          dtype=int)),
                                        "pol": ppol_dict[pol],
-                                       "hasYX_xsp": pol in ["ET","BE","BT"], #This is necessary for handling symmetrization 
-                                       "t1": xp_nu(exp_1, freq_1),  #
-                                       "t2": xp_nu(exp_2, freq_2),  #
+                                       "hasYX_xsp": pol in ["ET", "BE", "BT"],  # For symmetrization
+                                       "t1": xp_nu(exp_1, freq_1),
+                                       "t2": xp_nu(exp_2, freq_2),
                                        "nu1": freq_1,
                                        "nu2": freq_2,
-                                       "leff": ls,  #
-                                       "cl_data": cls,  #
+                                       "leff": ls,
+                                       "cl_data": cls,
                                        "bpw": ws})
                 index_sofar += cls.size
         if not cbbl_extra:
@@ -355,18 +356,17 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
         self.data = GaussianData("mflike", self.ell_vec, self.data_vec, self.cov)
 
-
     def _get_power_spectra(self, cl, **params_values_nocosmo):
         # Get Cl's from the theory code
         Dls = {s: cl[s][self.l_bpws] for s, _ in self.lcuts.items()}
-        DlsObs = self.ThFo.get_modified_theory(Dls,**params_values_nocosmo)
+        DlsObs = self.ThFo.get_modified_theory(Dls, **params_values_nocosmo)
 
         ps_vec = np.zeros_like(self.data_vec)
         for m in self.spec_meta:
             p = m["pol"]
             i = m["ids"]
             w = m["bpw"].weight.T
-            clt = np.dot(w, DlsObs[p, m["nu1"], m["nu2"]])       
+            clt = np.dot(w, DlsObs[p, m["nu1"], m["nu2"]])
             ps_vec[i] = clt
 
         return ps_vec

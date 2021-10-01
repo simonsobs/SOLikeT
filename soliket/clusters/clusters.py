@@ -54,7 +54,7 @@ class ClusterLikelihood(PoissonLikelihood):
         model.hmf = ccl.halos.MassFuncTinker08(cosmo, mass_def=self.mdef)
         model.hmb = ccl.halos.HaloBiasTinker10(cosmo, mass_def=self.mdef, mass_def_strict=False)
         model.hmc = ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
-        model.szk = SZTracer(cosmo)
+        # model.szk = SZTracer(cosmo)
         return model
 
     def _get_catalog(self):
@@ -94,7 +94,8 @@ class ClusterLikelihood(PoissonLikelihood):
     def _get_HMF(self):
         h = self.theory.get_param("H0") / 100.0
 
-        Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False).P
+        Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"),
+                                                          nonlinear=False).P
         pks = Pk_interpolator(self.zarr, self.k)
         # pkstest = Pk_interpolator(0.125, self.k )
         # print (pkstest * h**3 )

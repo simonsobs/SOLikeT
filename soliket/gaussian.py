@@ -55,7 +55,8 @@ class MultiGaussianLikelihood(GaussianLikelihood):
     def __init__(self, info=empty_dict, **kwargs):
 
         if 'components' in info:
-            self.likelihoods = [get_likelihood(*kv) for kv in zip(info['components'], info['options'])]
+            self.likelihoods = [get_likelihood(*kv) for kv in zip(info['components'],
+                                                                  info['options'])]
 
         default_info = merge_info(*[like.get_defaults() for like in self.likelihoods])
         default_info.update(info)
