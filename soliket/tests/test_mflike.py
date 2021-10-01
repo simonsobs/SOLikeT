@@ -7,8 +7,8 @@ import unittest
 from distutils.version import LooseVersion
 
 import camb
-# import mflike
-# import soliket
+import mflike  # noqa
+import soliket  # noqa
 
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "LAT_packages"
