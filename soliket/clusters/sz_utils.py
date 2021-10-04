@@ -9,14 +9,16 @@ from .massfunc import G_CGS as G_in_cgs
 
 # from .clusters import C_KM_S as C_in_kms
 
-rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
+rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
+                        / G_in_cgs * Mpc_in_cm / MSun_in_g
 
 
 def gaussian(xx, mu, sig, noNorm=False):
     if noNorm:
         return np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
     else:
-        return 1.0 / (sig * np.sqrt(2 * np.pi)) * np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
+        return 1.0 / (sig * np.sqrt(2 * np.pi)) \
+                            * np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
 
 
 class szutils:
@@ -25,7 +27,7 @@ class szutils:
         self.Survey = Survey
 
         # self.rho_crit0H100 = (3. / (8. * np.pi) * \
-        #                                   (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
+        #                           (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
 
     def P_Yo(self, LgY, M, z, param_vals, Ez_fn, Da_fn):
         H0 = param_vals["H0"]
@@ -91,7 +93,8 @@ class szutils:
         Y = 10 ** LgY
 
         sig_tr = np.outer(np.ones([MM.shape[0], MM.shape[1]]), self.Y_erf(Y, Ynoise))
-        sig_thresh = np.reshape(sig_tr, (MM.shape[0], MM.shape[1], len(self.Y_erf(Y, Ynoise))))
+        sig_thresh = np.reshape(sig_tr,
+                                (MM.shape[0], MM.shape[1], len(self.Y_erf(Y, Ynoise))))
 
         LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
         LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
@@ -179,7 +182,7 @@ class szutils:
 """Routines from nemo (author: Matt Hilton ) to limit dependencies"""
 
 
-# --------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
 def calcR500Mpc(z, M500, Ez_fn, H0):
     """Given z, M500 (in MSun), returns R500 in Mpc, with respect to critical density.
 
@@ -199,7 +202,7 @@ def calcR500Mpc(z, M500, Ez_fn, H0):
     return R500Mpc
 
 
-# --------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
 def calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0):
     """Given z, M500 (in MSun), returns angular size equivalent to R500, with respect to
     critical density.
@@ -214,7 +217,7 @@ def calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0):
     return theta500Arcmin
 
 
-# --------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
 def calcQ(theta500Arcmin, tck):
     """Returns Q, given theta500Arcmin, and a set of spline fit knots for (theta, Q).
 
@@ -226,12 +229,13 @@ def calcQ(theta500Arcmin, tck):
     return Q
 
 
-# --------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
 def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
     """Calculates relativistic correction to SZ effect at specified frequency, given z,
     M500 in MSun.
 
-    This assumes the Arnaud et al. (2005) M-T relation, and applies formulae of Itoh et al. (1998)
+    This assumes the Arnaud et al. (2005) M-T relation, and applies formulae of
+    Itoh et al. (1998)
 
     As for H13, we return fRel = 1 + delta_SZE (see also Marriage et al. 2011)
     """
@@ -277,7 +281,9 @@ def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
             - (44 / 5.0) * Xtw ** 4
             + (11 / 30.0) * Xtw ** 5
             + np.power(Stw, 2)
-            * (-(434 / 5.0) + (658 / 5.0) * Xtw - (242 / 5.0) * Xtw ** 2 + (143 / 30.0) * Xtw ** 3)
+            * (-(434 / 5.0) + (658 / 5.0) * Xtw
+               - (242 / 5.0) * Xtw ** 2
+               + (143 / 30.0) * Xtw ** 3)
             + np.power(Stw, 4) * (-(44 / 5.0) + (187 / 60.0) * Xtw)
     )
 
@@ -353,7 +359,7 @@ def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
     return fRel
 
 
-# --------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
 def y0FromLogM500(
         log10M500,
         z,
@@ -367,13 +373,14 @@ def y0FromLogM500(
         Ez_fn=None,
         Da_fn=None
 ):
-    """Predict y0~ given logM500 (in MSun) and redshift. Default scaling relation parameters are
-    A10 (as in H13).
+    """Predict y0~ given logM500 (in MSun) and redshift. Default scaling relation
+    parameters are A10 (as in H13).
 
     Use cosmoModel (astropy.cosmology object) to change/specify cosmological parameters.
 
-    fRelWeightsDict is used to account for the relativistic correction when y0~ has been constructed
-    from multi-frequency maps. Weights should sum to 1.0; keys are observed frequency in GHz.
+    fRelWeightsDict is used to account for the relativistic correction when y0~ has been
+    constructed from multi-frequency maps. Weights should sum to 1.0; keys are observed
+    frequency in GHz.
 
     Returns y0~, theta500Arcmin, Q
 
@@ -385,8 +392,8 @@ def y0FromLogM500(
              use, e.g., 3.0e+14 (not 3e14 or 3e+14)"
         )
 
-    # Filtering/detection was performed with a fixed fiducial cosmology... so we don't need to
-    # recalculate Q.
+    # Filtering/detection was performed with a fixed fiducial cosmology... so we don't
+    # need to recalculate Q.
     # We just need to recalculate theta500Arcmin and E(z) only
     M500 = np.power(10, log10M500)
     theta500Arcmin = calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0)
@@ -394,9 +401,9 @@ def y0FromLogM500(
 
     Ez = Ez_fn(z)
 
-    # Relativistic correction: now a little more complicated, to account for fact y0~ maps are
-    # weighted sum of individual frequency maps, and relativistic correction size varies with
-    # frequency
+    # Relativistic correction: now a little more complicated, to account for fact y0~ maps
+    # are weighted sum of individual frequency maps, and relativistic correction size
+    # varies with frequency
     fRels = []
     freqWeights = []
     for obsFreqGHz in fRelWeightsDict.keys():
@@ -406,7 +413,8 @@ def y0FromLogM500(
 
     # UPP relation according to H13
     # NOTE: m in H13 is M/Mpivot
-    # NOTE: this goes negative for crazy masses where the Q polynomial fit goes -ve, so ignore those
+    # NOTE: this goes negative for crazy masses where the Q polynomial fit goes -ve, so
+    # ignore those
     y0pred = tenToA0 * np.power(Ez, 2) * np.power(M500 / Mpivot, 1 + B0) * Q * fRel
 
     return y0pred, theta500Arcmin, Q

@@ -53,7 +53,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             else:
                 raise LoggedError(
                     self.log,
-                    "The 'data_folder' directory does not exist. " "Check the given path [%s].",
+                    "The 'data_folder' directory does not exist. "\
+                    "Check the given path [%s].",
                     self.data_folder,
                 )
 
@@ -92,7 +93,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                 differences)
 
     def get_requirements(self):
-        return dict(Cl={k: max(c, self.lmax_theory+1) for k, c in self.lcuts.items()})
+        return dict(Cl={k: max(c, self.lmax_theory + 1) for k, c in self.lcuts.items()})
 
     def _get_theory(self, **params_values):
         cl = self.provider.get_Cl(ell_factor=True)
@@ -320,7 +321,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                                                np.arange(cls.size,
                                                          dtype=int)),
                                        "pol": ppol_dict[pol],
-                                       "hasYX_xsp": pol in ["ET", "BE", "BT"],  # For symmetrization
+                                       "hasYX_xsp": pol in ["ET", "BE", "BT"],  # For symm
                                        "t1": xp_nu(exp_1, freq_1),
                                        "t2": xp_nu(exp_2, freq_2),
                                        "nu1": freq_1,

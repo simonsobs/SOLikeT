@@ -88,7 +88,8 @@ class MultiGaussianLikelihood(GaussianLikelihood):
 
     def get_requirements(self):
 
-        # Reqs with arguments like 'lmax', etc. may have to be carefully treated here to merge
+        # Reqs with arguments like 'lmax', etc. may have to be carefully treated here to
+        # merge
         reqs = {}
         for like in self.likelihoods:
             new_reqs = like.get_requirements()

@@ -22,7 +22,8 @@ class GaussianData:
         self.name = str(name)
 
         if not (len(x) == len(y) and cov.shape == (len(x), len(x))):
-            raise ValueError(f"Incompatible shapes! x={x.shape}, y={y.shape}, cov={cov.shape}")
+            raise ValueError(f"Incompatible shapes! x={x.shape}, y={y.shape}, \
+                               cov={cov.shape}")
 
         self.x = x
         self.y = y
@@ -38,7 +39,8 @@ class GaussianData:
         return len(self.x)
 
     def loglike(self, theory):
-        return multivariate_normal_logpdf(theory, self.y, self.cov, self.inv_cov, self.log_det)
+        return multivariate_normal_logpdf(theory, self.y, self.cov, self.inv_cov,
+                                          self.log_det)
 
 
 class MultiGaussianData(GaussianData):
@@ -154,5 +156,5 @@ class MultiGaussianData(GaussianData):
             for j, lj in zip(range(len(self.data)), self.labels)
         ]
 
-        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800, invert_yaxis=True,
-                                     xrotation=90)
+        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800,
+                                     invert_yaxis=True, xrotation=90)

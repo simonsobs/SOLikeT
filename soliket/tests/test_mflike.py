@@ -75,7 +75,8 @@ class MFLikeTest(unittest.TestCase):
     def setUp(self):
         from cobaya.install import install
 
-        install({"likelihood": {"mflike.MFLike": None}}, path=packages_path, skip_global=True)
+        install({"likelihood": {"mflike.MFLike": None}},
+                path=packages_path, skip_global=True)
 
     def get_mflike_type(self, as_string=False):
         if self.orig:
@@ -98,7 +99,8 @@ class MFLikeTest(unittest.TestCase):
         pars = camb.set_params(**camb_cosmo)
         results = camb.get_results(pars)
         powers = results.get_cmb_power_spectra(pars, CMB_unit="muK")
-        cl_dict = {k: powers["total"][:, v] for k, v in {"tt": 0, "ee": 1, "te": 3}.items()}
+        cl_dict = {k: powers["total"][:, v] for
+                   k, v in {"tt": 0, "ee": 1, "te": 3}.items()}
         for select, chi2 in chi2s.items():
             MFLike = self.get_mflike_type()
 

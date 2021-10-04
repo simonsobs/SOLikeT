@@ -30,7 +30,8 @@ class HMF:
 
         # Initialize rho critical values for usage
         self.om = om
-        self.rho_crit0H100 = (3. / (8. * np.pi) * (100 * 1.e5) ** 2.) / G_CGS * MPC2CM / MSUN_CGS
+        self.rho_crit0H100 = (3. / (8. * np.pi) * (100 * 1.e5) ** 2.) \
+                                / G_CGS * MPC2CM / MSUN_CGS
         self.rhoc0om = self.rho_crit0H100 * self.om
 
         if pk is None:
@@ -60,7 +61,8 @@ class HMF:
         M here is in MDeltam but we can convert
         """
         delts = self.critdensThreshold(delta)
-        dn_dlnm = dn_dlogM(M, self.zarr, self.rhoc0om, delts, self.kh, self.pk, 'comoving')
+        dn_dlnm = dn_dlogM(M, self.zarr, self.rhoc0om, delts, self.kh, self.pk,
+                           'comoving')
         dn_dm = dn_dlnm / M[:, None]
         return dn_dm
 

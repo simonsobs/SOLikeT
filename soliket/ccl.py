@@ -1,32 +1,36 @@
 """
 
 Simple CCL wrapper with function to return CCL cosmo object, and (optional) result of
-calling various custom methods on the ccl object. The idea is this is included with the CCL
-package, so it can easily be used as a Cobaya component whenever CCL is installed, here for now.
+calling various custom methods on the ccl object. The idea is this is included with the
+CCL package, so it can easily be used as a Cobaya component whenever CCL is installed,
+here for now.
 
 First version by AL. Untested example of usage at
 https://github.com/cmbant/SZCl_like/blob/methods/szcl_like/szcl_like.py
 
-get_CCL results a dictionary of results, where results['cosmo'] is the CCL cosmology object.
+get_CCL results a dictionary of results, where results['cosmo'] is the CCL cosmology
+object.
 
 Classes that need other CCL-computed results (without additional free parameters), should
 pass them in the requirements list.
 
-e.g. a Likelihood with get_requirements() returning {'CCL': {'methods:{'name': self.method}}}
-[where self is the Theory instance] will have results['name'] set to the result
-of self.method(cosmo) being called with the CCL cosmo object.
+e.g. a Likelihood with get_requirements() returning
+{'CCL': {'methods:{'name': self.method}}} [where self is the Theory instance] will have
+results['name'] set to the result of self.method(cosmo) being called with theCCL cosmo
+object.
 
-The Likelihood class can therefore handle for itself which results specifically it needs from CCL,
-and just give the method to return them (to be called and cached by Cobaya with the right
-parameters at the appropriate time).
+The Likelihood class can therefore handle for itself which results specifically it needs
+from CCL, and just give the method to return them (to be called and cached by Cobaya with
+the right parameters at the appropriate time).
 
-Alternatively the Likelihood can compute what it needs from results['cosmo'], however in this
-case it will be up to the Likelihood to cache the results appropriately itself.
+Alternatively the Likelihood can compute what it needs from results['cosmo'], however in
+this case it will be up to the Likelihood to cache the results appropriately itself.
 
-Note that this approach preclude sharing results other than the cosmo object itself between
-different likelihoods.
+Note that this approach preclude sharing results other than the cosmo object itself
+between different likelihoods.
 
-Also note lots of things still cannot be done consistently in CCL, so this is far from general.
+Also note lots of things still cannot be done consistently in CCL, so this is far from
+general.
 
 April 2021:
 -----------
@@ -76,7 +80,8 @@ class CCL(Theory):
 
         self.kmax = max(self.kmax, options.get('kmax', self.kmax))
         self.z = np.unique(np.concatenate(
-            (np.atleast_1d(options.get("z", self._default_z_sampling)), np.atleast_1d(self.z))))
+                            (np.atleast_1d(options.get("z", self._default_z_sampling)),
+                            np.atleast_1d(self.z))))
 
         # Dictionary of the things CCL needs from CAMB/CLASS
         needs = {}
@@ -117,7 +122,7 @@ class CCL(Theory):
         distance = self.provider.get_comoving_radial_distance(self.z)
         hubble_z = self.provider.get_Hubble(self.z)
         H0 = hubble_z[0]
-        h = H0/100
+        h = H0 / 100
         E_of_z = hubble_z / H0
 
         Omega_c = self.provider.get_param('omch2') / h ** 2
@@ -142,7 +147,8 @@ class CCL(Theory):
                 Pk_lin = np.flip(Pk_lin, axis=0)
 
                 if self.nonlinear:
-                    _, z, Pk_nonlin = self.provider.get_Pk_grid(var_pair=pair, nonlinear=True)
+                    _, z, Pk_nonlin = self.provider.get_Pk_grid(var_pair=pair,
+                                                                nonlinear=True)
                     Pk_nonlin = np.flip(Pk_nonlin, axis=0)
 
                     # Create a CCL cosmology object. Because we are giving it background
@@ -158,11 +164,10 @@ class CCL(Theory):
                                                                 'h_over_h0': E_of_z},
                                                     pk_linear={'a': a,
                                                                'k': k,
-                                                               'delta_matter:delta_matter': Pk_lin},
+                                                               'delta_matter:delta_matter': Pk_lin}, # noqa E501
                                                     pk_nonlin={'a': a,
                                                                'k': k,
-                                                               'delta_matter:delta_matter':
-                                                               Pk_nonlin}
+                                                               'delta_matter:delta_matter': Pk_nonlin} # noqa E501
                                                     )
 
                 else:
@@ -177,7 +182,7 @@ class CCL(Theory):
                                                                 'h_over_h0': E_of_z},
                                                     pk_linear={'a': a,
                                                                'k': k,
-                                                               'delta_matter:delta_matter': Pk_lin}
+                                                               'delta_matter:delta_matter': Pk_lin} # noqa E501
                                                     )
 
         state['CCL'] = {'cosmo': cosmo}
