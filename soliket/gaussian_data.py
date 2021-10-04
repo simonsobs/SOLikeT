@@ -22,7 +22,8 @@ class GaussianData:
         self.name = str(name)
 
         if not (len(x) == len(y) and cov.shape == (len(x), len(x))):
-            raise ValueError(f"Incompatible shapes! x={x.shape}, y={y.shape}, cov={cov.shape}")
+            raise ValueError(f"Incompatible shapes! x={x.shape}, y={y.shape}, \
+                               cov={cov.shape}")
 
         self.x = x
         self.y = y
@@ -38,7 +39,8 @@ class GaussianData:
         return len(self.x)
 
     def loglike(self, theory):
-        return multivariate_normal_logpdf(theory, self.y, self.cov, self.inv_cov, self.log_det)
+        return multivariate_normal_logpdf(theory, self.y, self.cov, self.inv_cov,
+                                          self.log_det)
 
 
 class MultiGaussianData(GaussianData):
@@ -71,7 +73,8 @@ class MultiGaussianData(GaussianData):
                     cov = cross_covs[key]
                     if not cov.shape == (len(d1), len(d2)):
                         raise ValueError(
-                            f"Cross-covariance (for {d1.name} x {d2.name}) has wrong shape: {cov.shape}!"
+                            f"Cross-covariance (for {d1.name} x {d2.name}) \
+                              has wrong shape: {cov.shape}!"
                         )
                 elif rev_key in cross_covs:
                     cross_covs[key] = cross_covs[rev_key].T
@@ -112,7 +115,8 @@ class MultiGaussianData(GaussianData):
 
     @property
     def labels(self):
-        return [x for y in [[name] * len(d) for name, d in zip(self.names, self.data_list)] for x in y]
+        return [x for y in [[name] * len(d) for
+                name, d in zip(self.names, self.data_list)] for x in y]
 
     def _index_range(self, name):
         if name not in self.names:
@@ -152,4 +156,5 @@ class MultiGaussianData(GaussianData):
             for j, lj in zip(range(len(self.data)), self.labels)
         ]
 
-        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800, invert_yaxis=True, xrotation=90)
+        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800,
+                                     invert_yaxis=True, xrotation=90)

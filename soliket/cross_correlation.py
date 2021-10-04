@@ -1,6 +1,6 @@
 """
 Simple likelihood for CMB-galaxy cross-correlations using the cobaya
-CCL module. 
+CCL module.
 
 First version by Pablo Lemos
 """
@@ -9,11 +9,12 @@ import numpy as np
 from .gaussian import GaussianData, GaussianLikelihood
 import pyccl as ccl
 
+
 class CrossCorrelationLikelihood(GaussianLikelihood):
     def initialize(self):
         self.dndz = np.loadtxt(self.dndz_file)
 
-        x,y,dy = self._get_data()
+        x, y, dy = self._get_data()
         cov = np.diag(dy**2)
         self.data = GaussianData("CrossCorrelation", x, y, cov)
 
@@ -32,7 +33,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         self.ell_cross = data_cross[0]
         cl_cross = data_cross[1]
-        cl_cross_err = data_cross[2]  
+        cl_cross_err = data_cross[2]
 
         x = np.concatenate([self.ell_auto, self.ell_cross])
         y = np.concatenate([cl_auto, cl_cross])
@@ -43,14 +44,18 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     def _get_theory(self, **params_values):
         cosmo = self.provider.get_CCL()['cosmo']
 
-        tracer_g = ccl.NumberCountsTracer(cosmo, has_rsd=False, dndz = self.dndz.T, 
-                                            bias =(self.dndz[:,0], params_values['b1']*np.ones(len(self.dndz[:,0]))), 
-                                            mag_bias = (self.dndz[:,0], params_values['s1']*np.ones(len(self.dndz[:,0])))
-                                            )
-        tracer_k = ccl.CMBLensingTracer(cosmo, z_source = 1060)
+        tracer_g = ccl.NumberCountsTracer(cosmo, has_rsd=False, dndz=self.dndz.T,
+                                          bias=(self.dndz[:, 0],
+                                                params_values['b1'] *
+                                                np.ones(len(self.dndz[:, 0]))),
+                                          mag_bias=(self.dndz[:, 0],
+                                                    params_values['s1'] *
+                                                    np.ones(len(self.dndz[:, 0])))
+                                          )
+        tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
 
-        cl_gg = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto) #+ 1e-7
-        cl_kg = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)    
+        cl_gg = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto)  # + 1e-7
+        cl_kg = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)
 
         return np.concatenate([cl_gg, cl_kg])
 

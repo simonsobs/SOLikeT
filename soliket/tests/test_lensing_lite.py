@@ -25,7 +25,7 @@ def get_demo_lensing_model(theory):
             H0:
                 prior:
                   min: 40
-                  max: 100        
+                  max: 100
         """
     elif theory == "classy":
         info_yaml = r"""
@@ -47,7 +47,7 @@ def get_demo_lensing_model(theory):
             H0:
                 prior:
                   min: 40
-                  max: 100        
+                  max: 100
 
         """
 
