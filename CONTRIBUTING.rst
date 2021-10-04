@@ -43,13 +43,12 @@ Create a *branch* off the ``simonsobs`` master branch. Working on unique branche
 Hack away!
 ^^^^^^^^^^
 
-Write the new code you would like to contribute and *commit* it to the feature branch on your local repository. Ideally commit small units of work often with clear and descriptive commit messages describing the changes you made. To commit changes to a file:
+Write the new code you would like to contribute, remembering to abide by the :ref:`Code Style`, and *commit* it to the feature branch on your local repository. Ideally commit small units of work often with clear and descriptive commit messages describing the changes you made. To commit changes to a file:
 
 ::
 
   git add file_containing_your_contribution
   git commit -m 'Your clear and descriptive commit message'
-
 
 *Push* the contributions in your feature branch to your remote fork on GitHub:
 
@@ -131,11 +130,37 @@ Before your pull request can be merged into the codebase, it will be reviewed by
 
 General Guidelines
 ^^^^^^^^^^^^^^^^^^
-
-  - All contributions should follow the `PEP8 Style Guide for Python Code <https://www.python.org/dev/peps/pep-0008/>`_. We recommend using `flake8 <https://flake8.pycqa.org/>`__ to check your code for PEP8 compliance.
 ..
+  - All contributions should follow the `PEP8 Style Guide for Python Code <https://www.python.org/dev/peps/pep-0008/>`_. We recommend using `flake8 <https://flake8.pycqa.org/>`__ to check your code for PEP8 compliance.
   - SOLikeT is compatible with Python>=3.6 (see `setup.cfg <https://github.com/simonsobs/soliket/blob/master/setup.cfg>`_). SOLikeT *does not* support backwards compatibility with Python 2.x; `six`, `__future__` and `2to3` should not be used.
   - Importing SOLikeT should only depend on having `NumPy <https://www.numpy.org>`_, `SciPy <https://www.scipy.org/>`_ and `Astropy <https://www.astropy.org/>`__ installed.
+
+Code Style
+^^^^^^^^^^
+
+All contributions should follow the `PEP8 Style Guide for Python Code <https://www.python.org/dev/peps/pep-0008/>`_. When a PR is created for SOLikeT, a check will be run to make sure your code complies with these recommendations, which are the same as those specified for `Cobaya <https://cobaya.readthedocs.io/>`_. This means the following checks will be made:
+
+::
+
+  E713,E704,E703,E714,E741,E10,E11,E20,E22,E23,E25,E27,E301,E302,E304,E9,F405,F406,F5,F6,F7,F8,W1,W2,W3,W6
+
+and a line length limit of 90 characters will be applied.
+
+You may find it easier to run this check as locally before raising a PR. This can either be done by running:
+
+::
+  tox -e codestlye
+
+in the SOLikeT root directory, or using the pre-commit hooks which are provided. These can be run before you make a local commit:
+
+::
+  pre-commit run --all-files
+
+Before you run pre-commit the first time you will need to
+
+::
+  pre-commit install
+
 
 Unit Tests
 ^^^^^^^^^^
