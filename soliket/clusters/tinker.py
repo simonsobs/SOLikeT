@@ -7,7 +7,7 @@ from scipy.integrate import simps
 
 tinker_data = np.transpose([[float(x) for x in line.split()]
                             for line in
-                            """200 0.186 1.47 2.57 1.19 
+                            """200 0.186 1.47 2.57 1.19
                                300 0.200 1.52 2.25 1.27
                                400 0.212 1.56 2.05 1.34
                                600 0.218 1.61 1.87 1.45
@@ -26,7 +26,7 @@ def tinker_params_spline(delta, z=None):
         tinker_splines = []
         D, data = np.log(tinker_data[0]), tinker_data[1:]
         for y in data:
-            # Extend to large Delta 
+            # Extend to large Delta
             p = np.polyfit(D[-2:], y[-2:], 1)
             x = np.hstack((D, D[-1] + 3.))
             y = np.hstack((y, np.polyval(p, x[-1])))

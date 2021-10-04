@@ -11,6 +11,7 @@ packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "lensing_packages"
 )
 
+
 def get_demo_lensing_model(theory):
     if theory == "camb":
         info_yaml = r"""
@@ -31,7 +32,7 @@ def get_demo_lensing_model(theory):
             H0:
                 prior:
                   min: 40
-                  max: 100        
+                  max: 100
         """
     elif theory == "classy":
         info_yaml = r"""
@@ -53,7 +54,7 @@ def get_demo_lensing_model(theory):
             H0:
                 prior:
                   min: 40
-                  max: 100        
+                  max: 100
 
         """
 

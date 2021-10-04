@@ -1,5 +1,5 @@
 import numpy as np
-import pytest
+# import pytest
 from soliket.tests.test_mflike import cosmo_params, nuisance_params
 
 
@@ -16,7 +16,8 @@ def test_multi():
 
     camb_options = {"extra_args": {"lens_potential_accuracy": 1}}
 
-    fg_params = {"a_tSZ": {"prior": {"min": 3.0, "max": 3.6}}, "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}}}
+    fg_params = {"a_tSZ": {"prior": {"min": 3.0, "max": 3.6}},
+                 "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}}}
     mflike_params = {**cosmo_params, **nuisance_params}
     mflike_params.update(fg_params)
 

@@ -5,6 +5,7 @@ from scipy import interpolate
 import astropy.io.fits as pyfits
 # from astLib import astWCS
 from astropy.io import fits
+from astropy.wcs import WCS
 import astropy.table as atpy
 
 
@@ -35,25 +36,27 @@ def read_mock_cat(fitsfile, qmin):
 def read_matt_mock_cat(fitsfile, qmin):
     list = fits.open(fitsfile)
     data = list[1].data
-    ra = data.field("RADeg")
-    dec = data.field("decDeg")
+    # ra = data.field("RADeg")
+    # dec = data.field("decDeg")
     z = data.field("redshift")
     zerr = data.field("redshiftErr")
     Y0 = data.field("fixed_y_c")
     Y0err = data.field("fixed_err_y_c")
     SNR = data.field("fixed_SNR")
-    M = data.field("true_M500")
+    # M = data.field("true_M500")
     ind = np.where(SNR >= qmin)[0]
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
 
 
 def loadAreaMask(extName, DIR):
-    """Loads the survey area mask (i.e., after edge-trimming and point source masking, produced by nemo).
+    """Loads the survey area mask
+    (i.e., after edge-trimming and point source masking, produced by nemo).
     Returns map array, wcs
     """
     areaImg = pyfits.open(os.path.join(DIR, "areaMask%s.fits.gz" % (extName)))
     areaMap = areaImg[0].data
-    wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    # wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    wcs = WCS(areaImg[0].header)
     areaImg.close()
 
     return areaMap, wcs
@@ -63,9 +66,11 @@ def loadRMSmap(extName, DIR):
     """Loads the survey RMS map (produced by nemo).
     Returns map array, wcs
     """
-    areaImg = pyfits.open(os.path.join(DIR, "RMSMap_Arnaud_M2e14_z0p4%s.fits.gz" % (extName)))
+    areaImg = pyfits.open(os.path.join(DIR,
+                                       "RMSMap_Arnaud_M2e14_z0p4%s.fits.gz" % (extName)))
     areaMap = areaImg[0].data
-    wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    # wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    wcs = WCS(areaImg[0].header)
     areaImg.close()
 
     return areaMap, wcs
@@ -74,13 +79,14 @@ def loadRMSmap(extName, DIR):
 def loadQ(source, tileNames=None):
     """Load the filter mismatch function Q as a dictionary of spline fits.
     Args:
-        source (NemoConfig or str): Either the path to a .fits table (containing Q fits for all tiles - this
-            is normally selFn/QFit.fits), or a NemoConfig object (from which the path and tiles to use will
-            be inferred).
-        tileNames (optional, list): A list of tiles for which the Q function will be extracted. If
-            source is a NemoConfig object, this should be set to None.
+        source (NemoConfig or str): Either the path to a .fits table (containing Q fits
+            for all tiles - this is normally selFn/QFit.fits), or a NemoConfig object
+            (from which the path and tiles to use will be inferred).
+        tileNames (optional, list): A list of tiles for which the Q function will be
+            extracted. If source is a NemoConfig object, this should be set to None.
     Returns:
-        A dictionary (with tile names as keys), containing spline knots for the Q function for each tile.
+        A dictionary (with tile names as keys), containing spline knots for the Q
+        function for each tile.
     """
     if type(source) == str:
         combinedQTabFileName = source
@@ -93,20 +99,24 @@ def loadQ(source, tileNames=None):
         combinedQTab = atpy.Table().read(combinedQTabFileName)
         for key in combinedQTab.keys():
             if key != "theta500Arcmin":
-                tckDict[key] = interpolate.splrep(combinedQTab["theta500Arcmin"], combinedQTab[key])
+                tckDict[key] = interpolate.splrep(combinedQTab["theta500Arcmin"],
+                                                  combinedQTab[key])
     else:
         if tileNames is None:
             raise Exception(
-                "If source does not point to a complete QFit.fits file, you need to supply tileNames."
+                "If source does not point to a complete QFit.fits file,\
+                 you need to supply tileNames."
             )
         for tileName in tileNames:
-            tab = atpy.Table().read(combinedQTabFileName.replace(".fits", "#%s.fits" % (tileName)))
+            tab = atpy.Table().read(combinedQTabFileName.replace(".fits",
+                                                                 "#%s.fits" % (tileName)))
             tckDict[tileName] = interpolate.splrep(tab["theta500Arcmin"], tab["Q"])
     return tckDict
 
 
 class SurveyData:
-    def __init__(self, nemoOutputDir, ClusterCat, qmin=5.6, szarMock=False, tiles=False, num_noise_bins=20):
+    def __init__(self, nemoOutputDir, ClusterCat, qmin=5.6, szarMock=False, tiles=False,
+                 num_noise_bins=20):
         self.nemodir = nemoOutputDir
 
         self.tckQFit = loadQ(self.nemodir + "/QFit.fits")
@@ -116,17 +126,19 @@ class SurveyData:
 
         if szarMock:
             print("mock catalog")
-            self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_mock_cat(ClusterCat, self.qmin)
+            self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = \
+                                                    read_mock_cat(ClusterCat, self.qmin)
         else:
             print("real catalog")
-            self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_clust_cat(
-                ClusterCat, self.qmin
-            )
+            self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = \
+                                                    read_clust_cat(ClusterCat, self.qmin)
 
         if tiles:
             self.filetile = self.nemodir + "tileAreas.txt"
-            self.tilenames = np.loadtxt(self.filetile, dtype=np.str, usecols=0, unpack=True)
-            self.tilearea = np.loadtxt(self.filetile, dtype=np.float, usecols=1, unpack=True)
+            self.tilenames = np.loadtxt(self.filetile, dtype=np.str,
+                                        usecols=0, unpack=True)
+            self.tilearea = np.loadtxt(self.filetile, dtype=np.float,
+                                       usecols=1, unpack=True)
 
             self.fsky = []
             self.mask = []
@@ -152,7 +164,8 @@ class SurveyData:
             self.rmstotal = self.rms[self.rms > 0]
             self.fskytotal = 987.5 / 41252.9612
 
-        count_temp, bin_edge = np.histogram(np.log10(self.rmstotal), bins=self.num_noise_bins)
+        count_temp, bin_edge = np.histogram(np.log10(self.rmstotal),
+                                            bins=self.num_noise_bins)
 
         self.frac_of_survey = count_temp * 1.0 / np.sum(count_temp)
         self.Ythresh = 10 ** ((bin_edge[:-1] + bin_edge[1:]) / 2.0)
