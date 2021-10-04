@@ -84,9 +84,10 @@ Status checks
 A series of automated checks will be run on your pull request, some of which will be required to pass before it can be merged into the main codebase:
 
   - ``Tests`` (Required) runs the `unit tests`
+  - ``Code Style`` (Required) runs `flake8 <https://flake8.pycqa.org/en/latest/>`__ to check that your code conforms to the `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_ style guidelines. Click "Details" to view any errors.
 ..
   _ in four predefined environments; `latest supported versions`, `oldest supported versions`, `macOS latest supported` and `Windows latest supported`. Click "Details" to view the output including any failures.
-  - ``Code Style`` (Required) runs `flake8 <https://flake8.pycqa.org/en/latest/>`__ to check that your code conforms to the `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_ style guidelines. Click "Details" to view any errors.
+
   - ``codecov`` reports the test coverage for your pull request; you should aim for `codecov/patch — 100.00%`. Click "Details" to view coverage data.
   - ``docs`` (Required) builds the `docstrings`_ on `readthedocs <https://readthedocs.org/>`_. Click "Details" to view the documentation or the failed build log.
 
@@ -130,9 +131,10 @@ Before your pull request can be merged into the codebase, it will be reviewed by
 
 General Guidelines
 ^^^^^^^^^^^^^^^^^^
+
+  - All contributions should follow the `PEP8 Style Guide for Python Code <https://www.python.org/dev/peps/pep-0008/>`_. We recommend using `flake8 <https://flake8.pycqa.org/>`__ to check your code for PEP8 compliance.
 ..
   - SOLikeT is compatible with Python>=3.6 (see `setup.cfg <https://github.com/simonsobs/soliket/blob/master/setup.cfg>`_). SOLikeT *does not* support backwards compatibility with Python 2.x; `six`, `__future__` and `2to3` should not be used.
-  - All contributions should follow the `PEP8 Style Guide for Python Code <https://www.python.org/dev/peps/pep-0008/>`_. We recommend using `flake8 <https://flake8.pycqa.org/>`__ to check your code for PEP8 compliance.
   - Importing SOLikeT should only depend on having `NumPy <https://www.numpy.org>`_, `SciPy <https://www.scipy.org/>`_ and `Astropy <https://www.astropy.org/>`__ installed.
 
 Unit Tests
