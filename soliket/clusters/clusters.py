@@ -52,9 +52,10 @@ class ClusterLikelihood(PoissonLikelihood):
     def _get_sz_model(self, cosmo):
         model = SZModel()
         model.hmf = ccl.halos.MassFuncTinker08(cosmo, mass_def=self.mdef)
-        model.hmb = ccl.halos.HaloBiasTinker10(cosmo, mass_def=self.mdef, mass_def_strict=False)
+        model.hmb = ccl.halos.HaloBiasTinker10(cosmo,
+                                               mass_def=self.mdef, mass_def_strict=False)
         model.hmc = ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
-        model.szk = SZTracer(cosmo)
+        # model.szk = SZTracer(cosmo)
         return model
 
     def _get_catalog(self):
@@ -77,7 +78,8 @@ class ClusterLikelihood(PoissonLikelihood):
         )
 
     def _get_ob(self):
-        return (self.theory.get_param("ombh2")) / ((self.theory.get_param("H0") / 100.0) ** 2)
+        return (self.theory.get_param("ombh2")) \
+                    / ((self.theory.get_param("H0") / 100.0) ** 2)
 
     def _get_Ez(self):
         return self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
@@ -94,12 +96,13 @@ class ClusterLikelihood(PoissonLikelihood):
     def _get_HMF(self):
         h = self.theory.get_param("H0") / 100.0
 
-        Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False).P
+        Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"),
+                                                          nonlinear=False).P
         pks = Pk_interpolator(self.zarr, self.k)
         # pkstest = Pk_interpolator(0.125, self.k )
         # print (pkstest * h**3 )
 
-        Ez = self._get_Ez()  # self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
+        Ez = self._get_Ez()
         om = self._get_om()
 
         hmf = mf.HMF(om, Ez, pk=pks * h ** 3, kh=self.k / h, zarr=self.zarr)
@@ -113,7 +116,8 @@ class ClusterLikelihood(PoissonLikelihood):
         H0 = self.theory.get_param("H0")
         ob = self._get_ob()
         om = self._get_om()
-        param_vals = {"om": om, "ob": ob, "H0": H0, "B0": B0, "scat": scat, "massbias": massbias}
+        param_vals = {"om": om, "ob": ob, "H0": H0, "B0": B0, "scat": scat,
+                      "massbias": massbias}
         return param_vals
 
     def _get_rate_fn(self, **kwargs):
@@ -152,7 +156,8 @@ class ClusterLikelihood(PoissonLikelihood):
         """
         DA_z = self.theory.get_angular_diameter_distance(self.zarr)
 
-        dV_dz = DA_z ** 2 * (1.0 + self.zarr) ** 2 / (self.theory.get_Hubble(self.zarr) / C_KM_S)
+        dV_dz = DA_z ** 2 * (1.0 + self.zarr) ** 2\
+                    / (self.theory.get_Hubble(self.zarr) / C_KM_S)
 
         # dV_dz *= (self.theory.get_param("H0") / 100.0) ** 3.0  # was h0
         return dV_dz
@@ -175,13 +180,16 @@ class ClusterLikelihood(PoissonLikelihood):
 
         for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
             Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
-            N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0)
-            Ntot += np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * self.survey.fskytotal * frac
+            N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0),
+                           axis=0)
+            Ntot += np.trapz(N_z * dVdz, x=z_arr) \
+                        * 4.0 * np.pi * self.survey.fskytotal * frac
 
         # To test Mass function against Nemo.
         # Pfunc = 1.
         # N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None]/h, axis=0), axis=0)
-        # Ntot = np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * (600./(4*np.pi * (180/np.pi)**2))
+        # Ntot = np.trapz(N_z * dVdz, x=z_arr) \
+        #           * 4.0 * np.pi * (600./(4*np.pi * (180/np.pi)**2))
         # print("Ntot", Ntot)
 
         return Ntot

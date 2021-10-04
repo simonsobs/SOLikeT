@@ -59,40 +59,42 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             else:
                 raise LoggedError(
                     self.log,
-                    "The 'data_folder' directory does not exist. " "Check the given path [%s].",
+                    "The 'data_folder' directory does not exist. "\
+                    "Check the given path [%s].",
                     self.data_folder,
                 )
 
         # Set files where data/covariance are loaded from
         self.datapath = os.path.join(self.data_folder, self.data_filename)
         self.covpath = os.path.join(self.data_folder, self.cov_filename)
-        self.binning_matrix_path = os.path.join(self.data_folder, self.binning_matrix_filename)
+        self.binning_matrix_path = os.path.join(self.data_folder,
+                                                self.binning_matrix_filename)
 
-        cov = np.loadtxt(self.covpath)
+        # cov = np.loadtxt(self.covpath)
 
         # Initialize fiducial PS
         Cls = self._get_fiducial_Cls()
 
         # Set the fiducial spectra
         self.ls = np.arange(0, self.lmax)
-        self.fcltt = Cls["tt"][0 : self.lmax]
-        self.fclpp = Cls["pp"][0 : self.lmax]
-        self.fclee = Cls["ee"][0 : self.lmax]
-        self.fclte = Cls["te"][0 : self.lmax]
-        self.fclbb = Cls["bb"][0 : self.lmax]
+        self.fcltt = Cls["tt"][0: self.lmax]
+        self.fclpp = Cls["pp"][0: self.lmax]
+        self.fclee = Cls["ee"][0: self.lmax]
+        self.fclte = Cls["te"][0: self.lmax]
+        self.fclbb = Cls["bb"][0: self.lmax]
         self.thetaclkk = self.fclpp * (self.ls * (self.ls + 1)) ** 2 * 0.25
 
         # load the correction terms generate from the script n1so.py
 
-        self.N0cltt = np.loadtxt(os.path.join(self.data_folder, "n0mvdcltt1.txt")).transpose()
-        self.N0clte = np.loadtxt(os.path.join(self.data_folder, "n0mvdclte1.txt")).transpose()
-        self.N0clee = np.loadtxt(os.path.join(self.data_folder, "n0mvdclee1.txt")).transpose()
-        self.N0clbb = np.loadtxt(os.path.join(self.data_folder, "n0mvdclbb1.txt")).transpose()
-        self.N1clpp = np.loadtxt(os.path.join(self.data_folder, "n1mvdclkk1.txt")).transpose()
-        self.N1cltt = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltte1.txt")).transpose()
-        self.N1clte = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltee1.txt")).transpose()
-        self.N1clee = np.loadtxt(os.path.join(self.data_folder, "n1mvdcleee1.txt")).transpose()
-        self.N1clbb = np.loadtxt(os.path.join(self.data_folder, "n1mvdclbbe1.txt")).transpose()
+        self.N0cltt = np.loadtxt(os.path.join(self.data_folder, "n0mvdcltt1.txt")).T
+        self.N0clte = np.loadtxt(os.path.join(self.data_folder, "n0mvdclte1.txt")).T
+        self.N0clee = np.loadtxt(os.path.join(self.data_folder, "n0mvdclee1.txt")).T
+        self.N0clbb = np.loadtxt(os.path.join(self.data_folder, "n0mvdclbb1.txt")).T
+        self.N1clpp = np.loadtxt(os.path.join(self.data_folder, "n1mvdclkk1.txt")).T
+        self.N1cltt = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltte1.txt")).T
+        self.N1clte = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltee1.txt")).T
+        self.N1clee = np.loadtxt(os.path.join(self.data_folder, "n1mvdcleee1.txt")).T
+        self.N1clbb = np.loadtxt(os.path.join(self.data_folder, "n1mvdclbbe1.txt")).T
         self.n0 = np.loadtxt(os.path.join(self.data_folder, "n0mv.txt"))
 
         super().initialize()
@@ -130,17 +132,17 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     def _get_theory(self, **params_values):
         cl = self.provider.get_Cl(ell_factor=False)
 
-        Cl_theo = cl["pp"][0 : self.lmax]
-        Cl_tt = cl["tt"][0 : self.lmax]
-        Cl_ee = cl["ee"][0 : self.lmax]
-        Cl_te = cl["te"][0 : self.lmax]
-        Cl_bb = cl["bb"][0 : self.lmax]
+        Cl_theo = cl["pp"][0: self.lmax]
+        Cl_tt = cl["tt"][0: self.lmax]
+        Cl_ee = cl["ee"][0: self.lmax]
+        Cl_te = cl["te"][0: self.lmax]
+        Cl_bb = cl["bb"][0: self.lmax]
 
         ls = self.ls
         Clkk_theo = (ls * (ls + 1)) ** 2 * Cl_theo * 0.25
 
         Clkk_binned = self.binning_matrix.dot(Clkk_theo)
-        Cltt_binned = self.binning_matrix.dot(Cl_tt)
+        # Cltt_binned = self.binning_matrix.dot(Cl_tt)
 
         correction = (
             2
@@ -169,5 +171,5 @@ class LensingLiteLikelihood(BinnedPSLikelihood):
     lmax: int = 3000
     datapath: str = resource_filename("soliket", "lensing/data/binnedauto.txt")
     covpath: str = resource_filename("soliket", "lensing/data/binnedcov.txt")
-    binning_matrix_path: str = resource_filename("soliket", "lensing/data/binningmatrix.txt")
-
+    binning_matrix_path: str = resource_filename("soliket",
+                                                 "lensing/data/binningmatrix.txt")
