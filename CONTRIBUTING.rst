@@ -43,7 +43,7 @@ Create a *branch* off the ``simonsobs`` master branch. Working on unique branche
 Hack away!
 ^^^^^^^^^^
 
-Write the new code you would like to contribute, remembering to abide by the :ref:`Code Style`, and *commit* it to the feature branch on your local repository. Ideally commit small units of work often with clear and descriptive commit messages describing the changes you made. To commit changes to a file:
+Write the new code you would like to contribute, remembering to abide by the `Code Style`_, and *commit* it to the feature branch on your local repository. Ideally commit small units of work often with clear and descriptive commit messages describing the changes you made. To commit changes to a file:
 
 ::
 
@@ -149,16 +149,19 @@ and a line length limit of 90 characters will be applied.
 You may find it easier to run this check as locally before raising a PR. This can either be done by running:
 
 ::
+
   tox -e codestlye
 
 in the SOLikeT root directory, or using the pre-commit hooks which are provided. These can be run before you make a local commit:
 
 ::
+
   pre-commit run --all-files
 
-Before you run pre-commit the first time you will need to
+Before you run pre-commit the first time you will need to:
 
 ::
+
   pre-commit install
 
 
@@ -169,9 +172,11 @@ Pull requests will require existing unit tests to pass before they can be merged
 
 If your unit tests check the statistical distribution of a random sample, the test outcome itself is a random variable, and the test will fail from time to time. Please mark such tests with the ``@pytest.mark.flaky`` decorator, so that they will be automatically tried again on failure. To prevent non-random test failures from being run multiple times, please isolate random statistical tests and deterministic tests in their own test cases.
 
-Docstrings
-^^^^^^^^^^
+
 ..
+  Docstrings
+  ^^^^^^^^^^
+  
   All public classes, methods and functions require docstrings. You can build documentation locally by installing `sphinx-astropy <https://github.com/astropy/sphinx-astropy>`_ and calling ``make html`` in the ``docs`` subdirectory. Docstrings should include the following sections:
 
     - Description
