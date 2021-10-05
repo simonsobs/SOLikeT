@@ -8,17 +8,18 @@ from ..gaussian import GaussianData, GaussianLikelihood
 from .. import utils
 from .limber import do_limber
 
+
 class XcorrLikelihood(GaussianLikelihood):
 
     def initialize(self):
-        name: str = "Xcorr"
+        name: str = "Xcorr"  # noqa F841
         self.log.info('Initialising.')
 
         if self.datapath is None:
 
-            dndz_file: Optional[str]
-            auto_file: Optional[str]
-            cross_file: Optional[str]
+            dndz_file: Optional[str]  # noqa F821
+            auto_file: Optional[str]  # noqa F821
+            cross_file: Optional[str]  # noqa F821
 
             self.dndz = np.loadtxt(self.dndz_file)
 
@@ -30,11 +31,11 @@ class XcorrLikelihood(GaussianLikelihood):
                 self.cov = self._get_cov()
 
         else:
-            
-            self.k_tracer_name: Optional[str]
-            self.gc_tracer_name: Optional[str]
-            # tracer_combinations: Optional[str] # TODO: implement this along with keep_selection
-            
+
+            self.k_tracer_name: Optional[str]  # noqa F821
+            self.gc_tracer_name: Optional[str]  # noqa F821
+            # tracer_combinations: Optional[str] # TODO: implement with keep_selection
+
             self.sacc_data = self._get_sacc_data()
 
             self.x = self.sacc_data['x']
@@ -44,17 +45,17 @@ class XcorrLikelihood(GaussianLikelihood):
             self.ngal = self.sacc_data['ngal']
 
         # TODO is this resolution limit on zarray a CAMB problem?
-        self.nz: Optional[int]
+        self.nz: Optional[int]  # noqa F821
         assert self.nz <= 149, "CAMB limitations requires nz <= 149"
-        self.zarray = np.linspace(self.dndz[:,0].min(), self.dndz[:,0].max(), self.nz)
+        self.zarray = np.linspace(self.dndz[:, 0].min(), self.dndz[:, 0].max(), self.nz)
         self.zbgdarray = np.concatenate([self.zarray, [1100]]) # TODO: unfix zstar
-        self.Nchi: Optional[int]
-        self.Nchi_mag: Optional[int]
+        self.Nchi: Optional[int]  # noqa F821
+        self.Nchi_mag: Optional[int]  # noqa F821
 
-        self.Pk_interp_kmax: Optional[float]
+        self.Pk_interp_kmax: Optional[float]  # noqa F821
 
-        self.high_ell: Optional[float]
-        self.ell_range = np.linspace(1, self.high_ell, int(self.high_ell+1))
+        self.high_ell: Optional[float]  # noqa F821
+        self.ell_range = np.linspace(1, self.high_ell, int(self.high_ell + 1))
 
         # TODO expose these defaults
         self.alpha_auto = 0.9981
@@ -92,27 +93,34 @@ class XcorrLikelihood(GaussianLikelihood):
     def _bin(self, theory_cl, lmin, lmax):
         binned_theory_cl = np.zeros_like(lmin)
         for i in range(len(lmin)):
-            binned_theory_cl[i] = np.mean(theory_cl[(self.ell_range >= lmin[i]) & (self.ell_range < lmax[i])])
+            binned_theory_cl[i] = np.mean(theory_cl[(self.ell_range >= lmin[i])
+                                                     & (self.ell_range < lmax[i])])
         return binned_theory_cl
 
     def _get_sacc_data(self, **params_values):
 
         data_sacc = sacc.Sacc.load_fits(self.datapath)
 
-        data_sacc.remove_selection(tracers=(self.k_tracer_name, self.k_tracer_name)) # TODO: would be better to use keep_selection
+        # TODO: would be better to use keep_selection
+        data_sacc.remove_selection(tracers=(self.k_tracer_name, self.k_tracer_name))
 
-        ell_auto, cl_auto = data_sacc.get_ell_cl('cl_00', self.gc_tracer_name, self.gc_tracer_name)
-        ell_cross, cl_cross = data_sacc.get_ell_cl('cl_00', self.gc_tracer_name, self.k_tracer_name) #TODO: be robust to ordering
+        ell_auto, cl_auto = data_sacc.get_ell_cl('cl_00',
+                                                 self.gc_tracer_name,
+                                                 self.gc_tracer_name)
+        ell_cross, cl_cross = data_sacc.get_ell_cl('cl_00',
+                                                   self.gc_tracer_name,
+                                                   self.k_tracer_name) #TODO: check order
         cov = data_sacc.covariance.covmat
 
         x = np.concatenate([ell_auto, ell_cross])
         y = np.concatenate([cl_auto, cl_cross])
 
-        dndz = np.column_stack([data_sacc.tracers[self.gc_tracer_name].z, data_sacc.tracers[self.gc_tracer_name].nz])
+        dndz = np.column_stack([data_sacc.tracers[self.gc_tracer_name].z,
+                                data_sacc.tracers[self.gc_tracer_name].nz])
         ngal = data_sacc.tracers[self.gc_tracer_name].metadata['ngal']
 
-        data = {'x' : x,
-                'y' : y,
+        data = {'x': x,
+                'y': y,
                 'cov': cov,
                 'dndz': dndz,
                 'ngal': ngal}
@@ -132,7 +140,7 @@ class XcorrLikelihood(GaussianLikelihood):
 
         self.ell_cross = data_cross[0]
         cl_cross = data_cross[1]
-        cl_cross_err = data_cross[2]  
+        cl_cross_err = data_cross[2]
 
         x = np.concatenate([self.ell_auto, self.ell_cross])
         y = np.concatenate([cl_auto, cl_cross])
@@ -148,10 +156,13 @@ class XcorrLikelihood(GaussianLikelihood):
 
         chimin = np.min(chival) + 1.e-5
         chimax = np.max(chival)
-        chival   = np.linspace(chimin,chimax,self.Nchi)
+        chival = np.linspace(chimin, chimax, self.Nchi)
         zval = zatchi(chival)
-        chistar = self.provider.get_comoving_radial_distance(self.provider.get_param('zstar'))
-        chivalp = np.array(list(map(lambda x: np.linspace(x,chistar,self.Nchi_mag),chival))).transpose()[0]
+        chistar = \
+            self.provider.get_comoving_radial_distance(self.provider.get_param('zstar'))
+        chivalp = \
+            np.array(list(map(lambda x: np.linspace(x, chistar, self.Nchi_mag), chival)))
+        chivalp = chivalp.transpose()[0]
         zvalp = zatchi(chivalp)
 
         return zatchi, chiatz, chival, zval, chivalp, zvalp
@@ -160,7 +171,9 @@ class XcorrLikelihood(GaussianLikelihood):
 
         setup_chi_out = self._setup_chi()
 
-        Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), extrap_kmax=1.e8, nonlinear=False).P
+        Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"),
+                                                          extrap_kmax=1.e8,
+                                                          nonlinear=False).P
 
         cl_gg, cl_kappag = do_limber(self.ell_range,
                                      self.provider,
@@ -181,11 +194,12 @@ class XcorrLikelihood(GaussianLikelihood):
                                      setup_chi_flag=True,
                                      setup_chi_out=setup_chi_out)
 
-        # TODO: this is not the correct binning, but there needs to be a consistent way to specify it
-        bin_edges = np.linspace(20, self.high_ell, self.data.x.shape[0]//2 + 1)
+        # TODO: this is not the correct binning,
+        # but there needs to be a consistent way to specify it
+        bin_edges = np.linspace(20, self.high_ell, self.data.x.shape[0] // 2 + 1)
 
         ell_gg, clobs_gg = utils.binner(self.ell_range, cl_gg, bin_edges)
         ell_kappag, clobs_kappag = utils.binner(self.ell_range, cl_kappag, bin_edges)
-        #ell_kappakappa, clobs_kappakappa = utils.binner(self.ell_range, cl_kappakappa, bin_edges)
+        #ell_kappakappa, clobs_kappakappa = utils.binner(self.ell_range, cl_kappakappa, bin_edges) # noqa E501
 
         return np.concatenate([clobs_gg, clobs_kappag])
