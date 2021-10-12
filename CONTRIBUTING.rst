@@ -4,11 +4,23 @@ Contributor Guidelines
 GitHub Workflow
 ---------------
 
-Fork and Clone the SOLikeT Repository
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If you are a membed of the `Simons Observatory GitHub organisation <https://github.com/simonsobs>`_ then contributions can be made directly to the `SOLikeT repo <https://github.com/simonsobs/soliket>`_.
+
+If you are not a member of the Simons Observatory Collaboration with access to the GitHub org, you can still make contributions via forking this repo, with additional instructions below.
+
+
+Clone the SOLikeT Repository
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 **You should only need to do this step once**
 
-First *fork* the SOLikeT repository. A fork is your own remote copy of the repository on GitHub. To create a fork:
+Cloning creates a local copy of the repository on your computer to work with. To clone your fork:
+
+::
+
+   git clone https://github.com/simonsobs/soliket.git
+
+**If you are not an SO GitHub org member**, first *fork* the SOLikeT repository. A fork is your own remote copy of the repository on GitHub. To create a fork:
 
   1. Go to the `SOLikeT GitHub Repository <https://github.com/simonsobs/soliket>`_
   2. Click the **Fork** button (in the top-right-hand corner)
@@ -32,7 +44,14 @@ Finally add the ``simonsobs`` repository as a *remote*. This will allow you to f
 Create a branch for your new feature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Create a *branch* off the ``simonsobs`` master branch. Working on unique branches for each new feature simplifies the development, review and merge processes by maintining logical separation. To create a feature branch:
+Create a *branch* off the master branch. Working on unique branches for each new feature simplifies the development, review and merge processes by maintining logical separation. To create a feature branch:
+
+::
+
+  git checkout -b <your-branch-name> master
+
+
+**If you are not an SO GitHub org member**, create a *branch* off the ``simonsobs`` master branch. Working on unique branches for each new feature simplifies the development, review and merge processes by maintining logical separation. To create a feature branch:
 
 ::
 
@@ -73,7 +92,7 @@ When you feel that work on your new feature is complete, you should create a *Pu
   2. Click the green **New pull request** button
   3. Click **compare across forks**
   4. Confirm that the base fork is ``simonsobs/soliket`` and the base branch is ``master``
-  5. Confirm the head fork is ``<your-account>/soliket`` and the compare branch is ``<your-branch-name>``
+  5. If you are making a contribution from a forl, confirm the head fork is ``<your-account>/soliket`` and the compare branch is ``<your-branch-name>``
   6. Give your pull request a title and fill out the the template for the description
   7. Click the green **Create pull request** button
 
@@ -97,15 +116,26 @@ As you work on your feature, new commits might be made to the ``simonsobs`` mast
 
   - If your pull request has no conflicts, click **Update branch**
   - If your pull request has conflicts, click **Resolve conflicts**, manually resolve the conflicts and click **Mark as resolved**
-  - *merge* the ``simonsobs`` master branch from the command line:
+  - *merge* the master branch from the command line:
+
+    ::
+
+        git fetch 
+        git merge master
+
+  - *rebase* your feature branch onto the ``simonsobs`` master branch from the command line:
+
+    ::
+
+        git fetch
+        git rebase master
+
+  - **If you are working on a fork** you will also need to specify that you updating from the ``simonsobs`` master branch:
 
     ::
 
         git fetch simonsobs
         git merge simonsobs/master
-
-  - *rebase* your feature branch onto the ``simonsobs`` master branch from the command line:
-    ::
 
         git fetch simonsobs
         git rebase simonsobs/master
