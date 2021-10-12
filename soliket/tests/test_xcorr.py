@@ -33,6 +33,10 @@ def get_demo_xcorr_model(theory):
                 prior:
                     min: 0.
                     max: 10.
+                ref:
+                    min: 1.
+                    max: 4.
+                proposal: 0.5
             s1:
                 prior:
                     min: 0.1

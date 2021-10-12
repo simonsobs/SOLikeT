@@ -18,6 +18,10 @@ params:
     prior:
       min: 0.
       max: 10.
+    ref:
+      min: 1.
+      max: 4.
+    proposal: 0.5
   s1: 
     value: 0.4
   H0:
