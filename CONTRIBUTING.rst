@@ -51,7 +51,7 @@ Create a *branch* off the master branch. Working on unique branches for each new
   git checkout -b <your-branch-name> master
 
 
-**If you are not an SO GitHub org member**, create a *branch* off the ``simonsobs`` master branch. Working on unique branches for each new feature simplifies the development, review and merge processes by maintining logical separation. To create a feature branch:
+**If you are not an SO GitHub org member**, create a *branch* off the ``simonsobs`` master branch:
 
 ::
 
@@ -86,15 +86,16 @@ Write the new code you would like to contribute, remembering to abide by the `Co
 Open a Pull Request
 ^^^^^^^^^^^^^^^^^^^
 
-When you feel that work on your new feature is complete, you should create a *Pull Request*. This will propose your work to be merged into the main SOLikeT repository.
+When you feel that work on your new feature is complete, you should create a *Pull Request*. This will propose your work to be merged into the main SOLikeT repository. If you would like feedback from others on active work in progress, even at an early stage, you can create a 'Draft' Pull Request at step 7. by choosing it from the drop-down menu. This will allow others to see and comment on your PR work in progress, which can be very helpful in getting it finished!
 
   1. Go to `SOLikeT Pull Requests <https://github.com/simonsobs/soliket/pulls>`_
   2. Click the green **New pull request** button
   3. Click **compare across forks**
   4. Confirm that the base fork is ``simonsobs/soliket`` and the base branch is ``master``
-  5. If you are making a contribution from a forl, confirm the head fork is ``<your-account>/soliket`` and the compare branch is ``<your-branch-name>``
+  5. If you are making a contribution from a fork, confirm the head fork is ``<your-account>/soliket`` and the compare branch is ``<your-branch-name>``
   6. Give your pull request a title and fill out the the template for the description
   7. Click the green **Create pull request** button
+
 
 Status checks
 ^^^^^^^^^^^^^
@@ -116,7 +117,7 @@ As you work on your feature, new commits might be made to the ``simonsobs`` mast
 
   - If your pull request has no conflicts, click **Update branch**
   - If your pull request has conflicts, click **Resolve conflicts**, manually resolve the conflicts and click **Mark as resolved**
-  - *merge* the master branch from the command line:
+  - *merge* the master branch into your dev branch from the command line:
 
     ::
 
@@ -141,7 +142,7 @@ As you work on your feature, new commits might be made to the ``simonsobs`` mast
         git rebase simonsobs/master
 
 
-**Warning**: It is bad practice to *rebase* commits that have already been pushed to a remote such as your fork. Rebasing creates new copies of your commits that can cause the local and remote branches to diverge. ``git push --force`` will **overwrite** the remote branch with your newly rebased local branch. This is strongly discouraged, particularly when working on a shared branch where you could erase a collaborators commits.
+**Warning**: You should take care to take this step and pull other contributors work to your branch before attempting any rebase.
 
 For more information about resolving conflicts see the GitHub guides:
   - `Resolving a merge conflict on GitHub <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/resolving-a-merge-conflict-on-github>`_
@@ -176,24 +177,20 @@ All contributions should follow the `PEP8 Style Guide for Python Code <https://w
 
 and a line length limit of 90 characters will be applied.
 
-You may find it easier to run this check as locally before raising a PR. This can either be done by running:
+You may find it easier to run this check as locally before raising a PR. This can be done by running:
 
 ::
 
   tox -e codestlye
 
-in the SOLikeT root directory, or using the pre-commit hooks which are provided. These can be run before you make a local commit:
-
-::
-
-  pre-commit run --all-files
-
-Before you run pre-commit the first time you will need to:
+in the SOLikeT root directory.
+Alternatively you can make use of the pre-commit hooks which are provided. If you run:
 
 ::
 
   pre-commit install
 
+in the SOLikeT root directory, then these hooks will be installed. The code style checks will then be run each time you attempt a local commit, and you will not be able to perfom the commit unless they pass.
 
 Unit Tests
 ^^^^^^^^^^

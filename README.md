@@ -44,7 +44,7 @@ This repo currently implements the following specific likelihoods:
 
 ## Contributing
 
-If you would like to contribute to SOLikeT, either addressing any of our [Issues](https://github.com/simonsobs/SOLikeT/issues), adding features to the current likelihoods, or extending SOLikeT by adding new ones, please read our [Contributor Guidelines](CONTRIBUTING.rst).
+If you would like to contribute to SOLikeT, either addressing any of our [Issues](https://github.com/simonsobs/SOLikeT/issues), adding features to the current likelihoods please read our [Contributor Guidelines](CONTRIBUTING.rst). If you plan on extending SOLikeT by adding new Likelihoods, please also have a look at the [guidelines for doing this](guidelines.md).
 
 ## Extending
 
