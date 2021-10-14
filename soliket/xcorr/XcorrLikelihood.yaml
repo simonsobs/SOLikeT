@@ -1,7 +1,8 @@
-auto_file: soliket/xcorr/data/clgg.txt
-cross_file: soliket/xcorr/data/clkg.txt
-dndz_file: soliket/xcorr/data/dndz.txt
+auto_file:
+cross_file:
+dndz_file:
 
+datapath: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits
 k_tracer_name: ck_so
 gc_tracer_name: gc_unwise
 # tracer_combinations: gc_unwise-ck_so, gc_unwise-gc_unwise

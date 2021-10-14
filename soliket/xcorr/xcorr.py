@@ -1,3 +1,7 @@
+r""" Likelihood for cross-correlation of CMB lensing and galaxy clustering probes.
+
+"""
+
 import numpy as np
 import sacc
 import pdb
@@ -10,6 +14,39 @@ from .limber import do_limber
 
 
 class XcorrLikelihood(GaussianLikelihood):
+    '''Cross-correlation Likelihood for CMB lensing and galaxy clustering probes.
+
+    Based on the original xcorr code [1]_ used in [2]_.
+
+    Accepts data files containing the two spectra from either text files or a sacc file.
+
+    Parameters
+    ----------
+
+    datapath : str, optional
+        sacc file containing the redshift distribtion, galaxy-galaxy and galaxy-kappa
+        observed spectra. Default: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits 
+    k_tracer_name : str, optional
+        sacc file tracer name for kappa. Default: ck_so
+    gc_tracer_name : str, optional
+        sacc file tracer name for galaxy clustering. Default: gc_unwise
+
+    dndz_file : str, optional
+        Text file containing the redshift distribution.
+    auto_file : str, optional
+        Text file containing the galaxy-galaxy observed spectra.
+    cross_file : str, optional
+        Text file containing the galaxy-kappa observed spectra.
+
+
+
+
+    References
+    ----------
+    .. [1] https://github.com/simonsobs/xcorr
+    .. [2] Krolewski, Ferraro and White, 2021, arXiv:2105.03421
+
+    '''
 
     def initialize(self):
         name: str = "Xcorr"  # noqa F841
