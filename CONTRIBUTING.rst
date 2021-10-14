@@ -8,6 +8,7 @@ If you are a membed of the `Simons Observatory GitHub organisation <https://gith
 
 If you are not a member of the Simons Observatory Collaboration with access to the GitHub org, you can still make contributions via forking this repo, with additional instructions below.
 
+If you are planning on bringing a new Likelihood in to SOLikeT, please have a look at the `guidelines <https://github.com/simonsobs/SOLikeT/blob/master/guidelines.md>`_ which explain how this should be done.
 
 Clone the SOLikeT Repository
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
