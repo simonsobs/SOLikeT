@@ -22,7 +22,7 @@ params:
     ref:
       min: 1.
       max: 4.
-    proposal: 0.5
+    proposal: 0.1
   s1: 
     value: 0.4
   H0:

@@ -38,6 +38,23 @@ class XcorrLikelihood(GaussianLikelihood):
     cross_file : str, optional
         Text file containing the galaxy-kappa observed spectra.
 
+    high_ell : int
+        Maximum multipole to be computed for all spectra. Default: 600
+    nz : int
+        Resolution of redshift grid used for Limber computations. Default: 149
+    Nchi : int
+        Resolution of Chi grid used for lensing kernel computations. Default: 149
+    Nchi_mag : int
+        Resolution of Chi grid used for magnification kernel computations. Default: 149
+
+    Pk_interp_kmax : float
+        Maximum k  value for the Pk interpolator, units Mpc^-1. Default: 10.0
+
+    b1 : float
+        Linear galaxy bias value for the galaxy sample.
+    s1 : float
+        Magnification bias slope for the galaxy sample.
+
 
     References
     ----------
