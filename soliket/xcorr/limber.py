@@ -27,9 +27,9 @@ def mag_bias_kernel(cosmo, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_arr):
 
 def do_limber(ell_arr, cosmo, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
               alpha_auto, alpha_cross,
+              setup_chi_out,
               use_zeff=True, autoCMB=False,
-              Nchi=50, dndz1_mag=None, dndz2_mag=None,
-              normed=False, setup_chi_flag=False, setup_chi_out=None):
+              Nchi=50, dndz1_mag=None, dndz2_mag=None, normed=False):
 
     zatchi, chiatz, chi_arr, z_arr, chiprime_arr, zprime_arr = setup_chi_out
     chistar = cosmo.get_comoving_radial_distance(cosmo.get_param('zstar'))

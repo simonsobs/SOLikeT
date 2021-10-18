@@ -238,13 +238,12 @@ class XcorrLikelihood(GaussianLikelihood):
                                      params_values['b1'],
                                      self.alpha_auto,
                                      self.alpha_cross,
+                                     setup_chi_out,
                                      Nchi=self.Nchi,
                                      autoCMB=False,
                                      use_zeff=False,
                                      dndz1_mag=self.dndz,
-                                     dndz2_mag=self.dndz,
-                                     setup_chi_flag=True,
-                                     setup_chi_out=setup_chi_out)
+                                     dndz2_mag=self.dndz)
 
         # TODO: this is not the correct binning,
         # but there needs to be a consistent way to specify it

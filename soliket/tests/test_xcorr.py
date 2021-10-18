@@ -111,13 +111,12 @@ def test_xcorr(theory):
                                    params['b1'],
                                    xcorr_lhood.alpha_auto,
                                    xcorr_lhood.alpha_cross,
+                                   setup_chi_out,
                                    Nchi=xcorr_lhood.Nchi,
                                    autoCMB=False,
                                    use_zeff=False,
                                    dndz1_mag=xcorr_lhood.dndz,
-                                   dndz2_mag=xcorr_lhood.dndz,
-                                   setup_chi_flag=True,
-                                   setup_chi_out=setup_chi_out)
+                                   dndz2_mag=xcorr_lhood.dndz)
 
     ell_load = xcorr_lhood.data.x
     cl_load = xcorr_lhood.data.y
