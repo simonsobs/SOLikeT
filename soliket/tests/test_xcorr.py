@@ -41,6 +41,7 @@ def get_demo_xcorr_model(theory):
                 prior:
                     min: 0.1
                     max: 1.0
+                proposal: 0.1
         """
     elif theory == "classy":
         info_yaml = r"""
@@ -62,10 +63,15 @@ def get_demo_xcorr_model(theory):
                 prior:
                     min: 0.
                     max: 10.
+                ref:
+                    min: 1.
+                    max: 4.
+                proposal: 0.1
             s1:
                 prior:
                     min: 0.1
                     max: 1.0
+                proposal: 0.1
 
         """
 
