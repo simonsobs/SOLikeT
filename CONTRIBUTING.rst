@@ -193,6 +193,12 @@ Alternatively you can make use of the pre-commit hooks which are provided. If yo
 
 in the SOLikeT root directory, then these hooks will be installed. The code style checks will then be run each time you attempt a local commit, and you will not be able to perfom the commit unless they pass.
 
+The `black <https://black.readthedocs.io/en/stable/>`_ tool will also try to automatically format your code to abide by the style guide, and can be run on any files you create by running:
+
+::
+
+  black <py-file-you-created>
+
 Unit Tests
 ^^^^^^^^^^
 
