@@ -40,6 +40,11 @@ This repo currently implements the following specific likelihoods:
 * `ClusterLikelihood`: An SZ-cluster count likelihood based on the original ACT SZ clusters likelihood.
 * `LensingLikelihood`: Lensing power-spectrum likelihood, adapted from [here](https://github.com/simonsobs/so-lenspipe/blob/6abdc185764894cefa76fd4666243669d7e8a4b0/bin/SOlikelihood/cobayalike.py#L80).
 * `LensingLiteLikelihood`: A no-frills, simple $\chi^2$ lensing power spectrum.
+* `CrossCorrelationLikelihood`: A likelihood for cross-power spectra between galaxy surveys and CMB lensing maps.
+
+## Contributing
+
+If you would like to contribute to SOLikeT, either addressing any of our [Issues](https://github.com/simonsobs/SOLikeT/issues), adding features to the current likelihoods please read our [Contributor Guidelines](CONTRIBUTING.rst). If you plan on extending SOLikeT by adding new Likelihoods, please also have a look at the [guidelines for doing this](guidelines.md).
 
 ## Extending
 
