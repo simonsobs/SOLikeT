@@ -1,3 +1,4 @@
+from .constants import *
 from .lensing import LensingLiteLikelihood, LensingLikelihood  # noqa: F401
 from .gaussian import GaussianLikelihood, MultiGaussianLikelihood  # noqa: F401
 from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401

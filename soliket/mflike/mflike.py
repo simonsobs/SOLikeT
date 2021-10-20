@@ -15,7 +15,7 @@ from cobaya.log import LoggedError
 from cobaya.tools import are_different_params_lists
 from .theoryforge_MFLike import TheoryForge_MFLike
 
-from .gaussian import GaussianData, GaussianLikelihood
+from ..gaussian import GaussianData, GaussianLikelihood
 
 
 class MFLike(GaussianLikelihood, InstallableLikelihood):
