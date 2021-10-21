@@ -1,7 +1,9 @@
 import numpy as np
 import pdb
+from ..constants import C_HMPC
 
-oneover_chmpc = 1. / 2997.92458
+
+oneover_chmpc = 1. / C_HMPC
 
 
 def mag_bias_kernel(cosmo, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_arr):

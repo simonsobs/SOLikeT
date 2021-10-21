@@ -2,6 +2,7 @@ from scipy import constants
 
 C_M_S = constants.c
 C_KM_S = constants.c * 1.e-3
+C_HMPC = constants.c * 1.e-5
 h_Planck = constants.h
 k_Boltzmann = constants.k
 elementary_charge = constants.e
