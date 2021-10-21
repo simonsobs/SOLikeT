@@ -10,9 +10,6 @@ from ..constants import T_CMB, h_Planck, k_Boltzmann
 def _cmb2bb(nu):
 
     # NB: numerical factors not included
-    #from scipy import constants
-    #T_CMB = 2.72548
-    #x = nu * constants.h * 1e9 / constants.k / T_CMB
     x = nu * h_Planck * 1e9 / k_Boltzmann / T_CMB
     return np.exp(x) * (nu * x / np.expm1(x))**2
 

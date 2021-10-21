@@ -14,8 +14,6 @@ from . import massfunc as mf
 from .survey import SurveyData
 from .sz_utils import szutils
 
-#C_KM_S = 2.99792e5
-
 
 class SZModel:
     pass
