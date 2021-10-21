@@ -7,6 +7,7 @@ import astropy.io.fits as pyfits
 from astropy.io import fits
 from astropy.wcs import WCS
 import astropy.table as atpy
+from ..constants import full_sky_area_sqdeg, SO_sky_area_sqdeg
 
 
 def read_clust_cat(fitsfile, qmin):
@@ -148,7 +149,7 @@ class SurveyData:
             self.rmstotal = np.array([])
 
             for i in range(len(self.tilearea)):
-                self.fsky.append(self.tilearea[i] / 41252.9612)
+                self.fsky.append(self.tilearea[i] / full_sky_area_sqdeg)
                 tempmask, tempmwcs = loadAreaMask("#" + self.tilenames[i], self.nemodir)
                 self.mask.append(tempmask)
                 self.mwcs.append(tempmwcs)
@@ -162,7 +163,8 @@ class SurveyData:
             self.rms, self.rwcs = loadRMSmap("", self.nemodir)
             self.mask, self.mwcs = loadAreaMask("", self.nemodir)
             self.rmstotal = self.rms[self.rms > 0]
-            self.fskytotal = 987.5 / 41252.9612
+            self.fskytotal = SO_sky_area_sqdeg / full_sky_area_sqdeg
+
 
         count_temp, bin_edge = np.histogram(np.log10(self.rmstotal),
                                             bins=self.num_noise_bins)

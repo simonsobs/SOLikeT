@@ -30,7 +30,7 @@ into **SOLikeT**, alongside `GaussianLikelihood` and `PoissonLikelihood`.
     `_InstallableLikelihood` (see `soliket.mflike` and `soliket.lensing` for examples).
     * Factor out all cosmological/astrophysical calculations necessary to compute the "theory vector" into separate standalone
     `Theory` objects (current example of this is the `Foreground` object in `soliket.mflike`.)
-
+    * If any of your new modules require physical constants, please hack the constants.py module in soliket (if you need to add new entries) and import it as needed. This would avoid inconsistent definitions of potentially shared quantities. Don't re-define constants in your own modules.
 
 Development regarding **newlike** in the soliket repository should either happen in a branch named `dev-newlike`.  
 Submit a pull request and request review to merge to master.
