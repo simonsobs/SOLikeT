@@ -1,12 +1,9 @@
 import numpy as np
 from scipy.interpolate import interp2d
 from .tinker import dn_dlogM
+from ..constants import MSUN_CGS, G_CGS, MPC2CM
 
 np.seterr(divide='ignore', invalid='ignore')
-
-MSUN_CGS = 1.98840987e+33
-G_CGS = 6.67259e-08
-MPC2CM = 3.085678e+24
 
 
 class HMF:

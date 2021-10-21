@@ -3,14 +3,13 @@ from scipy import interpolate
 # from astropy.cosmology import FlatLambdaCDM
 
 # from nemo import signals
-from .massfunc import MPC2CM as Mpc_in_cm
-from .massfunc import MSUN_CGS as MSun_in_g
-from .massfunc import G_CGS as G_in_cgs
+from ..constants import MPC2CM, MSUN_CGS, G_CGS, C_M_S, T_CMB
+from ..constants import h_Planck, k_Boltzmann, electron_mass_kg, elementary_charge
 
 # from .clusters import C_KM_S as C_in_kms
 
 rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
-                        / G_in_cgs * Mpc_in_cm / MSun_in_g
+                        / G_CGS * MPC2CM / MSUN_CGS
 
 
 def gaussian(xx, mu, sig, noNorm=False):
@@ -240,26 +239,17 @@ def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
     As for H13, we return fRel = 1 + delta_SZE (see also Marriage et al. 2011)
     """
 
-    # NOTE: we should define constants somewhere else...
-    h = 6.63e-34
-    kB = 1.38e-23
-    # sigmaT = 6.6524586e-29
-    me = 9.11e-31
-    e = 1.6e-19
-    c = 3e8
-    TCMB = 2.72548
-
     # Using Arnaud et al. (2005) M-T to get temperature
     A = 3.84e14
     B = 1.71
     # TkeV=5.*np.power(((cosmoModel.efunc(z)*M500)/A), 1/B)   # HMF/Astropy
     Ez = Ez_fn(z)
     TkeV = 5.0 * np.power(((Ez * M500) / A), 1 / B)  # Colossus
-    TKelvin = TkeV * ((1000 * e) / kB)
+    TKelvin = TkeV * ((1000 * elementary_charge) / k_Boltzmann)
 
     # Itoh et al. (1998) eqns. 2.25 - 2.30
-    thetae = (kB * TKelvin) / (me * c ** 2)
-    X = (h * obsFreqGHz * 1e9) / (kB * TCMB)
+    thetae = (k_Boltzmann * TKelvin) / (electron_mass_kg * C_M_S ** 2)
+    X = (h_Planck * obsFreqGHz * 1e9) / (k_Boltzmann * T_CMB)
     Xtw = X * (np.cosh(X / 2.0) / np.sinh(X / 2.0))
     Stw = X / np.sinh(X / 2.0)
 
