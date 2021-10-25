@@ -223,7 +223,7 @@ class XcorrLikelihood(GaussianLikelihood):
 
         setup_chi_out = self._setup_chi()
 
-        Pk_interpolator = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"),
+        Pk_interpolator = self.provider.get_Pk_interpolator(("delta_nonu", "delta_nonu"),
                                                           extrap_kmax=1.e8,
                                                           nonlinear=False).P
 
