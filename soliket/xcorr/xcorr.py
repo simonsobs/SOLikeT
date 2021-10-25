@@ -217,7 +217,14 @@ class XcorrLikelihood(GaussianLikelihood):
         chivalp = chivalp.transpose()[0]
         zvalp = zatchi(chivalp)
 
-        return zatchi, chiatz, chival, zval, chivalp, zvalp
+        chi_result = {'zatchi': zatchi,
+                      'chiatz': chiatz,
+                      'chival': chival,
+                      'zval': zval,
+                      'chivalp': chivalp,
+                      'zvalp': zvalp}
+
+        return chi_result
 
     def _get_theory(self, **params_values):
 
