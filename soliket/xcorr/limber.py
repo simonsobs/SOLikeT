@@ -6,49 +6,51 @@ from ..constants import C_HMPC
 oneover_chmpc = 1. / C_HMPC
 
 
-def mag_bias_kernel(cosmo, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_arr):
+def mag_bias_kernel(provider, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_arr):
+    '''Calculates magnification bias kernel.
 
+    '''
     dndzprime = np.interp(zprime_arr, dndz[:, 0], dndz[:, 1], left=0, right=0)
     norm = np.trapz(dndz[:, 1], x=dndz[:, 0])
     dndzprime = dndzprime / norm #TODO check this norm is right
 
     g_integrand = (chiprime_arr - chi_arr[np.newaxis, :]) / chiprime_arr \
-                    * (oneover_chmpc * cosmo.get_param('H0') / 100) \
-                    * np.sqrt(cosmo.get_param('omegam') * (1 + zprime_arr)**3.
-                                + 1 - cosmo.get_param('omegam')) \
+                    * (oneover_chmpc * provider.get_param('H0') / 100) \
+                    * np.sqrt(provider.get_param('omegam') * (1 + zprime_arr)**3.
+                                + 1 - provider.get_param('omegam')) \
                     * dndzprime
 
     g = chi_arr * np.trapz(g_integrand, x=chiprime_arr, axis=0)
 
-    W_mu = (5. * s1 - 2.) * 1.5 * cosmo.get_param('omegam') \
-                * (cosmo.get_param('H0') / 100)**2 * (oneover_chmpc)**2 \
+    W_mu = (5. * s1 - 2.) * 1.5 * provider.get_param('omegam') \
+                * (provider.get_param('H0') / 100)**2 * (oneover_chmpc)**2 \
                 * (1. + zatchi(chi_arr)) * g
 
     return W_mu
 
 
-def do_limber(ell_arr, cosmo, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
+def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
               alpha_auto, alpha_cross,
               setup_chi_out,
               use_zeff=True, autoCMB=False,
               Nchi=50, dndz1_mag=None, dndz2_mag=None, normed=False):
 
     zatchi, chiatz, chi_arr, z_arr, chiprime_arr, zprime_arr = setup_chi_out
-    chistar = cosmo.get_comoving_radial_distance(cosmo.get_param('zstar'))
+    chistar = provider.get_comoving_radial_distance(provider.get_param('zstar'))
 
     # Galaxy kernels, assumed to be b(z) * dN/dz
     W_g1 = np.interp(zatchi(chi_arr), dndz1[:, 0], dndz1[:, 1] \
-                * cosmo.get_Hubble(dndz1[:, 0], units='1/Mpc'), left=0, right=0)
+                * provider.get_Hubble(dndz1[:, 0], units='1/Mpc'), left=0, right=0)
     if not normed:
         W_g1 /= np.trapz(W_g1, x=chi_arr)
 
     W_g2 = np.interp(zatchi(chi_arr), dndz2[:, 0], dndz2[:, 1] \
-                * cosmo.get_Hubble(dndz2[:, 0], units='1/Mpc'), left=0, right=0)
+                * provider.get_Hubble(dndz2[:, 0], units='1/Mpc'), left=0, right=0)
     if not normed:
         W_g2 /= np.trapz(W_g2, x=chi_arr)
 
-    W_kappa = (oneover_chmpc)**2. * 1.5 * cosmo.get_param('omegam') \
-                * (cosmo.get_param('H0') / 100)**2. * (1. + zatchi(chi_arr)) \
+    W_kappa = (oneover_chmpc)**2. * 1.5 * provider.get_param('omegam') \
+                * (provider.get_param('H0') / 100)**2. * (1. + zatchi(chi_arr)) \
                 * chi_arr * (chistar - chi_arr) / chistar
 
     # Get effective redshift
@@ -59,7 +61,7 @@ def do_limber(ell_arr, cosmo, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
     #     zeff = -1.0
 
     # set up magnification bias kernels
-    W_mu1 = mag_bias_kernel(cosmo, dndz1, s1, zatchi, chi_arr, chiprime_arr, zprime_arr)
+    W_mu1 = mag_bias_kernel(provider, dndz1, s1, zatchi, chi_arr, chiprime_arr, zprime_arr)
 
     c_ell_g1g1 = np.zeros([ell_arr.shape[0], 1, chi_arr.shape[0]])
     c_ell_g1kappa = np.zeros([ell_arr.shape[0], 1, chi_arr.shape[0]])
