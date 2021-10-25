@@ -27,7 +27,7 @@ jobs:
 
     - name: install reqs
       run: |
-        conda install pip compilers pytest pyccl cython
+        conda install pip compilers pytest pytest-cov pyccl cython
         pip install cobaya
 
       env:  
@@ -65,3 +65,9 @@ jobs:
       run: |
         conda install coveralls
         coveralls --service=github
+
+    - name: Report Coverage (coveralls gha)
+      if: matrix.os == 'ubuntu-latest'
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
