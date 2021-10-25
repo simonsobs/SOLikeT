@@ -36,9 +36,9 @@ def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
               Nchi=50, dndz1_mag=None, dndz2_mag=None, normed=False):
 
     zatchi = chi_grids['zatchi']
-    chiatz = chi_grids['chiatz']
+    # chiatz = chi_grids['chiatz']
     chi_arr = chi_grids['chival']
-    z_arr = chi_grids['zval']
+    # z_arr = chi_grids['zval']
     chiprime_arr = chi_grids['chivalp']
     zprime_arr = chi_grids['zvalp']
 
@@ -67,7 +67,8 @@ def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
     #     zeff = -1.0
 
     # set up magnification bias kernels
-    W_mu1 = mag_bias_kernel(provider, dndz1, s1, zatchi, chi_arr, chiprime_arr, zprime_arr)
+    W_mu1 = mag_bias_kernel(provider, dndz1, s1,
+                            zatchi, chi_arr, chiprime_arr, zprime_arr)
 
     c_ell_g1g1 = np.zeros([ell_arr.shape[0], 1, chi_arr.shape[0]])
     c_ell_g1kappa = np.zeros([ell_arr.shape[0], 1, chi_arr.shape[0]])
