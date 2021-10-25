@@ -113,8 +113,6 @@ def test_xcorr(theory):
                                    xcorr_lhood.alpha_cross,
                                    setup_chi_out,
                                    Nchi=xcorr_lhood.Nchi,
-                                   autoCMB=False,
-                                   use_zeff=False,
                                    dndz1_mag=xcorr_lhood.dndz,
                                    dndz2_mag=xcorr_lhood.dndz)
 

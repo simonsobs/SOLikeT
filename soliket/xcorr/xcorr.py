@@ -104,6 +104,8 @@ class XcorrLikelihood(GaussianLikelihood):
         self.Nchi: Optional[int]  # noqa F821
         self.Nchi_mag: Optional[int]  # noqa F821
 
+        #self.use_zeff: Optional[bool]  # noqa F821
+
         self.Pk_interp_kmax: Optional[float]  # noqa F821
 
         self.high_ell: Optional[float]  # noqa F821
@@ -247,8 +249,7 @@ class XcorrLikelihood(GaussianLikelihood):
                                      self.alpha_cross,
                                      setup_chi_out,
                                      Nchi=self.Nchi,
-                                     autoCMB=False,
-                                     use_zeff=False,
+                                     #use_zeff=self.use_zeff,
                                      dndz1_mag=self.dndz,
                                      dndz2_mag=self.dndz)
 

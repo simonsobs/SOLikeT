@@ -32,7 +32,7 @@ def mag_bias_kernel(provider, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_ar
 def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
               alpha_auto, alpha_cross,
               chi_grids,
-              use_zeff=True, autoCMB=False,
+              #use_zeff=True,
               Nchi=50, dndz1_mag=None, dndz2_mag=None, normed=False):
 
     zatchi = chi_grids['zatchi']
