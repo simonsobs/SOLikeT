@@ -50,7 +50,7 @@ jobs:
 
     - name: Unit tests
       run: |
-        pytest -vv soliket
+        pytest -vv soliket --cov=soliket --cov-report=xml
       env:
         PYTEST_ADDOPTS: "--color=yes"
 
@@ -71,3 +71,4 @@ jobs:
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: coverage.xml
