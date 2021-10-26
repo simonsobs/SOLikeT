@@ -50,25 +50,17 @@ jobs:
 
     - name: Unit tests
       run: |
-        pytest -vv soliket --cov=soliket --cov-report=xml
+        pytest -vv soliket --cov=soliket --cov-report=xml:coverage.xml --cov-config=setup.cfg
       env:
         PYTEST_ADDOPTS: "--color=yes"
 
-    # - name: Report Coverage (codecov)
-    #   if: matrix.os == 'ubuntu-latest'
-    #   uses: codecov/codecov-action@v1
-
-    # - name: Report Coverage (coveralls)
-    #   if: matrix.os == 'ubuntu-latest'
-    #   env:
-    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #   run: |
-    #     conda install coveralls
-    #     coveralls --service=github
-
-    - name: Report Coverage (coveralls gha)
+    - name: Report Coverage (codecov)
       if: matrix.os == 'ubuntu-latest'
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        path-to-lcov: coverage.xml
+      uses: codecov/codecov-action@v1
+
+    # - name: Report Coverage (coveralls gha)
+    #   if: matrix.os == 'ubuntu-latest'
+    #   uses: coverallsapp/github-action@master
+    #   with:
+    #     github-token: ${{ secrets.GITHUB_TOKEN }}
+    #     path-to-lcov: coverage.xml
