@@ -1,0 +1,10 @@
+params:
+  mnu: 0.0
+  sigma8:
+theory:
+  camb: 
+  linear_bias
+debug: false
+stop_at_error: true
+sampler:
+  evaluate:
