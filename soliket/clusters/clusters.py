@@ -9,11 +9,10 @@ from pkg_resources import resource_filename
 import pyccl as ccl
 
 from ..poisson import PoissonLikelihood
+from ..constants import C_KM_S
 from . import massfunc as mf
 from .survey import SurveyData
 from .sz_utils import szutils
-
-C_KM_S = 2.99792e5
 
 
 class SZModel:

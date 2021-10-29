@@ -1,0 +1,41 @@
+auto_file:
+cross_file:
+dndz_file:
+
+datapath: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits
+k_tracer_name: ck_so
+gc_tracer_name: gc_unwise
+# tracer_combinations: gc_unwise-ck_so, gc_unwise-gc_unwise
+
+high_ell: 600
+nz: 149
+Nchi: 149
+Nchi_mag: 149
+
+Pk_interp_kmax: 10.0
+
+params:
+  b1: 
+    prior:
+      min: 0.
+      max: 10.
+    ref:
+      min: 1.
+      max: 4.
+    proposal: 0.1
+  s1: 
+    value: 0.4
+  H0:
+    value: 70.
+  omegam:
+    value: 0.3
+  ombh2:
+    value: 0.0245
+  omch2:
+    value: 0.1225
+  omk:
+    value: 0.0
+  ns:
+    value: 0.965
+  As:
+    value: 2.11e-9

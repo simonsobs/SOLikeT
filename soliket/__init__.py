@@ -3,6 +3,8 @@ from .gaussian import GaussianLikelihood, MultiGaussianLikelihood  # noqa: F401
 from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401
 from .clusters import ClusterLikelihood  # noqa: F401
 from .mflike import MFLike  # noqa: F401
+from .xcorr import XcorrLikelihood  # noqa: F401
+
 try:
     import pyccl as ccl  # noqa: F401
     from .ccl import CCL  # noqa: F401
