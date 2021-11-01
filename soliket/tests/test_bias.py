@@ -65,7 +65,8 @@ def test_linear_bias_run():
                                         "nonlinear": False,
                                         "vars_pairs": ('delta_tot', 'delta_tot')
                                         },
-                             "Pk_gg": None
+                             "Pk_gg": None,
+                             "Pk_gm": None
                             })
 
     model.logposterior(info['params'])  # force computation of model
@@ -76,5 +77,7 @@ def test_linear_bias_run():
                                                  nonlinear=False)
 
     Pk_gg = lhood.provider.get_Pk_gg()
+    Pk_gm = lhood.provider.get_Pk_gm()
 
-    assert np.allclose(Pk_mm_lin, Pk_gg)
+    assert np.allclose(Pk_mm_lin * info["params"]["b_lin"]**2., Pk_gg)
+    assert np.allclose(Pk_mm_lin * info["params"]["b_lin"], Pk_gm)
