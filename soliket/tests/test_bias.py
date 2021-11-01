@@ -61,4 +61,20 @@ def test_linear_bias_run():
            }
 
     model = get_model(info)  # noqa F841
-    updated_info, sampler = run(info)
+    model.add_requirements({"Pk_grid": {"z": 0., "k_max": 10.,
+                                        "nonlinear": False,
+                                        "vars_pairs": ('delta_tot', 'delta_tot')
+                                        },
+                             "Pk_gg": None
+                            })
+
+    model.logposterior(info['params'])  # force computation of model
+
+    lhood = model.likelihood['one']
+
+    k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'),
+                                                 nonlinear=False)
+
+    Pk_gg = lhood.provider.get_Pk_gg()
+
+    assert np.allclose(Pk_mm_lin, Pk_gg)

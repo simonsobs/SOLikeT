@@ -2,6 +2,7 @@ r"""Class to calculate bias models for haloes and galaxies as cobaya Theory clas
 
 """
 
+import pdb
 import numpy as np
 from typing import Sequence, Union
 from cobaya.theory import Theory
@@ -22,6 +23,7 @@ class Bias(Theory):
     def initialize(self):
 
         self._var_pairs = set()
+        # self._var_pairs = [('delta_tot', 'delta_tot')]
 
     def get_requirements(self):
         return {}
@@ -50,6 +52,7 @@ class Bias(Theory):
                 'k_max': self.kmax
             }
 
+        assert len(self._var_pairs) < 2, "CCL doesn't support other Pk yet"
         return needs
 
     def _get_Pk_mm(self):
@@ -57,22 +60,22 @@ class Bias(Theory):
         for pair in self._var_pairs:
 
             if self.nonlinear:
-                k, z, Pk_nonlin = self.provider.get_Pk_grid(var_pair=pair,
+                k, z, Pk_mm = self.provider.get_Pk_grid(var_pair=pair,
                                                             nonlinear=True)
-                Pk_mm = np.flip(Pk_nonlin, axis=0)
+                # Pk_mm = np.flip(Pk_nonlin, axis=0)
             else:
-                k, z, Pk_lin = self.provider.get_Pk_grid(var_pair=pair,
+                k, z, Pk_mm = self.provider.get_Pk_grid(var_pair=pair,
                                                          nonlinear=False)
-                Pk_mm = np.flip(Pk_lin, axis=0)
+                # Pk_mm = np.flip(Pk_lin, axis=0)
 
         return Pk_mm
 
     # def calculate(self, state, want_derived=True, **params_values_dict):
 
-    def get_Pkgg(self):
+    def get_Pk_gg(self):
         return self._current_state['Pk_gg']
 
-    def get_Pkgm(self):
+    def get_Pk_gm(self):
         return self._current_state['Pk_gm']
 
 
