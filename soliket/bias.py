@@ -72,11 +72,11 @@ class Bias(Theory):
 
     # def calculate(self, state, want_derived=True, **params_values_dict):
 
-    def get_Pk_gg(self):
-        return self._current_state['Pk_gg']
+    def get_Pk_gg_grid(self):
+        return self._current_state['Pk_gg_grid']
 
-    def get_Pk_gm(self):
-        return self._current_state['Pk_gm']
+    def get_Pk_gm_grid(self):
+        return self._current_state['Pk_gm_grid']
 
 
 class Linear_bias(Bias):
@@ -87,5 +87,5 @@ class Linear_bias(Bias):
 
         Pk_mm = self._get_Pk_mm()
 
-        state['Pk_gg'] = params_values_dict['b_lin']**2. * Pk_mm
-        state['Pk_gm'] = params_values_dict['b_lin'] * Pk_mm
+        state['Pk_gg_grid'] = params_values_dict['b_lin']**2. * Pk_mm
+        state['Pk_gm_grid'] = params_values_dict['b_lin'] * Pk_mm
