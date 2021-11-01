@@ -39,7 +39,7 @@ def test_linear_bias_model():
     model = get_model(info)  # noqa F841
 
 
-def test_linear_bias_run():
+def test_linear_bias_compute():
 
     from soliket.bias import Linear_bias
 
