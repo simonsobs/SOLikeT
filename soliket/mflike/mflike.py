@@ -13,7 +13,6 @@ import numpy as np
 from cobaya.likelihoods.base_classes import InstallableLikelihood
 from cobaya.log import LoggedError
 from cobaya.tools import are_different_params_lists
-from .theoryforge_MFLike import TheoryForge_MFLike
 
 from ..gaussian import GaussianData, GaussianLikelihood
 
@@ -28,9 +27,6 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
     cov_Bbl_file: Optional[str]
     data: dict
     defaults: dict
-    foregrounds: dict
-    band_integration: dict
-    systematics_template: dict
 
     def initialize(self):
         # Set path to data
@@ -61,48 +57,23 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         # Read data
         self.prepare_data()
 
-        # State requisites to the theory code
-        self.lmax_theory = 9000
-        self.requested_cls = ["tt", "te", "ee"]
-
-        self.expected_params_fg = ["a_tSZ", "a_kSZ", "a_p", "beta_p",
-                                   "a_c", "beta_c", "a_s", "a_gtt", "a_gte", "a_gee",
-                                   "a_psee", "a_pste", "xi", "T_d"]
-
-        self.expected_params_nuis = ["bandint_shift_93",
-                                     "bandint_shift_145",
-                                     "bandint_shift_225",
-                                     "calT_93", "calE_93",
-                                     "calT_145", "calE_145",
-                                     "calT_225", "calE_225",
-                                     "calG_all",
-                                     "alpha_93", "alpha_145", "alpha_225",
-                                     ]
-
-        self.ThFo = TheoryForge_MFLike(self)
         self.log.info("Initialized!")
 
-    def initialize_with_params(self):
-        # Check that the parameters are the right ones
-        differences = are_different_params_lists(
-            self.input_params, self.expected_params_fg + self.expected_params_nuis,
-            name_A="given", name_B="expected")
-        if differences:
-            raise LoggedError(
-                self.log, "Configuration error in parameters: %r.",
-                differences)
 
     def get_requirements(self):
-        return dict(Cl={k: max(c, self.lmax_theory + 1) for k, c in self.lcuts.items()})
+        cmbfg_dict = dict(cmbfg_dict={})
+        return cmbfg_dict
 
     def _get_theory(self, **params_values):
-        cl = self.provider.get_Cl(ell_factor=True)
-        params_values_nocosmo = {k: params_values[k] for
-                                 k in self.expected_params_fg + self.expected_params_nuis}
-        return self._get_power_spectra(cl, **params_values_nocosmo)
+        cmbfg_dict = self.provider.get_cmbfg_dict()
+        return self._get_power_spectra(cmbfg_dict)
 
-    def loglike(self, cl, **params_values_nocosmo):
-        ps_vec = self._get_power_spectra(cl, **params_values_nocosmo)
+    def logp(self, **params_values):
+        cmbfg_dict = self.theory.get_cmbfg_dict()
+        return self.loglike(cmbfg_dict)
+
+    def loglike(self, cmbfg_dict):
+        ps_vec = self._get_power_spectra(cmbfg_dict)
         delta = self.data_vec - ps_vec
         logp = -0.5 * (delta @ self.inv_cov @ delta)
         logp += self.logp_const
@@ -357,16 +328,29 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
         self.data = GaussianData("mflike", self.ell_vec, self.data_vec, self.cov)
 
-    def _get_power_spectra(self, cl, **params_values_nocosmo):
-        # Get Cl's from the theory code
-        Dls = {s: cl[s][self.l_bpws] for s, _ in self.lcuts.items()}
-        DlsObs = self.ThFo.get_modified_theory(Dls, **params_values_nocosmo)
-
+    def _get_power_spectra(self, cmbfg):
+        # Get Dl's from the theory component
         ps_vec = np.zeros_like(self.data_vec)
+        DlsObs = dict()
+        ell = self.l_bpws
+
         for m in self.spec_meta:
             p = m["pol"]
             i = m["ids"]
             w = m["bpw"].weight.T
+
+            if p in ['tt', 'ee', 'bb']:
+                DlsObs[p,  m['nu1'], m['nu2']] = cmbfg[p, m['nu1'], m['nu2']][ell]
+            else:  # ['te','tb','eb']
+                if m['hasYX_xsp']:  # not symmetrizing
+                    DlsObs[p,  m['nu1'], m['nu2']] = cmbfg[p, m['nu2'], m['nu1']][ell]
+                else:
+                    DlsObs[p,  m['nu1'], m['nu2']] = cmbfg[p, m['nu1'], m['nu2']][ell]
+#
+                if self.defaults['symmetrize']:  # we average TE and ET (as for data)
+                    DlsObs[p,  m['nu1'], m['nu2']] += cmbfg[p, m['nu2'], m['nu1']][ell]
+                    DlsObs[p,  m['nu1'], m['nu2']] *= 0.5
+
             clt = np.dot(w, DlsObs[p, m["nu1"], m["nu2"]])
             ps_vec[i] = clt
 

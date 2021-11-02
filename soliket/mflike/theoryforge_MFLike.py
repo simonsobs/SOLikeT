@@ -1,5 +1,10 @@
 import numpy as np
 import os
+from typing import Optional
+
+from cobaya.theory import Theory
+from cobaya.tools import are_different_params_lists
+from cobaya.log import LoggedError
 
 from ..constants import T_CMB, h_Planck, k_Boltzmann
 
@@ -25,33 +30,53 @@ def _get_fr(array):
     return fr
 
 
-class TheoryForge_MFLike:
+class TheoryForge_MFLike(Theory):
 
-    def __init__(self, mflike):
+    # attributes set from .yaml
+    data_folder: Optional[str]
+    freqs: str
+    spectra: dict
+    foregrounds: dict
+    band_integration: dict
+    systematics_template: dict
 
-        self.data_folder = mflike.data_folder
-        self.freqs = mflike.freqs
-        self.foregrounds = mflike.foregrounds
-        self.l_bpws = mflike.l_bpws
-        self.requested_cls = mflike.requested_cls
-        self.expected_params_fg = mflike.expected_params_fg
-        self.expected_params_nuis = mflike.expected_params_nuis
-        self.spec_meta = mflike.spec_meta
-        self.defaults_cuts = mflike.defaults
+    def initialize(self):
+
+        self.lmin = self.spectra["lmin"]
+        self.lmax = self.spectra["lmax"]
+        self.l_bpws = np.arange(self.lmin, self.lmax + 1)
+
+
+        # State requisites to the theory code
+        self.lmax_theory = 9000
+
+        self.requested_cls = self.spectra["polarizations"]
+
+        self.expected_params_fg = ["a_tSZ", "a_kSZ", "a_p", "beta_p",
+                           "a_c", "beta_c", "a_s", "a_gtt", "a_gte", "a_gee",
+                           "a_psee", "a_pste", "xi", "T_d"]
+
+        self.expected_params_nuis = ["bandint_shift_93",
+                                     "bandint_shift_145",
+                                     "bandint_shift_225",
+                                     "calT_93", "calE_93",
+                                     "calT_145", "calE_145",
+                                     "calT_225", "calE_225",
+                                     "calG_all",
+                                     "alpha_93", "alpha_145", "alpha_225",
+                                     ]
 
         # Initialize foreground model
         self._init_foreground_model()
 
-        # Parameters for template from file
-        self.systematics_template = mflike.systematics_template
         # Initialize template for marginalization, if needed
         if(self.systematics_template["has_file"]):
             self._init_template_from_file()
 
         # Parameters for band integration
-        self.bandint_nsteps = mflike.band_integration["nsteps"]
-        self.bandint_width = mflike.band_integration["bandwidth"]
-        self.bandint_external_bandpass = mflike.band_integration["external_bandpass"]
+        self.bandint_nsteps = self.band_integration["nsteps"]
+        self.bandint_width = self.band_integration["bandwidth"]
+        self.bandint_external_bandpass = self.band_integration["external_bandpass"]
 
         # Bandpass construction for band integration
         if self.bandint_external_bandpass:
@@ -60,7 +85,32 @@ class TheoryForge_MFLike:
             arrays = os.listdir(path)
             self._init_external_bandpass_construction(arrays)
 
-    def get_modified_theory(self, Dls, **params):
+    def initialize_with_params(self):
+        # Check that the parameters are the right ones
+        differences = are_different_params_lists(
+            self.input_params, self.expected_params_fg + self.expected_params_nuis,
+            name_A="given", name_B="expected")
+        if differences:
+            raise LoggedError(
+                self.log, "Configuration error in parameters: %r.",
+                differences)
+
+    def get_requirements(self):
+        return dict(Cl={k: max(self.lmax, self.lmax_theory + 1)
+            for k in self.requested_cls})
+
+    def get_cmb_theory(self, **params):
+        return self.provider.get_Cl(ell_factor=True)
+
+    def calculate(self, state, want_derived=False, **params_values_dict):
+        state["cmbfg_dict"] = self.get_modified_theory(**params_values_dict)
+
+    def get_cmbfg_dict(self):
+        return self.current_state["cmbfg_dict"]
+
+    def get_modified_theory(self, **params):
+
+        self.Dls = self.get_cmb_theory(**params)
 
         fg_params = {k: params[k] for k in self.expected_params_fg}
         nuis_params = {k: params[k] for k in self.expected_params_nuis}
@@ -78,7 +128,8 @@ class TheoryForge_MFLike:
         for f1 in self.freqs:
             for f2 in self.freqs:
                 for s in self.requested_cls:
-                    cmbfg_dict[s, f1, f2] = Dls[s] + fg_dict[s, 'all', f1, f2]
+                    cmbfg_dict[s, f1, f2] = (self.Dls[s][self.l_bpws] +
+                        fg_dict[s, 'all', f1, f2])
 
         # Apply alm based calibration factors
         cmbfg_dict = self._get_calibrated_spectra(cmbfg_dict, **nuis_params)
@@ -90,23 +141,8 @@ class TheoryForge_MFLike:
         if(self.systematics_template['has_file']):
             cmbfg_dict = self._get_template_from_file(cmbfg_dict, **nuis_params)
 
-        # Built theory
-        dls_dict = {}
-        for m in self.spec_meta:
-            p = m['pol']
-            if p in ['tt', 'ee', 'bb']:
-                dls_dict[p,  m['nu1'], m['nu2']] = cmbfg_dict[p, m['nu1'], m['nu2']]
-            else:  # ['te','tb','eb']
-                if m['hasYX_xsp']:  # not symmetrizing
-                    dls_dict[p,  m['nu1'], m['nu2']] = cmbfg_dict[p, m['nu2'], m['nu1']]
-                else:
-                    dls_dict[p,  m['nu1'], m['nu2']] = cmbfg_dict[p, m['nu1'], m['nu2']]
 
-                if self.defaults_cuts['symmetrize']:  # we average TE and ET (as for data)
-                    dls_dict[p,  m['nu1'], m['nu2']] += cmbfg_dict[p, m['nu2'], m['nu1']]
-                    dls_dict[p,  m['nu1'], m['nu2']] *= 0.5
-
-        return dls_dict
+        return cmbfg_dict
 
 ###########################################################################
 # This part deals with foreground construction and bandpass integration ##

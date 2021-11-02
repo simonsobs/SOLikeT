@@ -79,11 +79,12 @@ class MFLikeTest(unittest.TestCase):
                 path=packages_path, skip_global=True)
 
     def get_mflike_type(self, as_string=False):
-        if self.orig:
-            t = "mflike.MFLike"
-        else:
-            t = "soliket.MFLike"
+        #if self.orig:
+        #    t = "mflike.MFLike"
+        #else:
+        #    t = "soliket.MFLike"
 
+        t = "soliket.MFLike"
         if as_string:
             return t
         else:
