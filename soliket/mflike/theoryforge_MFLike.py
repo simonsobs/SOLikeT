@@ -103,14 +103,17 @@ class TheoryForge_MFLike(Theory):
         return self.provider.get_Cl(ell_factor=True)
 
     def calculate(self, state, want_derived=False, **params_values_dict):
-        state["cmbfg_dict"] = self.get_modified_theory(**params_values_dict)
+        Dls = self.get_cmb_theory(**params_values_dict)
+        params_values_nocosmo = {k: params_values_dict[k] for k in (
+            self.expected_params_fg + self.expected_params_nuis)}
+        state["cmbfg_dict"] = self.get_modified_theory(Dls, **params_values_nocosmo)
 
     def get_cmbfg_dict(self):
         return self.current_state["cmbfg_dict"]
 
-    def get_modified_theory(self, **params):
+    def get_modified_theory(self, Dls, **params):
 
-        self.Dls = self.get_cmb_theory(**params)
+        self.Dls = Dls#self.get_cmb_theory(**params)
 
         fg_params = {k: params[k] for k in self.expected_params_fg}
         nuis_params = {k: params[k] for k in self.expected_params_nuis}

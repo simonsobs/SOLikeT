@@ -79,12 +79,11 @@ class MFLikeTest(unittest.TestCase):
                 path=packages_path, skip_global=True)
 
     def get_mflike_type(self, as_string=False):
-        #if self.orig:
-        #    t = "mflike.MFLike"
-        #else:
-        #    t = "soliket.MFLike"
+        if self.orig:
+            t = "mflike.MFLike"
+        else:
+            t = "soliket.MFLike"
 
-        t = "soliket.MFLike"
         if as_string:
             return t
         else:
@@ -102,6 +101,11 @@ class MFLikeTest(unittest.TestCase):
         powers = results.get_cmb_power_spectra(pars, CMB_unit="muK")
         cl_dict = {k: powers["total"][:, v] for
                    k, v in {"tt": 0, "ee": 1, "te": 3}.items()}
+        if not self.orig:
+            TF = soliket.TheoryForge_MFLike()
+            #Dls = cl_dict
+            #params = cosmo_params + nuisance_params
+            dlobs_dict = TF.get_modified_theory(cl_dict, **nuisance_params)
         for select, chi2 in chi2s.items():
             MFLike = self.get_mflike_type()
 
@@ -123,7 +127,10 @@ class MFLikeTest(unittest.TestCase):
                 }
             )
 
-            loglike = my_mflike.loglike(cl_dict, **nuisance_params)
+            if not self.orig:
+                loglike = my_mflike.loglike(dlobs_dict)
+            else:
+                loglike = my_mflike.loglike(cl_dict, **nuisance_params)
 
             self.assertAlmostEqual(-2 * (loglike - my_mflike.logp_const), chi2, 2)
 
@@ -146,6 +153,8 @@ class MFLikeTest(unittest.TestCase):
             "modules": packages_path,
             "debug": True,
         }
+        if not self.orig:
+            info["theory"]["soliket.TheoryForge_MFLike"] = {'stop_at_error': True}
         from cobaya.model import get_model
 
         model = get_model(info)

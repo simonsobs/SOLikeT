@@ -31,13 +31,15 @@ def test_multi():
                 "stop_at_error": True,
             }
         },
-        "theory": {"camb": camb_options},
+        "theory": {"camb": camb_options,
+                   "soliket.TheoryForge_MFLike": {'stop_at_error': True}},
         "params": {**mflike_params},
     }
 
     info1 = {
         "likelihood": {"soliket.mflike.MFLike": mflike_options},
-        "theory": {"camb": camb_options},
+        "theory": {"camb": camb_options,
+                   "soliket.TheoryForge_MFLike": {'stop_at_error': True}},
         "params": {**mflike_params},
     }
 
