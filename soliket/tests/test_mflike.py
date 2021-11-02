@@ -112,6 +112,7 @@ class MFLikeTest(unittest.TestCase):
             my_mflike = MFLike(
                 {
                     "packages_path": packages_path,
+                    "data_folder": "MFLike/v0.6",
                     "input_file": pre + "00000.fits",
                     "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
                     "defaults": {
