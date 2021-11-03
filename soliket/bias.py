@@ -7,6 +7,7 @@ import numpy as np
 from typing import Sequence, Union
 from cobaya.theory import Theory
 from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
+from cobaya.log import LoggedError
 
 
 class Bias(Theory):
@@ -73,10 +74,12 @@ class Bias(Theory):
 
     # def calculate(self, state, want_derived=True, **params_values_dict):
 
-    def get_Pk_gg_interpolator(self, extrap_kmax=None):
+    def get_Pk_gg_interpolator(self,
+                               var_pair=("delta_tot", "delta_tot"),
+                               extrap_kmax=None):
 
         key = ("Pk_gg_interpolator",
-               self.nonlinear, extrap_kmax) + tuple(sorted(self._var_pairs))
+               self.nonlinear, extrap_kmax) + tuple(sorted(var_pair))
 
         pk = self.get_Pk_gg_grid()
         log_p = True
@@ -88,19 +91,21 @@ class Bias(Theory):
                 log_p = False
         if log_p:
             pk = np.log(sign * pk)
-        # elif extrap_kmax > k[-1]:
-        #     raise LoggedError(self.log,
-        #                       'Cannot do log extrapolation with zero-crossing pk '
-        #                       'for %s, %s' % var_pair)
+        elif extrap_kmax > self.k[-1]:
+            raise LoggedError(self.log,
+                              'Cannot do log extrapolation with zero-crossing pk '
+                              'for %s, %s' % var_pair)
         result = PowerSpectrumInterpolator(self.z, self.k, pk, logP=log_p, logsign=sign,
                                            extrap_kmax=extrap_kmax)
         self.current_state[key] = result
         return result
 
-    def get_Pk_gm_interpolator(self, extrap_kmax=None):
+    def get_Pk_gm_interpolator(self,
+                               var_pair=("delta_tot", "delta_tot"),
+                               extrap_kmax=None):
 
         key = ("Pk_gm_interpolator",
-               self.nonlinear, extrap_kmax) + tuple(sorted(self._var_pairs))
+               self.nonlinear, extrap_kmax) + tuple(sorted(var_pair))
 
         pk = self.get_Pk_gm_grid()
         log_p = True
@@ -112,10 +117,10 @@ class Bias(Theory):
                 log_p = False
         if log_p:
             pk = np.log(sign * pk)
-        # elif extrap_kmax > k[-1]:
-        #     raise LoggedError(self.log,
-        #                       'Cannot do log extrapolation with zero-crossing pk '
-        #                       'for %s, %s' % var_pair)
+        elif extrap_kmax > self.k[-1]:
+            raise LoggedError(self.log,
+                              'Cannot do log extrapolation with zero-crossing pk '
+                              'for %s, %s' % var_pair)
         result = PowerSpectrumInterpolator(self.z, self.k, pk, logP=log_p, logsign=sign,
                                            extrap_kmax=extrap_kmax)
         self.current_state[key] = result
