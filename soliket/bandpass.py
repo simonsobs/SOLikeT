@@ -1,0 +1,137 @@
+import numpy as np
+import os
+from typing import Optional
+
+from cobaya.theory import Theory
+from cobaya.tools import are_different_params_lists
+from cobaya.log import LoggedError
+
+from .constants import T_CMB, h_Planck, k_Boltzmann
+
+# Converts from cmb units to brightness.
+# Numerical factors not included, it needs proper normalization when used.
+
+
+def _cmb2bb(nu):
+
+    # NB: numerical factors not included
+    x = nu * h_Planck * 1e9 / k_Boltzmann / T_CMB
+    return np.exp(x) * (nu * x / np.expm1(x))**2
+
+
+# Provides the frequency value given the bandpass name. To be modified - it is ACT based!!
+def _get_fr(array):
+
+    a = array.split("_")[0]
+    if a == 'PA1' or a == 'PA2':
+        fr = 150
+    if a == 'PA3':
+        fr = array.split("_")[3]
+    return fr
+
+
+class BandPass(Theory):
+
+    # attributes set from .yaml
+    data_folder: Optional[str]
+    band_integration: dict
+
+    def initialize(self):
+
+        self.expected_params_bp = ["bandint_shift_93",
+                                   "bandint_shift_145",
+                                   "bandint_shift_225"]
+
+        self.freqs = None
+
+        # Parameters for band integration
+        self.bandint_nsteps = self.band_integration["nsteps"]
+        self.bandint_width = self.band_integration["bandwidth"]
+        self.bandint_external_bandpass = self.band_integration["external_bandpass"]
+
+        # Bandpass construction for band integration
+        if self.bandint_external_bandpass:
+            path = os.path.normpath(os.path.join(self.data_folder,
+                                                 '/bp_int/'))
+            arrays = os.listdir(path)
+            self._init_external_bandpass_construction(arrays)
+
+    def initialize_with_params(self):
+        # Check that the parameters are the right ones
+        differences = are_different_params_lists(
+            self.input_params, self.expected_params_bp,
+            name_A="given", name_B="expected")
+        if differences:
+            raise LoggedError(
+                self.log, "Configuration error in parameters: %r.",
+                differences)
+
+    def must_provide(self, **requirements):
+        if "bandint_freqs" in requirements:
+            self.freqs = requirements["bandint_freqs"]["freqs"]
+
+    def calculate(self, state, want_derived=False, **params_values_dict):
+
+        nuis_params = {k: params_values_dict[k] for k in self.expected_params_bp}
+
+        # Bandpass construction for band integration
+        if self.bandint_external_bandpass:
+            self.bandint_freqs = self._external_bandpass_construction(**nuis_params)
+        else:
+            self.bandint_freqs = self._bandpass_construction(**nuis_params)
+
+        state["bandint_freqs"] = self.bandint_freqs
+
+    def get_bandint_freqs(self):
+        return self.current_state["bandint_freqs"]
+
+    # Takes care of the bandpass construction. It returns a list of nu-transmittance for
+    # each frequency or an array with the effective freqs.
+    def _bandpass_construction(self, **params):
+
+        if not hasattr(self.bandint_width, "__len__"):
+            self.bandint_width = np.full_like(self.freqs, self.bandint_width,
+                                              dtype=np.float)
+        if np.any(np.array(self.bandint_width) > 0):
+            assert self.bandint_nsteps > 1, 'bandint_width and bandint_nsteps not \
+                                             coherent'
+            assert np.all(np.array(self.bandint_width) > 0), 'one band has width = 0, \
+                                                              set a positive width and \
+                                                              run again'
+
+            bandint_freqs = []
+            for ifr, fr in enumerate(self.freqs):
+                bandpar = 'bandint_shift_' + str(fr)
+                bandlow = fr * (1 - self.bandint_width[ifr] * .5)
+                bandhigh = fr * (1 + self.bandint_width[ifr] * .5)
+                nubtrue = np.linspace(bandlow, bandhigh, self.bandint_nsteps, dtype=float)
+                nub = np.linspace(bandlow + params[bandpar], bandhigh + params[bandpar],
+                                  self.bandint_nsteps, dtype=float)
+                tranb = _cmb2bb(nub)
+                tranb_norm = np.trapz(_cmb2bb(nubtrue), nubtrue)
+                bandint_freqs.append([nub, tranb / tranb_norm])
+        else:
+            bandint_freqs = np.empty_like(self.freqs, dtype=float)
+            for ifr, fr in enumerate(self.freqs):
+                bandpar = 'bandint_shift_' + str(fr)
+                bandint_freqs[ifr] = fr + params[bandpar]
+
+        return bandint_freqs
+
+    def _init_external_bandpass_construction(self, arrays):
+        self.external_bandpass = []
+        for array in arrays:
+            fr = _get_fr(array)
+            nu_ghz, bp = np.loadtxt(array, usecols=(0, 1), unpack=True)
+            trans_norm = np.trapz(bp * _cmb2bb(nu_ghz), nu_ghz)
+            self.external_bandpass.append([fr, nu_ghz, bp / trans_norm])
+
+    def _external_bandpass_construction(self, **params):
+        bandint_freqs = []
+        for fr, nu_ghz, bp in self.external_bandpass:
+            bandpar = 'bandint_shift_' + str(fr)
+            nub = nu_ghz + params[bandpar]
+            trans = bp * _cmb2bb(nub)
+            bandint_freqs.append([nub, trans])
+
+        return bandint_freqs

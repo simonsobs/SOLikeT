@@ -39,7 +39,9 @@ def test_multi():
     info1 = {
         "likelihood": {"soliket.mflike.MFLike": mflike_options},
         "theory": {"camb": camb_options,
-                   "soliket.TheoryForge_MFLike": {'stop_at_error': True}},
+                   "soliket.TheoryForge_MFLike": {'stop_at_error': True},
+                   "soliket.Foreground": {"stop_at_error": True},
+                   "soliket.BandPass": {"stop_at_error": True}},
         "params": {**mflike_params},
     }
 
