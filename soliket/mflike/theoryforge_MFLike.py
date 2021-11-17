@@ -20,13 +20,23 @@ class TheoryForge_MFLike(Theory):
 
         self.lmin = self.spectra["lmin"]
         self.lmax = self.spectra["lmax"]
-        self.l_bpws = np.arange(self.lmin, self.lmax + 1)
+        self.ell = np.arange(self.lmin, self.lmax + 1)
 
 
         # State requisites to the theory code
-        self.lmax_theory = 9000
+        # Which lmax for theory CMB
+        # Note this must be greater than lmax above to avoid approx errors
+        self.lmax_boltzmann = 9000
 
+        # Which lmax for theory FG
+        # This can be larger than lmax boltzmann
+        self.lmax_fg = 9000
+
+        # Which spectra to consider
         self.requested_cls = self.spectra["polarizations"]
+
+        # Set lmax for theory CMB requirements
+        self.lcuts = {k: self.lmax_boltzmann for k in self.requested_cls}
 
         self.expected_params_nuis = ["calT_93", "calE_93",
                                      "calT_145", "calE_145",
@@ -50,14 +60,28 @@ class TheoryForge_MFLike(Theory):
                 self.log, "Configuration error in parameters: %r.",
                 differences)
 
-    def get_requirements(self):
-        reqs = dict()
-        reqs["Cl"] = {k: max(self.lmax,
-            self.lmax_theory + 1) for k in self.requested_cls}
-        reqs["fg_dict"] = {"requested_cls": self.requested_cls,
-                           "ell": self.l_bpws,
-                           "freqs": self.freqs}
+    def must_provide(self, **requirements):
+        # cmbfg_dict is required by mflike
+        # and requires some params to be computed
+        # Assign required params from mflike
+        # otherwise use default values
+        if "cmbfg_dict" in requirements:
+            req = requirements["cmbfg_dict"]
+            self.ell = req.get("ell", self.ell)
+            self.requested_cls = req.get("requested_cls", self.requested_cls)
+            self.lcuts = req.get("lcuts", self.lcuts)
+            self.freqs = req.get("freqs", self.freqs)
 
+        # theoryforge requires Cl from boltzmann solver
+        # and fg_dict from Foreground theory component
+        # Both requirements require some params to be computed
+        # Passing those from theoryforge
+        reqs = dict()
+        # Be sure that CMB is computed at lmax > lmax_data (lcuts from mflike here)
+        reqs["Cl"] = {k: max(c, self.lmax_boltzmann + 1) for k, c in self.lcuts.items()}
+        reqs["fg_dict"] = {"requested_cls": self.requested_cls,
+                           "ell": np.arange(max(self.ell[-1], self.lmax_fg + 1)),
+                           "freqs": self.freqs}
         return reqs
 
     def get_cmb_theory(self, **params):
@@ -70,7 +94,6 @@ class TheoryForge_MFLike(Theory):
         Dls = self.get_cmb_theory(**params_values_dict)
         params_values_nocosmo = {k: params_values_dict[k] for k in (
             self.expected_params_nuis)}
-        #state["cmbfg_dict"] = self.get_modified_theory(Dls, **params_values_nocosmo)
         fg_dict = self.get_foreground_theory(**params_values_nocosmo)
         state["cmbfg_dict"] = self.get_modified_theory(Dls,
             fg_dict, **params_values_nocosmo)
@@ -84,15 +107,13 @@ class TheoryForge_MFLike(Theory):
 
         nuis_params = {k: params[k] for k in self.expected_params_nuis}
 
-        #fg_dict = self.get_foreground_theory(**params)
-
         cmbfg_dict = {}
         # Sum CMB and FGs
         for f1 in self.freqs:
             for f2 in self.freqs:
                 for s in self.requested_cls:
-                    cmbfg_dict[s, f1, f2] = (self.Dls[s][self.l_bpws] +
-                        fg_dict[s, 'all', f1, f2])
+                    cmbfg_dict[s, f1, f2] = (self.Dls[s][self.ell] +
+                        fg_dict[s, 'all', f1, f2][self.ell])
 
         # Apply alm based calibration factors
         cmbfg_dict = self._get_calibrated_spectra(cmbfg_dict, **nuis_params)
@@ -123,7 +144,7 @@ class TheoryForge_MFLike(Theory):
                               np.array([nuis_params['calE_' + str(fr)] for
                                         fr in self.freqs]))
 
-        calib = syl.Calibration_alm(ell=self.l_bpws, spectra=dls_dict)
+        calib = syl.Calibration_alm(ell=self.ell, spectra=dls_dict)
 
         return calib(cal1=cal_pars, cal2=cal_pars, nu=self.freqs)
 
@@ -138,7 +159,7 @@ class TheoryForge_MFLike(Theory):
 
         rot_pars = [nuis_params['alpha_' + str(fr)] for fr in self.freqs]
 
-        rot = syl.Rotation_alm(ell=self.l_bpws, spectra=dls_dict, cls=self.requested_cls)
+        rot = syl.Rotation_alm(ell=self.ell, spectra=dls_dict, cls=self.requested_cls)
 
         return rot(rot_pars, nu=self.freqs)
 
@@ -158,7 +179,7 @@ class TheoryForge_MFLike(Theory):
         # Currently stored inside syslibrary package
         templ_from_file = \
                 syl.ReadTemplateFromFile(rootname=self.systematics_template["rootname"])
-        self.dltempl_from_file = templ_from_file(ell=self.l_bpws)
+        self.dltempl_from_file = templ_from_file(ell=self.ell)
 
     def _get_template_from_file(self, dls_dict, **nuis_params):
 

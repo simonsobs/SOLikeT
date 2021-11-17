@@ -54,6 +54,11 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                     self.data_folder,
                 )
 
+        self.requested_cls = [p.lower() for p in self.defaults["polarizations"]]
+        for x in ["et", "eb", "bt"]:
+            if x in self.requested_cls:
+                self.requested_cls.remove(x)
+
         # Read data
         self.prepare_data()
 
@@ -61,8 +66,14 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
 
     def get_requirements(self):
-        cmbfg_dict = dict(cmbfg_dict={})
-        return cmbfg_dict
+        # mflike requires cmbfg_dict from theoryforge
+        # cmbfg_dict requires some params to be computed
+        reqs = dict()
+        reqs["cmbfg_dict"] = {"ell": self.l_bpws,
+                              "requested_cls": self.requested_cls,
+                              "lcuts": self.lcuts,
+                              "freqs": self.freqs}
+        return reqs
 
     def _get_theory(self, **params_values):
         cmbfg_dict = self.provider.get_cmbfg_dict()
@@ -332,7 +343,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         # Get Dl's from the theory component
         ps_vec = np.zeros_like(self.data_vec)
         DlsObs = dict()
-        ell = self.l_bpws
+        # Note we rescale l_bpws because cmbfg spectra start from l=2
+        ell = self.l_bpws - 2
 
         for m in self.spec_meta:
             p = m["pol"]

@@ -67,6 +67,9 @@ class BandPass(Theory):
                 differences)
 
     def must_provide(self, **requirements):
+        # bandint_freqs is required by Foreground
+        # and requires some params to be computed
+        # Assign those from Foreground
         if "bandint_freqs" in requirements:
             self.freqs = requirements["bandint_freqs"]["freqs"]
 

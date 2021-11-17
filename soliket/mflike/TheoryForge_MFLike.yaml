@@ -1,12 +1,16 @@
 data_folder: MFLike/v0.6
 
+# freqs can be either assigned from yaml 
+# or passed from like/theory component requiring theoryforge
 freqs: [93, 145, 225]
 
 spectra:
   # Which spectra?
+  # polarizations can be either assigned from yaml 
+  # or passed from like/theory component requiring theoryforge
   polarizations: ["tt", "te", "ee"]
   # Which lrange?
-  lmin: 0
+  lmin: 2
   lmax: 7000
 
 systematics_template:

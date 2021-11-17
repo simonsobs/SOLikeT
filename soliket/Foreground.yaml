@@ -1,3 +1,11 @@
+# spectra can be either assigned from yaml 
+# or passed from like/theory component requiring Foreground
+spectra:
+  polarizations: ["tt", "te", "ee"]
+  lmin: 2
+  lmax: 9000
+  frequencies: [150]
+
 foregrounds:
   normalisation:
     nu_0: 150.0

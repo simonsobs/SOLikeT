@@ -111,7 +111,7 @@ class MFLikeTest(unittest.TestCase):
             FG = soliket.Foreground()
             TF = soliket.TheoryForge_MFLike()
 
-            ell = TF.l_bpws
+            ell = np.arange(lmax + 1)
             freqs = TF.freqs
             requested_cls = TF.requested_cls
             BP.freqs = freqs
