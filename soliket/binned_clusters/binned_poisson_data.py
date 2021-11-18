@@ -5,14 +5,11 @@ class BinnedPoissonData:
 
     def __init__(self, delNcat, delN2Dcat):
 
-        #self.name = str(name)
         self.delNcat = delNcat
         self.delN2Dcat = delN2Dcat
-        #print('\r :::::: this is initialisation in binned_poisson_data.py')
 
     def loglike(self, theory):
 
-        #print('\r :::::: computing loglike in binned_poisson_data.py')
         if theory.ndim == 1:
 
             delN = theory
