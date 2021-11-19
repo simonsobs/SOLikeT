@@ -108,6 +108,8 @@ venv.bak/
 soliket/binned_clusters/chains/*
 soliket/binned_clusters/data/*
 soliket/binned_clusters/template_plc.yaml
-
+soliket/sz_binned_cluster_counts/*
 # ymap
 ymap/
+soliket/clusters/data/selFn_equD56/areaMask.fits
+soliket/clusters/data/selFn_equD56/RMSMap_Arnaud_M2e14_z0p4.fits
