@@ -123,3 +123,5 @@ soliket/sz_binned_cluster_counts/data
 
 
 soliket/clusters/data
+soliket/binned_clusters/data/so/MFMF_WebSkyHalos_A10tSZ_3freq_tiles/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits
+soliket/binned_clusters/data/so/MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/tileAreas.txt
