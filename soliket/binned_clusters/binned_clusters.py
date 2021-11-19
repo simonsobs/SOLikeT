@@ -505,7 +505,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         for i in range(len(zarr)-1):
             for j in range(len(marr)):
                 delN[i] += 0.5*(intgr[i,j]*c[i,j] + intgr[i+1,j]*c[i+1,j])*(zarr[i+1] - zarr[i])*dlnm
-            print(i, delN[i])
+            #print(i, delN[i])
         print("\r Total predicted N = ", delN.sum())
 
         return delN
@@ -545,8 +545,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                     delN2D[i,kk] += 0.5*(intgr[i,j]*cc[kk,i,j] + intgr[i+1,j]*cc[kk,i+1,j])*(zarr[i+1] - zarr[i])*dlnm
             #print(kk, delN2D[:,kk].sum())
 
-        for i in range(len(zarr)):
-            print(i, delN2D[i,:].sum())
+        #for i in range(len(zarr)):
+            #print(i, delN2D[i,:].sum())
         print("\r Total predicted 2D N = ", delN2D.sum())
 
         return delN2D
