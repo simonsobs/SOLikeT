@@ -107,7 +107,6 @@ venv.bak/
 .DS_Store
 soliket/binned_clusters/chains/*
 soliket/binned_clusters/data/*
-soliket/binned_clusters/template.yaml
 soliket/binned_clusters/template_plc.yaml
 
 # ymap
