@@ -610,7 +610,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             mm = m / mpivot
             #t = -0.008488*(mm*Ez[:,None])**(-0.585)
             t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
-            return 1 + 3.79*t - 28.2*(t**2.)
+            return 1.# + 3.79*t - 28.2*(t**2.)
 
         if single_tile == 'yes' or Q_opt == 'yes':
             #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
