@@ -1,7 +1,7 @@
 output: /Users/eunseonglee/SOLikeT/soliket/binned_clusters/chains/test
 
 likelihood:
-  solike.BinnedClusterLikelihood:
+  soliket.BinnedClusterLikelihood:
     single_tile_test: "no"
     choose_dim: "2D"
     Q_optimise: "yes"

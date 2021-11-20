@@ -392,21 +392,24 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             par_c[8] = 2.44
 
             delta = np.log10(delta)
-
-            dso = 200.
             omz = om*((1. + zarr)**3.)/(Ez**2.)
+
+            dso = 200.  ##### M200m
+            #dso = 500. # M500c
+            dsoz = dso/omz
+            if dso == 200.: dsoz = dso
 
             tck1 = interpolate.splrep(delta, par_aa)
             tck2 = interpolate.splrep(delta, par_a)
             tck3 = interpolate.splrep(delta, par_b)
             tck4 = interpolate.splrep(delta, par_c)
 
-            par1 = interpolate.splev(np.log10(dso), tck1)
-            par2 = interpolate.splev(np.log10(dso), tck2)
-            par3 = interpolate.splev(np.log10(dso), tck3)
-            par4 = interpolate.splev(np.log10(dso), tck4)
+            par1 = interpolate.splev(np.log10(dsoz), tck1)
+            par2 = interpolate.splev(np.log10(dsoz), tck2)
+            par3 = interpolate.splev(np.log10(dsoz), tck3)
+            par4 = interpolate.splev(np.log10(dsoz), tck4)
 
-            alpha = 10.**(-((0.75/np.log10(dso/75.))**1.2))
+            alpha = 10.**(-((0.75/np.log10(dsoz/75.))**1.2))
             A     = par1*((1. + zarr)**(-0.14))
             a     = par2*((1. + zarr)**(-0.06))
             b     = par3*((1. + zarr)**(-alpha))
@@ -419,7 +422,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         R = radius(np.exp(marr))[:,None]
         sigma = sigma_sq(R, kh)**0.5
         sigma_prime = sigma_sq_prime(R, kh)
-        return  -rhom0 * tinker(sigma, zarr) * dRdM * (sigma_prime/(2.*sigma**2.))
+        return -rhom0 * tinker(sigma, zarr) * dRdM * (sigma_prime/(2.*sigma**2.))
 
     def _get_dVdzdO(self):
 
@@ -487,8 +490,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         marr = np.exp(self.marr)
         dlnm = self.dlnm
 
-        M500c = self._get_M500c_from_M200m(marr, zarr)
-        marr = M500c
+        M500c = self._get_M500c_from_M200m(marr, zarr) ###### M200m
+        marr = M500c ###### M200m
 
         y0 = self._get_y0(marr, **params_values_dict)
         dVdzdO = self._get_dVdzdO()
@@ -519,8 +522,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         dlnm = self.dlnm
         Nq = self.Nq
 
-        M500c = self._get_M500c_from_M200m(marr, zarr)
-        marr = M500c
+        M500c = self._get_M500c_from_M200m(marr, zarr) ###### M200m
+        marr = M500c ###### M200m
 
         y0 = self._get_y0(marr, **params_values_dict)
         dVdzdO = self._get_dVdzdO()
@@ -588,7 +591,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             DAz = self._get_DAz() * h
             H0 = self.theory.get_param("H0")
             ttstar = thetastar * (H0/70.)**(-2./3.)
-            return ttstar*(m/3.e14*(100./H0))**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.)
+            #return ttstar*(m/3.e14*(100./H0))**alpha_theta * Ez[:,None]**(-2./3.) * (100.*DAz[:,None]/500/H0)**(-1.)
+            return ttstar*(m/3.e14*(100./H0))**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.) ###### M200m
 
         def splQ(x):
             if single_tile == 'yes' or Q_opt == 'yes':
@@ -604,12 +608,14 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         def rel(m):
             mm = m / mpivot
-            t = -0.008488*(mm*Ez[:,None])**(-0.585)
+            #t = -0.008488*(mm*Ez[:,None])**(-0.585)
+            t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
             return 1 + 3.79*t - 28.2*(t**2.)
 
         if single_tile == 'yes' or Q_opt == 'yes':
-            y0 = A0 * (Ez**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb))
-            y0 = y0.T
+            #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
+            y0 = A0 * (Ez**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb) ###### M200m
+            y0 = y0.T ###### M200m
         else:
             arg = A0 * (Ez**2.) * (mb[:,None] / mpivot)**(1. + B0)
             y0 = arg[:,:,None] * splQ(theta(mb)) * rel(mb).T[:,:,None]
