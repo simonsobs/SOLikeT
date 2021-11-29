@@ -2,10 +2,10 @@ Contributor Guidelines
 ======================
 
 How to add your theory component in solike
----------------
+------------------------------------------
 
 Basic ingredients
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 Your theory calculator must inherit from the cobaya theory class. It must have 3 main blocks of functions:
 
 inizialization (``inizialize``);
@@ -23,11 +23,11 @@ The 3 theory components are:
 
 
 Initialization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 You can either assign params in inizialize or do that via a dedicated yaml. You can in general do all the calculations that need to be done once for all.
 
 Requirements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 Here you need to write what external elements are needed by your theory block to perform its duties. These external elements will be computed and provided by some other external module (e.g., another Theory class).
 In our case, ``mflike`` must tell us that it needs a dictionary of cmb+fg spectra. This is done by letting the get_requirement function return a dictionary which has the name of the needed element as a key. For example, if the cmb+fg spectra dict is called ``cmbfg_dict``, the get_requirement function should 
 
@@ -66,7 +66,7 @@ If this happens, then the external Theory block (in this example, ``TheoryForge`
 	Of course, ``Foreground`` will have a similar call to ``must_provide``, where we assign to ``self.param1_fg`` the value passed from ``TheoryForge`` to ``Foreground``.
 
 Calculation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^
 In each Theory class, you need at least 2 functions:
 
 	1. 
