@@ -143,3 +143,15 @@ class Linear_bias(Bias):
 
         state['Pk_gg_grid'] = params_values_dict['b_lin']**2. * Pk_mm
         state['Pk_gm_grid'] = params_values_dict['b_lin'] * Pk_mm
+
+class LPT_bias(Bias):
+
+    params = {b1, b2, b3 etc}
+
+    def calculate(self, state, want_derived=True, **params_values_dict):
+
+        Pk_mm = self._get_Pk_mm()
+
+        state['Pk_gg_grid'] = some function of (Pk_mm)
+
+
