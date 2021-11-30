@@ -8,7 +8,7 @@ from .xcorr import XcorrLikelihood  # noqa: F401
 try:
     import pyccl as ccl  # noqa: F401
     from .ccl import CCL  # noqa: F401
-    from .cross_correlation import CrossCorrelationLikelihood  # noqa: F401
+    from .cross_correlation import GalaxyKappaLikelihood, ShearKappaLikelihood  # noqa: F401, E501
 except ImportError:
     print('Skipping CCL module as pyCCL is not installed')
     pass
