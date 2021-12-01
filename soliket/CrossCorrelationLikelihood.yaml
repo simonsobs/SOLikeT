@@ -11,3 +11,6 @@ params:
   s1: 
     value: 0.4
     latex: s_1
+  A_IA:
+    value: 0.54
+    latex: A_{IA}

@@ -36,19 +36,23 @@ def test_galaxykappa():
 
 def test_shearkappa():
     cosmo_params = {
-        "Omega_c": 0.25,
-        "Omega_b": 0.05,
+        "Omega_c": 0.31,
+        "Omega_b": 0.04,
         "h": 0.67,
-        "n_s": 0.96
+        "n_s": 0.97
     }
 
     info = {"params": {"omch2": cosmo_params['Omega_c'] * cosmo_params['h'] ** 2.,
                        "ombh2": cosmo_params['Omega_b'] * cosmo_params['h'] ** 2.,
                        "H0": cosmo_params['h'] * 100,
                        "ns": cosmo_params['n_s'],
-                       "As": 2.2e-9,
-                       "tau": 0},
-            "likelihood": {"ShearKappaLikelihood": ShearKappaLikelihood},
+                       "As": 2.2e-9 * 0.81 / 0.8,
+                       "tau": 0,
+                       "A_IA": 0.54},
+            "likelihood": {"ShearKappaLikelihood":
+                            {"external": ShearKappaLikelihood,
+                             "dndz_file": "soliket/data/xcorr_simulated/dndz_kids1000-highz.txt"}  # noqa E501
+                          },
             "theory": {
                 "camb": None,
                 "ccl": {"external": CCL, "nonlinear": False}
@@ -60,7 +64,9 @@ def test_shearkappa():
 
     lhood = model.likelihood['ShearKappaLikelihood']
 
-    ells = np.linspace(50, 2000, 128)
+    # pdb.set_trace()
+
+    ells = np.linspace(50, 3000, 128)
 
     # ell_load = lhood.data.x
     ell_load = np.concatenate([ells, ells])
@@ -76,7 +82,7 @@ def test_shearkappa():
     # cl_obs_gammagamma = cl_load[:n_ell]
     # cl_obs_kappagamma = cl_load[n_ell:]
 
-    cl_theory = lhood._get_theory()
+    cl_theory = lhood._get_theory(**info["params"])
     cl_gammagamma = cl_theory[n_ell:]
     cl_kappagamma = cl_theory[:n_ell]
 
@@ -89,15 +95,17 @@ def test_shearkappa():
     plt.xlabel(r'$\ell$')
     plt.xscale('log')
     # plt.ylim([-0.5, 1.6])
+    plt.xlim([60, 3000])
     plt.axhline(0, linestyle='dashed', alpha=0.4)
     plt.subplot(122)
     plt.plot(ell_obs_kappagamma, ell_obs_kappagamma * cl_kappagamma * 1.e6)
     plt.title(r'$\kappa \gamma$')
-    plt.ylabel(r'$\ell C_{\ell} / 10^6$')
+    # plt.ylabel(r'$\ell C_{\ell} / 10^6$'))
     plt.xlabel(r'$\ell$')
     plt.xscale('log')
-    # plt.ylim([-0.5, 1.6])
+    plt.ylim([-0.5, 1.6])
+    plt.xlim([60, 3000])
     plt.axhline(0, color='k', linestyle='dashed', alpha=0.4)
-    plt.savefig('./plots/kappagamma.png', dpi=300, bbox_inches='tight')
+    # plt.savefig('./plots/kappagamma.png', dpi=300, bbox_inches='tight')
 
     # assert np.isclose(loglikes[0], 88.2, atol=.2, rtol=0.)
