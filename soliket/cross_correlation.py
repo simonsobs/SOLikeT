@@ -72,13 +72,10 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
     def _get_theory(self, **params_values):
         cosmo = self.provider.get_CCL()['cosmo']
 
-        # import pdb
-        # pdb.set_trace()
-
         tracer_gamma = ccl.WeakLensingTracer(cosmo, dndz=self.dndz.T,
                                              ia_bias=(self.dndz[:, 0],
                                                       params_values['A_IA'] *
-                                                      np.ones(len(self.dndz[:, 0])))
+                                                      np.ones(len(self.dndz[:, 0]))),
                                              )
         tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
 

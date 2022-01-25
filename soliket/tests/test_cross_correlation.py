@@ -38,12 +38,14 @@ def test_shearkappa():
     cosmo_params = {
         "Omega_c": 0.267,
         "Omega_b": 0.0497,
-        "h": 0.67,
+        "h": 0.673,
         "n_s": 0.964
     }
 
-    info = {"params": {"omch2": cosmo_params['Omega_c'] * cosmo_params['h'] ** 2.,
-                       "ombh2": cosmo_params['Omega_b'] * cosmo_params['h'] ** 2.,
+    info = {"params": {#"omch2": cosmo_params['Omega_c'] * cosmo_params['h'] ** 2.,
+                       "omch2": 0.1200,
+                       "ombh2": 0.0223,
+                       # "omegam": 0.3153,
                        "H0": cosmo_params['h'] * 100,
                        "ns": cosmo_params['n_s'],
                        "As": 2.1e-9,
@@ -51,7 +53,9 @@ def test_shearkappa():
                        "A_IA": 0.0},
             "likelihood": {"ShearKappaLikelihood":
                             {"external": ShearKappaLikelihood,
-                             "dndz_file": "soliket/data/xcorr_simulated/dndz_hsc.txt"}  # noqa E501
+                             "dndz_file": "soliket/data/xcorr_simulated/dndz_hsc.txt"  # noqa E501
+                             # "dndz_file": "soliket/data/xcorr_simulated/dndz_kids1000-lowz.txt"
+                             }  # noqa E501
                           },
             "theory": {
                 "camb": None,
@@ -83,8 +87,8 @@ def test_shearkappa():
     # cl_obs_kappagamma = cl_load[n_ell:]
 
     cl_theory = lhood._get_theory(**info["params"])
-    cl_gammagamma = cl_theory[n_ell:]
-    cl_kappagamma = cl_theory[:n_ell]
+    cl_kappagamma = cl_theory[n_ell:]
+    cl_gammagamma = cl_theory[:n_ell]
 
     from matplotlib import pyplot as plt
     # plt.figure(1, figsize=(2 * 4.5, 3.75))
@@ -99,16 +103,28 @@ def test_shearkappa():
     # plt.xlim([60, 2000])
     # plt.axhline(0, linestyle='dashed', alpha=0.4)
     # plt.subplot(122)
-    plt.plot(ell_obs_kappagamma, ell_obs_kappagamma * cl_kappagamma * 1.e6)
+    plt.plot(ell_obs_kappagamma, ell_obs_kappagamma * cl_kappagamma * 1.e6, label='Calculated')
+
+    # ell_paper, ellcl_paper = np.loadtxt('soliket/data/xcorr_simulated/lcl_kids1000.txt', delimiter=',', unpack=True)
+    # plt.plot(ell_paper, ellcl_paper, '--', label='Robertson et al, Planck 2018 $A=1$')
+
+    ell_paper, ellcl_paper = np.loadtxt('soliket/data/xcorr_simulated/lcl_hsc.txt', delimiter=',', unpack=True)
+    plt.plot(ell_paper, ellcl_paper, '--', label='Marques et al, Planck 2018 $A=1$')
+
     # np.savetxt('./plots/kids1000-lowz.txt', np.column_stack([ell_obs_kappagamma, cl_kappagamma]))
     # plt.title(r'$\kappa \gamma$, $C_{\ell = 0}'+r' = {:.2f}$'.format(ell_obs_kappagamma[0] * cl_kappagamma[0] * 1.e6)))
     plt.title(r'$\kappa \gamma$ HSC')
+    # plt.title(r'$\kappa \gamma$ KiDS')
     plt.ylabel(r'$\ell C_{\ell} / 10^6$')
     plt.xlabel(r'$\ell$')
     # plt.xscale('log')
+    plt.legend(loc='upper right')
     plt.ylim([-0.5, 1.6])
     plt.xlim([60, 2000])
     plt.axhline(0, color='k', linestyle='dashed', alpha=0.4)
     plt.savefig('./plots/kappagamma-hsc.png', dpi=300, bbox_inches='tight')
+    # plt.savefig('./plots/kappagamma-kids1000-lowz.png', dpi=300, bbox_inches='tight')
+
+
 
     # assert np.isclose(loglikes[0], 88.2, atol=.2, rtol=0.)
