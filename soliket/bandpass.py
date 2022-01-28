@@ -22,12 +22,34 @@ def _cmb2bb(nu):
 # Provides the frequency value given the bandpass name. To be modified - it is ACT based!!
 def _get_fr(array):
 
+    #a = array.split("_")[0]
+    #if a == 'PA1' or a == 'PA2':
+    #    fr = 150
+    #if a == 'PA3':
+    #    fr = array.split("_")[3]
+    #return fr
     a = array.split("_")[0]
-    if a == 'PA1' or a == 'PA2':
+    if a == "PA1" or a == "PA2":
         fr = 150
-    if a == 'PA3':
+    if a == "PA3":
         fr = array.split("_")[3]
-    return fr
+    if a == "PA4" or a == "PA5" or a == "PA6":
+        fr = array.split("_")[3].replace("f", "")
+    return np.int(fr), a
+
+
+def _get_arrays_weights(arrays, polarized_arrays, freqs):
+    array_weights = {}
+    counter = []
+    for array in arrays:
+        fr, pa = _get_fr(array)
+        if (pa in polarized_arrays) and (fr in freqs):
+            if fr not in counter:
+                counter.append(fr)
+                array_weights[fr] = 1
+            else:
+                array_weights[fr] = array_weights[fr] + 1
+    return array_weights
 
 
 class BandPass(Theory):
@@ -48,13 +70,20 @@ class BandPass(Theory):
         self.bandint_nsteps = self.band_integration["nsteps"]
         self.bandint_width = self.band_integration["bandwidth"]
         self.bandint_external_bandpass = self.band_integration["external_bandpass"]
-
         # Bandpass construction for band integration
+        #if self.bandint_external_bandpass:
+        #    path = os.path.normpath(os.path.join(self.data_folder,
+        #                                         '/bp_int/'))
+        #    arrays = os.listdir(path)
+        #    self._init_external_bandpass_construction(arrays)
         if self.bandint_external_bandpass:
             path = os.path.normpath(os.path.join(self.data_folder,
-                                                 '/bp_int/'))
+                                    "external_bandpasses/"))
             arrays = os.listdir(path)
-            self._init_external_bandpass_construction(arrays)
+            self._init_external_bandpass_construction(path, arrays)
+            self.array_weights = _get_arrays_weights(arrays,
+                                                     self.polarized_arrays,
+                                                     self.freqs)
 
     def initialize_with_params(self):
         # Check that the parameters are the right ones
@@ -121,20 +150,39 @@ class BandPass(Theory):
 
         return bandint_freqs
 
-    def _init_external_bandpass_construction(self, arrays):
+    #def _init_external_bandpass_construction(self, arrays):
+    #    self.external_bandpass = []
+    #    for array in arrays:
+    #        fr = _get_fr(array)
+    #        nu_ghz, bp = np.loadtxt(array, usecols=(0, 1), unpack=True)
+    #        trans_norm = np.trapz(bp * _cmb2bb(nu_ghz), nu_ghz)
+    #        self.external_bandpass.append([fr, nu_ghz, bp / trans_norm])
+    def _init_external_bandpass_construction(self, path, arrays):
         self.external_bandpass = []
         for array in arrays:
-            fr = _get_fr(array)
-            nu_ghz, bp = np.loadtxt(array, usecols=(0, 1), unpack=True)
-            trans_norm = np.trapz(bp * _cmb2bb(nu_ghz), nu_ghz)
-            self.external_bandpass.append([fr, nu_ghz, bp / trans_norm])
+            fr, pa = _get_fr(array)
+            if pa in self.polarized_arrays and fr in self.freqs:
+                nu_ghz, bp = np.loadtxt(path + "/" + array, usecols=(0, 1), unpack=True)
+                trans_norm = np.trapz(bp * _cmb2bb(nu_ghz), nu_ghz)
+                self.external_bandpass.append([pa, fr, nu_ghz, bp / trans_norm])
 
+    #def _external_bandpass_construction(self, **params):
+    #    bandint_freqs = []
+    #    for fr, nu_ghz, bp in self.external_bandpass:
+    #        bandpar = 'bandint_shift_' + str(fr)
+    #        nub = nu_ghz + params[bandpar]
+    #        trans = bp * _cmb2bb(nub)
+    #        bandint_freqs.append([nub, trans])
     def _external_bandpass_construction(self, **params):
         bandint_freqs = []
-        for fr, nu_ghz, bp in self.external_bandpass:
-            bandpar = 'bandint_shift_' + str(fr)
+        order = []
+        for pa, fr, nu_ghz, bp in self.external_bandpass:
+            bandpar = "bandint_shift_" + str(fr)
             nub = nu_ghz + params[bandpar]
             trans = bp * _cmb2bb(nub)
             bandint_freqs.append([nub, trans])
+            order.append(pa + "_" + str(fr))
+
+        return order, bandint_freqs
 
         return bandint_freqs
