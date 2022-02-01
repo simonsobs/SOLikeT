@@ -7,6 +7,7 @@ git clone --depth=1000 https://github.com/lesgourg/class_public.git
 cd class_public
 
 #sed -i.bak -e 's/^CC/#CC/g' Makefile
+sed -i.bak -e 's/^CC/CC = gcc-9/g' Makefile
 #sed -i.bak -e 's/^OPTFLAG =/OPTFLAG = ${CFLAGS} ${LDFLAGS}/g' Makefile
 #sed -i.bak -e 's/^#CCFLAG +=/CCFLAG +=/g' Makefile
 #sed -i.bak -e 's/^#CCFLAG =/CCFLAG =/g' Makefile
