@@ -7,6 +7,8 @@ A centralized package for likelihood and theory implementations for SO.
 
 ## Installation
 
+For a set of detailed instructions, please see [here](INSTALL.rst).
+
 ```
 git clone https://github.com/simonsobs/soliket
 cd soliket
