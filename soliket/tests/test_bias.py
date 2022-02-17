@@ -72,6 +72,7 @@ def test_linear_bias_compute_grid():
     assert np.allclose(Pk_mm_lin * info["params"]["b_lin"]**2., Pk_gg)
     assert np.allclose(Pk_mm_lin * info["params"]["b_lin"], Pk_gm)
 
+
 def test_fastpt_bias_model():
 
     from soliket.bias import FPTTest, FastPT
@@ -102,4 +103,3 @@ def test_fastpt_bias_model():
 
     model = get_model(info)  # noqa F841
     loglikes, derived = model.loglikes()
-    print(loglikes)

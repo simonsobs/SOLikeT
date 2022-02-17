@@ -76,9 +76,6 @@ class Bias(Theory):
         return np.mean(Pk_mm/Pk_mm[:1], axis = -1)**0.5
 
     def _get_Pk_mm_grid(self):
-        if 'Pk_gg_grid' in self._current_state:
-            return self._current_state['Pk_gg_grid']
-
         for pair in self._var_pairs:
 
             if self.nonlinear:
