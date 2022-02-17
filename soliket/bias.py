@@ -133,13 +133,15 @@ class FastPT(Bias):
 
     zs : list = []
 
-    def init_fastpt(self, k, C_window = .75, pad_factor = 1, low_extrap = -5, high_extrap = 3):
+    def init_fastpt(self, k, C_window = .75, pad_factor = 1):
         self.C_window = C_window
-        to_do = ['one_loop_dd', 'dd_bias', 'one_loop_cleft_dd', 'IA_all', 'OV', 'kPol', 'RSD', 'IRres']
+        to_do = ['one_loop_dd', 'dd_bias', 'one_loop_cleft_dd', 'IA_all',
+                 'OV', 'kPol', 'RSD', 'IRres']
         n_pad = pad_factor * len(k)
         low_extrap = np.log10(min(k))  # From the example notebook, will change
         high_extrap = np.log10(max(k))  # From the example notebook, will change
-        self.fpt_obj = fpt.FASTPT(k, to_do=to_do, low_extrap=low_extrap, high_extrap=high_extrap, n_pad=n_pad)
+        self.fpt_obj = fpt.FASTPT(k, to_do=to_do, low_extrap=low_extrap,
+                                  high_extrap=high_extrap, n_pad=n_pad)
 
     def calculate(self, state, want_derived=True, **params_values_dict):
         log10kmin = np.log10(1e-5)
@@ -175,17 +177,15 @@ class FastPT(Bias):
             P_bias_E = self.fpt_obj.one_loop_dd_bias_b3nl(pk[i], C_window=self.C_window)
 
             # Output individual terms
-            Pd1d1 = g2[i] * pk[i] + g4[i] * P_bias_E[0] # could use halofit or emulator instead of 1-loop SPT
+            Pd1d1 = g2[i] * pk[i] + g4[i] * P_bias_E[0]
             Pd1d2 = g4[i] * P_bias_E[2]
             Pd2d2 = g4[i] * P_bias_E[3]
             Pd1s2 = g4[i] * P_bias_E[4]
             Pd2s2 = g4[i] * P_bias_E[5]
             Ps2s2 = g4[i] * P_bias_E[6]
             Pd1p3 = g4[i] * P_bias_E[8]
-            s4 = g4[i] * P_bias_E[7] # sigma^4 which determines the (non-physical) low-k contributions
+            s4 = g4[i] * P_bias_E[7]
 
-
-            # Combine for P_gg or P_mg
             pk_gg[i] = ((b11*b12) * Pd1d1 +
                     0.5*(b11*b22 + b12*b21) * Pd1d2 +
                     0.25*(b21*b22) * (Pd2d2 - 2.*s4) +
@@ -202,6 +202,7 @@ class FastPT(Bias):
         state['Pk_gm_grid'] = pk_gm
         state['Pk_gg_grid'] = pk_gg
         state['Pk_mm_grid'] = pk # For consistency (right now it was an interpolator)
+
 
 class FPTTest(Likelihood):
 
