@@ -46,13 +46,13 @@ params:
     value: 'lambda theta_MC_100: 1.e-2*theta_MC_100'
     derived: false
 
-  tenToA0: 4.35e-5
-  B0: 0.08
+  tenToA0: 4.524018987892e-5 #4.35e-5
+  B0: 0.11203227876022619 #0.08
   scatter_sz: 0.
   bias_sz: 1.
 
   ombh2: 0.0226576       # for omb = 0.049
-  omch2: 0.1206864
+  omch2: 0.1251085109847442 #0.1206864
   ns: 0.965
   tau: 0.055
   mnu: 0.0
@@ -70,8 +70,8 @@ params:
 sampler:
   evaluate:
       override:
-        theta_MC_100: 1.04135  # for H0 = 68
-        logA: 3.007            # for sigma8 = 0.81
+        theta_MC_100: 1.0452999885349978 #1.04135  # for H0 = 68
+        logA: 2.97045728 #3.007  # for sigma8 = 0.81
 
 theory:
   camb:

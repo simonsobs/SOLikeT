@@ -91,6 +91,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         # redshift bin for N(z)
         zmax = roundup(z.max(), 1)
         zarr = np.arange(0, zmax + 0.1, 0.1)
+        #zarr = np.arange(0, zmax + 0.1, 0.3)
         if zarr[0] == 0 : zarr[0] = 1e-5
         self.zarr = zarr
         print("\r Number of redshift bins = ", len(zarr)-1)
@@ -508,7 +509,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         for i in range(len(zarr)-1):
             for j in range(len(marr)):
                 delN[i] += 0.5*(intgr[i,j]*c[i,j] + intgr[i+1,j]*c[i+1,j])*(zarr[i+1] - zarr[i])*dlnm
-            #print(i, delN[i])
+            print(i, delN[i])
         print("\r Total predicted N = ", delN.sum())
 
         return delN
@@ -546,10 +547,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             for i in range(len(zarr)-1):
                 for j in range(len(marr)):
                     delN2D[i,kk] += 0.5*(intgr[i,j]*cc[kk,i,j] + intgr[i+1,j]*cc[kk,i+1,j])*(zarr[i+1] - zarr[i])*dlnm
-            #print(kk, delN2D[:,kk].sum())
+            print(kk, delN2D[:,kk].sum())
 
-        #for i in range(len(zarr)):
-            #print(i, delN2D[i,:].sum())
+        for i in range(len(zarr)):
+            print(i, delN2D[i,:].sum())
         print("\r Total predicted 2D N = ", delN2D.sum())
 
         return delN2D
@@ -607,18 +608,18 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             return np.asarray(np.abs(newQ))
 
         def rel(m):
-            mm = m / mpivot
+            #mm = m / mpivot
             #t = -0.008488*(mm*Ez[:,None])**(-0.585)
             t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
             return 1.# + 3.79*t - 28.2*(t**2.)
 
         if single_tile == 'yes' or Q_opt == 'yes':
             #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
-            y0 = A0 * (Ez**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb) ###### M200m
+            y0 = A0 * (Ez**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) #* rel(mb) ###### M200m
             y0 = y0.T ###### M200m
         else:
             arg = A0 * (Ez**2.) * (mb[:,None] / mpivot)**(1. + B0)
-            y0 = arg[:,:,None] * splQ(theta(mb)) * rel(mb).T[:,:,None]
+            y0 = arg[:,:,None] * splQ(theta(mb)) #* rel(mb).T[:,:,None]
         return y0
 
     # completeness 1D
