@@ -78,6 +78,7 @@ def test_linear_bias_compute_grid():
     assert np.allclose(Pk_mm_lin * info["params"]["b_lin"]**2., Pk_gg)
     assert np.allclose(Pk_mm_lin * info["params"]["b_lin"], Pk_gm)
 
+
 def test_LPT_bias_model():
 
     from soliket.bias import LPT_bias

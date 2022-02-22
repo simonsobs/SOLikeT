@@ -65,7 +65,7 @@ class Bias(Theory):
 
             assert(z[0] == 0)
 
-        return np.mean(Pk_mm/Pk_mm[:1], axis = -1)**0.5
+        return np.mean(Pk_mm / Pk_mm[:1], axis=-1)**0.5
 
     def _get_Pk_mm(self):
 
@@ -100,9 +100,15 @@ class Linear_bias(Bias):
         state['Pk_gg_grid'] = params_values_dict['b_lin']**2. * Pk_mm
         state['Pk_gm_grid'] = params_values_dict['b_lin'] * Pk_mm
 
+
 class LPT_bias(Bias):
 
-    params = {'b11' : None, 'b21' : None, 'bs1' : None, 'b12' : None, 'b22' : None, 'bs2' : None}
+    params = {'b11': None,
+              'b21': None,
+              'bs1': None,
+              'b12': None,
+              'b22': None,
+              'bs2': None}
 
     def init_cleft(self):
 
@@ -111,12 +117,13 @@ class LPT_bias(Bias):
         self.lpt_table = []
 
         for D in self._get_growth():
-            self.cleft_obj.make_ptable(D=D, kmin=self.k[0], kmax=self.k[-1], nk=self.k.size)
+            self.cleft_obj.make_ptable(D=D,
+                                       kmin=self.k[0], kmax=self.k[-1], nk=self.k.size)
             self.lpt_table.append(self.cleft_obj.pktable)
 
         self.lpt_table = np.array(self.lpt_table)
 
-    def _get_Pk_gg(self, **params_values_dict):
+    def _get_Pk_gg(self, Pk_mm, **params_values_dict):
 
         b11 = params_values_dict['b11']
         b21 = params_values_dict['b21']
@@ -152,7 +159,7 @@ class LPT_bias(Bias):
                 (b21 * b22)[:, None] * Pd2d2 +
                 (b21 * bs2 + b22 * bs1)[:, None] * Pd2s2 +
                 (bs1 * bs2)[:, None] * Ps2s2)
-        
+
         return pgg
 
     def calculate(self, state, want_derived=True, **params_values_dict):
