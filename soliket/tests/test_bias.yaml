@@ -1,4 +1,10 @@
 params:
+    b11: 1.
+    b21: 1.
+    bs1: 1.
+    b12: 1.
+    b22: 1.
+    bs2: 1.
   mnu: 0.0
   sigma8:
 theory:

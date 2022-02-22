@@ -8,6 +8,7 @@ from typing import Sequence, Union
 from cobaya.theory import Theory
 from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from cobaya.log import LoggedError
+from velocileptors.EPT.cleft_kexpanded_resummed_fftw import RKECLEFT
 
 
 class Bias(Theory):
@@ -56,6 +57,16 @@ class Bias(Theory):
 
         assert len(self._var_pairs) < 2, "Bias doesn't support other Pk yet"
         return needs
+
+    def _get_growth(self):
+        for pair in self._var_pairs:
+
+            k, z, Pk_mm = self.provider.get_Pk_grid(var_pair=pair,
+                                                     nonlinear=False)
+
+            assert(z[0] == 0)
+
+        return np.mean(Pk_mm/Pk_mm[:1], axis = -1)**0.5
 
     def _get_Pk_mm(self):
 
@@ -146,12 +157,61 @@ class Linear_bias(Bias):
 
 class LPT_bias(Bias):
 
-    params = {b1, b2, b3 etc}
+    params = {'b11' : None, 'b21' : None, 'bs1' : None, 'b12' : None, 'b22' : None, 'bs2' : None}
+
+    def init_cleft(self):
+
+        self.cleft_obj = RKECLEFT(self.k, self._get_Pk_mm())
+
+        self.lpt_table = []
+
+        for D in self._get_growth():
+            self.cleft_obj.make_ptable(D=D, kmin=self.k[0], kmax=self.k[-1], nk=self.k.size)
+            self.lpt_table.append(self.cleft_obj.pktable)
+
+        self.lpt_table = np.array(self.lpt_table)
+
+    def _get_Pk_gg(self, **params_values_dict):
+
+        b11 = params_values_dict['b11']
+        b21 = params_values_dict['b21']
+        bs1 = params_values_dict['bs1']
+        b12 = params_values_dict['b12']
+        b22 = params_values_dict['b22']
+        bs2 = params_values_dict['bs2']
+
+        bL11 = b11 - 1
+        bL12 = b12 - 1
+
+        if self.nonlinear:
+            pgg = (b11 * b12)[:, None] * Pk_mm
+        else:
+            Pdmdm = self.lpt_table[:, :, 1]
+            Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
+            Pd1d1 = self.lpt_table[:, :, 3]
+            pgg = (Pdmdm + (bL11 + bL12)[:, None] * Pdmd1 +
+                   (bL11 * bL12)[:, None] * Pd1d1)
+
+        Pdmd2 = 0.5 * self.lpt_table[:, :, 4]
+        Pd1d2 = 0.5 * self.lpt_table[:, :, 5]
+        Pd2d2 = self.lpt_table[:, :, 6] * self.wk_low[None, :]
+        Pdms2 = 0.25 * self.lpt_table[:, :, 7]
+        Pd1s2 = 0.25 * self.lpt_table[:, :, 8]
+        Pd2s2 = 0.25 * self.lpt_table[:, :, 9] * self.wk_low[None, :]
+        Ps2s2 = 0.25 * self.lpt_table[:, :, 10] * self.wk_low[None, :]
+
+        pgg += ((b21 + b22)[:, None] * Pdmd2 +
+                (bs1 + bs2)[:, None] * Pdms2 +
+                (bL11 * b22 + bL12 * b21)[:, None] * Pd1d2 +
+                (bL11 * bs2 + bL12 * bs1)[:, None] * Pd1s2 +
+                (b21 * b22)[:, None] * Pd2d2 +
+                (b21 * bs2 + b22 * bs1)[:, None] * Pd2s2 +
+                (bs1 * bs2)[:, None] * Ps2s2)
+        
+        return pgg
 
     def calculate(self, state, want_derived=True, **params_values_dict):
 
         Pk_mm = self._get_Pk_mm()
 
-        state['Pk_gg_grid'] = some function of (Pk_mm)
-
-
+        state['Pk_gg_grid'] = self._get_Pk_gg(Pk_mm, params_values_dict)

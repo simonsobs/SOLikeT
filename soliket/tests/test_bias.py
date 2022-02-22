@@ -8,6 +8,12 @@ from cobaya.run import run
 
 info = {"params": {
                    "b_lin": 1.1,
+                    "b11": 1.,
+                    "b21": 1.,
+                    "bs1": 1.,
+                    "b12": 1.,
+                    "b22": 1.,
+                    "bs2": 1.,
                    "H0": 70.,
                    "ombh2": 0.0245,
                    "omch2": 0.1225,
@@ -106,3 +112,15 @@ def test_linear_bias_compute_interpolator():
 
     assert np.allclose(Pk_mm_lin * info["params"]["b_lin"]**2., Pk_gg)
     assert np.allclose(Pk_mm_lin * info["params"]["b_lin"], Pk_gm)
+
+
+def test_LPT_bias_model():
+
+    from soliket.bias import LPT_bias
+
+    info["theory"] = {
+                   "camb": None,
+                   "lpt_bias": {"external": LPT_bias}
+                   }
+
+    model = get_model(info)  # noqa F841
