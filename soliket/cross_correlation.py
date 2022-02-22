@@ -41,6 +41,13 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         return x, y, dy
 
+    def logp(self, **params_values):
+        theory = self._get_theory(**params_values)
+        return self.data.loglike(theory)
+
+
+class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
+
     def _get_theory(self, **params_values):
         cosmo = self.provider.get_CCL()['cosmo']
 
@@ -59,6 +66,24 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         return np.concatenate([cl_gg, cl_kg])
 
-    def logp(self, **params_values):
-        theory = self._get_theory(**params_values)
-        return self.data.loglike(theory)
+
+class ShearKappaLikelihood(CrossCorrelationLikelihood):
+
+    def _get_theory(self, **params_values):
+        cosmo = self.provider.get_CCL()['cosmo']
+
+        tracer_gamma = ccl.WeakLensingTracer(cosmo, dndz=self.dndz.T,
+                                             ia_bias=(self.dndz[:, 0],
+                                                      params_values['A_IA'] *
+                                                      np.ones(len(self.dndz[:, 0]))),
+                                             )
+        tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
+
+        cl_gammagamma = ccl.cls.angular_cl(cosmo,
+                                           tracer_gamma, tracer_gamma,
+                                           self.ell_auto)
+        cl_kgamma = ccl.cls.angular_cl(cosmo,
+                                       tracer_k, tracer_gamma,
+                                       self.ell_cross)
+
+        return np.concatenate([cl_gammagamma, cl_kgamma])
