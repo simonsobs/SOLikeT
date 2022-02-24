@@ -112,25 +112,28 @@ class LPT_bias(Bias):
 
     def init_cleft(self):
 
-        self.cleft_obj = RKECLEFT(self.k, self._get_Pk_mm())
+        Pk_mm = self._get_Pk_mm()
+
+        self.cleft_obj = RKECLEFT(self.k, Pk_mm[0],
+                                  extrap_min=np.floor(np.log10(self.k[0])),
+                                  extrap_max=np.ceil(np.log10(self.k[-1])))
 
         self.lpt_table = []
 
         for D in self._get_growth():
-            self.cleft_obj.make_ptable(D=D,
-                                       kmin=self.k[0], kmax=self.k[-1], nk=self.k.size)
+            self.cleft_obj.make_ptable(D=D, kmin=self.k[0], kmax=self.k[-1], nk=self.k.size)
             self.lpt_table.append(self.cleft_obj.pktable)
 
         self.lpt_table = np.array(self.lpt_table)
 
     def _get_Pk_gg(self, Pk_mm, **params_values_dict):
 
-        b11 = params_values_dict['b11']
-        b21 = params_values_dict['b21']
-        bs1 = params_values_dict['bs1']
-        b12 = params_values_dict['b12']
-        b22 = params_values_dict['b22']
-        bs2 = params_values_dict['bs2']
+        b11 = params_values_dict['b11'] * np.ones_like(Pk_mm)
+        b21 = params_values_dict['b21'] * np.ones_like(Pk_mm)
+        bs1 = params_values_dict['bs1'] * np.ones_like(Pk_mm)
+        b12 = params_values_dict['b12'] * np.ones_like(Pk_mm)
+        b22 = params_values_dict['b22'] * np.ones_like(Pk_mm)
+        bs2 = params_values_dict['bs2'] * np.ones_like(Pk_mm)
 
         bL11 = b11 - 1
         bL12 = b12 - 1
@@ -146,11 +149,11 @@ class LPT_bias(Bias):
 
         Pdmd2 = 0.5 * self.lpt_table[:, :, 4]
         Pd1d2 = 0.5 * self.lpt_table[:, :, 5]
-        Pd2d2 = self.lpt_table[:, :, 6] * self.wk_low[None, :]
+        Pd2d2 = self.lpt_table[:, :, 6]# * self.wk_low[None, :]
         Pdms2 = 0.25 * self.lpt_table[:, :, 7]
         Pd1s2 = 0.25 * self.lpt_table[:, :, 8]
-        Pd2s2 = 0.25 * self.lpt_table[:, :, 9] * self.wk_low[None, :]
-        Ps2s2 = 0.25 * self.lpt_table[:, :, 10] * self.wk_low[None, :]
+        Pd2s2 = 0.25 * self.lpt_table[:, :, 9]# * self.wk_low[None, :]
+        Ps2s2 = 0.25 * self.lpt_table[:, :, 10]# * self.wk_low[None, :]
 
         pgg += ((b21 + b22)[:, None] * Pdmd2 +
                 (bs1 + bs2)[:, None] * Pdms2 +
@@ -164,6 +167,11 @@ class LPT_bias(Bias):
 
     def calculate(self, state, want_derived=True, **params_values_dict):
 
+        try:
+            self.cleft_obj
+        except:
+            self.init_cleft()
+
         Pk_mm = self._get_Pk_mm()
 
-        state['Pk_gg_grid'] = self._get_Pk_gg(Pk_mm, params_values_dict)
+        state['Pk_gg_grid'] = self._get_Pk_gg(Pk_mm, **params_values_dict)

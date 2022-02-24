@@ -89,3 +89,30 @@ def test_LPT_bias_model():
                    }
 
     model = get_model(info)  # noqa F841
+
+def test_LPT_bias_compute_grid():
+
+    from soliket.bias import LPT_bias
+
+    info["theory"] = {
+               "camb": None,
+               "LPT_bias": {"external": LPT_bias}
+               }
+
+    model = get_model(info)  # noqa F841
+    model.add_requirements({"Pk_grid": {"z": 0., "k_max": 10.,
+                                        "nonlinear": False,
+                                        "vars_pairs": ('delta_tot', 'delta_tot'),
+                                        "extrap_kmin": 1.e-3
+                                        },
+                             "Pk_gg_grid": None
+                            })
+
+    model.logposterior(info['params'])  # force computation of model
+
+    lhood = model.likelihood['one']
+
+    k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'),
+                                                 nonlinear=False)
+
+    Pk_gg = lhood.provider.get_Pk_gg_grid()
