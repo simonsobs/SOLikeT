@@ -1,5 +1,6 @@
 # pytest -k bias -v .
 
+import pdb
 import pytest
 import numpy as np
 
@@ -116,3 +117,10 @@ def test_LPT_bias_compute_grid():
                                                  nonlinear=False)
 
     Pk_gg = lhood.provider.get_Pk_gg_grid()
+
+    from matplotlib import pyplot as plt
+    plt.ion()
+    pdb.set_trace()
+
+    plt.loglog(k, Pk_mm_lin[0])
+    plt.loglog(k, Pk_gg[0])
