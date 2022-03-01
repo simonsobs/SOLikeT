@@ -135,12 +135,12 @@ class LPT_bias(Bias):
 
     def _get_Pk_gg(self, Pk_mm, **params_values_dict):
 
-        b11 = params_values_dict['b11']# * np.ones_like(Pk_mm)
-        b21 = params_values_dict['b21']# * np.ones_like(Pk_mm)
-        bs1 = params_values_dict['bs1']# * np.ones_like(Pk_mm)
-        b12 = params_values_dict['b12']# * np.ones_like(Pk_mm)
-        b22 = params_values_dict['b22']# * np.ones_like(Pk_mm)
-        bs2 = params_values_dict['bs2']# * np.ones_like(Pk_mm)
+        b11 = params_values_dict['b1g1']# * np.ones_like(Pk_mm)
+        b21 = params_values_dict['b2g1']# * np.ones_like(Pk_mm)
+        bs1 = params_values_dict['bsg1']# * np.ones_like(Pk_mm)
+        b12 = params_values_dict['b1g2']# * np.ones_like(Pk_mm)
+        b22 = params_values_dict['b2g2']# * np.ones_like(Pk_mm)
+        bs2 = params_values_dict['bsg2']# * np.ones_like(Pk_mm)
 
         bL11 = b11 - 1
         bL12 = b12 - 1
@@ -178,6 +178,31 @@ class LPT_bias(Bias):
         pgg_interpolated = interp1d(cleft_k[0], pgg, kind='cubic', fill_value='extrapolate')(self.k)
 
         return pgg_interpolated
+
+    def get_pgm(self, Pk_mm, **params_values_dict):
+
+        b1 = params_values_dict['b1g1']# * np.ones_like(Pk_mm)
+        b2 = params_values_dict['b2g1']# * np.ones_like(Pk_mm)
+        bs = params_values_dict['bsg1']# * np.ones_like(Pk_mm)
+
+        bL1 = b1-1
+        if Pnl is None:
+            Pdmdm = self.lpt_table[:, :, 1]
+            Pdmd1 = 0.5*self.lpt_table[:, :, 2]
+            pgm = Pdmdm + bL1[:, None] * Pdmd1
+        else:
+            pgm = b1[:, None]*Pnl
+        Pdmd2 = 0.5*self.lpt_table[:, :, 4]
+        Pdms2 = 0.25*self.lpt_table[:, :, 7]
+
+        pgm += (b2[:, None] * Pdmd2 +
+                bs[:, None] * Pdms2)
+
+        cleft_k = self.lpt_table[:, :, 0]
+
+        pgm_interpolated = interp1d(cleft_k[0], pgm, kind='cubic', fill_value='extrapolate')(self.k)
+
+        return pgm_interpolated
 
     def calculate(self, state, want_derived=True, **params_values_dict):
 

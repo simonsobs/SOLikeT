@@ -9,12 +9,12 @@ from cobaya.run import run
 
 info = {"params": {
                    "b_lin": 1.1,
-                    "b11": 1.,
-                    "b21": 1.,
-                    "bs1": 1.,
-                    "b12": 1.,
-                    "b22": 1.,
-                    "bs2": 1.,
+                    "b1g1": 1.,
+                    "b2g1": 1.,
+                    "bsg1": 1.,
+                    "b1g2": 1.,
+                    "b2g2": 1.,
+                    "bsg2": 1.,
                    "H0": 70.,
                    "ombh2": 0.0245,
                    "omch2": 0.1225,
@@ -117,6 +117,7 @@ def test_LPT_bias_compute_grid():
                                                  nonlinear=False)
 
     Pk_gg = lhood.provider.get_Pk_gg_grid()
+    Pk_gm = lhood.provider.get_Pk_gm_grid()
 
     from matplotlib import pyplot as plt
     plt.ion()
