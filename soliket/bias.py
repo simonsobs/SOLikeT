@@ -105,12 +105,12 @@ class Linear_bias(Bias):
 
 class LPT_bias(Bias):
 
-    params = {'b11': None,
-              'b21': None,
-              'bs1': None,
-              'b12': None,
-              'b22': None,
-              'bs2': None}
+    params = {'b1g1': None,
+              'b2g1': None,
+              'bsg1': None,
+              'b1g2': None,
+              'b2g2': None,
+              'bsg2': None}
 
     def init_cleft(self, k_filter=None):
 
@@ -179,24 +179,25 @@ class LPT_bias(Bias):
 
         return pgg_interpolated
 
-    def get_pgm(self, Pk_mm, **params_values_dict):
+    def _get_Pk_gm(self, Pk_mm, **params_values_dict):
 
         b1 = params_values_dict['b1g1']# * np.ones_like(Pk_mm)
         b2 = params_values_dict['b2g1']# * np.ones_like(Pk_mm)
         bs = params_values_dict['bsg1']# * np.ones_like(Pk_mm)
 
         bL1 = b1-1
-        if Pnl is None:
+        if self.nonlinear:
+            pgm = b1 * Pk_mm
+        else:
             Pdmdm = self.lpt_table[:, :, 1]
             Pdmd1 = 0.5*self.lpt_table[:, :, 2]
-            pgm = Pdmdm + bL1[:, None] * Pdmd1
-        else:
-            pgm = b1[:, None]*Pnl
+            pgm = Pdmdm + bL1 * Pdmd1
+
         Pdmd2 = 0.5*self.lpt_table[:, :, 4]
         Pdms2 = 0.25*self.lpt_table[:, :, 7]
 
-        pgm += (b2[:, None] * Pdmd2 +
-                bs[:, None] * Pdms2)
+        pgm += (b2 * Pdmd2 +
+                bs * Pdms2)
 
         cleft_k = self.lpt_table[:, :, 0]
 
@@ -211,6 +212,9 @@ class LPT_bias(Bias):
         except:
             self.init_cleft(k_filter=1.e-1)
 
+            # do init at init, then update_power_spectrum in calculate
+
         Pk_mm = self._get_Pk_mm()
 
         state['Pk_gg_grid'] = self._get_Pk_gg(Pk_mm, **params_values_dict)
+        state['Pk_gm_grid'] = self._get_Pk_gm(Pk_mm, **params_values_dict)
