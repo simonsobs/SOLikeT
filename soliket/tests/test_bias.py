@@ -101,7 +101,7 @@ def test_LPT_bias_compute_grid():
                }
 
     model = get_model(info)  # noqa F841
-    model.add_requirements({"Pk_grid": {"z": 0., "k_max": 10.,
+    model.add_requirements({"Pk_grid": {"z": 0., "k_max": 1.,
                                         "nonlinear": False,
                                         "vars_pairs": ('delta_tot', 'delta_tot'),
                                         "extrap_kmin": 1.e-3

@@ -27,6 +27,7 @@ class Bias(Theory):
     def initialize(self):
 
         self._var_pairs = set()
+        self.k = None
         # self._var_pairs = [('delta_tot', 'delta_tot')]
 
     def get_requirements(self):
@@ -59,28 +60,25 @@ class Bias(Theory):
         assert len(self._var_pairs) < 2, "Bias doesn't support other Pk yet"
         return needs
 
-    def _get_growth(self):
-        for pair in self._var_pairs:
 
-            k, z, Pk_mm = self.provider.get_Pk_grid(var_pair=pair,
-                                                     nonlinear=False)
-
-            assert(z[0] == 0)
-
-        return np.mean(Pk_mm / Pk_mm[:1], axis=-1)**0.5
-
-    def _get_Pk_mm(self):
+    def _get_Pk_mm(self, update_growth=True):
 
         for pair in self._var_pairs:
 
             if self.nonlinear:
-                self.k, self.z, Pk_mm = self.provider.get_Pk_grid(var_pair=pair,
-                                                            nonlinear=True)
-                # Pk_mm = np.flip(Pk_nonlin, axis=0)
+                k, z, Pk_mm = self.provider.get_Pk_grid(var_pair=pair,
+                                                        nonlinear=True)
             else:
-                self.k, self.z, Pk_mm = self.provider.get_Pk_grid(var_pair=pair,
-                                                         nonlinear=False)
-                # Pk_mm = np.flip(Pk_lin, axis=0)
+                k, z, Pk_mm = self.provider.get_Pk_grid(var_pair=pair,
+                                                        nonlinear=False)
+            if self.k is None:
+                self.k = k
+            if self.z is None:
+                self.z = z
+
+            if update_growth:
+                assert(z[0] == 0)
+                self.Dz = np.mean(Pk_mm / Pk_mm[:1], axis=-1)**0.5
 
         return Pk_mm
 
@@ -97,7 +95,7 @@ class Linear_bias(Bias):
 
     def calculate(self, state, want_derived=True, **params_values_dict):
 
-        Pk_mm = self._get_Pk_mm()
+        Pk_mm = self._get_Pk_mm(update_growth=False) # growth not needed for linear bias
 
         state['Pk_gg_grid'] = params_values_dict['b_lin']**2. * Pk_mm
         state['Pk_gm_grid'] = params_values_dict['b_lin'] * Pk_mm
@@ -114,24 +112,31 @@ class LPT_bias(Bias):
 
     def init_cleft(self, k_filter=None):
 
-        Pk_mm = self._get_Pk_mm()
+        # Pk_mm = self._get_Pk_mm()
 
         if k_filter is not None:
             self.wk_low = 1-np.exp(-(self.k/k_filter)**2)
         else:
             self.wk_low = np.ones_like(self.k)
+
+        # self.update_lpt_table(Pk_mm)
         
+
+    def update_lpt_table(self, Pk_mm):
+
         self.cleft_obj = RKECLEFT(self.k, Pk_mm[0],
                                   extrap_min=np.floor(np.log10(self.k[0])),
                                   extrap_max=np.ceil(np.log10(self.k[-1])))
 
         self.lpt_table = []
 
-        for D in self._get_growth():
+        for D in self.Dz:
             self.cleft_obj.make_ptable(D=D, kmin=self.k[0], kmax=self.k[-1], nk=self.k.size)
             self.lpt_table.append(self.cleft_obj.pktable)
 
         self.lpt_table = np.array(self.lpt_table)
+
+
 
     def _get_Pk_gg(self, Pk_mm, **params_values_dict):
 
@@ -207,14 +212,14 @@ class LPT_bias(Bias):
 
     def calculate(self, state, want_derived=True, **params_values_dict):
 
+        Pk_mm = self._get_Pk_mm()
+
         try:
             self.cleft_obj
         except:
             self.init_cleft(k_filter=1.e-1)
 
-            # do init at init, then update_power_spectrum in calculate
-
-        Pk_mm = self._get_Pk_mm()
+        self.update_lpt_table(Pk_mm)
 
         state['Pk_gg_grid'] = self._get_Pk_gg(Pk_mm, **params_values_dict)
         state['Pk_gm_grid'] = self._get_Pk_gm(Pk_mm, **params_values_dict)
