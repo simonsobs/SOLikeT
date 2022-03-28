@@ -1,0 +1,20 @@
+sz_data_file: soliket/szlike/TNG_data.txt
+beam_file: soliket/szlike/beam_f150_daynight.txt
+cov_ksz_file: soliket/szlike/cov_diskring_ksz_varweight_boostrap.txt
+cov_tsz_file: soliket/szlike/cov_diskring_tsz_varweight_boostrap.txt
+redshift: 0.55 
+mass_halo_mean: 10**13.
+frequency_GHz: 150.
+
+params:
+  b1: 
+    prior:
+      min: 0.
+      max: 10.
+    latex: b_1
+  s1: 
+    value: 0.4
+    latex: s_1
+  A_IA:
+    value: 0.54
+    latex: A_{IA}
