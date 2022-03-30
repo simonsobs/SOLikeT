@@ -3,10 +3,43 @@ beam_file: soliket/szlike/beam_f150_daynight.txt
 cov_ksz_file: soliket/szlike/cov_diskring_ksz_varweight_boostrap.txt
 cov_tsz_file: soliket/szlike/cov_diskring_tsz_varweight_boostrap.txt
 redshift: 0.55 
-mass_halo_mean: 10**13.
+mass_halo_mean_Msol: 10**13.
 frequency_GHz: 150.
 
 params:
+  Omega_m:
+    value: 0.25
+  Omega_b:
+    value: 0.044
+  hh:
+    value: 0.7
+  Omega_L:
+    value: 0.75
+  rhoc_0:
+    value: 2.77525e2
+  C_OVER_HUBBLE:
+    value: 2997.9
+  XH:
+    value: 0.76 #hydrogen fraction
+  v_rms:
+    value: 1.06e-3 #v_rms/c
+  gnfw_rho0:
+    value:
+  gnfw_xc_ksz:
+    value:
+  gnfw_bt_ksz:
+    value:
+  gnfw_A2h_ksz:
+    value:
+  gnfw_P0:
+    value:
+  gnfw_al_tsz:
+    value:
+  gnfw_bt_tsz:
+    value:
+  gnfw_A2h_tsz:
+    value:
+
   b1: 
     prior:
       min: 0.
