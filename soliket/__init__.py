@@ -4,6 +4,7 @@ from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401
 from .clusters import ClusterLikelihood  # noqa: F401
 from .mflike import MFLike  # noqa: F401
 from .xcorr import XcorrLikelihood  # noqa: F401
+from .szlike import KSZLikelihood, TSZLikelihood
 
 try:
     import pyccl as ccl  # noqa: F401
