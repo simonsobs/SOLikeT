@@ -1,5 +1,6 @@
+#do we want to test things for ACT or SO? will change theta for TNG data, units, cov
 sz_data_file: soliket/szlike/TNG_data.txt
-beam_file: soliket/szlike/beam_f150_daynight.txt
+beam_file: soliket/szlike/beam_f150_daynight.txt 
 cov_ksz_file: soliket/szlike/cov_diskring_ksz_varweight_boostrap.txt
 cov_tsz_file: soliket/szlike/cov_diskring_tsz_varweight_boostrap.txt
 redshift: 0.55 
@@ -23,31 +24,22 @@ params:
     value: 0.76 #hydrogen fraction
   v_rms:
     value: 1.06e-3 #v_rms/c
-  gnfw_rho0:
-    value:
-  gnfw_xc_ksz:
-    value:
-  gnfw_bt_ksz:
-    value:
-  gnfw_A2h_ksz:
-    value:
-  gnfw_P0:
-    value:
-  gnfw_al_tsz:
-    value:
-  gnfw_bt_tsz:
-    value:
-  gnfw_A2h_tsz:
-    value:
 
-  b1: 
-    prior:
-      min: 0.
-      max: 10.
-    latex: b_1
-  s1: 
-    value: 0.4
-    latex: s_1
-  A_IA:
-    value: 0.54
-    latex: A_{IA}
+  #put in priors etc. for these when we want to run chains. 
+  #fixed for now at values using Battaglia formulas for M=1e13, z=0.55
+  gnfw_rho0:
+    value: 1536.17633526
+  gnfw_al_ksz:
+    value: 1.02481552231
+  gnfw_bt_ksz:
+    value: 3.45493977635
+  gnfw_A2h_ksz:
+    value: 1.0
+  gnfw_P0:
+    value: 9.10766709141
+  gnfw_xc_tsz:
+    value: 0.698455690636
+  gnfw_bt_tsz:
+    value: 4.76625102519
+  gnfw_A2h_tsz:
+    value: 1.0
