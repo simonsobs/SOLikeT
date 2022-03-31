@@ -6,7 +6,7 @@ from .gnfw import r200, rho_gnfw1h, Pth_gnfw1h, rho_gnfw, Pth_gnfw
 from .obb import con, fstar_func, return_prof_pars, rho, Pth
 from .beam import read_beam, f_beam
 
-from ..constants import C_M_S, h_Planck, k_Boltzmann, electron_mass_kg, proton_mass_kg, T_CMB, MPC2CM, ST_CGS
+from ..constants import C_M_S, h_Planck, k_Boltzmann, electron_mass_kg, proton_mass_kg, hydrogen_fraction, T_CMB, MPC2CM, ST_CGS
 
 
 fb = cosmo_params["Omega_b"] / cosmo_params["Omega_m"] #put cosmo params in the yaml file, look at cross corr for example, param_values['cobaya_name']
@@ -15,7 +15,7 @@ C_CGS = C_M_S*1.e2
 ME_CGS = electron_mass_kg * 1.e3
 MP_CGS = proton_mass_kg * 1.e3
 sr2sqarcmin = 3282.8 * 60.**2
-XH = 0.76 #how do we get this value from yaml file to use in these functions?
+XH = hydrogen_fraction
 
 def coth(x):
     return 1 / np.tanh(x)

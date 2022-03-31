@@ -13,6 +13,7 @@ MSUN_CGS = 1.98840987e+33
 G_CGS = constants.G * 1e3
 MPC2CM = constants.parsec * 1e8
 ST_CGS = constants.value('Thomson cross section') * 1.e4
+hydrogen_fraction = 0.76
 
 full_sky_area_sqdeg = 41252.9612
 SO_sky_area_sqdeg = 987.5
