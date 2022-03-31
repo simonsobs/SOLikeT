@@ -4,11 +4,11 @@ from scipy.optimize import fmin
 from scipy.optimize import newton
 from .params import cosmo_params
 
+from ..constants import MSUN_CGS, G_CGS, C_M_S
+
 delx = 0.01
-Msol_cgs = 1.989e33
-Gravity = 6.67259e-8
 rhocrit =  1.87847e-29 * cosmo_params['hh']**2
-C_CGS = 2.99792e+10
+C_CGS = C_M_S * 1.e2
 
 fb = cosmo_params['Omega_b']/cosmo_params['Omega_m']
 
@@ -61,7 +61,7 @@ def r200(M, z):
     '''radius of a sphere with density 200 times the critical density of the universe.
     Input mass in solar masses. Output radius in cm.
     '''
-    M_cgs = M*Msol_cgs
+    M_cgs = M*MSUN_CGS
     om = cosmo_params['Omega_m']
     ol = cosmo_params['Omega_L']
     Ez2 = om * (1 + z)**3 + ol
@@ -81,7 +81,7 @@ def rho_dm(x,M,z):
     '''
     c = con(M,z)
     rvir = r200(M,z)
-    M_cgs = M*Msol_cgs
+    M_cgs = M*MSUN_CGS
     ans = M_cgs*(c/rvir)**3 / (4.*np.pi*gx(c)) * nfw(x)
     return ans
 
@@ -167,8 +167,8 @@ def rho(x,M,z,theta, theta2):
     nn = n_exp(gamma)
     c = con(M,z)
     rvir = r200(M,z)
-    M_cgs = M*Msol_cgs
-    beta = rho_0/P_0 * Gravity*M_cgs/rvir*c/gx(c)
+    M_cgs = M*MSUN_CGS
+    beta = rho_0/P_0 * G_CGS*M_cgs/rvir*c/gx(c)
     theta2_use = beta, x_f
     #print(theta_func(x,Mvir,theta,theta2_use))
     ans = rho_0*(theta_func(x,M,z,theta,theta2_use))**nn
@@ -181,8 +181,8 @@ def rho_outtest(x,M,z,theta, theta2):
     nn = n_exp(gamma)
     c = con(M,z)
     rvir = r200(M,z)
-    M_cgs = M*Msol_cgs
-    beta = rho_0/P_0 * Gravity*M_cgs/rvir*c/gx(c)
+    M_cgs = M*MSUN_CGS
+    beta = rho_0/P_0 * G_CGS*M_cgs/rvir*c/gx(c)
     theta2_use = beta, x_f
     #print("inside rhoout", theta2_use)
     ans = rho_0*(theta_func(x,M,z,theta,theta2_use))**nn
@@ -200,8 +200,8 @@ def Pth(x,M,z,theta,theta2):
     c = con(M,z)
     rvir = r200(M,z)
     nn = n_exp(gamma)
-    M_cgs = M*Msol_cgs
-    beta = rho_0/P_0 * Gravity*M_cgs/rvir*c/gx(c)
+    M_cgs = M*MSUN_CGS
+    beta = rho_0/P_0 * G_CGS*M_cgs/rvir*c/gx(c)
     theta2_use = beta, x_f
     ans = P_0*(theta_func(x,M,z,theta,theta2_use))**(nn+1.) * Pnth_th(x,M,z,theta)
     return ans
@@ -219,8 +219,8 @@ def Ptot(M,z,theta,theta2):
     nn = n_exp(gamma)
     rvir = r200(M,z)
     c = con(M,z)
-    M_cgs = M*Msol_cgs
-    beta = rho_0/P_0 * Gravity*M_cgs/rvir*c/gx(c)
+    M_cgs = M*MSUN_CGS
+    beta = rho_0/P_0 * G_CGS*M_cgs/rvir*c/gx(c)
     theta2_use = beta, x_f
     ans = P_0*(theta_func_f(x_f,M,z,theta,theta2_use))**(nn+1.)
     return ans
@@ -238,8 +238,8 @@ def Pnth(x,M,z,theta,theta2):
     c = con(M,z)
     nn = n_exp(gamma)
     rvir = r200(M,z)
-    M_cgs = M*Msol_cgs
-    beta = rho_0/P_0 * Gravity*Mvir/rvir*c/gx(c)
+    M_cgs = M*MSUN_CGS
+    beta = rho_0/P_0 * G_CGS*Mvir/rvir*c/gx(c)
     theta2_use = beta, x_f
     ans = alpha*(x/c)**0.8 * P_0*(theta_func(x,M,z,theta,theta2_use))**(nn+1.)
     return ans
@@ -290,7 +290,7 @@ def rho_0_func(theta0,theta2):
     c = con(M,z)
     rvir = r200(M,z)
     fstar = fstar_func(M)
-    M_cgs = M*Msol_cgs
+    M_cgs = M*MSUN_CGS
     ans = M_cgs*(fb-fstar) / (4.*np.pi * L_int(M,z,theta,theta2)*(rvir/c)**3)
     return ans
 
@@ -299,8 +299,8 @@ def P_0_func(theta0,theta2,rho_0):
     beta, x_f = theta2
     c = con(M,z)
     rvir = r200(M,z)
-    M_cgs = M*Msol_cgs
-    ans = rho_0/beta * Gravity*M_cgs/rvir*c/gx(c)
+    M_cgs = M*MSUN_CGS
+    ans = rho_0/beta * G_CGS*M_cgs/rvir*c/gx(c)
     return ans
 
 def findroots2(theta2,theta0):
@@ -311,9 +311,9 @@ def findroots2(theta2,theta0):
     rvir = r200(M,z)
     x_s = xs_func(M,z)
     fstar = fstar_func(M)
-    M_cgs = M*Msol_cgs
+    M_cgs = M*MSUN_CGS
 
-    E_inj = Ef * gx(c) * rvir * fstar / (Gravity*M_cgs*c) * C_CGS**2
+    E_inj = Ef * gx(c) * rvir * fstar / (G_CGS*M_cgs*c) * C_CGS**2
 
     Eq1 = (3./2.*(1. + fstar) * (K_c(c)*(3.-4.*del_s(c)) + Ks(x_s,M,z))  - E_inj + 1./3.* (1.+fstar) *Sc(c) / gx(c) * (x_f**3 - c**3)
            - I2_int(M,z,theta,theta2)/L_int(M,z,theta,theta2)
@@ -340,9 +340,9 @@ def findroots(theta2,theta0):
     beta, x_f = theta2
     c = con(M,z)
     rvir = r200(M,z)
-    M_cgs = M*Msol_cgs
+    M_cgs = M*MSUN_CGS
 
-    E_inj = Ef * gx(c) * rvir / (Gravity*M_cgs*c) * C_CGS**2
+    E_inj = Ef * gx(c) * rvir / (G_CGS*M_cgs*c) * C_CGS**2
 
     Eq1 = (3./2. * (K_c(c)*(3.-4.*del_s(c))) - E_inj + 1./3.* Sc(c) / gx(c) * (x_f**3 - c**3)
            - I2_int(M,z,theta,theta2)/L_int(M,z,theta,theta2)
