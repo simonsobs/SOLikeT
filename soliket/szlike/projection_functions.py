@@ -4,6 +4,7 @@ from scipy.signal import convolve
 from .cosmo import AngDist
 from .gnfw import r200, rho_gnfw1h, Pth_gnfw1h, rho_gnfw, Pth_gnfw
 from .obb import con, fstar_func, return_prof_pars, rho, Pth
+from .beam import read_beam, f_beam
 
 from ..constants import C_M_S, h_Planck, k_Boltzmann, electron_mass_kg, proton_mass_kg, T_CMB, MPC2CM, ST_CGS
 
@@ -28,7 +29,7 @@ def fnu(nu):
     return ans
 
 
-def project_ksz(tht, M, z, fbeam, gnfw_params):
+def project_ksz(tht, M, z, beam_txt, gnfw_params):
     disc_fac = np.sqrt(2)
     l0 = 30000.0
     NNR = 100
@@ -77,10 +78,12 @@ def project_ksz(tht, M, z, fbeam, gnfw_params):
     rho2D = rho2D[None, :, None]
     rho2D2 = rho2D2[None, :, None]
 
+    b = read_beam(beam_txt)
+
     rho2D_beam0 = np.trapz(
         thta_smooth
         * rho2D
-        * f_beam(np.sqrt(thta ** 2 + thta_smooth ** 2 - 2 * thta * thta_smooth * np.cos(phi))),
+        * f_beam(np.sqrt(thta ** 2 + thta_smooth ** 2 - 2 * thta * thta_smooth * np.cos(phi)),b),
         x=phi,
         axis=2,
     )
@@ -88,7 +91,7 @@ def project_ksz(tht, M, z, fbeam, gnfw_params):
     rho2D2_beam0 = np.trapz(
         thta2_smooth
         * rho2D2
-        * f_beam(np.sqrt(thta2 ** 2 + thta2_smooth ** 2 - 2 * thta2 * thta2_smooth * np.cos(phi))),
+        * f_beam(np.sqrt(thta2 ** 2 + thta2_smooth ** 2 - 2 * thta2 * thta2_smooth * np.cos(phi)),b),
         x=phi,
         axis=2,
     )
@@ -162,10 +165,12 @@ def project_tsz(tht, M, z, nu, fbeam, gnfw_params):
     Pth2D = Pth2D[None, :, None]
     Pth2D2 = Pth2D2[None, :, None]
 
+    b = read_beam(beam_txt)
+
     Pth2D_beam0 = np.trapz(
         thta_smooth
         * Pth2D
-        * f_beam(np.sqrt(thta ** 2 + thta_smooth ** 2 - 2 * thta * thta_smooth * np.cos(phi))),
+        * f_beam(np.sqrt(thta ** 2 + thta_smooth ** 2 - 2 * thta * thta_smooth * np.cos(phi)),b),
         x=phi,
         axis=2,
     )
@@ -173,7 +178,7 @@ def project_tsz(tht, M, z, nu, fbeam, gnfw_params):
     Pth2D2_beam0 = np.trapz(
         thta2_smooth
         * Pth2D2
-        * f_beam(np.sqrt(thta2 ** 2 + thta2_smooth ** 2 - 2 * thta2 * thta2_smooth * np.cos(phi))),
+        * f_beam(np.sqrt(thta2 ** 2 + thta2_smooth ** 2 - 2 * thta2 * thta2_smooth * np.cos(phi)),b),
         x=phi,
         axis=2,
     )

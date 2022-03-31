@@ -2,15 +2,16 @@
 Likelihood for SZ model
 '''
 
-from .gaussian import GaussianData, GaussianLikelihood
+from ..gaussian import GaussianData, GaussianLikelihood
+from .projection_functions import project_ksz, project_tsz
 
 class SZLikelihood(GaussianLikelihood):
     def initialize(self):
 
-        self.beam=np.loadtxt(self.beam_file) #come back to this, interp function?
-        self.z=self.redshift
-        self.nu=self.frequency_GHz
-        self.M= self.mass_halo_mean_Msol 
+        self.beam_txt = self.beam_file
+        self.z = self.redshift
+        self.nu = self.frequency_GHz
+        self.M = self.mass_halo_mean_Msol 
 
         x,y,dy=self._get_data()
         cov=np.diag(dy**2)
@@ -37,7 +38,7 @@ class KSZLikelihood(SZLikelihood):
         #define thta_arc=x somewhere
         rho = np.zeros(len(thta_arc))
         for ii in range(len(thta_arc)):
-            rho[ii] = project_ksz(thta_arc[ii], self.M, self.z, fbeam, gnfw_params)
+            rho[ii] = project_ksz(thta_arc[ii], self.M, self.z, self.beam_txt, gnfw_params)
 
         return rho
 
@@ -58,6 +59,6 @@ class TSZLikelihood(SZLikelihood):
         #define thta_arc=x somewhere
         pth = np.zeros(len(thta_arc))
         for ii in range(len(thta_arc)):
-            pth[ii] = project_tsz(thta_arc[ii], self.M, self.z, self.nu, fbeam, gnfw_params)
+            pth[ii] = project_tsz(thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, gnfw_params)
 
         return pth
