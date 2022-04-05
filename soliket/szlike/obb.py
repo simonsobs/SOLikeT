@@ -2,15 +2,14 @@ import numpy as np
 from scipy.special import spence
 from scipy.optimize import fmin
 from scipy.optimize import newton
-from .params import cosmo_params
 
 from ..constants import MSUN_CGS, G_CGS, C_M_S
 
 delx = 0.01
-rhocrit =  1.87847e-29 * cosmo_params['hh']**2
+rhocrit =  1.87847e-29 * provider.get_param('hh')**2
 C_CGS = C_M_S * 1.e2
 
-fb = cosmo_params['Omega_b']/cosmo_params['Omega_m']
+fb = provider.get_param('Omega_b') / provider.get_param('Omega_m')
 
 
 def nfw(x):
@@ -62,8 +61,8 @@ def r200(M, z):
     Input mass in solar masses. Output radius in cm.
     '''
     M_cgs = M*MSUN_CGS
-    om = cosmo_params['Omega_m']
-    ol = cosmo_params['Omega_L']
+    om = provider.get_param('Omega_m')
+    ol = provider.get_param('Omega_L')
     Ez2 = om * (1 + z)**3 + ol
     ans = (3 * M_cgs / (4 * np.pi * 200.*rhocrit*Ez2))**(1.0/3.0)
     return ans
