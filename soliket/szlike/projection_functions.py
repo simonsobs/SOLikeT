@@ -8,8 +8,7 @@ from .beam import read_beam, f_beam
 
 from ..constants import MPC2CM, C_M_S, h_Planck, k_Boltzmann, electron_mass_kg, proton_mass_kg, hydrogen_fraction, T_CMB, ST_CGS
 
-
-fb = cosmo_params["Omega_b"] / cosmo_params["Omega_m"] #put cosmo params in the yaml file, look at cross corr for example, param_values['cobaya_name']
+fb = provider.get_param('Omega_b') / provider.get_param('Omega_m') #is this correct way to use provider?
 kpc_cgs = MPC2CM * 1.e-3
 C_CGS = C_M_S * 1.e2
 ME_CGS = electron_mass_kg * 1.e3
