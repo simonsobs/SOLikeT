@@ -13,7 +13,7 @@ class SZLikelihood(GaussianLikelihood):
         self.nu = self.frequency_GHz
         self.M = self.mass_halo_mean_Msol 
 
-        x,y,dy = self._get_data() #come back to these lines for cov
+        x,y,dy = self._get_data()
         cov = np.diag(dy**2)
         self.data = GaussianData("SZModel",x,y,cov)
 
@@ -25,38 +25,40 @@ class KSZLikelihood(SZLikelihood):
 
     def _get_data(self,**params_values):
         thta_arc,ksz_data = np.loadtxt(self.sz_data_file,usecols=(0,1),unpack=True)
-        dy_ksz = np.loadtxt(self.cov_ksz_file)
-        #figure out units for dy, need to multiply by sr2sqarcmin
+        cov_ksz = np.loadtxt(self.cov_ksz_file) #units muK*sr
+
+        self.thta_arc = thta_arc
         self.ksz_data = ksz_data
-        self.dy_ksz = dy_ksz
+        self.dy_ksz = np.sqrt(np.diag(cov_ksz)) * 3282.8 * 60.**2 #units to muK*sqarcmin
         return thta_arc,ksz_data,dy_ksz
 
     def _get_theory(self,**params_values):
 
         gnfw_params = [params_values['gnfw_rho0'],params_values['gnfw_al_ksz']
                 ,params_values['gnfw_bt_ksz'],params_values['gnfw_A2h_ksz']]
-        #define thta_arc=x somewhere
-        rho = np.zeros(len(thta_arc))
-        for ii in range(len(thta_arc)):
-            rho[ii] = project_ksz(thta_arc[ii], self.M, self.z, self.beam_txt, gnfw_params)
+
+        rho = np.zeros(len(self.thta_arc))
+        for ii in range(len(self.thta_arc)):
+            rho[ii] = project_ksz(self.thta_arc[ii], self.M, self.z, self.beam_txt, gnfw_params)
         return rho
 
 class TSZLikelihood(SZLikelihood):
 
     def _get_data(self,**params_values):
         thta_arc,tsz_data = np.loadtxt(self.sz_data_file,usecols=(0,2),unpack=True) #do we need two separate get data functions?
-        dy_tsz = np.loadtxt(self.cov_tsz_file)
-        #figure out units for dy, need to multiply by sr2sqarcmin
+        cov_tsz = np.loadtxt(self.cov_tsz_file) #units muK*sr
+
+        self.thta_arc = thta_arc
         self.tsz_data = tsz_data
-        self.dy_tsz = dy_tsz
+        self.dy_tsz = np.sqrt(np.diag(cov_tsz)) * 3282.8 * 60.**2 #units to muK*sqarcmin
         return thta_arc,tsz_data,dy_tsz
 
     def _get_theory(self,**params_values):
 
         gnfw_params = [params_values['gnfw_P0'],params_values['gnfw_xc_tsz']
                 ,params_values['gnfw_bt_tsz'],params_values['gnfw_A2h_tsz']]
-        #define thta_arc=x somewhere
-        pth = np.zeros(len(thta_arc))
-        for ii in range(len(thta_arc)):
-            pth[ii] = project_tsz(thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, gnfw_params)
+
+        pth = np.zeros(len(self.thta_arc))
+        for ii in range(len(self.thta_arc)):
+            pth[ii] = project_tsz(self.thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, gnfw_params)
         return pth

@@ -1,4 +1,3 @@
-#do we want to test things for ACT or SO? will change theta for TNG data, units, cov
 sz_data_file: soliket/szlike/TNG_data.txt
 beam_file: soliket/szlike/beam_f150_daynight.txt 
 cov_ksz_file: soliket/szlike/cov_diskring_ksz_varweight_boostrap.txt
