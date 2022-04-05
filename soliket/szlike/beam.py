@@ -39,6 +39,8 @@ def read_beam(filename, normalize=True):
 
 
 def f_beam(tht,b):
+    """Interpolates beam transform, b, from read_beam for a given theta value
+    """
 
     theta_arcmin = np.linspace(0, 20, 100)
     theta_rad = theta_arcmin / 60.0 * (np.pi / 180)
