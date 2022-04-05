@@ -3,22 +3,12 @@ from soliket.szlike import SZLikelihood
 from cobaya.model import get_model
 
 
-def test_szlike():
-    cosmo_params = {
-        "h": 0.673,
-        "n_s": 0.964
-    }
+previously_calculated_differences_ksz = [ksz_data - gnfw_I_calculate_outside_SOliket]
+previously_calculated_differences_tsz = [tsz_data - gnfw_I_calculate_outside_SOliket] 
 
-    #come back to all of these parameters
-    info = {"params": {#"omch2": cosmo_params['Omega_c'] * cosmo_params['h'] ** 2.,
-                       "omch2": 0.1200,
-                       "ombh2": 0.0223,
-                       "H0": cosmo_params['h'] * 100,
-                       "ns": cosmo_params['n_s'],
-                       "As": 2.1e-9,
-                       "tau": 0.054,
-                       "A_IA": 0.0},
-            "likelihood": {"SZLikelihood":
+def test_ksz():
+    #I'm not sure what is necessary here, check others for examples. Do we need yaml?
+    info = {"likelihood": {"SZLikelihood":
                             {"external": SZlikelihood,
                              "beam_file": "soliket/tests/data/beam_f150_daynight.txt" ###come back to this
                              }
@@ -33,18 +23,48 @@ def test_szlike():
 
     lhood = model.likelihood['SZLikelihood']
 
-    ksz_data, tsz_data = np.loadtxt('soliket/tests/data/TNG_data.txt', usecols=(1,2),unpack=True) #should this be in tests for folder for szlike?
+    thta_arc, ksz_data = np.loadtxt('soliket/tests/data/TNG_data.txt', usecols=(0,1),unpack=True) #should this be in tests for folder for szlike?
+    cov_ksz = np.loadtxt('soliket/tests/data/....txt')
 
+    lhood.thta_arc = thta_arc
     lhood.ksz_data = ksz_data
+    lhood.cov_ksz = cov_ksz #check what we call this in szlike? might be dy? check units
+
+    ksz_theory = lhood._get_theory(**info["params"])
+
+    diff_theory = ksz_data - ksz_theory 
+
+    assert np.array_equal(previously_calculated_differences_ksz, diff_theory)
+
+
+def test_tsz():
+    #I'm not sure what is necessary here, check others for examples. Do we need yaml?
+    info = {"likelihood": {"SZLikelihood":
+                            {"external": SZlikelihood,
+                             "beam_file": "soliket/tests/data/beam_f150_daynight.txt" ###come back to this
+                             }
+                          },
+            "theory": {
+                "camb": None, #idk what these are for??
+            },
+            "debug": False, "stop_at_error": True}
+
+    model = get_model(info)
+    loglikes, derived = model.loglikes()
+
+    lhood = model.likelihood['SZLikelihood']
+
+    thta_arc, tsz_data = np.loadtxt('soliket/tests/data/TNG_data.txt', usecols=(0,2),unpack=True) #should this be in tests for folder for szlike?
+    cov_tsz = np.loadtxt('soliket/tests/data/....txt')
+
+    lhood.thta_arc = thta_arc
     lhood.tsz_data = tsz_data
+    lhood.cov_tsz = cov_tsz #check what we call this in szlike? might be dy? check units
 
-    #not sure what these are for or how to finish the test
-    ell_obs_kappagamma = ell_load[n_ell:]
-    # ell_obs_gammagamma = ell_load[:n_ell]
+    tsz_theory = lhood._get_theory(**info["params"])
 
-    cl_theory = lhood._get_theory(**info["params"])
-    cl_kappagamma = cl_theory[n_ell:]
+    diff_theory = tsz_data - tsz_theory 
 
-    assert np.allclose(ell_obs_kappagamma * cl_kappagamma * 1.e6,
-                       ellcl_paper,
-                       atol=.2, rtol=0.)
+    assert np.array_equal(previously_calculated_differences_tsz, diff_theory)
+
+
