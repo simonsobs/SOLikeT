@@ -96,7 +96,7 @@ def Pth_gnfw1h(x, M, z, theta, provider):
     fb = provider.get_param('Omega_b') / provider.get_param('Omega_m')
     for i in range(0, len(b_cen)):
         m = 10 ** b_cen[i]
-        r200c = r200(m, z)
+        r200c = r200(m, z, provider)
         rvir = r200c / kpc_cgs / 1e3  # Mpc
         M_cgs = m * MSUN_CGS
         P200c = G_CGS * M_cgs * 200.0 * rho_cz(z, provider) * fb / (2.0 * r200c)
@@ -118,8 +118,8 @@ def Pth_gnfw2h(xx, z, theta2h):
     return theta2h * ans
 
 
-def Pth_gnfw(xx, M, z, theta):
+def Pth_gnfw(xx, M, z, theta, provider):
     theta1h = theta[0], theta[1], theta[2]
     theta2h = theta[3]
-    ans = Pth_gnfw1h(xx, M, z, theta1h) + Pth_gnfw2h(xx, z, theta2h)
+    ans = Pth_gnfw1h(xx, M, z, theta1h, provider) + Pth_gnfw2h(xx, z, theta2h)
     return ans

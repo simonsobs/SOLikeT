@@ -114,16 +114,14 @@ def project_ksz(tht, M, z, beam_txt, gnfw_params, provider):
     sig_all_beam *= sr2sqarcmin #units in muK*sqarcmin
     return sig_all_beam
 
-def project_tsz(tht, M, z, nu, fbeam, gnfw_params):
+def project_tsz(tht, M, z, nu, beam_txt, gnfw_params, provider):
     disc_fac = np.sqrt(2)
     l0 = 30000.0
     NNR = 100
     NNR2 = 3.5 * NNR
     
     drint = 1e-3 * (kpc_cgs * 1e3)
-    AngDis = AngDist(z)
-
-    rvir = r200(M,z) / kpc_cgs / 1e3  # in MPC
+    AngDis = AngDist(z, provider)
 
     r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
     r_ext2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
@@ -149,8 +147,8 @@ def project_tsz(tht, M, z, nu, fbeam, gnfw_params):
     rint = np.sqrt(rad ** 2 + thta_smooth ** 2 * AngDis ** 2)
     rint2 = np.sqrt(rad2 ** 2 + thta2_smooth ** 2 * AngDis ** 2)
 
-    Pth2D = 2 * np.trapz(Pth_gnfw(rint, M, z, gnfw_params), x=rad * kpc_cgs, axis=1) * 1e3
-    Pth2D2 = 2 * np.trapz(Pth_gnfw(rint2, M, z, gnfw_params), x=rad2 * kpc_cgs, axis=1) * 1e3
+    Pth2D = 2 * np.trapz(Pth_gnfw(rint, M, z, gnfw_params, provider), x=rad * kpc_cgs, axis=1) * 1e3
+    Pth2D2 = 2 * np.trapz(Pth_gnfw(rint2, M, z, gnfw_params, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
 
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht
     thta = thta[:, None, None]
