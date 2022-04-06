@@ -3,12 +3,9 @@ from .cosmo import rho_cz
 
 from ..constants import MSUN_CGS, G_CGS, MPC2CM
 
-rhocrit = 1.87847e-29 * provider.get_param('hh') ** 2
 kpc_cgs = MPC2CM * 1.e-3
-fb = provider.get_param('Omega_b') / provider.get_param('Omega_m')
 
-
-def r200(M, z):
+def r200(M, z, provider):
     """radius of a sphere with density 200 times the critical density of the universe.
     Input mass in solar masses. Output radius in cm.
     """
@@ -16,31 +13,32 @@ def r200(M, z):
     om = provider.get_param('Omega_m')
     ol = provider.get_param('Omega_L')
     Ez2 = om * (1 + z) ** 3 + ol
+    rhocrit = 1.87847e-29 * provider.get_param('hh') ** 2
     ans = (3 * M_cgs / (4 * np.pi * 200.0 * rhocrit * Ez2)) ** (1.0 / 3.0)
     return ans
 
-def rho_gnfw1h(x, M, z, theta):
+def rho_gnfw1h(x, M, z, theta, provider):
     b_cen = np.array([[12.27689266, 12.67884686, 13.16053855, 13.69871423]]).T
     p = np.array([4.13431979e-03, 1.31666601e-01, 3.36540698e-01, 8.13760167e-02])
     rho = []
 
     # hack
     #theta = theta[:3]
-
+    fb = provider.get_param('Omega_b') / provider.get_param('Omega_m')
     for i in range(0, len(b_cen)):
         m = 10 ** b_cen[i]
-        r200c = r200(m, z)
+        r200c = r200(m, z, provider)
         rvir = r200c / kpc_cgs / 1e3  # Mpc
-        # xc = 0.5
-        al = 0.88 * (m / 1e14) ** (-0.03) * (1 + z) ** 0.19
+        xc = 0.5
+        #al = 0.88 * (m / 1e14) ** (-0.03) * (1 + z) ** 0.19
         gm = -0.2
-        # rho0,al,bt = theta
-        rho0, xc, bt = theta
+        rho0,al,bt = theta
+        #rho0, xc, bt = theta
         rho.append(
             10 ** rho0
             * (x / rvir / xc) ** gm
             / ((1 + (x / rvir / xc) ** al) ** ((bt - gm) / al))
-            * rho_cz(z)
+            * rho_cz(z,provider)
             * fb
         )
     rho = np.array(rho)
@@ -56,14 +54,14 @@ def rho_gnfw2h(xx, theta2h):
     return theta2h * ans
 
 
-def rho_gnfw(xx, M, z, theta):
+def rho_gnfw(xx, M, z, theta, provider):
     theta1h = theta[0], theta[1], theta[2]
     theta2h = theta[3]
-    ans = rho_gnfw1h(xx, M, z, theta1h) + rho_gnfw2h(xx, theta2h)
+    ans = rho_gnfw1h(xx, M, z, theta1h, provider) + rho_gnfw2h(xx, theta2h)
     return ans
 
 
-def Pth_gnfw1h(x, M, z, theta):
+def Pth_gnfw1h(x, M, z, theta, provider):
     #theta = theta[:3]
 
     b_cen = np.array(
@@ -95,15 +93,16 @@ def Pth_gnfw1h(x, M, z, theta):
         ]
     )
     pth = []
+    fb = provider.get_param('Omega_b') / provider.get_param('Omega_m')
     for i in range(0, len(b_cen)):
         m = 10 ** b_cen[i]
         r200c = r200(m, z)
         rvir = r200c / kpc_cgs / 1e3  # Mpc
         M_cgs = m * MSUN_CGS
-        P200c = G_CGS * M_cgs * 200.0 * rho_cz(z) * fb / (2.0 * r200c)
-        P0, al, bt = theta
-        # al = 1.0
-        xc = 0.497 * (m / 1e14) ** (-0.00865) * (1 + z) ** 0.731
+        P200c = G_CGS * M_cgs * 200.0 * rho_cz(z, provider) * fb / (2.0 * r200c)
+        P0, xc, bt = theta
+        al = 1.0
+        #xc = 0.497 * (m / 1e14) ** (-0.00865) * (1 + z) ** 0.731
         gm = -0.3
         pth.append(P0 * (x / rvir / xc) ** gm * (1 + (x / rvir / xc) ** al) ** (-bt) * P200c)
     pth = np.array(pth)

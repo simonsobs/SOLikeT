@@ -8,7 +8,6 @@ from .beam import read_beam, f_beam
 
 from ..constants import MPC2CM, C_M_S, h_Planck, k_Boltzmann, electron_mass_kg, proton_mass_kg, hydrogen_fraction, T_CMB, ST_CGS
 
-fb = provider.get_param('Omega_b') / provider.get_param('Omega_m') #is this correct way to use provider?
 kpc_cgs = MPC2CM * 1.e-3
 C_CGS = C_M_S * 1.e2
 ME_CGS = electron_mass_kg * 1.e3
@@ -28,14 +27,14 @@ def fnu(nu):
     return ans
 
 
-def project_ksz(tht, M, z, beam_txt, gnfw_params):
+def project_ksz(tht, M, z, beam_txt, gnfw_params, provider):
     disc_fac = np.sqrt(2)
     l0 = 30000.0
     NNR = 100
     NNR2 = 2.0 * NNR
 
     drint = 1e-3 * (kpc_cgs * 1e3)
-    AngDis = AngDist(z)
+    AngDis = AngDist(z, provider)
 
     r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
     r_ext2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
@@ -61,8 +60,8 @@ def project_ksz(tht, M, z, beam_txt, gnfw_params):
     rint = np.sqrt(rad ** 2 + thta_smooth ** 2 * AngDis ** 2)
     rint2 = np.sqrt(rad2 ** 2 + thta2_smooth ** 2 * AngDis ** 2)
 
-    rho2D = 2 * np.trapz(rho_gnfw(rint, M, z, gnfw_params), x=rad * kpc_cgs, axis=1) * 1e3
-    rho2D2 = 2 * np.trapz(rho_gnfw(rint2, M, z, gnfw_params), x=rad2 * kpc_cgs, axis=1) * 1e3
+    rho2D = 2 * np.trapz(rho_gnfw(rint, M, z, gnfw_params, provider), x=rad * kpc_cgs, axis=1) * 1e3
+    rho2D2 = 2 * np.trapz(rho_gnfw(rint2, M, z, gnfw_params, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
 
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht
     thta = thta[:, None, None]
@@ -110,7 +109,7 @@ def project_ksz(tht, M, z, beam_txt, gnfw_params):
     sig2 = 2.0 * np.pi * dtht2 * np.sum(thta2 * rho2D2_beam)
 
     sig_all_beam = (
-        (2 * sig - sig2) * v_rms * ST_CGS * TCMB * 1e6 * ((2.0 + 2.0 * XH) / (3.0 + 5.0 * XH)) / MP_CGS
+        (2 * sig - sig2) * provider.get_param('v_rms') * ST_CGS * T_CMB * 1e6 * ((2.0 + 2.0 * XH) / (3.0 + 5.0 * XH)) / MP_CGS
     ) #units in muK*sr
     sig_all_beam *= sr2sqarcmin #units in muK*sqarcmin
     return sig_all_beam
@@ -126,7 +125,7 @@ def project_tsz(tht, M, z, nu, fbeam, gnfw_params):
 
     rvir = r200(M,z) / kpc_cgs / 1e3  # in MPC
 
- 	r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
+    r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
     r_ext2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
 
     rad = np.logspace(-3, 1, 200)  # Mpc
@@ -201,7 +200,7 @@ def project_tsz(tht, M, z, nu, fbeam, gnfw_params):
         * (2 * sig_p - sig2_p)
         * ST_CGS
         / (ME_CGS * C_CGS ** 2)
-        * TCMB
+        * T_CMB
         * 1e6
         * ((2.0 + 2.0 * XH) / (3.0 + 5.0 * XH))
     )  #units in muK*sr

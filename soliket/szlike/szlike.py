@@ -1,7 +1,7 @@
 '''
 Likelihood for SZ model
 '''
-
+import numpy as np
 from ..gaussian import GaussianData, GaussianLikelihood
 from .projection_functions import project_ksz, project_tsz
 
@@ -30,16 +30,16 @@ class KSZLikelihood(SZLikelihood):
         self.thta_arc = thta_arc
         self.ksz_data = ksz_data
         self.dy_ksz = np.sqrt(np.diag(cov_ksz)) * 3282.8 * 60.**2 #units to muK*sqarcmin
-        return thta_arc,ksz_data,dy_ksz
+        return self.thta_arc,self.ksz_data,self.dy_ksz
 
     def _get_theory(self,**params_values):
 
-        gnfw_params = [params_values['gnfw_rho0'],params_values['gnfw_al_ksz']
+        gnfw_params = [np.log10(params_values['gnfw_rho0']),params_values['gnfw_al_ksz']
                 ,params_values['gnfw_bt_ksz'],params_values['gnfw_A2h_ksz']]
 
         rho = np.zeros(len(self.thta_arc))
         for ii in range(len(self.thta_arc)):
-            rho[ii] = project_ksz(self.thta_arc[ii], self.M, self.z, self.beam_txt, gnfw_params)
+            rho[ii] = project_ksz(self.thta_arc[ii], self.M, self.z, self.beam_txt, gnfw_params, self.provider)
         return rho
 
 class TSZLikelihood(SZLikelihood):
@@ -51,7 +51,7 @@ class TSZLikelihood(SZLikelihood):
         self.thta_arc = thta_arc
         self.tsz_data = tsz_data
         self.dy_tsz = np.sqrt(np.diag(cov_tsz)) * 3282.8 * 60.**2 #units to muK*sqarcmin
-        return thta_arc,tsz_data,dy_tsz
+        return self.thta_arc,self.tsz_data,self.dy_tsz
 
     def _get_theory(self,**params_values):
 
@@ -60,5 +60,5 @@ class TSZLikelihood(SZLikelihood):
 
         pth = np.zeros(len(self.thta_arc))
         for ii in range(len(self.thta_arc)):
-            pth[ii] = project_tsz(self.thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, gnfw_params)
+            pth[ii] = project_tsz(self.thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, gnfw_params, self.provider)
         return pth
