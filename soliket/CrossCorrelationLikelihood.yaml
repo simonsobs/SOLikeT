@@ -2,6 +2,8 @@ auto_file: soliket/data/xcorr_simulated/clgg_noiseless.txt
 cross_file: soliket/data/xcorr_simulated/clkg_noiseless.txt
 dndz_file: soliket/data/xcorr_simulated/dndz.txt
 
+datapath: soliket/tests/data/cs82_gs-planck_kappa.sim.sacc.fits
+
 params:
   b1: 
     prior:

@@ -48,7 +48,8 @@ def test_shearkappa():
                        "A_IA": 0.0},
             "likelihood": {"ShearKappaLikelihood":
                             {"external": ShearKappaLikelihood,
-                             "dndz_file": "soliket/tests/data/dndz_hsc.txt"  # noqa E501
+                             'datapath': '/Users/ianharrison/Dropbox/code_cdf/act-x-des/desgamma-x-actkappa/data/des_s-act_kappa.FLASK-sim_mockdata_and_cov.fits'
+                             # "dndz_file": "soliket/tests/data/dndz_hsc.txt"  # noqa E501
                              }
                           },
             "theory": {
@@ -60,22 +61,24 @@ def test_shearkappa():
     model = get_model(info)
     loglikes, derived = model.loglikes()
 
-    lhood = model.likelihood['ShearKappaLikelihood']
+    assert np.isfinite(loglikes)
 
-    ell_paper, ellcl_paper = np.loadtxt('soliket/tests/data/lcl_hsc.txt', unpack=True)
-    ells = ell_paper
+    # lhood = model.likelihood['ShearKappaLikelihood']
 
-    ell_load = np.concatenate([ells, ells])
-    n_ell = len(ell_load) // 2
+    # ell_paper, ellcl_paper = np.loadtxt('soliket/tests/data/lcl_hsc.txt', unpack=True)
+    # ells = ell_paper
 
-    lhood.ell_auto = ell_load[n_ell:]
-    lhood.ell_cross = ell_load[:n_ell]
+    # ell_load = np.concatenate([ells, ells])
+    # n_ell = len(ell_load) // 2
 
-    ell_obs_kappagamma = ell_load[n_ell:]
-    # ell_obs_gammagamma = ell_load[:n_ell]
+    # lhood.ell_auto = ell_load[n_ell:]
+    # lhood.ell_cross = ell_load[:n_ell]
 
-    cl_theory = lhood._get_theory(**info["params"])
-    cl_kappagamma = cl_theory[n_ell:]
+    # ell_obs_kappagamma = ell_load[n_ell:]
+    # # ell_obs_gammagamma = ell_load[:n_ell]
+
+    # cl_theory = lhood._get_theory(**info["params"])
+    # cl_kappagamma = cl_theory[n_ell:]
     # cl_gammagamma = cl_theory[:n_ell]
 
     # from matplotlib import pyplot as plt
@@ -94,6 +97,6 @@ def test_shearkappa():
     # plt.axhline(0, color='k', linestyle='dashed', alpha=0.4)
     # plt.savefig('./plots/kappagamma-hsc.png', dpi=300, bbox_inches='tight')
 
-    assert np.allclose(ell_obs_kappagamma * cl_kappagamma * 1.e6,
-                       ellcl_paper,
-                       atol=.2, rtol=0.)
+    # assert np.allclose(ell_obs_kappagamma * cl_kappagamma * 1.e6,
+    #                    ellcl_paper,
+    #                    atol=.2, rtol=0.)
