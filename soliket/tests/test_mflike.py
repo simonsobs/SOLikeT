@@ -10,6 +10,8 @@ import camb
 import mflike  # noqa
 import soliket  # noqa
 
+import numpy as np
+
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "LAT_packages"
 )
@@ -95,12 +97,35 @@ class MFLikeTest(unittest.TestCase):
         # w/out cobaya
 
         camb_cosmo = cosmo_params.copy()
-        camb_cosmo.update({"lmax": 9000, "lens_potential_accuracy": 1})
+        lmax = 9000
+        camb_cosmo.update({"lmax": lmax, "lens_potential_accuracy": 1})
         pars = camb.set_params(**camb_cosmo)
         results = camb.get_results(pars)
         powers = results.get_cmb_power_spectra(pars, CMB_unit="muK")
         cl_dict = {k: powers["total"][:, v] for
                    k, v in {"tt": 0, "ee": 1, "te": 3}.items()}
+
+        if not self.orig:
+
+            BP = soliket.BandPass()
+            FG = soliket.Foreground()
+            TF = soliket.TheoryForge_MFLike()
+
+            ell = np.arange(lmax + 1)
+            freqs = TF.freqs
+            requested_cls = TF.requested_cls
+            BP.freqs = freqs
+
+            bandpass = BP._bandpass_construction(**nuisance_params)
+
+            fg_dict = FG._get_foreground_model(requested_cls=requested_cls,
+                                                    ell=ell,
+                                                    freqs=freqs,
+                                                    bandint_freqs=bandpass,
+                                                    **nuisance_params)
+
+            dlobs_dict = TF.get_modified_theory(cl_dict, fg_dict, **nuisance_params)
+
         for select, chi2 in chi2s.items():
             MFLike = self.get_mflike_type()
 
@@ -123,7 +148,10 @@ class MFLikeTest(unittest.TestCase):
                 }
             )
 
-            loglike = my_mflike.loglike(cl_dict, **nuisance_params)
+            if not self.orig:
+                loglike = my_mflike.loglike(dlobs_dict)
+            else:
+                loglike = my_mflike.loglike(cl_dict, **nuisance_params)
 
             self.assertAlmostEqual(-2 * (loglike - my_mflike.logp_const), chi2, 2)
 
@@ -147,6 +175,10 @@ class MFLikeTest(unittest.TestCase):
             "modules": packages_path,
             "debug": True,
         }
+        if not self.orig:
+            info["theory"]["soliket.TheoryForge_MFLike"] = {'stop_at_error': True}
+            info["theory"]["soliket.Foreground"] = {'stop_at_error': True}
+            info["theory"]["soliket.BandPass"] = {'stop_at_error': True}
         from cobaya.model import get_model
 
         model = get_model(info)

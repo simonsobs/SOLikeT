@@ -6,11 +6,7 @@ from scipy.optimize import newton
 from ..constants import MSUN_CGS, G_CGS, C_M_S
 
 delx = 0.01
-rhocrit =  1.87847e-29 * provider.get_param('hh')**2
 C_CGS = C_M_S * 1.e2
-
-fb = provider.get_param('Omega_b') / provider.get_param('Omega_m')
-
 
 def nfw(x):
     '''shape of a NFW profile (NFW 1997, ApJ,490, 493)
@@ -56,7 +52,7 @@ def sig_dm2(x,c):
     return ans
 
 
-def r200(M, z):
+def r200(M, z, provider):
     '''radius of a sphere with density 200 times the critical density of the universe.
     Input mass in solar masses. Output radius in cm.
     '''
@@ -64,6 +60,7 @@ def r200(M, z):
     om = provider.get_param('Omega_m')
     ol = provider.get_param('Omega_L')
     Ez2 = om * (1 + z)**3 + ol
+    rhocrit =  1.87847e-29 * provider.get_param('hh')**2
     ans = (3 * M_cgs / (4 * np.pi * 200.*rhocrit*Ez2))**(1.0/3.0)
     return ans
 
@@ -75,11 +72,11 @@ def con(M, z):
     ans = 5.71 / (1 + z)**(0.47) * (M / 2e12)**(-0.084)
     return ans
 
-def rho_dm(x,M,z):
+def rho_dm(x,M,z,provider):
     '''NFW profile describing the dark matter density [g/cm3]
     '''
     c = con(M,z)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     M_cgs = M*MSUN_CGS
     ans = M_cgs*(c/rvir)**3 / (4.*np.pi*gx(c)) * nfw(x)
     return ans
@@ -160,12 +157,12 @@ def rho_use(x,M,z,theta, theta2):
     ans = (theta_func(x,M,z,theta,theta2))**nn
     return ans
 
-def rho(x,M,z,theta, theta2):
+def rho(x,M,z,theta, theta2,provider):
     gamma,alpha,Ef = theta
     P_0, rho_0, x_f = theta2
     nn = n_exp(gamma)
     c = con(M,z)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     M_cgs = M*MSUN_CGS
     beta = rho_0/P_0 * G_CGS*M_cgs/rvir*c/gx(c)
     theta2_use = beta, x_f
@@ -174,12 +171,12 @@ def rho(x,M,z,theta, theta2):
     return ans
 
 
-def rho_outtest(x,M,z,theta, theta2):
+def rho_outtest(x,M,z,theta, theta2,provider):
     gamma,alpha,Ef = theta
     P_0, rho_0, x_f = theta2
     nn = n_exp(gamma)
     c = con(M,z)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     M_cgs = M*MSUN_CGS
     beta = rho_0/P_0 * G_CGS*M_cgs/rvir*c/gx(c)
     theta2_use = beta, x_f
@@ -193,11 +190,11 @@ def Pnth_th(x,M,z,theta):
     ans = 1. - alpha*(x/c)**0.8
     return ans
 
-def Pth(x,M,z,theta,theta2):
+def Pth(x,M,z,theta,theta2,provider):
     gamma,alpha,Ef = theta
     P_0, rho_0, x_f = theta2
     c = con(M,z)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     nn = n_exp(gamma)
     M_cgs = M*MSUN_CGS
     beta = rho_0/P_0 * G_CGS*M_cgs/rvir*c/gx(c)
@@ -212,11 +209,11 @@ def Pth_use(x,M,z,theta,theta2):
     ans = (theta_func(x,M,z,theta,theta2))**(nn+1.) * Pnth_th(x,M,z,theta)
     return ans
 
-def Ptot(M,z,theta,theta2):
+def Ptot(M,z,theta,theta2,provider):
     gamma,alpha,Ef = theta
     P_0, rho_0, x_f = theta2
     nn = n_exp(gamma)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     c = con(M,z)
     M_cgs = M*MSUN_CGS
     beta = rho_0/P_0 * G_CGS*M_cgs/rvir*c/gx(c)
@@ -231,12 +228,12 @@ def Ptot_use(M,z,theta,theta2):
     ans = (theta_func_f(x_f,M,z,theta,theta2))**(nn+1.)
     return ans
 
-def Pnth(x,M,z,theta,theta2):
+def Pnth(x,M,z,theta,theta2,provider):
     gamma,alpha,Ef = theta
     P_0, rho_0, x_f = theta2
     c = con(M,z)
     nn = n_exp(gamma)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     M_cgs = M*MSUN_CGS
     beta = rho_0/P_0 * G_CGS*Mvir/rvir*c/gx(c)
     theta2_use = beta, x_f
@@ -283,31 +280,32 @@ def L_int(M,z,theta,theta2):
     ans = np.sum(rho_use(xx,M,z,theta,theta2)*xx**2)*delx
     return ans
 
-def rho_0_func(theta0,theta2):
+def rho_0_func(theta0,theta2,provider):
     M,z,gamma,alpha,Ef = theta0
     theta = [gamma,alpha,Ef]
     c = con(M,z)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     fstar = fstar_func(M)
     M_cgs = M*MSUN_CGS
+    fb = provider.get_param('Omega_b') / provider.get_param('Omega_m')
     ans = M_cgs*(fb-fstar) / (4.*np.pi * L_int(M,z,theta,theta2)*(rvir/c)**3)
     return ans
 
-def P_0_func(theta0,theta2,rho_0):
+def P_0_func(theta0,theta2,rho_0,provider):
     M,z,gamma,alpha,Ef = theta0
     beta, x_f = theta2
     c = con(M,z)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     M_cgs = M*MSUN_CGS
     ans = rho_0/beta * G_CGS*M_cgs/rvir*c/gx(c)
     return ans
 
-def findroots2(theta2,theta0):
+def findroots2(theta2,theta0,provider):
     M,z,gamma,alpha,Ef = theta0
     theta = [gamma,alpha,Ef]
     beta, x_f = theta2
     c = con(M,z)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     x_s = xs_func(M,z)
     fstar = fstar_func(M)
     M_cgs = M*MSUN_CGS
@@ -333,12 +331,12 @@ def return_prof_pars(theta2,theta0):
     P_0 = P_0_func(theta0,ans,rho_0)
     return P_0, rho_0, x_f_ans
 
-def findroots(theta2,theta0):
+def findroots(theta2,theta0,provider):
     M,z,gamma,alpha,Ef = theta0
     theta = [gamma,alpha,Ef]
     beta, x_f = theta2
     c = con(M,z)
-    rvir = r200(M,z)
+    rvir = r200(M,z,provider)
     M_cgs = M*MSUN_CGS
 
     E_inj = Ef * gx(c) * rvir / (G_CGS*M_cgs*c) * C_CGS**2

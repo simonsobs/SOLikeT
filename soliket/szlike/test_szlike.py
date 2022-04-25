@@ -48,10 +48,10 @@ def test_ksz():
 
     diff_theory = ksz_data - ksz_theory 
 
-    #print("my gnfw",ksz_gnfw)
-    #print("SO calc gnfw",ksz_theory)
+    print("my gnfw",ksz_gnfw)
+    print("SO calc gnfw",ksz_theory)
     assert np.array_equal(ksz_differences, diff_theory)
-
+'''
 def test_tsz():
     info = {"params": {"Omega_m": 0.25,
                        "Omega_b": 0.044,
@@ -86,7 +86,7 @@ def test_tsz():
 
     diff_theory = tsz_data - tsz_theory 
 
-    #print("my gnfw",tsz_gnfw)
-    #print("SO calc gnfw",tsz_theory)
+    print("my gnfw",tsz_gnfw)
+    print("SO calc gnfw",tsz_theory)
     assert np.array_equal(tsz_differences, diff_theory)
-
+'''

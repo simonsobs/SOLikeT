@@ -14,7 +14,7 @@ class SZLikelihood(GaussianLikelihood):
         self.M = self.mass_halo_mean_Msol 
 
         x,y,dy = self._get_data()
-        cov = np.diag(dy**2)
+        cov = np.diag(dy**2) #come back to this #sr2sqarcmin
         self.data = GaussianData("SZModel",x,y,cov)
 
     def logp(self,**params_values):

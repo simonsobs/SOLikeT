@@ -1,0 +1,51 @@
+data_folder: MFLike/v0.6
+
+# freqs can be either assigned from yaml 
+# or passed from like/theory component requiring theoryforge
+freqs: [93, 145, 225]
+
+spectra:
+  # Which spectra?
+  # polarizations can be either assigned from yaml 
+  # or passed from like/theory component requiring theoryforge
+  polarizations: ["tt", "te", "ee"]
+  # Which lrange?
+  lmin: 2
+  lmax: 7000
+
+systematics_template:
+  has_file: False
+  rootname: "test_template"
+
+params:
+  # Systematics
+  calT_93:
+    value: 1
+    latex: \mathrm{Cal}_{\rm T}^{93}
+  calE_93:
+    value: 1
+    latex: \mathrm{Cal}_{\rm E}^{93}
+  calT_145:
+    value: 1
+    latex: \mathrm{Cal}_{\rm T}^{145}
+  calE_145:
+    value: 1
+    latex: \mathrm{Cal}_{\rm E}^{145}
+  calT_225:
+    value: 1
+    latex: \mathrm{Cal}_{\rm T}^{225}
+  calE_225:
+    value: 1
+    latex: \mathrm{Cal}_{\rm E}^{225}
+  calG_all:
+    value: 1
+    latex: \mathrm{Cal}_{\rm G}^{\rm All}
+  alpha_93:
+    value: 0 #deg
+    latex: \alpha^{93}
+  alpha_145:
+    value: 0 #deg
+    latex: \alpha^{145}
+  alpha_225:
+    value: 0 #deg
+    latex: \alpha^{225}
