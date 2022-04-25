@@ -1,10 +1,12 @@
 import numpy as np
 from scipy import special
+from scipy.interpolate import interp1d
 from scipy.signal import convolve
 from .cosmo import AngDist
 from .gnfw import r200, rho_gnfw1h, Pth_gnfw1h, rho_gnfw, Pth_gnfw
 from .obb import con, fstar_func, return_prof_pars, rho, Pth
 from .beam import read_beam, f_beam
+from .flat_map import FlatMap
 
 from ..constants import MPC2CM, C_M_S, h_Planck, k_Boltzmann, electron_mass_kg, proton_mass_kg, hydrogen_fraction, T_CMB, ST_CGS
 
@@ -121,7 +123,7 @@ def project_ksz(tht, M, z, beam_txt, input_model, model_params, provider):
     sig_all_beam *= sr2sqarcmin #units in muK*sqarcmin
     return sig_all_beam
 
-def project_tsz(tht, M, z, nu, beam_txt, input_model, model_params, provider):
+def project_tsz(tht, M, z, nu, beam_txt, input_model, model_params, beam_response, provider):
     disc_fac = np.sqrt(2)
     l0 = 30000.0
     NNR = 100
@@ -163,57 +165,100 @@ def project_tsz(tht, M, z, nu, beam_txt, input_model, model_params, provider):
     Pth2D = 2 * np.trapz(chosen_model(rint, M, z, model_params, provider), x=rad * kpc_cgs, axis=1) * 1e3
     Pth2D2 = 2 * np.trapz(chosen_model(rint2, M, z, model_params, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
 
-    thta_smooth = (np.arange(NNR2) + 1.0) * dtht
-    thta = thta[:, None, None]
-    thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2
-    thta2 = thta2[:, None, None]
-    phi = np.linspace(0.0, 2 * np.pi, 50)
-    phi = phi[None, None, :]
-    thta_smooth = thta_smooth[None, :, None]
-    thta2_smooth = thta2_smooth[None, :, None]
-    Pth2D = Pth2D[None, :, None]
-    Pth2D2 = Pth2D2[None, :, None]
+    if beam_response is not False:
+        sizeArcmin = 15.  # [degree]
+        sz = 500 
+        baseMap = FlatMap(nX=sz, nY=sz, sizeX=sizeArcmin*np.pi/180./60., sizeY=sizeArcmin*np.pi/180./60.)
+        # map of the cluster, not yet convolved with the beam
+        xc = baseMap.sizeX / 2.
+        yc = baseMap.sizeY / 2.
+        r = np.sqrt((baseMap.x-xc)**2 + (baseMap.y-yc)**2)  # cluster centric radius in rad
 
-    b = read_beam(beam_txt)
+        thta_smooth = (np.arange(NNR2) + 1.)*dtht
+        thta2_smooth = (np.arange(NNR2) + 1.)*dtht2
 
-    Pth2D_beam0 = np.trapz(
-        thta_smooth
-        * Pth2D
-        * f_beam(np.sqrt(thta ** 2 + thta_smooth ** 2 - 2 * thta * thta_smooth * np.cos(phi)),b),
-        x=phi,
-        axis=2,
-    )
+        profMap = np.interp(r,thta_smooth,Pth2D)
+        profMap2 = np.interp(r,thta2_smooth,Pth2D2)
+        
+        ##figure out better ways to do this, but just matching the old format for now
+        ell, beam = np.loadtxt(beam_txt,usecols = (0,1), unpack = True)
+        beamMapF = np.interp(baseMap.l,ell,beam)
+        ell, resp = np.loadtxt(beam_response, usecols = (0,1), unpack = True) 
+        respTF = np.interp(baseMap.l,ell,resp) 
 
-    Pth2D2_beam0 = np.trapz(
-        thta2_smooth
-        * Pth2D2
-        * f_beam(np.sqrt(thta2 ** 2 + thta2_smooth ** 2 - 2 * thta2 * thta2_smooth * np.cos(phi)),b),
-        x=phi,
-        axis=2,
-    )
+        # Fourier transform the profile
+        profMapF = baseMap.fourier(profMap)
+        profMapF2 = baseMap.fourier(profMap2)
+        # multiply by the beam transfer function
+        convolvedProfMapF = profMapF * beamMapF * respTF #test #test
+        convolvedProfMapF2 = profMapF2 * beamMapF * respTF
+        # inverse Fourier transform
+        convolvedProfMap = baseMap.inverseFourier(convolvedProfMapF)
+        convolvedProfMap2 = baseMap.inverseFourier(convolvedProfMapF2)
 
-    thta_smooth = (np.arange(NNR2) + 1.0) * dtht
-    thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2
+        thta = (np.arange(NNR) + 1.)*dtht
+        thta2 = (np.arange(NNR) + 1.)*dtht2
 
-    Pth2D_beam = np.trapz(Pth2D_beam0, x=thta_smooth, axis=1)
-    Pth2D2_beam = np.trapz(Pth2D2_beam0, x=thta2_smooth, axis=1)
+        Pth2D_beam = interp1d(r.flatten(),convolvedProfMap.flatten(), kind='linear', bounds_error=False, fill_value=0.)(thta)
+        Pth2D2_beam = interp1d(r.flatten(),convolvedProfMap2.flatten(), kind='linear', bounds_error=False, fill_value=0.)(thta2)
 
-    thta = (np.arange(NNR) + 1.0) * dtht
-    thta2 = (np.arange(NNR) + 1.0) * dtht2
+        area_fac = 2.0*np.pi*dtht*np.sum(thta)
+        sig_p  = 2.0*np.pi*dtht*np.sum(thta*Pth2D_beam)
+        sig2_p = 2.0*np.pi*dtht2*np.sum(thta2*Pth2D2_beam)
+        sig_all_p_beam = (2*sig_p - sig2_p) * ST_CGS/(ME_CGS*C_CGS**2) * ((2. + 2.*XH)/(3.+5.*XH)) * 1e6
 
-    area_fac = 2.0 * np.pi * dtht * np.sum(thta)
+    else:
+        thta_smooth = (np.arange(NNR2) + 1.0) * dtht
+        thta = thta[:, None, None]
+        thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2
+        thta2 = thta2[:, None, None]
+        phi = np.linspace(0.0, 2 * np.pi, 50)
+        phi = phi[None, None, :]
+        thta_smooth = thta_smooth[None, :, None]
+        thta2_smooth = thta2_smooth[None, :, None]
+        Pth2D = Pth2D[None, :, None]
+        Pth2D2 = Pth2D2[None, :, None]
 
-    sig_p = 2.0 * np.pi * dtht * np.sum(thta * Pth2D_beam)
-    sig2_p = 2.0 * np.pi * dtht2 * np.sum(thta2 * Pth2D2_beam)
+        b = read_beam(beam_txt)
 
-    sig_all_p_beam = (
-        fnu(nu)
-        * (2 * sig_p - sig2_p)
-        * ST_CGS
-        / (ME_CGS * C_CGS ** 2)
-        * T_CMB
-        * 1e6
-        * ((2.0 + 2.0 * XH) / (3.0 + 5.0 * XH))
-    )  #units in muK*sr
+        Pth2D_beam0 = np.trapz(
+            thta_smooth
+            * Pth2D
+            * f_beam(np.sqrt(thta ** 2 + thta_smooth ** 2 - 2 * thta * thta_smooth * np.cos(phi)),b),
+            x=phi,
+            axis=2,
+        )
+
+        Pth2D2_beam0 = np.trapz(
+            thta2_smooth
+            * Pth2D2
+            * f_beam(np.sqrt(thta2 ** 2 + thta2_smooth ** 2 - 2 * thta2 * thta2_smooth * np.cos(phi)),b),
+            x=phi,
+            axis=2,
+        )
+
+        thta_smooth = (np.arange(NNR2) + 1.0) * dtht
+        thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2
+
+        Pth2D_beam = np.trapz(Pth2D_beam0, x=thta_smooth, axis=1)
+        Pth2D2_beam = np.trapz(Pth2D2_beam0, x=thta2_smooth, axis=1)
+
+        thta = (np.arange(NNR) + 1.0) * dtht
+        thta2 = (np.arange(NNR) + 1.0) * dtht2
+
+        area_fac = 2.0 * np.pi * dtht * np.sum(thta)
+
+        sig_p = 2.0 * np.pi * dtht * np.sum(thta * Pth2D_beam)
+        sig2_p = 2.0 * np.pi * dtht2 * np.sum(thta2 * Pth2D2_beam)
+
+        sig_all_p_beam = (
+            fnu(nu)
+            * (2 * sig_p - sig2_p)
+            * ST_CGS
+            / (ME_CGS * C_CGS ** 2)
+            * T_CMB
+            * 1e6
+            * ((2.0 + 2.0 * XH) / (3.0 + 5.0 * XH))
+        )  #units in muK*sr
     sig_all_p_beam *= sr2sqarcmin #units in muK*sqarcmin
     return sig_all_p_beam

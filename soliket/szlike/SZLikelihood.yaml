@@ -1,7 +1,10 @@
 sz_data_file: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/TNG_data.txt
 beam_file: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/beam_f150_daynight.txt 
+#optional beam response file
+beam_response: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt #False, or give file
 cov_ksz_file: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/cov_diskring_ksz_varweight_bootstrap.txt
 cov_tsz_file: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/cov_diskring_tsz_varweight_bootstrap.txt
+
 redshift: 0.55 
 mass_halo_mean_Msol: 10**13.
 frequency_GHz: 150.

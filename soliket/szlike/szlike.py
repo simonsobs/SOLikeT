@@ -13,6 +13,7 @@ class SZLikelihood(GaussianLikelihood):
         self.nu = self.frequency_GHz
         self.M = self.mass_halo_mean_Msol 
         self.input_model = self.input_model
+        self.beam_response = self.beam_response
 
         x,y,dy = self._get_data()
         cov = np.diag(dy**2) #come back to this #sr2sqarcmin
@@ -67,5 +68,5 @@ class TSZLikelihood(SZLikelihood):
 
         pth = np.zeros(len(self.thta_arc))
         for ii in range(len(self.thta_arc)):
-            pth[ii] = project_tsz(self.thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, self.input_model, model_params, self.provider)
+            pth[ii] = project_tsz(self.thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, self.input_model, model_params, self.beam_response, self.provider)
         return pth
