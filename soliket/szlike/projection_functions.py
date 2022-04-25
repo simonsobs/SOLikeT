@@ -27,7 +27,7 @@ def fnu(nu):
     return ans
 
 
-def project_ksz(tht, M, z, beam_txt, gnfw_params, provider):
+def project_ksz(tht, M, z, beam_txt, input_model, model_params, provider):
     disc_fac = np.sqrt(2)
     l0 = 30000.0
     NNR = 100
@@ -60,8 +60,15 @@ def project_ksz(tht, M, z, beam_txt, gnfw_params, provider):
     rint = np.sqrt(rad ** 2 + thta_smooth ** 2 * AngDis ** 2)
     rint2 = np.sqrt(rad2 ** 2 + thta2_smooth ** 2 * AngDis ** 2)
 
-    rho2D = 2 * np.trapz(rho_gnfw(rint, M, z, gnfw_params, provider), x=rad * kpc_cgs, axis=1) * 1e3
-    rho2D2 = 2 * np.trapz(rho_gnfw(rint2, M, z, gnfw_params, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
+    #choose the model for projection
+    models = {
+        "gnfw":rho_gnfw,
+        "obb":rho
+    }
+    chosen_model = models.get(input_model)
+
+    rho2D = 2 * np.trapz(chosen_model(rint, M, z, model_params, provider), x=rad * kpc_cgs, axis=1) * 1e3
+    rho2D2 = 2 * np.trapz(chosen_model(rint2, M, z, model_params, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
 
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht
     thta = thta[:, None, None]
@@ -114,7 +121,7 @@ def project_ksz(tht, M, z, beam_txt, gnfw_params, provider):
     sig_all_beam *= sr2sqarcmin #units in muK*sqarcmin
     return sig_all_beam
 
-def project_tsz(tht, M, z, nu, beam_txt, gnfw_params, provider):
+def project_tsz(tht, M, z, nu, beam_txt, input_model, model_params, provider):
     disc_fac = np.sqrt(2)
     l0 = 30000.0
     NNR = 100
@@ -147,8 +154,14 @@ def project_tsz(tht, M, z, nu, beam_txt, gnfw_params, provider):
     rint = np.sqrt(rad ** 2 + thta_smooth ** 2 * AngDis ** 2)
     rint2 = np.sqrt(rad2 ** 2 + thta2_smooth ** 2 * AngDis ** 2)
 
-    Pth2D = 2 * np.trapz(Pth_gnfw(rint, M, z, gnfw_params, provider), x=rad * kpc_cgs, axis=1) * 1e3
-    Pth2D2 = 2 * np.trapz(Pth_gnfw(rint2, M, z, gnfw_params, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
+    models = {
+        "gnfw":Pth_gnfw,
+        "obb":Pth
+    }
+    chosen_model = models.get(input_model)
+
+    Pth2D = 2 * np.trapz(chosen_model(rint, M, z, model_params, provider), x=rad * kpc_cgs, axis=1) * 1e3
+    Pth2D2 = 2 * np.trapz(chosen_model(rint2, M, z, model_params, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
 
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht
     thta = thta[:, None, None]

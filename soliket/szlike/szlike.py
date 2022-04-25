@@ -12,6 +12,7 @@ class SZLikelihood(GaussianLikelihood):
         self.z = self.redshift
         self.nu = self.frequency_GHz
         self.M = self.mass_halo_mean_Msol 
+        self.input_model = self.input_model
 
         x,y,dy = self._get_data()
         cov = np.diag(dy**2) #come back to this #sr2sqarcmin
@@ -33,13 +34,16 @@ class KSZLikelihood(SZLikelihood):
         return self.thta_arc,self.ksz_data,self.dy_ksz
 
     def _get_theory(self,**params_values):
-
-        gnfw_params = [np.log10(params_values['gnfw_rho0']),params_values['gnfw_al_ksz']
-                ,params_values['gnfw_bt_ksz'],params_values['gnfw_A2h_ksz']]
+        model_params = {
+            "gnfw":[np.log10(params_values['gnfw_rho0']),params_values['gnfw_al_ksz']
+                ,params_values['gnfw_bt_ksz'],params_values['gnfw_A2h_ksz']],
+            "obb":["similar_array"]
+        }
+        model_params = model_params.get(self.input_model)
 
         rho = np.zeros(len(self.thta_arc))
         for ii in range(len(self.thta_arc)):
-            rho[ii] = project_ksz(self.thta_arc[ii], self.M, self.z, self.beam_txt, gnfw_params, self.provider)
+            rho[ii] = project_ksz(self.thta_arc[ii], self.M, self.z, self.beam_txt, self.input_model, model_params, self.provider)
         return rho
 
 class TSZLikelihood(SZLikelihood):
@@ -54,11 +58,14 @@ class TSZLikelihood(SZLikelihood):
         return self.thta_arc,self.tsz_data,self.dy_tsz
 
     def _get_theory(self,**params_values):
-
-        gnfw_params = [params_values['gnfw_P0'],params_values['gnfw_xc_tsz']
-                ,params_values['gnfw_bt_tsz'],params_values['gnfw_A2h_tsz']]
+        model_params = {
+            "gnfw":[params_values['gnfw_P0'],params_values['gnfw_xc_tsz']
+            ,params_values['gnfw_bt_tsz'],params_values['gnfw_A2h_tsz']],
+            "obb":["similar_array"]
+        }
+        model_params = model_params.get(self.input_model)
 
         pth = np.zeros(len(self.thta_arc))
         for ii in range(len(self.thta_arc)):
-            pth[ii] = project_tsz(self.thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, gnfw_params, self.provider)
+            pth[ii] = project_tsz(self.thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, self.input_model, model_params, self.provider)
         return pth

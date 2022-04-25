@@ -5,6 +5,7 @@ cov_tsz_file: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/cov_diskring_tsz_
 redshift: 0.55 
 mass_halo_mean_Msol: 10**13.
 frequency_GHz: 150.
+input_model: "gnfw" #or "obb"
 
 params:
   Omega_m:
@@ -42,3 +43,7 @@ params:
     value: 4.76625102519
   gnfw_A2h_tsz:
     value: 1.0
+  #obb_param1:
+  #  value:
+  #obb_param_etc:
+  #  value:
