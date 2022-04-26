@@ -232,7 +232,7 @@ class LPT_bias(Bias):
             Pd1d1 = self.lpt_table[:, :, 3]
             pgg_leading_order = (Pdmdm + (bL11 + bL12) * Pdmd1 + (bL11 * bL12) * Pd1d1)
 
-            pgg = pgg_leading_order + pgm_higher_order 
+            pgg = pgg_leading_order + pgg_higher_order 
 
             pgg_interpolated = interp1d(cleft_k[0], pgg,
                                         kind='cubic',
