@@ -10,11 +10,9 @@ from cobaya.run import run
 info = {"params": {
                    "b_lin": 1.0,
                     "b1g1": 1.0,
-                    "b2g1": 0.0,
-                    "bsg1": 0.0,
+                    "b2g1": 1.0,
                     "b1g2": 1.0,
-                    "b2g2": 0.0,
-                    "bsg2": 0.0,
+                    "b2g2": 1.0,
                    "H0": 70.,
                    "ombh2": 0.0245,
                    "omch2": 0.1225,
@@ -91,40 +89,32 @@ def test_LPT_bias_model():
 
     model = get_model(info)  # noqa F841
 
+
 def test_LPT_bias_compute_grid():
 
     from soliket.bias import LPT_bias
 
     info["theory"] = {
                "camb": None,
-               "LPT_bias": {"external": LPT_bias}
+               "LPT_bias": {"external": LPT_bias,
+                            "nonlinear": True}
                }
 
     model = get_model(info)  # noqa F841
     model.add_requirements({"Pk_grid": {"z": 0., "k_max": 1.,
-                                        "nonlinear": False,
+                                        "nonlinear": True,
                                         "vars_pairs": ('delta_tot', 'delta_tot'),
-                                        "extrap_kmin": 1.e-3
                                         },
-                             "Pk_gg_grid": None
+                             "Pk_gg_grid": None,
+                             "Pk_gm_grid": None
                             })
 
     model.logposterior(info['params'])  # force computation of model
 
     lhood = model.likelihood['one']
 
-    k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'),
-                                                 nonlinear=False)
-
     Pk_gg = lhood.provider.get_Pk_gg_grid()
-    # Pk_gm = lhood.provider.get_Pk_gm_grid()
+    Pk_gm = lhood.provider.get_Pk_gm_grid()
 
-    from matplotlib import pyplot as plt
-    # plt.ion()
-    # pdb.set_trace()
-
-    # plt.loglog(k, Pk_mm_lin[0])
-    # plt.loglog(k, Pk_gg[0])
-    # plt.xlim([1.e-3, 1.e0])
-    # plt.ylim([1.e3, 1.e5])
-    # plt.savefig('plots/lpt-bias-pk.png', dpi=300, bbox_inches='tight')
+    assert np.isclose(Pk_gg.sum(), 493326018.33041435)
+    assert np.isclose(Pk_gm.sum(), 429303138.83088464)

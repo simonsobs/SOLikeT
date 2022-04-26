@@ -105,24 +105,36 @@ class LPT_bias(Bias):
 
     params = {'b1g1': None,
               'b2g1': None,
-              'bsg1': None,
+              # 'bsg1': None,
               'b1g2': None,
               'b2g2': None,
-              'bsg2': None}
+              # 'bsg2': None
+              }
 
     def init_cleft(self, k_filter=None):
 
-        # Pk_mm = self._get_Pk_mm()
+        self.update_lpt_table()
 
         if k_filter is not None:
-            self.wk_low = 1-np.exp(-(self.k/k_filter)**2)
+            self.wk_low = 1 - np.exp(-(self.k / k_filter)**2)
         else:
             self.wk_low = np.ones_like(self.k)
 
-        # self.update_lpt_table(Pk_mm)
-        
 
-    def update_lpt_table(self, Pk_mm):
+    def update_lpt_table(self):
+
+        k, z, Pk_mm = self.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'),
+                                                nonlinear=False)
+
+        if self.k is None:
+            self.k = k
+        else:
+            assert np.allclose(k, self.k) # check we are consistent with ks
+
+        if self.z is None:
+            self.z = z
+        else:
+            assert np.allclose(z, self.z) # check we are consistent with zs
 
         self.cleft_obj = RKECLEFT(self.k, Pk_mm[0],
                                   extrap_min=np.floor(np.log10(self.k[0])),
@@ -130,33 +142,37 @@ class LPT_bias(Bias):
 
         self.lpt_table = []
 
+        assert(z[0] == 0)
+        self.Dz = np.mean(Pk_mm / Pk_mm[:1], axis=-1)**0.5
+
         for D in self.Dz:
-            self.cleft_obj.make_ptable(D=D, kmin=self.k[0], kmax=self.k[-1], nk=self.k.size)
+            self.cleft_obj.make_ptable(D=D,
+                                       kmin=self.k[0],
+                                       kmax=self.k[-1],
+                                       nk=self.k.size)
             self.lpt_table.append(self.cleft_obj.pktable)
 
         self.lpt_table = np.array(self.lpt_table)
 
 
+    def _get_Pk_gg(self, **params_values_dict):
 
-    def _get_Pk_gg(self, Pk_mm, **params_values_dict):
-
-        b11 = params_values_dict['b1g1']# * np.ones_like(Pk_mm)
-        b21 = params_values_dict['b2g1']# * np.ones_like(Pk_mm)
-        bs1 = params_values_dict['bsg1']# * np.ones_like(Pk_mm)
-        b12 = params_values_dict['b1g2']# * np.ones_like(Pk_mm)
-        b22 = params_values_dict['b2g2']# * np.ones_like(Pk_mm)
-        bs2 = params_values_dict['bsg2']# * np.ones_like(Pk_mm)
+        b11 = params_values_dict['b1g1']
+        b21 = params_values_dict['b2g1']
+        # bs1 = params_values_dict['bsg1']
+        bs1 = 0.0 # ignore bs terms for now
+        b12 = params_values_dict['b1g2']
+        b22 = params_values_dict['b2g2']
+        # bs2 = params_values_dict['bsg2']
+        bs2 = 0.0 # ignore bs terms for now
 
         bL11 = b11 - 1
         bL12 = b12 - 1
 
-        if self.nonlinear:
-            pgg = (b11 * b12) * Pk_mm
-        else:
-            Pdmdm = self.lpt_table[:, :, 1]
-            Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
-            Pd1d1 = self.lpt_table[:, :, 3]
-            pgg = (Pdmdm + (bL11 + bL12) * Pdmd1 + (bL11 * bL12) * Pd1d1)
+        Pdmdm = self.lpt_table[:, :, 1]
+        Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
+        Pd1d1 = self.lpt_table[:, :, 3]
+        pgg = (Pdmdm + (bL11 + bL12) * Pdmd1 + (bL11 * bL12) * Pd1d1)
 
         Pdmd2 = 0.5 * self.lpt_table[:, :, 4]
         Pd1d2 = 0.5 * self.lpt_table[:, :, 5]
@@ -176,50 +192,47 @@ class LPT_bias(Bias):
 
         cleft_k = self.lpt_table[:, :, 0]
 
-        # pdb.set_trace()
-
-        # spectra = {r'$(1,1)$':self.lpt_table[:,:,1],r'$(1,b_1)$':0.5*self.lpt_table[:,:,2], r'$(b_1,b_1)$': self.lpt_table[:,:,3],r'$(1,b_2)$':0.5*self.lpt_table[:,:,4], r'$(b_1,b_2)$': 0.5*self.lpt_table[:,:,5],  r'$(b_2,b_2)$': self.lpt_table[:,:,6],r'$(1,b_s)$':0.5*self.lpt_table[:,:,7], r'$(b_1,b_s)$': 0.5*self.lpt_table[:,:,8],  r'$(b_2,b_s)$':0.5*self.lpt_table[:,:,9], r'$(b_s,b_s)$':self.lpt_table[:,:,10],r'$(1,b_3)$':0.5*self.lpt_table[:,:,11],r'$(b_1,b_3)$': 0.5*self.lpt_table[:,:,12]}
-
-        pgg_interpolated = interp1d(cleft_k[0], pgg, kind='cubic', fill_value='extrapolate')(self.k)
+        pgg_interpolated = interp1d(cleft_k[0], pgg,
+                                    kind='cubic',
+                                    fill_value='extrapolate')(self.k)
 
         return pgg_interpolated
 
-    def _get_Pk_gm(self, Pk_mm, **params_values_dict):
+    def _get_Pk_gm(self, **params_values_dict):
 
-        b1 = params_values_dict['b1g1']# * np.ones_like(Pk_mm)
-        b2 = params_values_dict['b2g1']# * np.ones_like(Pk_mm)
-        bs = params_values_dict['bsg1']# * np.ones_like(Pk_mm)
+        b1 = params_values_dict['b1g1']
+        b2 = params_values_dict['b2g1']
+        # bs = params_values_dict['bsg1']
+        bs = 0.0 # ignore bs terms for now
 
-        bL1 = b1-1
-        if self.nonlinear:
-            pgm = b1 * Pk_mm
-        else:
-            Pdmdm = self.lpt_table[:, :, 1]
-            Pdmd1 = 0.5*self.lpt_table[:, :, 2]
-            pgm = Pdmdm + bL1 * Pdmd1
+        bL1 = b1 - 1
 
-        Pdmd2 = 0.5*self.lpt_table[:, :, 4]
-        Pdms2 = 0.25*self.lpt_table[:, :, 7]
+        Pdmdm = self.lpt_table[:, :, 1]
+        Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
+        pgm = Pdmdm + bL1 * Pdmd1
+
+        Pdmd2 = 0.5 * self.lpt_table[:, :, 4]
+        Pdms2 = 0.25 * self.lpt_table[:, :, 7]
 
         pgm += (b2 * Pdmd2 +
                 bs * Pdms2)
 
         cleft_k = self.lpt_table[:, :, 0]
 
-        pgm_interpolated = interp1d(cleft_k[0], pgm, kind='cubic', fill_value='extrapolate')(self.k)
+        pgm_interpolated = interp1d(cleft_k[0], pgm,
+                                    kind='cubic',
+                                    fill_value='extrapolate')(self.k)
 
         return pgm_interpolated
 
     def calculate(self, state, want_derived=True, **params_values_dict):
 
-        Pk_mm = self._get_Pk_mm()
-
         try:
             self.cleft_obj
         except:
-            self.init_cleft(k_filter=1.e-1)
+            self.init_cleft(k_filter=1.e-2)
 
-        self.update_lpt_table(Pk_mm)
+        self.update_lpt_table()
 
-        state['Pk_gg_grid'] = self._get_Pk_gg(Pk_mm, **params_values_dict)
-        state['Pk_gm_grid'] = self._get_Pk_gm(Pk_mm, **params_values_dict)
+        state['Pk_gg_grid'] = self._get_Pk_gg(**params_values_dict)
+        state['Pk_gm_grid'] = self._get_Pk_gm(**params_values_dict)
