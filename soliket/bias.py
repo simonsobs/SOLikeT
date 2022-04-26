@@ -105,6 +105,29 @@ class Linear_bias(Bias):
 
 
 class LPT_bias(Bias):
+    '''Theory object for computation of galaxy-galaxy and galaxy-matter power spectra,
+    based on a Lagrangian Effective Field Theory model for the galaxy bias.
+
+    The model consists of:
+        - Input bias parameters in the Lagrangian definition.
+        - Use of the velocileptors code [1]_ to calculate power spectrum expansion terms
+        - Only terms up to b_1 and b_2 (i.e. no shear or third order terms)
+        - Use of HaloFit non-linear matter power spectrum to account for small-scales, 
+          replacing the use of EFT counter-terms. This follows the approach of
+          [2]_ (equation X) and [3]_ (table Y).
+        - The further substitutions P_{b_1} = 2 P^{HaloFit}_{mm}
+          and P_{b^2_1} = P^{HaloFit}_{mm} 
+
+    Or, in mathemetics:
+        P_{gm}(k) = P^{HaloFit}_{mm} + b_1 P^{HaloFit}_{mm} + \frac{b_2}{2}P_{b_{2}}
+        P_{mm}(k) = P^{HaloFit}_{mm} +
+                        2 b_1 P^{HaloFit}_{mm} + b^{2}_1 P^{HaloFit}_{mm} +
+                            b_1 b_2 P_{b_{1}b_{2}} + 
+                                b_2 P_{b_2} + b^2_2 P_{b^2_2}
+    where e.g. P_{b_1} is the \langle 1, \delta \rangle power spectrum and P_{b_2} is
+    the \langle 1, \delta^2 \rangle power spectrum.
+
+    '''
 
     params = {'b1g1': None,
               'b2g1': None,
@@ -172,10 +195,14 @@ class LPT_bias(Bias):
         bL11 = b11 - 1
         bL12 = b12 - 1
 
-        Pdmdm = self.lpt_table[:, :, 1]
-        Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
-        Pd1d1 = self.lpt_table[:, :, 3]
-        pgg = (Pdmdm + (bL11 + bL12) * Pdmd1 + (bL11 * bL12) * Pd1d1)
+        if self.nonlinear:
+            Pk_mm = self._get_Pk_mm(update_growth=False)
+            pgg = Pk_mm + (bL11 + bL12) * Pk_mm + (bL11 * bL12) * Pk_mm
+        else:
+            Pdmdm = self.lpt_table[:, :, 1]
+            Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
+            Pd1d1 = self.lpt_table[:, :, 3]
+            pgg = (Pdmdm + (bL11 + bL12) * Pdmd1 + (bL11 * bL12) * Pd1d1)
 
         Pdmd2 = 0.5 * self.lpt_table[:, :, 4]
         Pd1d2 = 0.5 * self.lpt_table[:, :, 5]
@@ -210,21 +237,37 @@ class LPT_bias(Bias):
 
         bL1 = b1 - 1
 
-        Pdmdm = self.lpt_table[:, :, 1]
-        Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
-        pgm = Pdmdm + bL1 * Pdmd1
-
+        cleft_k = self.lpt_table[:, :, 0]
         Pdmd2 = 0.5 * self.lpt_table[:, :, 4]
         Pdms2 = 0.25 * self.lpt_table[:, :, 7]
 
-        pgm += (b2 * Pdmd2 +
-                bs * Pdms2)
+        pgm_higher_order = (b2 * Pdmd2 +
+                            bs * Pdms2)
 
-        cleft_k = self.lpt_table[:, :, 0]
+        if self.nonlinear:
+            # here the nonlinear matter-matter power spectrum from the upstream Theory
+            # (i.e. HaloFit) is used for leading order terms, so only higher order terms
+            # come from the lpt table and hence need interpolation.
+            pgm_higher_order_interp = interp1d(cleft_k[0], pgm_higher_order,
+                                               kind='cubic',
+                                               fill_value='extrapolate')(self.k)
 
-        pgm_interpolated = interp1d(cleft_k[0], pgm,
-                                    kind='cubic',
-                                    fill_value='extrapolate')(self.k)
+            Pk_mm = self._get_Pk_mm(update_growth=False)
+            pgm_lin = Pk_mm + bL1 * Pk_mm
+
+            pgm_interpolated = pgm_lin + pgm_higher_order_interp
+
+        else:
+            # here the lpt table is used for all order terms, so all need interpolation.
+            Pdmdm = self.lpt_table[:, :, 1]
+            Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
+            pgm_lin = Pdmdm + bL1 * Pdmd1
+
+            pgm = pgm_lin + pgm_higher_order
+
+            pgm_interpolated = interp1d(cleft_k[0], pgm,
+                                        kind='cubic',
+                                        fill_value='extrapolate')(self.k)
 
         return pgm_interpolated
 
