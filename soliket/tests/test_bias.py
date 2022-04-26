@@ -90,6 +90,7 @@ def test_LPT_bias_model():
 
     model = get_model(info)  # noqa F841
 
+
 @pytest.mark.parametrize("nonlinear_model", [True, False])
 def test_LPT_bias_compute_grid(nonlinear_model):
 
@@ -118,9 +119,10 @@ def test_LPT_bias_compute_grid(nonlinear_model):
     Pk_gg = lhood.provider.get_Pk_gg_grid()
     Pk_gm = lhood.provider.get_Pk_gm_grid()
 
-    # k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'),
+    # k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(var_pair=('delta_tot','delta_tot'),
     #                                              nonlinear=False)
-    # k_nl, z_nl, Pk_mm_nl = lhood.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'),
+    # k_nl, z_nl, Pk_mm_nl = lhood.provider.get_Pk_grid(var_pair=('delta_tot',
+    #                                                             'delta_tot'),
     #                                                   nonlinear=True)
 
     # from matplotlib import pyplot as plt
@@ -130,8 +132,10 @@ def test_LPT_bias_compute_grid(nonlinear_model):
     #     plt.loglog(k_nl, Pk_mm_nl[0], label='$P_{mm, HaloFit}$')
     # else:
     #     plot_tag = 'velocileptors'
-    # plt.loglog(k_nl, Pk_gm[0], '-.', label='$P_{gm}$'+' ({} leading order)'.format(plot_tag))
-    # plt.loglog(k_nl, Pk_gg[0], '--', label='$P_{gg}$'+' ({} leading order)'.format(plot_tag))
+    # plt.loglog(k_nl, Pk_gm[0], '-.',
+    #            label='$P_{gm}$'+' ({} leading order)'.format(plot_tag))
+    # plt.loglog(k_nl, Pk_gg[0], '--',
+    #            label='$P_{gg}$'+' ({} leading order)'.format(plot_tag))
     # plt.xlabel('$k\\,$[Mpc$^{-1}$]')
     # plt.ylabel('$P(k)$')
     # plt.legend()
@@ -145,4 +149,3 @@ def test_LPT_bias_compute_grid(nonlinear_model):
     else:
         assert np.isclose(Pk_gg.sum(), 493325841.6713596)
         assert np.isclose(Pk_gm.sum(), 429302962.1718302)
-

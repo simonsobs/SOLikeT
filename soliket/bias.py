@@ -111,21 +111,51 @@ class LPT_bias(Bias):
     The model consists of:
         - Input bias parameters in the Lagrangian definition.
         - Use of the velocileptors code [1]_ to calculate power spectrum expansion terms
-        - Only terms up to b_1 and b_2 (i.e. no shear or third order terms)
-        - Use of HaloFit non-linear matter power spectrum to account for small-scales, 
-          replacing the use of EFT counter-terms. This follows the approach of
-          [2]_ (equation X) and [3]_ (table Y).
-        - The further substitutions P_{b_1} = 2 P^{HaloFit}_{mm}
-          and P_{b^2_1} = P^{HaloFit}_{mm} 
+        - Only terms up to :math:`b_1` and :math:`b_2` (i.e. no shear or
+          third order terms)
 
+    If nonlinear = True we make use of the following, which is the approach of
+    [2]_ (equation 3.1-3.7) and [3]_ (Model C of Table 1).:
+        - HaloFit non-linear matter power spectrum to account for small-scales,
+          replacing the use of EFT counter-terms in the leading order terms.
+        - The further substitutions :math:`P_{b_1} = 2 P^{HaloFit}_{mm}`
+          and :math:`P_{b^2_1} = P^{HaloFit}_{mm}`.
     Or, in mathemetics:
+
+    .. math::
         P_{gm}(k) = P^{HaloFit}_{mm} + b_1 P^{HaloFit}_{mm} + \frac{b_2}{2}P_{b_{2}}
-        P_{mm}(k) = P^{HaloFit}_{mm} +
-                        2 b_1 P^{HaloFit}_{mm} + b^{2}_1 P^{HaloFit}_{mm} +
-                            b_1 b_2 P_{b_{1}b_{2}} + 
-                                b_2 P_{b_2} + b^2_2 P_{b^2_2}
-    where e.g. P_{b_1} is the \langle 1, \delta \rangle power spectrum and P_{b_2} is
-    the \langle 1, \delta^2 \rangle power spectrum.
+
+        P_{mm}(k) =& P^{HaloFit}_{mm} + \\
+                   & 2 b_1 P^{HaloFit}_{mm} + b^{2}_1 P^{HaloFit}_{mm} + \\
+                   & b_1 b_2 P_{b_{1}b_{2}} + \\
+                   & b_2 P_{b_2} + b^2_2 P_{b^2_2}
+
+    where e.g. :math:`P_{b_1}` is the :math:`\\langle 1, \\delta \\rangle` power spectrum
+    and :math:`P_{b_2}` is the :math:`\\langle 1, \\delta^2 \\rangle` power spectrum.
+
+    Parameters
+    ----------
+
+    nonlinear : bool
+        If True, use the non-linear matter power spectrum as calculated by an upstream
+        Theory when calculating the leading order terms (as detailed above). Otherwise
+        use velocileptors LPT terms for leading order.
+
+    b1g1 : float
+        Leading order Lagrangian bias value for galaxy sample 1.
+    b1g2 : float
+        Leading order Lagrangian bias value for galaxy sample 2.
+    b2g1 : float
+        Second order Lagrangian bias value for galaxy sample 1.
+    b2g2 : float
+        Second order Lagrangian bias value for galaxy sample 2.
+
+
+    References
+    ----------
+    .. [1] https://github.com/sfschen/velocileptors
+    .. [2] Krolewski, Ferraro and White, 2021, arXiv:2105.03421
+    .. [3] Pandey et al 2020, arXiv:2008.05991
 
     '''
 
@@ -232,7 +262,7 @@ class LPT_bias(Bias):
             Pd1d1 = self.lpt_table[:, :, 3]
             pgg_leading_order = (Pdmdm + (bL11 + bL12) * Pdmd1 + (bL11 * bL12) * Pd1d1)
 
-            pgg = pgg_leading_order + pgg_higher_order 
+            pgg = pgg_leading_order + pgg_higher_order
 
             pgg_interpolated = interp1d(cleft_k[0], pgg,
                                         kind='cubic',
