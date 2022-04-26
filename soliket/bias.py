@@ -195,15 +195,6 @@ class LPT_bias(Bias):
         bL11 = b11 - 1
         bL12 = b12 - 1
 
-        if self.nonlinear:
-            Pk_mm = self._get_Pk_mm(update_growth=False)
-            pgg = Pk_mm + (bL11 + bL12) * Pk_mm + (bL11 * bL12) * Pk_mm
-        else:
-            Pdmdm = self.lpt_table[:, :, 1]
-            Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
-            Pd1d1 = self.lpt_table[:, :, 3]
-            pgg = (Pdmdm + (bL11 + bL12) * Pdmd1 + (bL11 * bL12) * Pd1d1)
-
         Pdmd2 = 0.5 * self.lpt_table[:, :, 4]
         Pd1d2 = 0.5 * self.lpt_table[:, :, 5]
         Pd2d2 = self.lpt_table[:, :, 6] * self.wk_low[None, :]
@@ -212,19 +203,40 @@ class LPT_bias(Bias):
         Pd2s2 = 0.25 * self.lpt_table[:, :, 9] * self.wk_low[None, :]
         Ps2s2 = 0.25 * self.lpt_table[:, :, 10] * self.wk_low[None, :]
 
-        pgg += ((b21 + b22) * Pdmd2 +
-                (bs1 + bs2) * Pdms2 +
-                (bL11 * b22 + bL12 * b21) * Pd1d2 +
-                (bL11 * bs2 + bL12 * bs1) * Pd1s2 +
-                (b21 * b22) * Pd2d2 +
-                (b21 * bs2 + b22 * bs1) * Pd2s2 +
-                (bs1 * bs2) * Ps2s2)
+        pgg_higher_order = ((b21 + b22) * Pdmd2 +
+                            (bs1 + bs2) * Pdms2 +
+                            (bL11 * b22 + bL12 * b21) * Pd1d2 +
+                            (bL11 * bs2 + bL12 * bs1) * Pd1s2 +
+                            (b21 * b22) * Pd2d2 +
+                            (b21 * bs2 + b22 * bs1) * Pd2s2 +
+                            (bs1 * bs2) * Ps2s2)
 
         cleft_k = self.lpt_table[:, :, 0]
 
-        pgg_interpolated = interp1d(cleft_k[0], pgg,
-                                    kind='cubic',
-                                    fill_value='extrapolate')(self.k)
+        if self.nonlinear:
+            # Nonlinear matter-matter power spectrum from the upstream Theory
+            # (i.e. HaloFit) is used for leading order terms, so only higher order
+            # terms come from the lpt table and hence need interpolation.
+            pgg_higher_order_interp = interp1d(cleft_k[0], pgg_higher_order,
+                                               kind='cubic',
+                                               fill_value='extrapolate')(self.k)
+
+            Pk_mm = self._get_Pk_mm(update_growth=False)
+            pgg_leading_order = Pk_mm + (bL11 + bL12) * Pk_mm + (bL11 * bL12) * Pk_mm
+
+            pgg_interpolated = pgg_leading_order + pgg_higher_order_interp
+
+        else:
+            Pdmdm = self.lpt_table[:, :, 1]
+            Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
+            Pd1d1 = self.lpt_table[:, :, 3]
+            pgg_leading_order = (Pdmdm + (bL11 + bL12) * Pdmd1 + (bL11 * bL12) * Pd1d1)
+
+            pgg = pgg_leading_order + pgm_higher_order 
+
+            pgg_interpolated = interp1d(cleft_k[0], pgg,
+                                        kind='cubic',
+                                        fill_value='extrapolate')(self.k)
 
         return pgg_interpolated
 
@@ -245,25 +257,25 @@ class LPT_bias(Bias):
                             bs * Pdms2)
 
         if self.nonlinear:
-            # here the nonlinear matter-matter power spectrum from the upstream Theory
-            # (i.e. HaloFit) is used for leading order terms, so only higher order terms
-            # come from the lpt table and hence need interpolation.
+            # Nonlinear matter-matter power spectrum from the upstream Theory
+            # (i.e. HaloFit) is used for leading order terms, so only higher order
+            # terms come from the lpt table and hence need interpolation.
             pgm_higher_order_interp = interp1d(cleft_k[0], pgm_higher_order,
                                                kind='cubic',
                                                fill_value='extrapolate')(self.k)
 
             Pk_mm = self._get_Pk_mm(update_growth=False)
-            pgm_lin = Pk_mm + bL1 * Pk_mm
+            pgm_leading_order = Pk_mm + bL1 * Pk_mm
 
-            pgm_interpolated = pgm_lin + pgm_higher_order_interp
+            pgm_interpolated = pgm_leading_order + pgm_higher_order_interp
 
         else:
             # here the lpt table is used for all order terms, so all need interpolation.
             Pdmdm = self.lpt_table[:, :, 1]
             Pdmd1 = 0.5 * self.lpt_table[:, :, 2]
-            pgm_lin = Pdmdm + bL1 * Pdmd1
+            pgm_leading_order = Pdmdm + bL1 * Pdmd1
 
-            pgm = pgm_lin + pgm_higher_order
+            pgm = pgm_leading_order + pgm_higher_order
 
             pgm_interpolated = interp1d(cleft_k[0], pgm,
                                         kind='cubic',
