@@ -80,6 +80,7 @@ def test_linear_bias_compute_grid():
 
 def test_LPT_bias_model():
 
+    skip_lpt = pytest.importorskip("velocileptors") # noqa F841
     from soliket.bias import LPT_bias
 
     info["theory"] = {
@@ -92,6 +93,7 @@ def test_LPT_bias_model():
 
 def test_LPT_bias_compute_grid():
 
+    skip_lpt = pytest.importorskip("velocileptors") # noqa F841
     from soliket.bias import LPT_bias
 
     info["theory"] = {

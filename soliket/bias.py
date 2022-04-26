@@ -9,7 +9,10 @@ from scipy.interpolate import interp1d
 
 from cobaya.theory import Theory
 from cobaya.log import LoggedError
-from velocileptors.EPT.cleft_kexpanded_resummed_fftw import RKECLEFT
+try:
+    from velocileptors.EPT.cleft_kexpanded_resummed_fftw import RKECLEFT
+except:
+    "velocileptors import failed, LPT_bias will be unavailable"
 
 
 class Bias(Theory):
