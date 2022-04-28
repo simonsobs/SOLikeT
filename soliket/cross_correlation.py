@@ -14,14 +14,39 @@ import sacc
 
 class CrossCorrelationLikelihood(GaussianLikelihood):
     def initialize(self):
-        self.dndz = np.loadtxt(self.dndz_file)
 
-        x, y, dy = self._get_data()
-        cov = np.diag(dy**2)
-        self.data = GaussianData("CrossCorrelation", x, y, cov)
+        if self.datapath is None:
+            self.dndz = np.loadtxt(self.dndz_file)
+
+            x, y, dy = self._get_data()
+            cov = np.diag(dy**2)
+            self.data = GaussianData("CrossCorrelation", x, y, cov)
+        else:
+            self._get_sacc_data()
 
     def get_requirements(self):
         return {"CCL": {"kmax": 10, "nonlinear": True}}
+
+    def _get_sacc_data(self, **params_values):
+
+        self.sacc_data = sacc.Sacc.load_fits(self.datapath)
+
+        self.x = self._construct_ell_bins()
+        self.y = self.sacc_data.mean
+        self.cov = self.sacc_data.covariance.covmat
+
+        self.data = GaussianData(self.name, self.x, self.y, self.cov)
+
+    def _construct_ell_bins(self):
+
+        ell_eff = []
+
+        for tracer_comb in self.sacc_data.get_tracer_combinations():
+            ind = self.sacc_data.indices(tracers=tracer_comb)
+            ell = np.array(self.sacc_data._get_tags_by_index(["ell"], ind)[0])
+            ell_eff.append(ell)
+
+        return np.concatenate(ell_eff)
 
     def _get_data(self, **params_values):
         data_auto = np.loadtxt(self.auto_file)
@@ -70,32 +95,6 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
 
 
 class ShearKappaLikelihood(CrossCorrelationLikelihood):
-    def initialize(self):
-
-        name: str = "ShearKappa"
-        self.log.info("Initialising")
-        self._get_data()
-
-    def _construct_ell_bins(self):
-
-        ell_eff = []
-
-        for tracer_comb in self.sacc_data.get_tracer_combinations():
-            ind = self.sacc_data.indices(tracers=tracer_comb)
-            ell = np.array(self.sacc_data._get_tags_by_index(["ell"], ind)[0])
-            ell_eff.append(ell)
-
-        return np.concatenate(ell_eff)
-
-    def _get_data(self, **params_values):
-
-        self.sacc_data = sacc.Sacc.load_fits(self.datapath)
-
-        self.x = self._construct_ell_bins()
-        self.y = self.sacc_data.mean
-        self.cov = self.sacc_data.covariance.covmat
-
-        self.data = GaussianData(self.name, self.x, self.y, self.cov)
 
     def _get_theory(self, **params_values):
 
