@@ -29,11 +29,13 @@ def test_clusters():
                     "dark_energy_model": "ppf",
                 }
             },
-            "soliket.CCL": {"stop_at_error": True},
+            # "soliket.CCL": {"stop_at_error": True},
         },
     }
 
     from cobaya.model import get_model
+
+    print('starting test')
 
     model_fiducial = get_model(info_fiducial)
 
@@ -45,5 +47,7 @@ def test_clusters():
     assert np.isfinite(lnl)
 
     like = model_fiducial.likelihood["soliket.ClusterLikelihood"]
+    print(like,lnl)
 
     assert like._get_n_expected() > 40
+test_clusters()

@@ -6,7 +6,7 @@ import astropy.io.fits as pyfits
 # from astLib import astWCS
 from astropy.io import fits
 import astropy.table as atpy
-
+from astropy.wcs import WCS
 
 def read_clust_cat(fitsfile, qmin):
     list = fits.open(fitsfile)
@@ -53,7 +53,8 @@ def loadAreaMask(extName, DIR):
     """
     areaImg = pyfits.open(os.path.join(DIR, "areaMask%s.fits.gz" % (extName)))
     areaMap = areaImg[0].data
-    wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    # wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    wcs = WCS(areaImg[0].header)
     areaImg.close()
 
     return areaMap, wcs
@@ -65,7 +66,8 @@ def loadRMSmap(extName, DIR):
     """
     areaImg = pyfits.open(os.path.join(DIR, "RMSMap_Arnaud_M2e14_z0p4%s.fits.gz" % (extName)))
     areaMap = areaImg[0].data
-    wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    # wcs = astWCS.WCS(areaImg[0].header, mode="pyfits")
+    wcs = WCS(areaImg[0].header)
     areaImg.close()
 
     return areaMap, wcs
