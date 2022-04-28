@@ -21,8 +21,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
         self.data = GaussianData("CrossCorrelation", x, y, cov)
 
     def get_requirements(self):
-        return {'CCL': {"kmax": 10,
-                        "nonlinear": True}}
+        return {"CCL": {"kmax": 10, "nonlinear": True}}
 
     def _get_data(self, **params_values):
         data_auto = np.loadtxt(self.auto_file)
@@ -49,17 +48,18 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
 
 class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
-
     def _get_theory(self, **params_values):
-        cosmo = self.provider.get_CCL()['cosmo']
+        cosmo = self.provider.get_CCL()["cosmo"]
 
-        tracer_g = ccl.NumberCountsTracer(cosmo, has_rsd=False, dndz=self.dndz.T,
+        tracer_g = ccl.NumberCountsTracer(cosmo,
+                                          has_rsd=False,
+                                          dndz=self.dndz.T,
                                           bias=(self.dndz[:, 0],
-                                                params_values['b1'] *
-                                                np.ones(len(self.dndz[:, 0]))),
+                                                params_values["b1"] *
+                                                    np.ones(len(self.dndz[:, 0]))),
                                           mag_bias=(self.dndz[:, 0],
-                                                    params_values['s1'] *
-                                                    np.ones(len(self.dndz[:, 0])))
+                                                    params_values["s1"] *
+                                                        np.ones(len(self.dndz[:, 0])))
                                           )
         tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
 
@@ -70,21 +70,19 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
 
 
 class ShearKappaLikelihood(CrossCorrelationLikelihood):
-
     def initialize(self):
 
         name: str = "ShearKappa"
-        self.log.info('Initialising')
-
+        self.log.info("Initialising")
         self._get_data()
 
     def _construct_ell_bins(self):
 
         ell_eff = []
-        
+
         for tracer_comb in self.sacc_data.get_tracer_combinations():
             ind = self.sacc_data.indices(tracers=tracer_comb)
-            ell = np.array(self.sacc_data._get_tags_by_index(['ell'], ind)[0])
+            ell = np.array(self.sacc_data._get_tags_by_index(["ell"], ind)[0])
             ell_eff.append(ell)
 
         return np.concatenate(ell_eff)
@@ -101,29 +99,34 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
     def _get_theory(self, **params_values):
 
-        cosmo = self.provider.get_CCL()['cosmo']
+        cosmo = self.provider.get_CCL()["cosmo"]
 
         cl_binned_list = []
 
         for tracer_comb in self.sacc_data.get_tracer_combinations():
 
-            if self.sacc_data.tracers[tracer_comb[0]].quantity == 'cmb_convergence':
+            if self.sacc_data.tracers[tracer_comb[0]].quantity == "cmb_convergence":
                 tracer1 = ccl.CMBLensingTracer(cosmo, z_source=1060)
-            elif self.sacc_data.tracers[tracer_comb[0]].quantity == 'galaxy_shear':
+            elif self.sacc_data.tracers[tracer_comb[0]].quantity == "galaxy_shear":
                 tracer1 = ccl.WeakLensingTracer(cosmo,
-                                                dndz=(self.sacc_data.tracers[tracer_comb[0]].z ,
-                                                      self.sacc_data.tracers[tracer_comb[0]].nz),
+                                                dndz=(
+                                                self.sacc_data.tracers[tracer_comb[0]].z,
+                                                self.sacc_data.tracers[tracer_comb[0]].nz,
+                                                ),
                                                 ia_bias=None)
 
-            if self.sacc_data.tracers[tracer_comb[1]].quantity == 'cmb_convergence':
+            if self.sacc_data.tracers[tracer_comb[1]].quantity == "cmb_convergence":
                 tracer2 = ccl.CMBLensingTracer(cosmo, z_source=1060)
-            elif self.sacc_data.tracers[tracer_comb[1]].quantity == 'galaxy_shear':
+            elif self.sacc_data.tracers[tracer_comb[1]].quantity == "galaxy_shear":
                 tracer2 = ccl.WeakLensingTracer(cosmo,
-                                                dndz=(self.sacc_data.tracers[tracer_comb[1]].z ,
-                                                      self.sacc_data.tracers[tracer_comb[1]].nz),
+                                                dndz=(
+                                                self.sacc_data.tracers[tracer_comb[1]].z,
+                                                self.sacc_data.tracers[tracer_comb[1]].nz,
+                                                ),
                                                 ia_bias=None)
 
-            bpw = self.sacc_data.get_bandpower_windows(self.sacc_data.indices(tracers=tracer_comb))
+            bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
+            bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
             ells_theory = bpw.values
             w_bins = bpw.weight.T
 
@@ -136,22 +139,3 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
         cl_binned_total = np.concatenate(cl_binned_list)
 
         return cl_binned_total
-
-    # def _get_theory(self, **params_values):
-    #     cosmo = self.provider.get_CCL()['cosmo']
-
-    #     tracer_gamma = ccl.WeakLensingTracer(cosmo, dndz=self.dndz.T,
-    #                                          ia_bias=(self.dndz[:, 0],
-    #                                                   params_values['A_IA'] *
-    #                                                   np.ones(len(self.dndz[:, 0]))),
-    #                                          )
-    #     tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
-
-    #     cl_gammagamma = ccl.cls.angular_cl(cosmo,
-    #                                        tracer_gamma, tracer_gamma,
-    #                                        self.ell_auto)
-    #     cl_kgamma = ccl.cls.angular_cl(cosmo,
-    #                                    tracer_k, tracer_gamma,
-    #                                    self.ell_cross)
-
-    #     return np.concatenate([cl_gammagamma, cl_kgamma])
