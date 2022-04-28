@@ -3,7 +3,10 @@ from .gaussian import GaussianLikelihood, MultiGaussianLikelihood  # noqa: F401
 from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401
 from .clusters import ClusterLikelihood  # noqa: F401
 from .mflike import MFLike  # noqa: F401
+from .mflike import TheoryForge_MFLike
 from .xcorr import XcorrLikelihood  # noqa: F401
+from .foreground import Foreground
+from .bandpass import BandPass
 
 try:
     import pyccl as ccl  # noqa: F401

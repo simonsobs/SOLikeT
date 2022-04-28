@@ -1,0 +1,17 @@
+data_folder: MFLike/v0.6
+
+band_integration:
+  external_bandpass: False
+  nsteps: 1
+  bandwidth: 0
+
+params:
+  bandint_shift_93:
+    value: 0
+    latex: \Delta_{\rm band}^{93}
+  bandint_shift_145:
+    value: 0
+    latex: \Delta_{\rm band}^{145}
+  bandint_shift_225:
+    value: 0
+    latex: \Delta_{\rm band}^{225}
