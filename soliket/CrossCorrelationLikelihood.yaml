@@ -3,6 +3,7 @@ cross_file: soliket/data/xcorr_simulated/clkg_noiseless.txt
 dndz_file: soliket/data/xcorr_simulated/dndz.txt
 
 datapath: soliket/tests/data/cs82_gs-planck_kappa.sim.sacc.fits
+use_tracers: ck_planck,gs_cs82
 
 params:
   b1: 

@@ -48,7 +48,7 @@ def test_shearkappa():
                        "A_IA": 0.0},
             "likelihood": {"ShearKappaLikelihood":
                             {"external": ShearKappaLikelihood,
-                             'datapath': '/Users/ianharrison/Dropbox/code_cdf/act-x-des/desgamma-x-actkappa/data/des_s-act_kappa.FLASK-sim_mockdata_and_cov_exact_win.fits'
+                             # 'datapath': '/Users/ianharrison/Dropbox/code_cdf/act-x-des/desgamma-x-actkappa/data/des_s-act_kappa.FLASK-sim_mockdata_and_cov_exact_win.fits'
                              }
                           },
             "theory": {
@@ -62,56 +62,56 @@ def test_shearkappa():
 
     assert np.isfinite(loglikes)
 
-    lhood = model.likelihood['ShearKappaLikelihood']
+    # lhood = model.likelihood['ShearKappaLikelihood']
 
-    cl_binned = lhood._get_theory(**info["params"])
+    # cl_binned = lhood._get_theory(**info["params"])
 
-    # ell_unbinned = unbinned[0]
-    # cl_unbinned = unbinned[1]
+    # # ell_unbinned = unbinned[0]
+    # # cl_unbinned = unbinned[1]
 
-    # ell_unbinned = ell_unbinned.reshape(4, 1951)
-    # cl_unbinned = cl_unbinned.reshape(4, 1951)
-    cl_binned = cl_binned.reshape(4, 13)
+    # # ell_unbinned = ell_unbinned.reshape(4, 1951)
+    # # cl_unbinned = cl_unbinned.reshape(4, 1951)
+    # cl_binned = cl_binned.reshape(4, 13)
 
-    import sacc
+    # import sacc
 
-    s = sacc.Sacc.load_fits('/Users/ianharrison/Dropbox/code_cdf/act-x-des/desgamma-x-actkappa/data/des_s-act_kappa.FLASK-sim_mockdata_and_cov_exact_win.fits')
+    # s = sacc.Sacc.load_fits('/Users/ianharrison/Dropbox/code_cdf/act-x-des/desgamma-x-actkappa/data/des_s-act_kappa.FLASK-sim_mockdata_and_cov_exact_win.fits')
 
-    from matplotlib import pyplot as plt
+    # from matplotlib import pyplot as plt
 
-    # import pdb
-    # pdb.set_trace()
+    # # import pdb
+    # # pdb.set_trace()
 
-    plt.close(1)
-    plt.figure(1, figsize=(4.*4.5, 3.75))
+    # plt.close(1)
+    # plt.figure(1, figsize=(4.*4.5, 3.75))
 
-    plt.suptitle(r'ACT $\times$ DES (FLASK sim)')
+    # plt.suptitle(r'ACT $\times$ DES (FLASK sim)')
 
-    nbins_des = 4
-    ell_max = 1950
+    # nbins_des = 4
+    # ell_max = 1950
 
-    for ibin in np.arange(1,nbins_des+1):
-        plt.subplot(1,4,ibin)
-        plt.title(r'$\kappa \gamma_{}$'.format(ibin))
-        ell, cl, cov = s.get_ell_cl('cl_20', 'gs_des_bin{}'.format(ibin), 'ck_act', return_cov=True)
-        cl_err = np.sqrt(np.diag(cov))
-        # plt.plot(ell_theory, 1.e5*ell_theory*cl_gk_theory , '--', c='C1')
-        plt.plot(ell, cl, 'o', ms=3, c='C1', label='Data')
-        plt.errorbar(ell, cl, yerr=cl_err, fmt='none', c='C1')
+    # for ibin in np.arange(1,nbins_des+1):
+    #     plt.subplot(1,4,ibin)
+    #     plt.title(r'$\kappa \gamma_{}$'.format(ibin))
+    #     ell, cl, cov = s.get_ell_cl('cl_20', 'gs_des_bin{}'.format(ibin), 'ck_act', return_cov=True)
+    #     cl_err = np.sqrt(np.diag(cov))
+    #     # plt.plot(ell_theory, 1.e5*ell_theory*cl_gk_theory , '--', c='C1')
+    #     plt.plot(ell, cl, 'o', ms=3, c='C1', label='Data')
+    #     plt.errorbar(ell, cl, yerr=cl_err, fmt='none', c='C1')
 
-        # plt.plot(ell_unbinned, cl_unbinned[ibin-1], '-', ms=3, c='C2', label='SOLikeT ShearKappaLikelihood')
-        plt.plot(ell, cl_binned[ibin-1], '.-', ms=3, c='C2', label='SOLikeT ShearKappaLikelihood')
+    #     # plt.plot(ell_unbinned, cl_unbinned[ibin-1], '-', ms=3, c='C2', label='SOLikeT ShearKappaLikelihood')
+    #     plt.plot(ell, cl_binned[ibin-1], '.-', ms=3, c='C2', label='SOLikeT ShearKappaLikelihood')
 
-        plt.xlim([1,ell_max])
-        plt.ylim([1.e-11, 1.e-7])
-        plt.xlabel(r'$\ell$')
-        plt.yscale('log')
-        plt.axhline(0, color='k', linestyle='dashed', alpha=0.4)
-        if ibin == 1:
-            plt.ylabel(r'$C_\ell$')
-            plt.legend()
+    #     plt.xlim([1,ell_max])
+    #     plt.ylim([1.e-11, 1.e-7])
+    #     plt.xlabel(r'$\ell$')
+    #     plt.yscale('log')
+    #     plt.axhline(0, color='k', linestyle='dashed', alpha=0.4)
+    #     if ibin == 1:
+    #         plt.ylabel(r'$C_\ell$')
+    #         plt.legend()
 
-    plt.savefig('./des-act-flask.png', dpi=300, bbox_inches='tight')
+    # plt.savefig('./des-act-flask.png', dpi=300, bbox_inches='tight')
 
     # lhood = model.likelihood['ShearKappaLikelihood']
 

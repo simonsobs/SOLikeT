@@ -30,6 +30,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     def _get_sacc_data(self, **params_values):
 
         self.sacc_data = sacc.Sacc.load_fits(self.datapath)
+        self.sacc_data.keep_selection(tracers=self.use_tracers.split(','))
 
         self.x = self._construct_ell_bins()
         self.y = self.sacc_data.mean
