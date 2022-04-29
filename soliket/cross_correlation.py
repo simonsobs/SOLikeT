@@ -136,6 +136,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
             cl_binned_list.append(cl_binned)
 
+
         cl_binned_total = np.concatenate(cl_binned_list)
 
         return cl_binned_total

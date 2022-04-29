@@ -38,8 +38,7 @@ def test_shearkappa():
         "n_s": 0.964
     }
 
-    info = {"params": {#"omch2": cosmo_params['Omega_c'] * cosmo_params['h'] ** 2.,
-                       "omch2": 0.1200,
+    info = {"params": {"omch2": 0.1200,
                        "ombh2": 0.0223,
                        "H0": cosmo_params['h'] * 100,
                        "ns": cosmo_params['n_s'],
@@ -48,7 +47,6 @@ def test_shearkappa():
                        "A_IA": 0.0},
             "likelihood": {"ShearKappaLikelihood":
                             {"external": ShearKappaLikelihood,
-                             # 'datapath': '/Users/ianharrison/Dropbox/code_cdf/act-x-des/desgamma-x-actkappa/data/des_s-act_kappa.FLASK-sim_mockdata_and_cov_exact_win.fits'
                              }
                           },
             "theory": {
@@ -62,9 +60,9 @@ def test_shearkappa():
 
     assert np.isfinite(loglikes)
 
-    # lhood = model.likelihood['ShearKappaLikelihood']
+    lhood = model.likelihood['ShearKappaLikelihood']
 
-    # cl_binned = lhood._get_theory(**info["params"])
+    cl_binned = lhood._get_theory(**info["params"])
 
     # # ell_unbinned = unbinned[0]
     # # cl_unbinned = unbinned[1]
@@ -73,17 +71,35 @@ def test_shearkappa():
     # # cl_unbinned = cl_unbinned.reshape(4, 1951)
     # cl_binned = cl_binned.reshape(4, 13)
 
-    # import sacc
+    import sacc
 
-    # s = sacc.Sacc.load_fits('/Users/ianharrison/Dropbox/code_cdf/act-x-des/desgamma-x-actkappa/data/des_s-act_kappa.FLASK-sim_mockdata_and_cov_exact_win.fits')
+    data = sacc.Sacc.load_fits(lhood.datapath)
+    data.keep_selection(tracers=lhood.use_tracers.split(','))
 
-    # from matplotlib import pyplot as plt
+    tracer_combs = data.get_tracer_combinations()[0]
+    ell, cl, cov = data.get_ell_cl('cl_20', tracer_combs[0], tracer_combs[1], return_cov=True)
+    cl_err = np.sqrt(np.diag(cov))
+
+    from matplotlib import pyplot as plt
 
     # # import pdb
     # # pdb.set_trace()
 
-    # plt.close(1)
-    # plt.figure(1, figsize=(4.*4.5, 3.75))
+    plt.close(1)
+    plt.figure(1, figsize=(4.5, 3.75))
+    plt.title(r'$\kappa \gamma$')
+    plt.plot(ell, cl, 'o', ms=3, c='C1', label='Data')
+    # plt.errorbar(ell, cl, yerr=cl_err, fmt='none', c='C1')
+    plt.plot(ell, cl_binned, '.-', ms=3, c='C2', label='SOLikeT ShearKappaLikelihood')
+
+    plt.xlim([1,ell.max()])
+    # plt.ylim([1.e-11, 1.e-7])
+    plt.xlabel(r'$\ell$')
+    plt.yscale('log')
+    plt.axhline(0, color='k', linestyle='dashed', alpha=0.4)
+    plt.ylabel(r'$C_\ell$')
+
+    plt.savefig('./des-act.png', dpi=300, bbox_inches='tight')
 
     # plt.suptitle(r'ACT $\times$ DES (FLASK sim)')
 
