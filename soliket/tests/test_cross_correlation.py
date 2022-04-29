@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from soliket.ccl import CCL
 from cobaya.model import get_model
 
@@ -35,11 +36,15 @@ def test_galaxykappa_model():
 
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
-    info["likelihood"] = {"GalaxyKappaLikelihood": GalaxyKappaLikelihood}
+    info["likelihood"] = {
+        "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
+                                  "datapath": None}
+    }
 
     model = get_model(info) # noqa F841
 
 
+@pytest.mark.xfail(reason="data file not in repo")
 def test_shearkappa_model():
 
     from soliket.cross_correlation import ShearKappaLikelihood
@@ -54,7 +59,8 @@ def test_galaxykappa_like():
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
     info["likelihood"] = {
-        "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood, "datapath": None}
+        "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
+                                  "datapath": None}
     }
 
     model = get_model(info)
@@ -62,6 +68,7 @@ def test_galaxykappa_like():
     assert np.isclose(loglikes[0], 88.2, atol=0.2, rtol=0.0)
 
 
+@pytest.mark.xfail(reason="data file not in repo")
 def test_shearkappa_like():
 
     from soliket.cross_correlation import ShearKappaLikelihood
