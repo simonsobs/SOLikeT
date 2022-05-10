@@ -126,9 +126,10 @@ def test_LPT_bias_compute_grid(nonlinear_model):
         assert np.isclose(Pk_gg.sum(), 493325841.6713596)
         assert np.isclose(Pk_gm.sum(), 429302962.1718302)
 
+
 @pytest.mark.parametrize("nonlinear_model", [True, False])
 def test_LPT_bias_compute_interpolator(nonlinear_model):
-    
+
     skip_lpt = pytest.importorskip("velocileptors") # noqa F841
     from soliket.bias import LPT_bias
 
