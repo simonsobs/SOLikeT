@@ -64,28 +64,25 @@ class Bias(Theory):
         assert len(self._var_pairs) < 2, "Bias doesn't support other Pk yet"
         return needs
 
-    def get_Pk_mm_interpolator(self, var_pair=("delta_tot", "delta_tot"),
-                                nonlinear=True, extrap_kmax=None):
+    def get_Pk_mm_interpolator(self, extrap_kmax=None):
 
         return self._get_Pk_interpolator(pk_type='mm',
-                                         var_pair=var_pair,
-                                         nonlinear=nonlinear,
+                                         var_pair=self._var_pairs,
+                                         nonlinear=self.nonlinear,
                                          extrap_kmax=extrap_kmax)
 
-    def get_Pk_gg_interpolator(self, var_pair=("delta_tot", "delta_tot"),
-                                nonlinear=True, extrap_kmax=None):
+    def get_Pk_gg_interpolator(self, extrap_kmax=None):
 
         return self._get_Pk_interpolator(pk_type='gg',
-                                         var_pair=var_pair,
-                                         nonlinear=nonlinear,
+                                         var_pair=self._var_pairs,
+                                         nonlinear=self.nonlinear,
                                          extrap_kmax=extrap_kmax)
 
-    def get_Pk_gm_interpolator(self, var_pair=("delta_tot", "delta_tot"),
-                                nonlinear=True, extrap_kmax=None):
+    def get_Pk_gm_interpolator(self, extrap_kmax=None):
 
         return self._get_Pk_interpolator(pk_type='gm',
-                                         var_pair=var_pair,
-                                         nonlinear=nonlinear,
+                                         var_pair=self._var_pairs,
+                                         nonlinear=self.nonlinear,
                                          extrap_kmax=extrap_kmax)
 
     def _get_Pk_interpolator(self, pk_type,
@@ -100,11 +97,11 @@ class Bias(Theory):
             return self.current_state[key]
 
         if pk_type == 'mm':
-            k, z, pk = self.get_Pk_mm(var_pair=var_pair, nonlinear=nonlinear)
+            pk = self._get_Pk_mm(update_growth=False)
         elif pk_type == 'gm':
-            k, z, pk = self.get_Pk_gm_grid(var_pair=var_pair, nonlinear=nonlinear)
+            pk = self.get_Pk_gm_grid()
         elif pk_type == 'gg':
-            k, z, pk = self.get_Pk_gg_grid(var_pair=var_pair, nonlinear=nonlinear)
+            pk = self.get_Pk_gg_grid()
 
         log_p = True
         sign = 1
@@ -115,11 +112,11 @@ class Bias(Theory):
                 log_p = False
         if log_p:
             pk = np.log(sign * pk)
-        elif extrap_kmax > k[-1]:
+        elif (extrap_kmax is not None) and (extrap_kmax > self.k[-1]):
             raise LoggedError(self.log,
                               'Cannot do log extrapolation with zero-crossing pk '
                               'for %s, %s' % var_pair)
-        result = PowerSpectrumInterpolator(z, k, pk, logP=log_p, logsign=sign,
+        result = PowerSpectrumInterpolator(self.z, self.k, pk, logP=log_p, logsign=sign,
                                            extrap_kmax=extrap_kmax)
         self.current_state[key] = result
         return result
