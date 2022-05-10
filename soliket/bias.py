@@ -9,6 +9,7 @@ from scipy.interpolate import interp1d
 
 from cobaya.theory import Theory
 from cobaya.log import LoggedError
+from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 try:
     from velocileptors.EPT.cleft_kexpanded_resummed_fftw import RKECLEFT
 except:
@@ -63,6 +64,66 @@ class Bias(Theory):
         assert len(self._var_pairs) < 2, "Bias doesn't support other Pk yet"
         return needs
 
+    def get_Pk_mm_interpolator(self, var_pair=("delta_tot", "delta_tot"),
+                                nonlinear=True, extrap_kmax=None):
+
+        return self._get_Pk_interpolator(pk_type='mm',
+                                         var_pair=var_pair,
+                                         nonlinear=nonlinear,
+                                         extrap_kmax=extrap_kmax)
+
+    def get_Pk_gg_interpolator(self, var_pair=("delta_tot", "delta_tot"),
+                                nonlinear=True, extrap_kmax=None):
+
+        return self._get_Pk_interpolator(pk_type='gg',
+                                         var_pair=var_pair,
+                                         nonlinear=nonlinear,
+                                         extrap_kmax=extrap_kmax)
+
+    def get_Pk_gm_interpolator(self, var_pair=("delta_tot", "delta_tot"),
+                                nonlinear=True, extrap_kmax=None):
+
+        return self._get_Pk_interpolator(pk_type='gm',
+                                         var_pair=var_pair,
+                                         nonlinear=nonlinear,
+                                         extrap_kmax=extrap_kmax)
+
+    def _get_Pk_interpolator(self, pk_type,
+                             var_pair=("delta_tot", "delta_tot"), nonlinear=True,
+                             extrap_kmax=None):
+
+        nonlinear = bool(nonlinear)
+
+        key = ("Pk_{}_interpolator".format(pk_type), nonlinear, extrap_kmax)\
+                + tuple(sorted(var_pair))
+        if key in self.current_state:
+            return self.current_state[key]
+
+        if pk_type == 'mm':
+            k, z, pk = self.get_Pk_mm(var_pair=var_pair, nonlinear=nonlinear)
+        elif pk_type == 'gm':
+            k, z, pk = self.get_Pk_gm_grid(var_pair=var_pair, nonlinear=nonlinear)
+        elif pk_type == 'gg':
+            k, z, pk = self.get_Pk_gg_grid(var_pair=var_pair, nonlinear=nonlinear)
+
+        log_p = True
+        sign = 1
+        if np.any(pk < 0):
+            if np.all(pk < 0):
+                sign = -1
+            else:
+                log_p = False
+        if log_p:
+            pk = np.log(sign * pk)
+        elif extrap_kmax > k[-1]:
+            raise LoggedError(self.log,
+                              'Cannot do log extrapolation with zero-crossing pk '
+                              'for %s, %s' % var_pair)
+        result = PowerSpectrumInterpolator(z, k, pk, logP=log_p, logsign=sign,
+                                           extrap_kmax=extrap_kmax)
+        self.current_state[key] = result
+        return result
+
 
     def _get_Pk_mm(self, update_growth=True):
 
@@ -76,8 +137,12 @@ class Bias(Theory):
                                                         nonlinear=False)
             if self.k is None:
                 self.k = k
+            else:
+                assert np.allclose(k, self.k) # check we are consistent with ks
             if self.z is None:
                 self.z = z
+            else:
+                assert np.allclose(z, self.z) # check we are consistent with zs
 
             if update_growth:
                 assert(z[0] == 0)
@@ -180,7 +245,7 @@ class LPT_bias(Bias):
     def update_lpt_table(self):
 
         k, z, Pk_mm = self.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'),
-                                                nonlinear=False)
+                                                nonlinear=False) # needs to be linear
 
         if self.k is None:
             self.k = k
