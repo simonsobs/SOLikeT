@@ -27,7 +27,7 @@ jobs:
 
     - name: install reqs
       run: |
-        conda install pip compilers pytest pyccl cython
+        conda install pip compilers pytest pytest-cov pyccl cython
         pip install cobaya
 
       env:  
@@ -50,6 +50,10 @@ jobs:
 
     - name: Unit tests
       run: |
-        pytest -vv soliket
+        pytest -vv soliket --cov=soliket --cov-report=xml:coverage.xml --cov-config=setup.cfg
       env:
         PYTEST_ADDOPTS: "--color=yes"
+
+    - name: Report Coverage (codecov)
+      if: matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v2
