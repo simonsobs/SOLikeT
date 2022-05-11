@@ -36,8 +36,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
             pass
         else:
             raise LoggedError('Tracer selection not implemented yet!')
-
-        self.sacc_data.keep_selection(tracers=self.use_tracers.split(','))
+            # self.sacc_data.keep_selection(tracers=self.use_tracers.split(','))
 
         self.x = self._construct_ell_bins()
         self.y = self.sacc_data.mean
