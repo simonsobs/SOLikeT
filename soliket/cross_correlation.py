@@ -27,6 +27,25 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     def get_requirements(self):
         return {"CCL": {"kmax": 10, "nonlinear": True}}
 
+    def _get_nz(self, tracer, tracer_name):
+
+        z = tracer.z
+        nz = tracer.nz
+
+        bias = params_values['{}_deltaz',format(tracer_name)]
+
+        if self.z_nuisance_mode == 'deltaz':
+
+            nz_interp = np.interp1d(z, nz, kind=interpolation,
+                                    fill_value=0.0, bounds_error=False)
+
+            nz_biased = nz_interp(z - bias)
+
+        nz_biased /= np.trapz(nz_biased, z)
+
+        return nz_biased
+
+
     def _get_sacc_data(self, **params_values):
 
         self.sacc_data = sacc.Sacc.load_fits(self.datapath)
@@ -103,26 +122,44 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
         cl_binned_list = []
 
+        # import pdb
+        # pdb.set_trace()
+        # baryons! https://arxiv.org/pdf/2105.13544.pdf
+
         for tracer_comb in self.sacc_data.get_tracer_combinations():
 
             if self.sacc_data.tracers[tracer_comb[0]].quantity == "cmb_convergence":
                 tracer1 = ccl.CMBLensingTracer(cosmo, z_source=1060)
+
             elif self.sacc_data.tracers[tracer_comb[0]].quantity == "galaxy_shear":
+
+                if self.z_nuisance_mode is None:
+                    z_tracer1 = self.sacc_data.tracers[tracer_comb[0]].z
+                    nz_tracer1 = self.sacc_data.tracers[tracer_comb[0]].nz
+                else:
+                    # import pdb
+                    # pdb.set_trace()
+                    z_tracer1, nz_tracer1 = self._get_nz(tracer1, tracer_comb[0])
+
                 tracer1 = ccl.WeakLensingTracer(cosmo,
-                                                dndz=(
-                                                self.sacc_data.tracers[tracer_comb[0]].z,
-                                                self.sacc_data.tracers[tracer_comb[0]].nz,
-                                                ),
+                                                dndz=(z_tracer1, nz_tracer1),
                                                 ia_bias=None)
 
             if self.sacc_data.tracers[tracer_comb[1]].quantity == "cmb_convergence":
                 tracer2 = ccl.CMBLensingTracer(cosmo, z_source=1060)
+
             elif self.sacc_data.tracers[tracer_comb[1]].quantity == "galaxy_shear":
+
+                if self.z_nuisance_mode is None:
+                    z_tracer2 = self.sacc_data.tracers[tracer_comb[1]].z
+                    nz_tracer2 = self.sacc_data.tracers[tracer_comb[1]].nz
+                else:
+                    # import pdb
+                    # pdb.set_trace()
+                    z_tracer2, nz_tracer2 = self._get_nz(tracer2, tracer_comb[1])
+
                 tracer2 = ccl.WeakLensingTracer(cosmo,
-                                                dndz=(
-                                                self.sacc_data.tracers[tracer_comb[1]].z,
-                                                self.sacc_data.tracers[tracer_comb[1]].nz,
-                                                ),
+                                                dndz=(z_tracer2, nz_tracer2),
                                                 ia_bias=None)
 
             bpw_idx = self.sacc_data.indices(tracers=tracer_comb)

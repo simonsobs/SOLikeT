@@ -44,12 +44,13 @@ def test_galaxykappa_model():
     model = get_model(info) # noqa F841
 
 
-@pytest.mark.xfail(reason="data file not in repo")
+# @pytest.mark.xfail(reason="data file not in repo")
 def test_shearkappa_model():
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": ShearKappaLikelihood}
+    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
+                                                   "z_nuisance_mode": 'deltaz'}}
 
     model = get_model(info) # noqa F841
 
