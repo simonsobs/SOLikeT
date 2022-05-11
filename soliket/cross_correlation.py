@@ -8,6 +8,7 @@ First version by Pablo Lemos
 import numpy as np
 from .gaussian import GaussianData, GaussianLikelihood
 import pyccl as ccl
+from cobaya.log import LoggedError
 
 import sacc
 
@@ -30,6 +31,12 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     def _get_sacc_data(self, **params_values):
 
         self.sacc_data = sacc.Sacc.load_fits(self.datapath)
+
+        if self.use_tracers == 'all':
+            pass
+        else:
+            raise LoggedError('Tracer selection not implemented yet!')
+
         self.sacc_data.keep_selection(tracers=self.use_tracers.split(','))
 
         self.x = self._construct_ell_bins()
