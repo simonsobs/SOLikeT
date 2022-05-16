@@ -23,8 +23,10 @@ class SZModel:
 class ClusterLikelihood(PoissonLikelihood):
     name = "Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err"]
-    data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
-    data_name = resource_filename("soliket", "clusters/data/ACTPol_Cond_scatv5.fits")
+    # data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
+    data_path = resource_filename("soliket", "clusters/data/selFn_SO")
+    # data_name = resource_filename("soliket", "clusters/data/ACTPol_Cond_scatv5.fits")
+    data_name = resource_filename("soliket", "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
 
     def initialize(self):
         self.zarr = np.arange(0, 2, 0.05)
@@ -58,7 +60,7 @@ class ClusterLikelihood(PoissonLikelihood):
         return model
 
     def _get_catalog(self):
-        self.survey = SurveyData(self.data_path, self.data_name, szarMock=True)
+        self.survey = SurveyData(self.data_path, self.data_name, szarMock=True, tiles=False)
 
         self.szutils = szutils(self.survey)
 
@@ -83,13 +85,13 @@ class ClusterLikelihood(PoissonLikelihood):
         return self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
 
     def _get_Ez_interpolator(self):
-        return interp1d(self.zarr, self._get_Ez())
+        return interp1d(self.zarr, self._get_Ez(),bounds_error=False,fill_value=0.)
 
     def _get_DAz(self):
-        return self.theory.get_angular_diameter_distance(self.zarr)
+        return self.theory.get_angular_diameter_distance(self.zarr,)
 
     def _get_DAz_interpolator(self):
-        return interp1d(self.zarr, self._get_DAz())
+        return interp1d(self.zarr, self._get_DAz(),bounds_error=False,fill_value=0.)
 
     def _get_HMF(self):
         h = self.theory.get_param("H0") / 100.0
@@ -185,6 +187,36 @@ class ClusterLikelihood(PoissonLikelihood):
         # print("Ntot", Ntot)
 
         return Ntot
+
+
+    def _get_nz_expected(self, **kwargs):
+        # def Ntot_survey(self,int_HMF,fsky,Ythresh,param_vals):
+
+        HMF = self._get_HMF()
+        param_vals = self._get_param_vals()
+        Ez_fn = self._get_Ez_interpolator()
+        DA_fn = self._get_DAz_interpolator()
+
+        z_arr = self.zarr
+
+        h = self.theory.get_param("H0") / 100.0
+
+        Ntot = 0
+        dVdz = self._get_dVdz()
+        dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h ** 4.0  # getting rid of hs
+
+        for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
+            Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
+            N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0)
+            # Ntot += np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * self.survey.fskytotal * frac
+
+        # To test Mass function against Nemo.
+        # Pfunc = 1.
+        # N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None]/h, axis=0), axis=0)
+        # Ntot = np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * (600./(4*np.pi * (180/np.pi)**2))
+        # print("Ntot", Ntot)
+
+        return (z_arr,N_z*dVdz)
 
     # def logp(self, *args, **kwargs):
     #     return super().logp(*args, **kwargs)

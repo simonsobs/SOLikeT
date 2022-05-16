@@ -10,9 +10,9 @@ likelihood:
     # Websky data
     data_path: /Users/eunseonglee/SOLikeT/soliket/binned_clusters/data/so/
     cat_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits
-    Q_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/quick_theta_Q.npz
-    tile_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/tileAreas.txt
-    rms_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/downsampled.txt
+    Q_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/quick_theta_Q.npz # (boris): see notebook.
+    tile_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/tileAreas.txt # (boris): not needed i think.
+    rms_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/downsampled.txt # (boris): see notebook to create this.
 
 params:
   logA:

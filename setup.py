@@ -16,6 +16,7 @@ setup(
             "data/simulated*/*.txt",
             "clusters/data/*",
             "clusters/data/selFn_equD56/*",
+            "clusters/data/selFn_SO/*",
         ]
     },
     install_requires=[

@@ -179,14 +179,15 @@ class szutils:
 # ------------------------------------------------------------------------------------------------------------
 def calcR500Mpc(z, M500, Ez_fn, H0):
     """Given z, M500 (in MSun), returns R500 in Mpc, with respect to critical density.
-    
+
     """
 
     if type(M500) == str:
         raise Exception(
             "M500 is a string - check M500MSun in your .yml config file: use, e.g., 1.0e+14 (not 1e14 or 1e+14)"
         )
-
+    # print('Q:',Q)
+    # print('z:',z)
     Ez = Ez_fn(z)
 
     criticalDensity = rho_crit0H100 * (H0 / 100.) ** 2 * Ez ** 2
@@ -198,7 +199,7 @@ def calcR500Mpc(z, M500, Ez_fn, H0):
 # ------------------------------------------------------------------------------------------------------------
 def calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0):
     """Given z, M500 (in MSun), returns angular size equivalent to R500, with respect to critical density.
-    
+
     """
 
     R500Mpc = calcR500Mpc(z, M500, Ez_fn, H0)
@@ -212,7 +213,7 @@ def calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0):
 # ------------------------------------------------------------------------------------------------------------
 def calcQ(theta500Arcmin, tck):
     """Returns Q, given theta500Arcmin, and a set of spline fit knots for (theta, Q).
-    
+
     """
 
     # Q=np.poly1d(coeffs)(theta500Arcmin)
@@ -224,9 +225,9 @@ def calcQ(theta500Arcmin, tck):
 # ------------------------------------------------------------------------------------------------------------
 def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
     """Calculates relativistic correction to SZ effect at specified frequency, given z, M500 in MSun.
-       
+
     This assumes the Arnaud et al. (2005) M-T relation, and applies formulae of Itoh et al. (1998)
-    
+
     As for H13, we return fRel = 1 + delta_SZE (see also Marriage et al. 2011)
     """
 
@@ -361,14 +362,14 @@ def y0FromLogM500(
 ):
     """Predict y0~ given logM500 (in MSun) and redshift. Default scaling relation parameters are A10 (as in
     H13).
-    
+
     Use cosmoModel (astropy.cosmology object) to change/specify cosmological parameters.
-    
+
     fRelWeightsDict is used to account for the relativistic correction when y0~ has been constructed
     from multi-frequency maps. Weights should sum to 1.0; keys are observed frequency in GHz.
-    
+
     Returns y0~, theta500Arcmin, Q
-    
+
     """
 
     if type(Mpivot) == str:
