@@ -1,3 +1,5 @@
+# cobaya-run /Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/cosmopower/input_files/cosmopower.yaml -f
+
 output: /Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/cosmopower/chains/
 
 likelihood:

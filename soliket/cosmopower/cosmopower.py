@@ -19,7 +19,7 @@ class cosmopower(classy):
         self.classy_module = self.is_installed()
         if not self.classy_module:
             raise NotInstalledError(
-                self.log, "Could not find CLASS_SZ. Check error message above.")
+                self.log, "Could not find class. Check error message above.")
         from classy_sz import Class, CosmoSevereError, CosmoComputationError
         global CosmoComputationError, CosmoSevereError
         self.classy = Class()
