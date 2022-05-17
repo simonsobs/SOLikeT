@@ -1,0 +1,220 @@
+likelihood:
+  act:
+    external: import_module('JCH_Cobaya_stable_ACTlike_hip').external_act_like
+    speed: 5
+modules: /home/chill/cobaya_analyses/modules
+params:
+  fEDE:
+   prior:
+      min: 1.e-3
+      max: 0.5
+   ref:
+      min: 2.e-3
+      max: 0.25
+   latex: f_\mathrm{EDE}
+   proposal: 0.03
+  log10z_c:
+   prior:
+      min: 3.
+      max: 4.3
+   ref:
+      min: 3.1
+      max: 4.2
+   latex: \mathrm{log}_{10}(z_c)
+   proposal: 0.3
+  z_c:
+   derived: 'lambda log10z_c: np.power(10.,log10z_c)'
+   latex: z_c
+  thetai_scf:
+   prior:
+      min: 0.1
+      max: 3.1
+   ref:
+      min: 0.1
+      max: 3.1
+   latex: \theta_i
+   proposal: 0.25
+  log10f_scf:
+   latex: \mathrm{log}_{10}(f/{\mathrm{eV}})
+  f_scf:
+   derived: 'lambda log10f_scf: np.power(10.,log10f_scf)'
+   latex: f/\mathrm{eV}
+  log10m_scf:
+   latex: \mathrm{log}_{10}(m/{\mathrm{eV}})
+  m_scf:
+   derived: 'lambda log10m_scf: np.power(10.,log10m_scf)'
+   latex: m/\mathrm{eV}
+  logA:
+    prior:
+      min: 1.61
+      max: 3.91
+    ref:
+      dist: norm
+      loc: 3.05
+      scale: 0.001
+    proposal: 0.001
+    latex: \log(10^{10} A_\mathrm{s})
+    drop: true
+  A_s:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+    latex: A_\mathrm{s}
+  n_s:
+    prior:
+      min: 0.8
+      max: 1.2
+    ref:
+      dist: norm
+      loc: 0.965
+      scale: 0.004
+    proposal: 0.002
+    latex: n_\mathrm{s}
+  theta_s_1e2:
+    prior:
+      min: 0.5
+      max: 10
+    ref:
+      dist: norm
+      loc: 1.0416
+      scale: 0.0004
+    proposal: 0.0002
+    latex: 100\theta_\mathrm{s}
+    drop: true
+  100*theta_s:
+    value: 'lambda theta_s_1e2: theta_s_1e2'
+    derived: false
+  H0:
+    latex: H_0
+  omega_b:
+    prior:
+      min: 0.005
+      max: 0.1
+    ref:
+      dist: norm
+      loc: 0.0224
+      scale: 0.0001
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+  omega_cdm:
+    prior:
+      min: 0.001
+      max: 0.99
+    ref:
+      dist: norm
+      loc: 0.12
+      scale: 0.001
+    proposal: 0.0005
+    latex: \Omega_\mathrm{c} h^2
+  Omega_m:
+    latex: \Omega_\mathrm{m}
+  omegamh2:
+    derived: 'lambda Omega_m, H0: Omega_m*(H0/100)**2'
+    latex: \Omega_\mathrm{m} h^2
+  m_ncdm:
+    value: 0.06
+    renames: mnu
+  Omega_Lambda:
+    latex: \Omega_\Lambda
+  YHe:
+    latex: Y_\mathrm{P}
+  #tau_reio:
+  #  prior:
+  #    min: 0.01
+  #    max: 0.8
+  #  ref:
+  #    dist: norm
+  #    loc: 0.055
+  #    scale: 0.006
+  #  proposal: 0.003
+  #  latex: \tau_\mathrm{reio}
+  # USE tau prior matching Erminia's choice
+  # email from Jo 6-14-20: prior is tau	= 0.065	\pm 0.015
+  tau_reio:
+    prior:
+      dist: norm
+      loc: 0.065
+      scale: 0.015
+    ref:
+      dist: norm
+      loc: 0.065
+      scale: 0.002
+    proposal: 0.002
+    latex: \tau_\mathrm{reio}
+  yp2:
+    prior:
+      min: 0.9
+      max: 1.1
+    ref:
+      dist: norm
+      loc: 1.01
+      scale: 0.005
+  z_reio:
+    latex: z_\mathrm{re}
+  sigma8:
+    latex: \sigma_8
+  s8h5:
+    derived: 'lambda sigma8, H0: sigma8*(H0*1e-2)**(-0.5)'
+    latex: \sigma_8/h^{0.5}
+  s8omegamp5:
+    derived: 'lambda sigma8, Omega_m: sigma8*Omega_m**0.5'
+    latex: \sigma_8 \Omega_\mathrm{m}^{0.5}
+  s8omegamp25:
+    derived: 'lambda sigma8, Omega_m: sigma8*Omega_m**0.25'
+    latex: \sigma_8 \Omega_\mathrm{m}^{0.25}
+  A:
+    derived: 'lambda A_s: 1e9*A_s'
+    latex: 10^9 A_\mathrm{s}
+  clamp:
+    derived: 'lambda A_s, tau_reio: 1e9*A_s*np.exp(-2*tau_reio)'
+    latex: 10^9 A_\mathrm{s} e^{-2\tau}
+  age:
+    latex: '{\rm{Age}}/\mathrm{Gyr}'
+  rs_drag:
+    latex: r_\mathrm{drag}
+  #chi2__CMB:
+  #  derived: 'lambda chi2__planck_2018_lowl_TT, chi2__planck_2018_lowl_EE, chi2__planck_2018_highl_plik_TTTEEE:
+  #    sum([chi2__planck_2018_lowl_TT, chi2__planck_2018_lowl_EE, chi2__planck_2018_highl_plik_TTTEEE])'
+  #  latex: \chi^2_\mathrm{CMB}
+sampler:
+  mcmc:
+    covmat: auto
+    #covmat: /mnt/sdceph/users/chill/chains/CLASS2p8_ACTPol_lite_DR4_leakfix_yp2_EDEshoot_taup.covmat
+    Rminus1_stop: 0.03
+    #drag: true #only possible when doing a multi-likelihood run with different speed for each likelihood
+    proposal_scale: 1.9
+    burn_in: 0
+    max_tries: 5000
+    check_every: 20
+    learn_proposal: true
+theory:
+  classy:
+    extra_args:
+      non linear: halofit
+      N_ncdm: 1
+      N_ur: 2.0328
+      P_k_max_h/Mpc: 100.
+      z_pk: 1.
+      Omega_Lambda: 0.0
+      Omega_fld: 0
+      Omega_scf: -1
+      n_scf: 3
+      CC_scf: 1
+      scf_parameters: '1, 1, 1, 1, 1, 0.0'
+      scf_tuning_index: 3
+      attractor_ic_scf: 'no'
+      l_max_scalars: 11000 #specified in the ACT likelihood Cobaya interface itself as well, but repeat here just in case
+      neglect_CMB_sources_below_visibility: 1.e-30
+      transfer_neglect_late_source: 3000.
+      halofit_k_per_decade: 3000.
+      l_switch_limber: 40.
+      accurate_lensing: 1
+      num_mu_minus_lmax: 1000.
+      delta_l_max: 1000.
+      k_min_tau0: 0.002
+      k_max_tau0_over_l_max: 3.
+      k_step_sub: 0.015
+      k_step_super: 0.0001
+      k_step_super_reduction: 0.1
+
+# update 7-6-20: have to re-run b/c I forgot to sample yp2
+# update 12-27-20: high-precision run to see if our chi^2 was sufficiently accurate
+output: /mnt/sdceph/users/chill/chains/CLASS2p8_ACTPol_lite_DR4_leakfix_yp2_EDEshoot_taup_hip

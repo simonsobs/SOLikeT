@@ -20,22 +20,20 @@ theory:
 
   soliket.ymap.classy_sz:
      extra_args:
-
-          output : 'tSZ_1h'
+          output : 'tSZ_1h, tCl'
           units for tSZ spectrum : 'dimensionless'
           component of tSZ power spectrum : 'total'
           # write sz results to files : 'no'
           mass function : 'M500'
-          integrate_wrt_m500c : 1
+          # integrate_wrt_m500c : 1
           pressure profile : 'A10'
           multipoles_sz : 'P15'
           nlSZ : 18
 
-          M1SZ : 1e11
-          M2SZ : 1e16
-
-          z1SZ : 1e-5
-          z2SZ : 4.
+          z_min : 0.005
+          z_max : 3.0
+          M_min : 1.0e10
+          M_max : 3.5e15
           z_max_pk : 4.
 
           non linear: 'halofit'
@@ -43,20 +41,25 @@ theory:
           k_min_for_pk_class_sz : 1e-3
           k_max_for_pk_class_sz : 1e1
 
-          P_k_max_h/Mpc : 1e1
+          perturbations_verbose: 10
+          thermodynamics_verbose: 10
+          background_verbose: 10
+          class_sz_verbose: 10
+          spectra_verbose: 10
 
-          N_ur : 0.00641
+          # harmonic_verbose: 0
+          # fourier_verbose : 0
+          input_verbose : 10
+          # lensing_verbose : 0
+          # The base model features two massless
+          # and one massive neutrino with m=0.06eV.
+          # The settings below ensures that Neff=3.046
+          # and m/omega = 93.14 eV
+          N_ur : 2.0328
           N_ncdm : 1
-          deg_ncdm : 3
-          m_ncdm : 0.02
+          m_ncdm : 0.06
           T_ncdm : 0.71611
-
-          HMF_prescription_NCDM: 'CDM'
-
-          input_verbose : 0
-          background_verbose: 0
-          perturbations_verbose: 0
-          sz_verbose: 3
+          YHe: 'BBN'
           # following parameters (50,50) give less than 1% difference w.r.t. ndimSZ = 100 and n_arraySZ=1000
           # [relevant for tabulation of sigma(R,z)]
           # ndimSZ: 50
@@ -218,4 +221,4 @@ sampler:
 
 
 
-# debug : True
+debug : True

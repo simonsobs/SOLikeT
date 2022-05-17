@@ -1,0 +1,109 @@
+output: /Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/cosmopower/chains/
+
+likelihood:
+  pyactlike.ACTPol_lite_DR4:
+
+
+
+theory:
+  soliket.cosmopower.cosmopower:
+
+params:
+  omega_b:
+    prior:
+      min: 0.02
+      max: 0.03
+    ref:
+      dist: norm
+      loc: 0.022
+      scale: 0.005
+    proposal: 0.005
+    latex: omega_b
+  omega_cdm:
+    prior:
+      min: 0.10
+      max: 0.14
+    ref:
+      dist: norm
+      loc: 0.11
+      scale: 0.01
+    proposal: 0.01
+    latex: omega_cdm
+  h:
+    prior:
+      min: 0.55
+      max: 0.90
+    ref:
+      dist: norm
+      loc: 0.6727
+      scale: 0.006
+    proposal: 0.006
+    latex: h
+  tau_reio:
+    prior:
+      min: 0.05
+      max: 0.09
+    ref:
+      dist: norm
+      loc: 0.06
+      scale: 0.01
+    proposal: 0.01
+    latex: tau_reio
+  n_s:
+    prior:
+      min: 0.93
+      max: 0.99
+    ref:
+      dist: norm
+      loc: 0.96
+      scale: 0.01
+    proposal: 0.01
+    latex: n_s
+  logA:
+    prior:
+      min: 2.5
+      max: 3.5
+    ref:
+      dist: norm
+      loc: 3.05
+      scale: 0.01
+    proposal: 0.01
+    latex: ln10^{10}A_s
+
+
+  # pyactlike param
+  yp2:
+    prior:
+      min: 0.9
+      max: 1.1
+    ref:
+      dist: norm
+      loc: 1.01
+      scale: 0.005
+
+
+sampler:
+  #settings for covmat see https://cobaya.readthedocs.io/en/latest/sampler_mcmc.html
+  # mcmc:
+  #   covmat: #auto
+  #   Rminus1_stop: 0.01
+  #   drag: true
+  #   proposal_scale: 2.4
+  #   learn_proposal: True
+  #   learn_proposal_Rminus1_max: 2.
+
+  evaluate:
+    override:
+      omega_b: 0.0223
+      omega_cdm: 0.115
+      h: 0.7
+      tau_reio: 0.06
+      n_s: 0.96
+      logA: 3.07
+
+      yp2 : 1.02
+
+
+
+
+debug : True

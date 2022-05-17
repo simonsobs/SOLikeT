@@ -31,6 +31,12 @@ class classy_sz(classy):
         # self.extra_args['nlSZ'] = 18
 
 
+    # # here modify if you want to bypass stuff in the class computation
+    # def calculate(self, state, want_derived=True, **params_values_dict):
+    #     print("Bypassing class_sz")
+
+
+
 
     def must_provide(self, **requirements):
         if "Cl_sz" in requirements:
