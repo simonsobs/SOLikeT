@@ -10,6 +10,12 @@ import multiprocessing
 import astropy.table as atpy
 from astropy.io import fits
 from functools import partial
+import logging
+import nemo as nm
+import scipy.stats
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 pi = 3.1415926535897932384630
 rhocrit0 = 2.7751973751261264e11 # [h2 msun Mpc-3]
@@ -33,6 +39,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
     choose_dim: Optional[str] = None
     single_tile_test: Optional[str] = None
     Q_optimise: Optional[str] = None
+    mode: Optional[str] = None
+    dwnsmpl_bins: Optional[int] = None
+    average_Q: Optional[bool] = False
 
     params = {"tenToA0":None, "B0":None, "scatter_sz":None, "bias_sz":None}
 
@@ -53,12 +62,21 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         print('\r Number of mass bins : ', len(self.marr))
 
-        single_tile = self.single_tile_test
+        if self.mode == 'single_tile':
+            logger.info('Running single tile.')
+        elif self.mode == 'full':
+            logger.info('Running full analysis. No downsampling.')
+        elif self.mode == 'downsample':
+            assert self.dwnsmpl_bins is not None, 'mode = downsample but no bin number given. Aborting.'
+            logger.info('Downsampling selection function inputs.')
+        elif self.mode == 'inpt_dwnsmpld':
+            logger.info('Running on pre-downsampled input.')
+
         dimension = self.choose_dim
         Q_opt = self.Q_optimise
         self.data_directory = self.data_path
 
-        if single_tile == 'yes':
+        if self.mode == 'single_tile':
             self.datafile = self.test_cat_file
             print(" SO test only for a single tile")
         else:
@@ -195,9 +213,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         self.dlogq = dlogq
         self.delN2Dcat = zarr, qarr, delN2Dcat
 
-        print('\r :::::: loading files describing selection function')
-        print('\r :::::: reading Q as a function of theta')
-        if single_tile =='yes':
+        logger.info('Loading files describing selection function.')
+        logger.info('Reading Q as a function of theta.')
+        if self.mode == 'single_tile':
+            logger.info('Reading Q function for single tile.')
             self.datafile_Q = self.test_Q_file
             list = fits.open(os.path.join(self.data_directory, self.datafile_Q))
             data = list[1].data
@@ -207,25 +226,38 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             print("\r Number of Q function = ", self.Q.ndim)
 
         else:
-            # for quick reading theta and Q data is saved first and just called
-            self.datafile_Q = self.Q_file
-            Qfile = np.load(os.path.join(self.data_directory, self.datafile_Q))
-            self.tt500 = Qfile['theta']
-            self.allQ = Qfile['Q']
+            if self.mode == 'inpt_dwnsmpld':
+                logger.info('Reading pre-downsampled Q function.')
+                # for quick reading theta and Q data is saved first and just called
+                self.datafile_Q = self.Q_file
+                Qfile = np.load(os.path.join(self.data_directory, self.datafile_Q))
+                self.tt500 = Qfile['theta']
+                self.allQ = Qfile['Q']
+                assert len(self.tt500) == len(self.allQ[:,0])
 
-            assert len(self.tt500) == len(self.allQ[:,0])
-
-            if Q_opt == 'yes':
-                self.Q = np.mean(self.allQ, axis=1)
-                print("\r Number of Q functions = ", self.Q.ndim)
-                print("\r Using one averaged Q function for optimisation")
             else:
-                self.Q = self.allQ
-                print("\r Number of Q functions = ", len(self.Q[0]))
+                logger.info('Reading full Q function.')
+                self.datafile_Q = self.Q_file
+                tile_area = np.genfromtxt(os.path.join(self.data_directory, self.tile_file), dtype=str)
+                tilename = tile_area[:, 0]
+                QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q), tileNames=tilename)
+                Nt = len(tilename)
+                logger.info("Number of tiles = {}.".format(Nt))
 
+                hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
+                data = hdulist[1].data
+                tt500 = data.field("theta500Arcmin")
 
-        print('\r :::::: reading noise data')
-        if single_tile == 'yes':
+                # reading in all Q functions
+                allQ = np.zeros((len(tt500), Nt))
+                for i in range(Nt):
+                    allQ[:, i] = QFit.getQ(tt500, tileName=tile_area[:, 0][i])
+                assert len(tt500) == len(allQ[:, 0])
+                self.tt500 = tt500
+                self.allQ = allQ
+
+        logger.info('Reading RMS.')
+        if self.mode == 'single_tile':
             self.datafile_rms = self.test_rms_file
 
             list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
@@ -235,22 +267,62 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             print("\r Number of sky patches = ", self.skyfracs.size)
 
         else:
-            # for convenience,
-            # save a down sampled version of rms txt file and read it directly
-            # this way is a lot faster
-            # could recreate this file with different downsampling as well
-            # tile name is replaced by consecutive number from now on
+            if self.mode == 'inpt_dwnsmpld':
+                # for convenience,
+                # save a down sampled version of rms txt file and read it directly
+                # this way is a lot faster
+                # could recreate this file with different downsampling as well
+                # tile name is replaced by consecutive number from now on
+                logger.info('Reading pre-downsampled RMS table.')
+                self.datafile_rms = self.rms_file
+                file_rms = np.loadtxt(os.path.join(self.data_directory, self.datafile_rms))
+                self.noise = file_rms[:,0]
+                self.skyfracs = file_rms[:,1]
+                self.tname = file_rms[:,2]
+                logger.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
+                logger.info("Number of sky patches = {}.".format(self.skyfracs.size))
+            else:
+                logger.info('Reading in full RMS table.')
+                self.datafile_rms = self.rms_file
 
-            self.datafile_rms = self.rms_file
-            file_rms = np.loadtxt(os.path.join(self.data_directory, self.datafile_rms))
-            self.noise = file_rms[:,0]
-            self.skyfracs = file_rms[:,1]
-            self.tname = file_rms[:,2]
-            print("\r Number of tiles = ", len(np.unique(self.tname)))
+                list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
+                file_rms = list[1].data
 
-            downsample = 50
-            print("\r Noise map is downsampled to speed up a completeness compuation by %d" %downsample)
-            print("\r Number of sky patches = ", self.skyfracs.size)
+                self.noise = file_rms['y0RMS']
+                self.skyfracs = file_rms['areaDeg2']*np.deg2rad(1.)**2
+                self.tname = file_rms['tileName']
+
+        if self.mode == 'downsample':
+            logger.info('Downsampling RMS and Q function using {} bins.'.format(self.dwnsmpl_bins))
+            binned_stat = scipy.stats.binned_statistic(self.noise, self.skyfracs, statistic='sum', bins=self.dwnsmpl_bins)
+            binned_area = binned_stat[0]
+            binned_rms_edges = binned_stat[1]
+
+            bin_ind = np.digitize(self.noise, binned_rms_edges)
+            tiledict = dict(zip(tile_area[:, 0], np.arange(tile_area[:, 0].shape[0])))
+
+            Qdwnsmpld = np.zeros((self.allQ.shape[0], self.dwnsmpl_bins))
+
+            for i in range(self.dwnsmpl_bins):
+                tempind = np.where(bin_ind == i + 1)[0]
+                temparea = self.skyfracs[tempind]
+                temptiles = self.tname[tempind]
+                test = [tiledict[key] for key in temptiles]
+                Qdwnsmpld[:, i] = np.average(self.allQ[:, test], axis=1, weights=temparea)
+
+            self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
+            self.skyfracs = binned_area
+            self.allQ = Qdwnsmpld
+
+            assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.allQ.shape[1]
+
+        if self.average_Q:
+            self.Q = np.mean(self.allQ, axis=1)
+            logger.info("Number of Q functions = {}.".format(self.Q.ndim))
+            logger.info("Using one averaged Q function for optimisation")
+        else:
+            self.Q = self.allQ
+            logger.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
         print("\r Entire survey area = ", self.skyfracs.sum()/(np.deg2rad(1.)**2.), "deg2")
 
@@ -574,9 +646,6 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
     # y-m scaling relation for completeness
     def _get_y0(self, mass, **params_values_dict):
 
-        single_tile = self.single_tile_test
-        Q_opt = self.Q_optimise
-
         A0 = params_values_dict["tenToA0"]
         B0 = params_values_dict["B0"]
         bias = params_values_dict["bias_sz"]
@@ -596,7 +665,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             return ttstar*(m/3.e14*(100./H0))**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.) ###### M200m
 
         def splQ(x):
-            if single_tile == 'yes' or Q_opt == 'yes':
+            if self.mode == 'single_tile' or self.average_Q:
                 tck = interpolate.splrep(self.tt500, self.Q)
                 newQ = interpolate.splev(x, tck)
             else:
@@ -613,13 +682,14 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
             return 1.# + 3.79*t - 28.2*(t**2.)
 
-        if single_tile == 'yes' or Q_opt == 'yes':
+        if self.mode == 'single_tile' or self.average_Q:
             #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
             y0 = A0 * (Ez**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) #* rel(mb) ###### M200m
             y0 = y0.T ###### M200m
         else:
-            arg = A0 * (Ez**2.) * (mb[:,None] / mpivot)**(1. + B0)
-            y0 = arg[:,:,None] * splQ(theta(mb)) #* rel(mb).T[:,:,None]
+            arg = A0 * (Ez[np.newaxis, :]**2.) * (mb / mpivot)**(1. + B0)
+            y0 = arg[None, :, :] * splQ(theta(mb)) #* rel(mb).T[:,:,None]
+
         return y0
 
     # completeness 1D
@@ -630,9 +700,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         qcut = self.qcut
         skyfracs = self.skyfracs/self.skyfracs.sum()
         Npatches = len(skyfracs)
-        single_tile = self.single_tile_test
-        Q_opt = self.Q_optimise
-        if single_tile == 'no' and Q_opt == 'no': tilename = self.tname
+
+        if self.mode != 'single_tile' and not self.average_Q:
+            tilename = self.tname
 
         if scatter == 0.:
             a_pool = multiprocessing.Pool()
@@ -646,9 +716,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                         yy=None,
                                         y0=y0,
                                         temp=None,
-                                        single_tile=single_tile,
-                                        tile=None if single_tile == 'yes' or Q_opt == 'yes' else tilename,
-                                        Q_opt=Q_opt,
+                                        mode=self.mode,
+                                        tile=None if self.mode == 'single_tile' or self.average_Q else tilename,
+                                        average_Q=self.average_Q,
                                         scatter=scatter),range(len(zarr)))
         else :
             lnymin = -25.     #ln(1e-10) = -23
@@ -662,7 +732,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             i = 0
             lny = lnymin
 
-            if single_tile == 'yes' or Q_opt == "yes":
+            if self.mode == 'single_tile' or self.average_Q:
 
                 for i in range(Ny):
                     y = np.exp(lny)
@@ -706,9 +776,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                                 yy=yy,
                                                 y0=y0,
                                                 temp=temp,
-                                                single_tile=single_tile,
-                                                tile=None if single_tile == 'yes' or Q_opt == 'yes' else tilename,
-                                                Q_opt=Q_opt,
+                                                mode=self.mode,
+                                                tile=None if self.mode == 'single_tile' or self.average_Q else tilename,
+                                                average_Q=self.average_Q,
                                                 scatter=scatter),range(len(zarr)))
         a_pool.close()
         comp = np.asarray(completeness)
@@ -725,9 +795,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         qcut = self.qcut
         skyfracs = self.skyfracs/self.skyfracs.sum()
         Npatches = len(skyfracs)
-        single_tile = self.single_tile_test
-        Q_opt = self.Q_optimise
-        if single_tile == 'no' and Q_opt == 'no': tilename = self.tname
+
+        if self.mode != 'single_tile' and not self.average_Q:
+            tilename = self.tname
 
         Nq = self.Nq
         qarr = self.qarr
@@ -749,9 +819,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                             dyy=None,
                                             yy=None,
                                             temp=None,
-                                            single_tile=single_tile,
-                                            Q_opt=Q_opt,
-                                            tile=None if single_tile == 'yes' or Q_opt == 'yes' else tilename,
+                                            mode=self.mode,
+                                            tile=None if self.mode == 'single_tile' or self.average_Q else tilename,
+                                            average_Q=self.average_Q,
                                             scatter=scatter),range(len(zarr)))
 
 
@@ -767,7 +837,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             lny = lnymin
             i = 0
 
-            if single_tile == 'yes' or Q_opt == "yes":
+            if self.mode != 'single_tile' and not self.average_Q:
 
                 for i in range(Ny):
                     yy0 = np.exp(lny)
@@ -842,9 +912,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                                 dyy=dyy,
                                                 yy=yy,
                                                 temp=temp,
-                                                single_tile=single_tile,
-                                                Q_opt=Q_opt,
-                                                tile=None if single_tile == 'yes' or Q_opt == 'yes' else tilename,
+                                                mode=self.mode,
+                                                tile=None if self.mode == 'single_tile' or self.average_Q else tilename,
+                                                average_Q=self.average_Q,
                                                 scatter=scatter),range(len(zarr)))
 
         a_pool.close()
@@ -855,7 +925,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         return comp
 
 
-def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, single_tile, Q_opt, tile, scatter):
+def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, mode, average_Q, tile, scatter):
 
     i = 0
     res = []
@@ -863,7 +933,7 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, s
 
         if scatter == 0.:
 
-            if single_tile == 'yes' or Q_opt == 'yes':
+            if mode == 'single_tile' or average_Q:
                 arg = get_erf(y0[index_z, i], noise, qcut)
             else:
                 j = 0
@@ -877,7 +947,7 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, s
 
             fac = 1./np.sqrt(2.*pi*scatter**2)
             mu = np.log(y0)
-            if single_tile == 'yes' or Q_opt == 'yes':
+            if mode == 'single_tile' or average_Q:
                 arg = (lnyy - mu[index_z, i])/(np.sqrt(2.)*scatter)
                 res.append(np.dot(temp, fac*np.exp(-arg**2.)*dyy/yy))
             else:
@@ -890,7 +960,7 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, s
 
     return res
 
-def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbin, lnyy, dyy, yy, temp, single_tile, Q_opt, tile, scatter):
+def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbin, lnyy, dyy, yy, temp, mode, average_Q, tile, scatter):
 
     kk = qbin
     qmin = qarr[kk] - dlogq/2.
@@ -898,13 +968,16 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbi
     qmin = 10.**qmin
     qmax = 10.**qmax
 
+    # print(index_z)
+    # print(y0.shape)
+
     i = 0
     res = []
     for i in range(Nm):
 
         if scatter == 0.:
 
-            if single_tile == 'yes' or Q_opt == "yes":
+            if mode == 'single_tile' or average_Q:
                 if kk == 0:
                     erfunc = get_erf(y0[index_z,i], noise, qcut)*(1. - get_erf(y0[index_z,i], noise, qmax))
                 elif kk == Nq:
@@ -928,7 +1001,7 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbi
 
             fac = 1./np.sqrt(2.*pi*scatter**2)
             mu = np.log(y0)
-            if single_tile == 'yes' or Q_opt == "yes":
+            if mode == 'single_tile' or average_Q:
                 arg = (lnyy - mu[index_z,i])/(np.sqrt(2.)*scatter)
                 res.append(np.dot(temp, fac*np.exp(-arg**2.)*dyy/yy))
             else:
