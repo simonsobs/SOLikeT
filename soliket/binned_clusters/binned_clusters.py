@@ -223,7 +223,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             self.tt500 = data.field("theta500Arcmin")
             self.Q = data.field("PRIMARY")
             assert len(self.tt500) == len(self.Q)
-            print("\r Number of Q function = ", self.Q.ndim)
+            logger.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
         else:
             if self.mode == 'inpt_dwnsmpld':
@@ -264,7 +264,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             data = list[1].data
             self.skyfracs = data.field("areaDeg2")*np.deg2rad(1.)**2
             self.noise = data.field("y0RMS")
-            print("\r Number of sky patches = ", self.skyfracs.size)
+            logger.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
         else:
             if self.mode == 'inpt_dwnsmpld':
@@ -291,6 +291,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 self.noise = file_rms['y0RMS']
                 self.skyfracs = file_rms['areaDeg2']*np.deg2rad(1.)**2
                 self.tname = file_rms['tileName']
+                logger.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
+                logger.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
         if self.mode == 'downsample':
             logger.info('Downsampling RMS and Q function using {} bins.'.format(self.dwnsmpl_bins))
@@ -299,22 +301,31 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             binned_rms_edges = binned_stat[1]
 
             bin_ind = np.digitize(self.noise, binned_rms_edges)
-            tiledict = dict(zip(tile_area[:, 0], np.arange(tile_area[:, 0].shape[0])))
+            tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
 
             Qdwnsmpld = np.zeros((self.allQ.shape[0], self.dwnsmpl_bins))
 
             for i in range(self.dwnsmpl_bins):
                 tempind = np.where(bin_ind == i + 1)[0]
-                temparea = self.skyfracs[tempind]
-                temptiles = self.tname[tempind]
-                test = [tiledict[key] for key in temptiles]
-                Qdwnsmpld[:, i] = np.average(self.allQ[:, test], axis=1, weights=temparea)
+                if len(tempind) == 0:
+                    logger.info('Found empty bin.')
+                    Qdwnsmpld[:, i] = np.zeros(self.allQ.shape[0])
+                else:
+                    temparea = self.skyfracs[tempind]
+                    temptiles = self.tname[tempind]
+                    test = [tiledict[key] for key in temptiles]
+                    Qdwnsmpld[:, i] = np.average(self.allQ[:, test], axis=1, weights=temparea)
 
             self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
             self.skyfracs = binned_area
             self.allQ = Qdwnsmpld
+            logger.info("Number of downsampled sky patches = {}.".format(self.skyfracs.size))
 
             assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.allQ.shape[1]
+
+        elif self.mode == 'full':
+            tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
+            self.tile_list = [tiledict[key]+1 for key in self.tname]
 
         if self.average_Q:
             self.Q = np.mean(self.allQ, axis=1)
@@ -324,7 +335,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             self.Q = self.allQ
             logger.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
-        print("\r Entire survey area = ", self.skyfracs.sum()/(np.deg2rad(1.)**2.), "deg2")
+        logger.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
 
         super().initialize()
 
@@ -622,8 +633,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             print(kk, delN2D[:,kk].sum())
 
         for i in range(len(zarr)):
-            print(i, delN2D[i,:].sum())
-        print("\r Total predicted 2D N = ", delN2D.sum())
+            logger.info('Number of clusters in redshift bin {}: {}.'.format(i, delN2D[i,:].sum()))
+        logger.info("Total predicted 2D N = {}.".format(delN2D.sum()))
 
         return delN2D
 
@@ -638,7 +649,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             delN = self._get_integrated2D(pk_intp, **params_values_dict)
 
         elapsed = t.time() - start
-        print("\r ::: theory N calculation took %.1f seconds" %elapsed)
+        logger.info("Theory N calculation took {} seconds.".format(elapsed))
 
         return delN
 
@@ -687,8 +698,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             y0 = A0 * (Ez**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) #* rel(mb) ###### M200m
             y0 = y0.T ###### M200m
         else:
-            arg = A0 * (Ez[np.newaxis, :]**2.) * (mb / mpivot)**(1. + B0)
-            y0 = arg[None, :, :] * splQ(theta(mb)) #* rel(mb).T[:,:,None]
+            arg = A0 * (Ez ** 2.) * (mb / mpivot) ** (1. + B0) * splQ(theta(mb))
+            y0 = np.transpose(arg, axes=[1, 2, 0])
 
         return y0
 
@@ -702,7 +713,14 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         Npatches = len(skyfracs)
 
         if self.mode != 'single_tile' and not self.average_Q:
-            tilename = self.tname
+            if self.mode == 'inpt_dwnsmpld':
+                tile_list = self.tname
+            elif self.mode == 'downsample':
+                tile_list = np.arange(noise.shape[0])+1
+            elif self.mode == 'full':
+                tile_list = self.tile_list
+        else:
+            tile_list = None
 
         if scatter == 0.:
             a_pool = multiprocessing.Pool()
@@ -717,7 +735,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                         y0=y0,
                                         temp=None,
                                         mode=self.mode,
-                                        tile=None if self.mode == 'single_tile' or self.average_Q else tilename,
+                                        tile=tile_list,
                                         average_Q=self.average_Q,
                                         scatter=scatter),range(len(zarr)))
         else :
@@ -777,7 +795,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                                 y0=y0,
                                                 temp=temp,
                                                 mode=self.mode,
-                                                tile=None if self.mode == 'single_tile' or self.average_Q else tilename,
+                                                tile=tile_list,
                                                 average_Q=self.average_Q,
                                                 scatter=scatter),range(len(zarr)))
         a_pool.close()
@@ -797,7 +815,14 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         Npatches = len(skyfracs)
 
         if self.mode != 'single_tile' and not self.average_Q:
-            tilename = self.tname
+            if self.mode == 'inpt_dwnsmpld':
+                tile_list = self.tname
+            elif self.mode == 'downsample':
+                tile_list = np.arange(noise.shape[0])+1
+            elif self.mode == 'full':
+                tile_list = self.tile_list
+        else:
+            tile_list = None
 
         Nq = self.Nq
         qarr = self.qarr
@@ -820,7 +845,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                             yy=None,
                                             temp=None,
                                             mode=self.mode,
-                                            tile=None if self.mode == 'single_tile' or self.average_Q else tilename,
+                                            tile=tile_list,
                                             average_Q=self.average_Q,
                                             scatter=scatter),range(len(zarr)))
 
@@ -913,7 +938,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                                 yy=yy,
                                                 temp=temp,
                                                 mode=self.mode,
-                                                tile=None if self.mode == 'single_tile' or self.average_Q else tilename,
+                                                tile=tile_list,
                                                 average_Q=self.average_Q,
                                                 scatter=scatter),range(len(zarr)))
 
