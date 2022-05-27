@@ -40,6 +40,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
     single_tile_test: Optional[str] = None
     Q_optimise: Optional[str] = None
     mode: Optional[str] = None
+    compl_mode: Optional[str] = 'erf_prod'
     dwnsmpl_bins: Optional[int] = None
     average_Q: Optional[bool] = False
 
@@ -845,6 +846,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                             yy=None,
                                             temp=None,
                                             mode=self.mode,
+                                            compl_mode=self.compl_mode,
                                             tile=tile_list,
                                             average_Q=self.average_Q,
                                             scatter=scatter),range(len(zarr)))
@@ -873,12 +875,15 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                     qmin = 10.**qmin
                     qmax = 10.**qmax
 
-                    if kk == 0:
-                        cc = get_erf(yy0, noise, qcut)*(1. - get_erf(yy0, noise, qmax))
-                    elif kk == Nq-1:
-                        cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)
-                    else:
-                        cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)*(1. - get_erf(yy0, noise, qmax))
+                    if self.compl_mode == 'erf_prod':
+                        if kk == 0:
+                            cc = get_erf(yy0, noise, qcut)*(1. - get_erf(yy0, noise, qmax))
+                        elif kk == Nq-1:
+                            cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)
+                        else:
+                            cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)*(1. - get_erf(yy0, noise, qmax))
+                    elif self.compl_mode == 'erf_diff':
+                        cc = get_erf_compl(yy0, qmin, qmax, noise, qcut)
 
                     temp.append(np.dot(cc.T, skyfracs))
                     yy.append(yy0)
@@ -904,12 +909,15 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
                     j = 0
                     for j in range(Npatches):
-                        if kk == 0:
-                            cc = get_erf(yy0, noise[j], qcut)*(1. - get_erf(yy0, noise[j], qmax))
-                        elif kk == Nq:
-                            cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)
-                        else:
-                            cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)*(1. - get_erf(yy0, noise[j], qmax))
+                        if self.compl_mode == 'erf_prod':
+                            if kk == 0:
+                                cc = get_erf(yy0, noise[j], qcut)*(1. - get_erf(yy0, noise[j], qmax))
+                            elif kk == Nq:
+                                cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)
+                            else:
+                                cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)*(1. - get_erf(yy0, noise[j], qmax))
+                        elif self.compl_mode == 'erf_diff':
+                            cc = get_erf_compl(yy0, qmin, qmax, noise[j], qcut)
 
                         temp.append(cc*skyfracs[j])
                         yy.append(yy0)
@@ -938,6 +946,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                                 yy=yy,
                                                 temp=temp,
                                                 mode=self.mode,
+                                                compl_mode=self.compl_mode,
                                                 tile=tile_list,
                                                 average_Q=self.average_Q,
                                                 scatter=scatter),range(len(zarr)))
@@ -985,7 +994,7 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, m
 
     return res
 
-def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbin, lnyy, dyy, yy, temp, mode, average_Q, tile, scatter):
+def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbin, lnyy, dyy, yy, temp, mode, compl_mode, average_Q, tile, scatter):
 
     kk = qbin
     qmin = qarr[kk] - dlogq/2.
@@ -1003,22 +1012,28 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbi
         if scatter == 0.:
 
             if mode == 'single_tile' or average_Q:
-                if kk == 0:
-                    erfunc = get_erf(y0[index_z,i], noise, qcut)*(1. - get_erf(y0[index_z,i], noise, qmax))
-                elif kk == Nq:
-                    erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)
-                else:
-                    erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)*(1. - get_erf(y0[index_z,i], noise, qmax))
+                if compl_mode == 'erf_prod':
+                    if kk == 0:
+                        erfunc = get_erf(y0[index_z,i], noise, qcut)*(1. - get_erf(y0[index_z,i], noise, qmax))
+                    elif kk == Nq:
+                        erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)
+                    else:
+                        erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)*(1. - get_erf(y0[index_z,i], noise, qmax))
+                elif compl_mode == 'erf_diff':
+                    erfunc = get_erf_compl(y0[index_z,i], qmin, qmax, noise, qcut)
             else:
                 j = 0
                 erfunc = []
                 for j in range(len(skyfracs)):
-                    if kk == 0:
-                        erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*(1. - get_erf(y0[i,index_z,int(tile[j]-1)], noise[j], qmax)))
-                    elif kk == Nq:
-                        erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmin))
-                    else:
-                        erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmin)*(1. - get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmax)))
+                    if compl_mode == 'erf_prod':
+                        if kk == 0:
+                            erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*(1. - get_erf(y0[i,index_z,int(tile[j]-1)], noise[j], qmax)))
+                        elif kk == Nq:
+                            erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmin))
+                        else:
+                            erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmin)*(1. - get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmax)))
+                    elif compl_mode == 'erf_diff':
+                        erfunc.append(get_erf_compl(y0[i,index_z,int(tile[j])-1], qmin, qmax, noise[j], qcut))
                 erfunc = np.asarray(erfunc)
             res.append(np.dot(erfunc, skyfracs))
 
@@ -1039,6 +1054,17 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbi
                 res.append(args)
 
     return res
+
+def get_erf_compl(y, qmin, qmax, rms, qcut):
+
+    arg1 = (y/rms - qmax)/np.sqrt(2.)
+    if qmin > qcut:
+        qlim = qmin
+    else:
+        qlim = qcut
+    arg2 = (y/rms - qlim)/np.sqrt(2.)
+    erf_compl = (special.erf(arg2) - special.erf(arg1)) / 2.
+    return erf_compl
 
 def get_erf(y, rms, cut):
     arg = (y - cut*rms)/np.sqrt(2.)/rms
