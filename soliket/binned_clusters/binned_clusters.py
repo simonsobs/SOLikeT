@@ -10,6 +10,12 @@ import multiprocessing
 import astropy.table as atpy
 from astropy.io import fits
 from functools import partial
+import logging
+import nemo as nm
+import scipy.stats
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 from pkg_resources import resource_filename
 
 pi = 3.1415926535897932384630
@@ -31,18 +37,20 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
     # exit(0)
     data_path: Optional[str] = None
     choose_theory: Optional[str] = None
-    single_tile_test: Optional[str] = None
-    choose_dim: Optional[str] = None
-    Q_optimise: Optional[str] = None
     rel_correction: Optional[str] = None
 
     cat_file: Optional[str] = None
     Q_file: Optional[str] = None
     tile_file: Optional[str] = None
     rms_file: Optional[str] = None
-    test_cat_file: Optional[str] = None
-    test_Q_file: Optional[str] = None
-    test_rms_file: Optional[str] = None
+
+    choose_dim: Optional[str] = None
+    single_tile_test: Optional[str] = None
+    Q_optimise: Optional[str] = None
+    mode: Optional[str] = None
+    compl_mode: Optional[str] = 'erf_prod'
+    dwnsmpl_bins: Optional[int] = None
+    average_Q: Optional[bool] = False
 
     SNRcut: Optional[float] = None
     zmin: Optional[float] = None
@@ -75,12 +83,21 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         print('\r Number of mass bins : ', len(self.marr))
 
-        single_tile = self.single_tile_test
+        if self.mode == 'single_tile':
+            logger.info('Running single tile.')
+        elif self.mode == 'full':
+            logger.info('Running full analysis. No downsampling.')
+        elif self.mode == 'downsample':
+            assert self.dwnsmpl_bins is not None, 'mode = downsample but no bin number given. Aborting.'
+            logger.info('Downsampling selection function inputs.')
+        elif self.mode == 'inpt_dwnsmpld':
+            logger.info('Running on pre-downsampled input.')
+
         dimension = self.choose_dim
         Q_opt = self.Q_optimise
         self.data_directory = self.data_path
 
-        if single_tile == 'yes':
+        if self.mode == 'single_tile':
             self.datafile = self.test_cat_file
             print(" SO test only for a single tile")
         else:
@@ -216,223 +233,129 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         self.dlogq = dlogq
         self.delN2Dcat = zarr, qarr, delN2Dcat
 
-        print('\r :::::: loading files describing selection function')
-        print('\r :::::: reading Q as a function of theta')
-        if single_tile =='yes':
+        logger.info('Loading files describing selection function.')
+        logger.info('Reading Q as a function of theta.')
+        if self.mode == 'single_tile':
+            logger.info('Reading Q function for single tile.')
             self.datafile_Q = self.test_Q_file
             list = fits.open(os.path.join(self.data_directory, self.datafile_Q))
             data = list[1].data
             self.tt500 = data.field("theta500Arcmin")
             self.Q = data.field("PRIMARY")
             assert len(self.tt500) == len(self.Q)
-            print("\r Number of Q function = ", self.Q.ndim)
+            logger.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
         else:
-            # for quick reading theta and Q data is saved first and just called
-            self.datafile_Q = self.Q_file
-            Qfile = np.load(os.path.join(self.data_directory, self.datafile_Q))
-            self.tt500 = Qfile['theta']
-            self.allQ = Qfile['Q']
+            if self.mode == 'inpt_dwnsmpld':
+                logger.info('Reading pre-downsampled Q function.')
+                # for quick reading theta and Q data is saved first and just called
+                self.datafile_Q = self.Q_file
+                Qfile = np.load(os.path.join(self.data_directory, self.datafile_Q))
+                self.tt500 = Qfile['theta']
+                self.allQ = Qfile['Q']
+                assert len(self.tt500) == len(self.allQ[:,0])
 
-            assert len(self.tt500) == len(self.allQ[:,0])
-
-            if Q_opt == 'yes':
-                self.Q = np.mean(self.allQ, axis=1)
-                print("\r Number of Q functions = ", self.Q.ndim)
-                print("\r Using one averaged Q function for optimisation")
             else:
-                self.Q = self.allQ
-                print("\r Number of Q functions = ", len(self.Q[0]))
+                logger.info('Reading full Q function.')
+                self.datafile_Q = self.Q_file
+                tile_area = np.genfromtxt(os.path.join(self.data_directory, self.tile_file), dtype=str)
+                tilename = tile_area[:, 0]
+                QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q), tileNames=tilename)
+                Nt = len(tilename)
+                logger.info("Number of tiles = {}.".format(Nt))
 
+                hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
+                data = hdulist[1].data
+                tt500 = data.field("theta500Arcmin")
 
-            # #------------------------------------------------------------------
-            # # copied from NEMO for reading the mocks
-            # # vary number of Q other than all or 1
-            #
-            # tileNamesInFile = []
-            # fitDict = {}
-            #
-            # self.datafile_Q = self.Q_file
-            # with fits.open((os.path.join(self.data_directory, self.datafile_Q))) as QTabFile:
-            #     for ext in QTabFile:
-            #         if type(ext) == fits.hdu.table.BinTableHDU:
-            #             tileNamesInFile.append(ext.name)
-            #     tileNamesInFile.sort()
-            # tileNames = tileNamesInFile
-            #
-            # i = 0
-            # for tileName in tileNames:
-            #     fitDict[i] = atpy.Table().read((os.path.join(self.data_directory, self.datafile_Q)), hdu=tileName)
-            #     i += 1
-            #
-            # self.tt500 = fitDict[0]['theta500Arcmin']
-            # tilename = tileNames
-            #
-            # i = 0
-            # Nt = len(tileNames)
-            # allQ = np.zeros((len(self.tt500),Nt))
-            # for i in range(Nt):
-            #     allQ[:,i] = fitDict[i]['Q']
-            #
-            # #np.savez('quick_theta_Q', theta=self.tt500, Q=allQ)
-            #
-            # assert len(self.tt500) == len(allQ[:,0])
-            #
-            # if Q_opt == 'yes':
-            #     QQ = np.delete(allQ, np.s_[138,267], axis=1)
-            #     self.Q = np.mean(QQ, axis=1)
-            #     print("\r Number of Q functions = ", self.Q.ndim)
-            #     print("\r Using one averaged Q function for optimisation")
-            #     #print(allQ)
-            #     #print(self.Q)
-            # else:
-            #
-            #     QQ = np.delete(allQ, np.s_[138,267], axis=1)
-            #     meanQ = np.mean(QQ, axis=1)
-            #
-            #     allQ[:,138] = meanQ
-            #     allQ[:,267] = meanQ
-            #
-            #     qpeak = []
-            #
-            #     iNq = len(allQ[0,:])
-            #     for i in range(iNq):
-            #         qpeak.append(np.max(allQ[:,i]))
-            #
-            #     Nqq = 10
-            #     count, edges = np.histogram(qpeak, Nqq)
-            #     nbin = len(edges) - 1
-            #
-            #     qbin = [[] for i in range(nbin)]
-            #
-            #     for i in range(iNq):
-            #         for j in range(nbin):
-            #             if (np.max(allQ[:,i]) >= edges[j] and np.max(allQ[:,i]) < edges[j+1]):
-            #                 qbin[j].append(allQ[:,i])
-            #
-            #     qbin = np.array(qbin)
-            #
-            #
-            #     qmean = []
-            #
-            #     for i in range(nbin):
-            #         #print(i, len(qbin[i]))
-            #         qmean.append(sum(qbin[i])/len(qbin[i]))
-            #
-            #     qname = []
-            #
-            #     for i in range(iNq):
-            #         for j in range(nbin):
-            #             if (np.max(allQ[:,i]) >= edges[j] and np.max(allQ[:,i]) <= edges[j+1]):
-            #                 qname.append(j+1)
-            #
-            #     self.qname = np.array(qname)
-            #
-            #     self.Q = np.array(qmean).T
-            #     print("\r Number of Q functions = ", len(self.Q[0]))
-            #
-            # #------------------------------------------------------------------
+                # reading in all Q functions
+                allQ = np.zeros((len(tt500), Nt))
+                for i in range(Nt):
+                    allQ[:, i] = QFit.getQ(tt500, tileName=tile_area[:, 0][i])
+                assert len(tt500) == len(allQ[:, 0])
+                self.tt500 = tt500
+                self.allQ = allQ
 
-
-        print('\r :::::: reading noise data')
-        if single_tile == 'yes':
+        logger.info('Reading RMS.')
+        if self.mode == 'single_tile':
             self.datafile_rms = self.test_rms_file
 
             list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
             data = list[1].data
             self.skyfracs = data.field("areaDeg2")*np.deg2rad(1.)**2
             self.noise = data.field("y0RMS")
-            print("\r Number of sky patches = ", self.skyfracs.size)
+            logger.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
         else:
-            # for convenience,
-            # save a down sampled version of rms txt file and read it directly
-            # this way is a lot faster
-            # could recreate this file with different downsampling as well
-            # tile name is replaced by consecutive number from now on
+            if self.mode == 'inpt_dwnsmpld':
+                # for convenience,
+                # save a down sampled version of rms txt file and read it directly
+                # this way is a lot faster
+                # could recreate this file with different downsampling as well
+                # tile name is replaced by consecutive number from now on
+                logger.info('Reading pre-downsampled RMS table.')
+                self.datafile_rms = self.rms_file
+                file_rms = np.loadtxt(os.path.join(self.data_directory, self.datafile_rms))
+                self.noise = file_rms[:,0]
+                self.skyfracs = file_rms[:,1]
+                self.tname = file_rms[:,2]
+                logger.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
+                logger.info("Number of sky patches = {}.".format(self.skyfracs.size))
+            else:
+                logger.info('Reading in full RMS table.')
+                self.datafile_rms = self.rms_file
 
-            self.datafile_rms = self.rms_file
-            file_rms = np.loadtxt(os.path.join(self.data_directory, self.datafile_rms))
-            self.noise = file_rms[:,0]
-            self.skyfracs = file_rms[:,1]
-            self.tname = file_rms[:,2]
-            print("\r Number of tiles = ", len(np.unique(self.tname)))
+                list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
+                file_rms = list[1].data
 
-            downsample = 50
-            print("\r Noise map is downsampled to speed up a completeness compuation by %d" %downsample)
-            print("\r Number of sky patches = ", self.skyfracs.size)
+                self.noise = file_rms['y0RMS']
+                self.skyfracs = file_rms['areaDeg2']*np.deg2rad(1.)**2
+                self.tname = file_rms['tileName']
+                logger.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
+                logger.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
+        if self.mode == 'downsample':
+            logger.info('Downsampling RMS and Q function using {} bins.'.format(self.dwnsmpl_bins))
+            binned_stat = scipy.stats.binned_statistic(self.noise, self.skyfracs, statistic='sum', bins=self.dwnsmpl_bins)
+            binned_area = binned_stat[0]
+            binned_rms_edges = binned_stat[1]
 
-        #-----------------------------------------------------------------------
-        #     self.datafile_rms = self.rms_file
-        #     list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
-        #     data = list[1].data
-        #     noise    = data.field("y0RMS")
-        #     skyfracs = data.field("areaDeg2")
-        #     tname    = data.field("tileName")
-        #     print("\r Number of sky patches = ", skyfracs.size)
-        #
-        #     # downsampling
-        #     skyfracs0 = []
-        #     noise0 = []
-        #     tname0 = []
-        #
-        #     downsample = 50
-        #     stepSize = downsample*1e-7
-        #     binEdges = np.arange(min(noise), max(noise)+stepSize, stepSize)
-        #
-        #     for i in range(len(tilename)):
-        #
-        #          noise_tile = []
-        #          skyfracs_tile = []
-        #          tname_tile = []
-        #
-        #          for j in range(len(noise)):
-        #              if tname[j] == tilename[i]:
-        #                  noise_tile.append(noise[j])
-        #                  skyfracs_tile.append(skyfracs[j])
-        #                  tname_tile.append(tname[j])
-        #
-        #          noise_arr = np.array(noise_tile)
-        #          skyfracs_arr = np.array(skyfracs_tile)
-        #          tname_arr = np.array(tname_tile)
-        #
-        #          skyfracs_masked = []
-        #          noise_masked = []
-        #          tname_masked = []
-        #
-        #          for k in range(len(binEdges)-1):
-        #              mask = np.logical_and(noise_arr >= binEdges[k], noise_arr < binEdges[k+1])
-        #              if mask.sum() > 0:
-        #                  noise_masked.append(np.average(noise_arr[mask], weights=skyfracs_arr[mask]))
-        #                  skyfracs_masked.append(np.sum(skyfracs_arr[mask]))
-        #                  tname_masked.append(tilename[i])
-        #
-        #          noise0.append(noise_masked)
-        #          skyfracs0.append(skyfracs_masked)
-        #          tname0.append(tname_masked)
-        #
-        #     #print(len(noise0))
-        #     self.noise = np.array([item for singleList in noise0 for item in singleList])
-        #     self.skyfracs = np.array([item for singleList in skyfracs0 for item in singleList])*np.deg2rad(1.)**2.
-        #     tname_reduced = np.array([item for singleList in tname0 for item in singleList])
-        #
-        #     tname = []
-        #
-        #     for i in range(len(tname_reduced)):
-        #         for j in range(len(tilename)):
-        #             if tname_reduced[i] == tilename[j]:
-        #                 tname.append(self.qname[j])
-        #
-        #     self.tname = np.array(tname)
-        #
-        # print("\r Number of sky patches = ", self.skyfracs.size)
-        #
-        #
-        #----------------------------------------------------------------------
+            bin_ind = np.digitize(self.noise, binned_rms_edges)
+            tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
 
+            Qdwnsmpld = np.zeros((self.allQ.shape[0], self.dwnsmpl_bins))
 
-        print("\r Entire survey area = ", self.skyfracs.sum()/(np.deg2rad(1.)**2.), "deg2")
+            for i in range(self.dwnsmpl_bins):
+                tempind = np.where(bin_ind == i + 1)[0]
+                if len(tempind) == 0:
+                    logger.info('Found empty bin.')
+                    Qdwnsmpld[:, i] = np.zeros(self.allQ.shape[0])
+                else:
+                    temparea = self.skyfracs[tempind]
+                    temptiles = self.tname[tempind]
+                    test = [tiledict[key] for key in temptiles]
+                    Qdwnsmpld[:, i] = np.average(self.allQ[:, test], axis=1, weights=temparea)
+
+            self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
+            self.skyfracs = binned_area
+            self.allQ = Qdwnsmpld
+            logger.info("Number of downsampled sky patches = {}.".format(self.skyfracs.size))
+
+            assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.allQ.shape[1]
+
+        elif self.mode == 'full':
+            tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
+            self.tile_list = [tiledict[key]+1 for key in self.tname]
+
+        if self.average_Q:
+            self.Q = np.mean(self.allQ, axis=1)
+            logger.info("Number of Q functions = {}.".format(self.Q.ndim))
+            logger.info("Using one averaged Q function for optimisation")
+        else:
+            self.Q = self.allQ
+            logger.info("Number of Q functions = {}.".format(len(self.Q[0])))
+
+        logger.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
 
 
         # finner binning for low redshift
@@ -827,7 +750,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         i = 0
         for i in range(len(zarr)):
-            print(i, delN2D[i,:].sum())
+            logger.info('Number of clusters in redshift bin {}: {}.'.format(i, delN2D[i,:].sum()))
+        logger.info("Total predicted 2D N = {}.".format(delN2D.sum()))
 
         return delN2D
 
@@ -842,16 +766,13 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             delN = self._get_integrated2D(pk_intp, **params_values_dict)
 
         elapsed = t.time() - start
-        print("\r ::: theory N calculation took %.1f seconds" %elapsed)
+        logger.info("Theory N calculation took {} seconds.".format(elapsed))
 
         return delN
 
 
     # y-m scaling relation for completeness
     def _get_y0(self, mass, z, **params_values_dict):
-
-        single_tile = self.single_tile_test
-        Q_opt = self.Q_optimise
 
         A0 = params_values_dict["tenToA0"]
         B0 = params_values_dict["B0"]
@@ -876,7 +797,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             return ttstar*(m/3.e14*(100./H0))**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.)
 
         def splQ(x):
-            if single_tile == 'yes' or Q_opt == 'yes':
+            if self.mode == 'single_tile' or self.average_Q:
                 tck = interpolate.splrep(self.tt500, self.Q)
                 newQ = interpolate.splev(x, tck)
             else:
@@ -888,15 +809,18 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             return np.asarray(np.abs(newQ))
 
         def rel(m):
-            t = -0.008488*(m*Ez)**(-0.585)
-            return 1. + 3.79*t - 28.2*(t**2.)
+            #mm = m / mpivot
+            #t = -0.008488*(mm*Ez[:,None])**(-0.585)
+            t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
+            return 1.# + 3.79*t - 28.2*(t**2.)
 
-        rel_cor = self.rel_correction
-
-        if rel_cor == 'yes':
-            y0 = A0 * (Ez**C0) * (mb/mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb/mpivot)
+        if self.mode == 'single_tile' or self.average_Q:
+            #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
+            y0 = A0 * (Ez**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) #* rel(mb) ###### M200m
+            y0 = y0.T ###### M200m
         else:
-            y0 = A0 * (Ez**C0) * (mb/mpivot)**(1. + B0) * splQ(theta(mb))
+            arg = A0 * (Ez ** 2.) * (mb / mpivot) ** (1. + B0) * splQ(theta(mb))
+            y0 = np.transpose(arg, axes=[1, 2, 0])
 
         return y0
 
@@ -908,9 +832,16 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         qcut = self.qcut
         skyfracs = self.skyfracs/self.skyfracs.sum()
         Npatches = len(skyfracs)
-        single_tile = self.single_tile_test
-        Q_opt = self.Q_optimise
-        if single_tile == 'no' and Q_opt == 'no': tilename = self.tname
+
+        if self.mode != 'single_tile' and not self.average_Q:
+            if self.mode == 'inpt_dwnsmpld':
+                tile_list = self.tname
+            elif self.mode == 'downsample':
+                tile_list = np.arange(noise.shape[0])+1
+            elif self.mode == 'full':
+                tile_list = self.tile_list
+        else:
+            tile_list = None
 
         if scatter == 0.:
             a_pool = multiprocessing.Pool()
@@ -924,9 +855,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                         yy=None,
                                         y0=y0,
                                         temp=None,
-                                        single_tile=single_tile,
-                                        tile=None if single_tile == 'yes' or Q_opt == 'yes' else tilename,
-                                        Q_opt=Q_opt,
+                                        mode=self.mode,
+                                        tile=tile_list,
+                                        average_Q=self.average_Q,
                                         scatter=scatter),range(len(zarr)))
         else :
             lnymin = -25.     #ln(1e-10) = -23
@@ -940,7 +871,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             i = 0
             lny = lnymin
 
-            if single_tile == 'yes' or Q_opt == "yes":
+            if self.mode == 'single_tile' or self.average_Q:
 
                 for i in range(Ny):
                     y = np.exp(lny)
@@ -984,9 +915,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                                 yy=yy,
                                                 y0=y0,
                                                 temp=temp,
-                                                single_tile=single_tile,
-                                                tile=None if single_tile == 'yes' or Q_opt == 'yes' else tilename,
-                                                Q_opt=Q_opt,
+                                                mode=self.mode,
+                                                tile=tile_list,
+                                                average_Q=self.average_Q,
                                                 scatter=scatter),range(len(zarr)))
         a_pool.close()
         comp = np.asarray(completeness)
@@ -1003,9 +934,16 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         qcut = self.qcut
         skyfracs = self.skyfracs/self.skyfracs.sum()
         Npatches = len(skyfracs)
-        single_tile = self.single_tile_test
-        Q_opt = self.Q_optimise
-        if single_tile == 'no' and Q_opt == 'no': tilename = self.tname
+
+        if self.mode != 'single_tile' and not self.average_Q:
+            if self.mode == 'inpt_dwnsmpld':
+                tile_list = self.tname
+            elif self.mode == 'downsample':
+                tile_list = np.arange(noise.shape[0])+1
+            elif self.mode == 'full':
+                tile_list = self.tile_list
+        else:
+            tile_list = None
 
         Nq = self.Nq
         qarr = self.qarr
@@ -1027,9 +965,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                             dyy=None,
                                             yy=None,
                                             temp=None,
-                                            single_tile=single_tile,
-                                            Q_opt=Q_opt,
-                                            tile=None if single_tile == 'yes' or Q_opt == 'yes' else tilename,
+                                            mode=self.mode,
+                                            compl_mode=self.compl_mode,
+                                            tile=tile_list,
+                                            average_Q=self.average_Q,
                                             scatter=scatter),range(len(zarr)))
 
         else:
@@ -1044,7 +983,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             lny = lnymin
             i = 0
 
-            if single_tile == 'yes' or Q_opt == "yes":
+            if self.mode != 'single_tile' and not self.average_Q:
 
                 for i in range(Ny):
                     yy0 = np.exp(lny)
@@ -1055,12 +994,15 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                     qmin = 10.**qmin
                     qmax = 10.**qmax
 
-                    if kk == 0:
-                        cc = get_erf(yy0, noise, qcut)*(1. - get_erf(yy0, noise, qmax))
-                    elif kk == Nq-1:
-                        cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)
-                    else:
-                        cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)*(1. - get_erf(yy0, noise, qmax))
+                    if self.compl_mode == 'erf_prod':
+                        if kk == 0:
+                            cc = get_erf(yy0, noise, qcut)*(1. - get_erf(yy0, noise, qmax))
+                        elif kk == Nq-1:
+                            cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)
+                        else:
+                            cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)*(1. - get_erf(yy0, noise, qmax))
+                    elif self.compl_mode == 'erf_diff':
+                        cc = get_erf_compl(yy0, qmin, qmax, noise, qcut)
 
                     temp.append(np.dot(cc.T, skyfracs))
                     yy.append(yy0)
@@ -1086,12 +1028,15 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
                     j = 0
                     for j in range(Npatches):
-                        if kk == 0:
-                            cc = get_erf(yy0, noise[j], qcut)*(1. - get_erf(yy0, noise[j], qmax))
-                        elif kk == Nq:
-                            cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)
-                        else:
-                            cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)*(1. - get_erf(yy0, noise[j], qmax))
+                        if self.compl_mode == 'erf_prod':
+                            if kk == 0:
+                                cc = get_erf(yy0, noise[j], qcut)*(1. - get_erf(yy0, noise[j], qmax))
+                            elif kk == Nq:
+                                cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)
+                            else:
+                                cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)*(1. - get_erf(yy0, noise[j], qmax))
+                        elif self.compl_mode == 'erf_diff':
+                            cc = get_erf_compl(yy0, qmin, qmax, noise[j], qcut)
 
                         temp.append(cc*skyfracs[j])
                         yy.append(yy0)
@@ -1119,9 +1064,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                                 dyy=dyy,
                                                 yy=yy,
                                                 temp=temp,
-                                                single_tile=single_tile,
-                                                Q_opt=Q_opt,
-                                                tile=None if single_tile == 'yes' or Q_opt == 'yes' else tilename,
+                                                mode=self.mode,
+                                                compl_mode=self.compl_mode,
+                                                tile=tile_list,
+                                                average_Q=self.average_Q,
                                                 scatter=scatter),range(len(zarr)))
 
         a_pool.close()
@@ -1132,7 +1078,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         return comp
 
 
-def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, single_tile, Q_opt, tile, scatter):
+def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, mode, average_Q, tile, scatter):
 
     i = 0
     res = []
@@ -1140,7 +1086,7 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, s
 
         if scatter == 0.:
 
-            if single_tile == 'yes' or Q_opt == 'yes':
+            if mode == 'single_tile' or average_Q:
                 arg = get_erf(y0[index_z, i], noise, qcut)
             else:
                 j = 0
@@ -1154,7 +1100,7 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, s
 
             fac = 1./np.sqrt(2.*pi*scatter**2)
             mu = np.log(y0)
-            if single_tile == 'yes' or Q_opt == 'yes':
+            if mode == 'single_tile' or average_Q:
                 arg = (lnyy - mu[index_z, i])/(np.sqrt(2.)*scatter)
                 res.append(np.dot(temp, fac*np.exp(-arg**2.)*dyy/yy))
             else:
@@ -1167,7 +1113,7 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, s
 
     return res
 
-def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbin, lnyy, dyy, yy, temp, single_tile, Q_opt, tile, scatter):
+def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbin, lnyy, dyy, yy, temp, mode, compl_mode, average_Q, tile, scatter):
 
     kk = qbin
     qmin = qarr[kk] - dlogq/2.
@@ -1175,29 +1121,38 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbi
     qmin = 10.**qmin
     qmax = 10.**qmax
 
+    # print(index_z)
+    # print(y0.shape)
+
     i = 0
     res = []
     for i in range(Nm):
 
         if scatter == 0.:
 
-            if single_tile == 'yes' or Q_opt == "yes":
-                if kk == 0:
-                    erfunc = get_erf(y0[index_z,i], noise, qcut)*(1. - get_erf(y0[index_z,i], noise, qmax))
-                elif kk == Nq:
-                    erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)
-                else:
-                    erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)*(1. - get_erf(y0[index_z,i], noise, qmax))
+            if mode == 'single_tile' or average_Q:
+                if compl_mode == 'erf_prod':
+                    if kk == 0:
+                        erfunc = get_erf(y0[index_z,i], noise, qcut)*(1. - get_erf(y0[index_z,i], noise, qmax))
+                    elif kk == Nq:
+                        erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)
+                    else:
+                        erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)*(1. - get_erf(y0[index_z,i], noise, qmax))
+                elif compl_mode == 'erf_diff':
+                    erfunc = get_erf_compl(y0[index_z,i], qmin, qmax, noise, qcut)
             else:
                 j = 0
                 erfunc = []
                 for j in range(len(skyfracs)):
-                    if kk == 0:
-                        erfunc.append(get_erf(y0[int(tile[j])-1, index_z, i], noise[j], qcut)*(1. - get_erf(y0[int(tile[j])-1, index_z, i], noise[j], qmax)))
-                    elif kk == Nq:
-                        erfunc.append(get_erf(y0[int(tile[j])-1, index_z, i], noise[j], qcut)*get_erf(y0[int(tile[j])-1, index_z, i], noise[j], qmin))
-                    else:
-                        erfunc.append(get_erf(y0[int(tile[j])-1, index_z, i], noise[j], qcut)*get_erf(y0[int(tile[j])-1, index_z, i], noise[j], qmin)*(1. - get_erf(y0[int(tile[j])-1, index_z, i], noise[j], qmax)))
+                    if compl_mode == 'erf_prod':
+                        if kk == 0:
+                            erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*(1. - get_erf(y0[i,index_z,int(tile[j]-1)], noise[j], qmax)))
+                        elif kk == Nq:
+                            erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmin))
+                        else:
+                            erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmin)*(1. - get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmax)))
+                    elif compl_mode == 'erf_diff':
+                        erfunc.append(get_erf_compl(y0[i,index_z,int(tile[j])-1], qmin, qmax, noise[j], qcut))
                 erfunc = np.asarray(erfunc)
             res.append(np.dot(erfunc, skyfracs))
 
@@ -1205,7 +1160,7 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbi
 
             fac = 1./np.sqrt(2.*pi*scatter**2)
             mu = np.log(y0)
-            if single_tile == 'yes' or Q_opt == "yes":
+            if mode == 'single_tile' or average_Q:
                 arg = (lnyy - mu[index_z,i])/(np.sqrt(2.)*scatter)
                 res.append(np.dot(temp, fac*np.exp(-arg**2.)*dyy/yy))
             else:
@@ -1217,6 +1172,17 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbi
                 res.append(args)
 
     return res
+
+def get_erf_compl(y, qmin, qmax, rms, qcut):
+
+    arg1 = (y/rms - qmax)/np.sqrt(2.)
+    if qmin > qcut:
+        qlim = qmin
+    else:
+        qlim = qcut
+    arg2 = (y/rms - qlim)/np.sqrt(2.)
+    erf_compl = (special.erf(arg2) - special.erf(arg1)) / 2.
+    return erf_compl
 
 def get_erf(y, rms, cut):
     arg = (y - cut*rms)/np.sqrt(2.)/rms
