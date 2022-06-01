@@ -1,10 +1,13 @@
-output: /Users/eunseonglee/SOLikeT/soliket/binned_clusters/chains/test
+# run from SOLikeT/soliket/binned_clusters
+# command:
+# $ cobaya-run input_files/template_class.yaml -f
+output: chains/test
 
 likelihood:
   soliket.BinnedClusterLikelihood:
 
     # Websky data
-    data_path: /Users/eunseonglee/SOLikeT/soliket/binned_clusters/data/so/
+    data_path: data/so/
     cat_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits
     Q_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/quick_theta_Q.npz
     tile_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/tileAreas.txt
@@ -81,3 +84,4 @@ theory:
     extra_args:
       N_ur: 3.046
       N_ncdm: 0.
+    # non_linear: 'halofit'

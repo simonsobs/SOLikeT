@@ -1,41 +1,22 @@
-output: /Users/eunseonglee/SOLikeT/soliket/binned_clusters/chains/test
+# run from SOLikeT/soliket/binned_clusters
+# command:
+# $ cobaya-run input_files/template_test.yaml -f
+
+output: chains/test
 
 likelihood:
   soliket.BinnedClusterLikelihood:
-
-    # Websky data
-    data_path: /Users/eunseonglee/SOLikeT/soliket/binned_clusters/data/so/
-    cat_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits
-    Q_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/quick_theta_Q.npz
-    tile_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/tileAreas.txt
-    rms_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/downsampled.txt
-
-    # run options
-    stop_at_error: true
-    choose_theory: "camb"
     single_tile_test: "no"
     choose_dim: "1D"
     Q_optimise: "yes"
-    rel_correction: "no"
+    stop_at_error: true
 
-    # redshift setting
-    zmin: 0.
-    zmax: 2.8
-    dz: 0.1
-
-    # SNR setting
-    SNRcut: 5.
-    log10qmin: 0.6
-    log10qmax: 2.0
-    dlog10q: 0.25
-
-    # mass setting
-    Mmin: 1e13
-    Mmax: 1e16
-    dlogM: 0.05
-
-    # mass function
-    delta: 200.
+    # Websky data
+    data_path: data/so/
+    cat_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits
+    Q_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/quick_theta_Q.npz # (boris): see notebook.
+    tile_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/tileAreas.txt # (boris): not needed i think.
+    rms_file: MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/downsampled.txt # (boris): see notebook to create this.
 
 params:
   logA:
@@ -69,14 +50,13 @@ params:
     value: 'lambda theta_MC_100: 1.e-2*theta_MC_100'
     derived: false
 
-  tenToA0: 4.35e-5
-  B0: 0.08
-  C0: 2.
+  tenToA0: 4.524018987892e-5 #4.35e-5
+  B0: 0.11203227876022619 #0.08
   scatter_sz: 0.
   bias_sz: 1.
 
-  ombh2: 0.0226576  # for omb = 0.049
-  omch2: 0.1206864
+  ombh2: 0.0226576       # for omb = 0.049
+  omch2: 0.1251085109847442 #0.1206864
   ns: 0.965
   tau: 0.055
   mnu: 0.0
@@ -94,12 +74,15 @@ params:
 sampler:
   evaluate:
       override:
-        theta_MC_100: 1.0413345 # for H0 = 68
-        logA: 3.007
+        theta_MC_100: 1.0452999885349978 #1.04135  # for H0 = 68
+        logA: 2.97045728 #3.007  # for sigma8 = 0.81
 
 theory:
   camb:
     stop_at_error: true
     extra_args:
       num_massive_neutrinos: 0
+      nonlinear: false
+      kmax: 4.2
       dark_energy_model: fluid
+    ignore_obsolete: True

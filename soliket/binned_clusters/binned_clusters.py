@@ -10,6 +10,7 @@ import multiprocessing
 import astropy.table as atpy
 from astropy.io import fits
 from functools import partial
+from pkg_resources import resource_filename
 
 pi = 3.1415926535897932384630
 rhocrit0 = 2.7751973751261264e11 # [h2 msun Mpc-3]
@@ -23,6 +24,11 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
     name = "BinnedCluster"
 
+    # dataroot = resource_filename(
+    #     "soliket", "binned_clusters/data/"
+    # )
+    # print(dataroot)
+    # exit(0)
     data_path: Optional[str] = None
     choose_theory: Optional[str] = None
     single_tile_test: Optional[str] = None
