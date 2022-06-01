@@ -812,7 +812,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             #mm = m / mpivot
             #t = -0.008488*(mm*Ez[:,None])**(-0.585)
             rel_cor = self.rel_correction
-            if rel_cor == 'yes'
+            if rel_cor == 'yes':
                 t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
                 res = 1.+ 3.79*t - 28.2*(t**2.)
             else:
