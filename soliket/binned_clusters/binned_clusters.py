@@ -811,8 +811,13 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         def rel(m):
             #mm = m / mpivot
             #t = -0.008488*(mm*Ez[:,None])**(-0.585)
-            t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
-            return 1.# + 3.79*t - 28.2*(t**2.)
+            rel_cor = self.rel_correction
+            if rel_cor == 'yes'
+                t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
+                res = 1.+ 3.79*t - 28.2*(t**2.)
+            else:
+                res = 1.
+            return res
 
         if self.mode == 'single_tile' or self.average_Q:
             #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
