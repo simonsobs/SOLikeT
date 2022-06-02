@@ -838,8 +838,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             y0 = A0 * (Ez**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) #* rel(mb) ###### M200m
             y0 = y0.T ###### M200m
         else:
-            arg = A0 * (Ez ** 2.) * (mb / mpivot) ** (1. + B0) * splQ(theta(mb))
-            y0 = np.transpose(arg, axes=[1, 2, 0])
+            y0 = A0 * (Ez ** 2.) * (mb / mpivot) ** (1. + B0) * splQ(theta(mb))
+            # y0 = np.transpose(arg, axes=[1, 2, 0])
 
         return y0
 
@@ -969,6 +969,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         dlogq = self.dlogq
 
         if scatter == 0.:
+
+            print(len(marr))
+            print(len(zarr))
+
             a_pool = multiprocessing.Pool()
             completeness = a_pool.map(partial(get_comp_zarr2D,
                                             Nm=len(marr),
@@ -1165,13 +1169,13 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qarr, dlogq, qbi
                 for j in range(len(skyfracs)):
                     if compl_mode == 'erf_prod':
                         if kk == 0:
-                            erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*(1. - get_erf(y0[i,index_z,int(tile[j]-1)], noise[j], qmax)))
+                            erfunc.append(get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qcut)*(1. - get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qmax)))
                         elif kk == Nq:
-                            erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmin))
+                            erfunc.append(get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qcut)*get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qmin))
                         else:
-                            erfunc.append(get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qcut)*get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmin)*(1. - get_erf(y0[i,index_z,int(tile[j])-1], noise[j], qmax)))
+                            erfunc.append(get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qcut)*get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qmin)*(1. - get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qmax)))
                     elif compl_mode == 'erf_diff':
-                        erfunc.append(get_erf_compl(y0[i,index_z,int(tile[j])-1], qmin, qmax, noise[j], qcut))
+                        erfunc.append(get_erf_compl(y0[int(tile[j])-1,index_z,i], qmin, qmax, noise[j], qcut))
                 erfunc = np.asarray(erfunc)
             res.append(np.dot(erfunc, skyfracs))
 
