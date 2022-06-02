@@ -79,7 +79,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         self.lnmmax = np.log(self.Mmax)
         self.dlnm = self.dlogM
         self.marr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
-        # this is to be consist with szcounts.f90 - maybe switch to linsapce?
+        # this is to be consist with szcounts.f90 - maybe switch to linspace?
 
         print('\r Number of mass bins : ', len(self.marr))
 
@@ -127,10 +127,24 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         print('\r Number of clusters above the SNR cut = ', Ncat)
         print('\r The highest redshift = %.2f' %z.max())
 
+        # New code... but a bug (boris, 1st june)
+        # # redshift bin for N(z)
+        # zarr = np.arange(self.zmin, self.zmax + 0.1, self.dz)
+        # if zarr[0] == 0 : zarr[0] = 1e-6 # for theory calculation
+        # self.zarr = zarr
+
         # redshift bin for N(z)
-        zarr = np.arange(self.zmin, self.zmax + 0.1, self.dz)
-        if zarr[0] == 0 : zarr[0] = 1e-6 # for theory calculation
+        zmax = roundup(z.max(), 1)
+        zarr = np.arange(0, zmax + 0.1, 0.1)
+        #zarr = np.arange(0, zmax + 0.1, 0.3)
+        if zarr[0] == 0 : zarr[0] = 1e-5
+
+        # # Redshift binning now different to selFn binning
+        # zBinEdges = np.arange(0, 3 + 0.1, 0.1)
+        # zarr = zBinEdges[1:] + zBinEdges[:-1] / 2
+
         self.zarr = zarr
+
         print("\r Number of redshift bins = ", len(zarr)-1)
 
         # redshift binning (following szcounts.f90)

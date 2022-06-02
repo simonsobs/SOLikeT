@@ -76,7 +76,7 @@ params:
 
   tenToA0: 4.35e-5
   B0: 0.08
-  C0: 2.
+  C0: 2. # boris: why 2?
   scatter_sz: 0.
   bias_sz: 1.
 

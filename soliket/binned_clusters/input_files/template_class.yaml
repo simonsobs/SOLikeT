@@ -37,7 +37,7 @@ likelihood:
     Mmax: 1e16
     dlogM: 0.05
 
-    # mass function
+    # mass definition
     delta: 200.
 
 params:
