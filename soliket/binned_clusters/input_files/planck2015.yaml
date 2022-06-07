@@ -1,0 +1,168 @@
+theory:
+  camb:
+    stop_at_error: true
+    extra_args:
+      num_massive_neutrinos: 1
+      neutrino_hierarchy: degenerate
+      accurate_massive_neutrino_transfers: true
+      nonlinear: false
+      kmax: 4.2
+      dark_energy_model: fluid
+likelihood:
+  soliket.BinnedClusterLikelihoodPlanck:
+    plc_data_path: /home/elee/soliket/soliket/binned_clusters/data/planck
+    plc_cat_file: SZ_cat.txt
+    plc_thetas_file: SZ_thetas.txt
+    plc_skyfracs_file: SZ_skyfracs.txt
+    plc_ylims_file: SZ_ylims.txt
+    choose_dim: 2D
+    stop_at_error: false
+  bao.sixdf_2011_bao:
+    path: /home/elee/cobaya/cobaya/likelihoods/bao/
+    stop_at_error: true
+  bao.sdss_dr7_mgs:
+    path: /home/elee/cobaya_cosmo/data/
+    stop_at_error: true
+  bao.sdss_dr11_lowz_bao:
+    path: /home/elee/cobaya/cobaya/likelihoods/bao/
+    stop_at_error: true
+  bao.sdss_dr11_cmass_bao:
+    path: /home/elee/cobaya_cosmo/data/
+    stop_at_error: true
+prior:
+  p_ystar_sz: 'lambda ystar_sz: stats.norm.logpdf(ystar_sz, loc=-0.186, scale=0.021)'
+  p_scatter_sz: 'lambda scatter_sz: stats.norm.logpdf(scatter_sz, loc=0.075, scale=0.01)'
+  p_cccp_sz: 'lambda bias_sz: stats.norm.logpdf(bias_sz, loc=0.780, scale=0.092)'
+  p_ns: 'lambda ns: stats.norm.logpdf(ns, loc=0.9624, scale=0.014)'
+  p_ombh2: 'lambda ombh2: stats.norm.logpdf(ombh2, loc=0.022, scale=0.002)'
+params:
+  alpha_sz:
+    prior:
+      min: 1.0
+      max: 3.0
+    ref:
+      dist: norm
+      loc: 1.789
+      scale: 0.1
+    proposal: 0.05
+    latex: \alpha_{\mathrm{SZ}}
+  ystar_sz:
+    prior:
+      min: -0.291
+      max: -0.081
+    ref:
+      dist: norm
+      loc: -0.186
+      scale: 0.0105
+    proposal: 0.00525
+    latex: Y_{*}
+  beta_sz:
+    value: 0.66666666
+    latex: \beta_{\mathrm{SZ}}
+  scatter_sz:
+    prior:
+      min: 0.022
+      max: 0.122
+    ref:
+      dist: norm
+      loc: 0.075
+      scale: 0.005
+    proposal: 0.0025
+    latex: \sigma_{\mathrm{SZ}}
+  bias_SZ:
+    prior:
+      min: 0.1
+      max: 1.3
+    ref:
+      dist: norm
+      loc: 0.8
+      scale: 0.1
+    proposal: 0.05
+    latex: 1-b_{\mathrm{SZ}}
+  ns:
+    prior:
+      min: 0.8
+      max: 1.2
+    ref:
+      dist: norm
+      loc: 0.96
+      scale: 0.004
+    proposal: 0.002
+    latex: n_\mathrm{s}
+  ombh2:
+    prior:
+      min: 0.012
+      max: 0.032
+    ref:
+      dist: norm
+      loc: 0.0221
+      scale: 0.0001
+    proposal: 0.0001
+    latex: \Omega_\mathrm{b} h^2
+  omch2:
+    prior:
+      min: 0.05
+      max: 0.19
+    ref:
+      dist: norm
+      loc: 0.12
+      scale: 0.001
+    proposal: 0.0005
+    latex: \Omega_\mathrm{c} h^2
+  logA:
+    prior:
+      min: 2.0
+      max: 4.0
+    ref:
+      dist: norm
+      loc: 3.1
+      scale: 0.001
+    proposal: 0.001
+    latex: \log(10^{10} A_\mathrm{s})
+    drop: true
+  As:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+    latex: A_\mathrm{s}
+  theta_MC_100:
+    prior:
+      min: 0.5
+      max: 10
+    ref:
+      dist: norm
+      loc: 1.0411
+      scale: 0.0004
+    proposal: 0.0002
+    latex: 100\theta_\mathrm{MC}
+    drop: true
+    renames: theta
+  cosmomc_theta:
+    value: 'lambda theta_MC_100: 1.e-2*theta_MC_100'
+    derived: false
+  tau: 0.085
+  mnu: 0.06
+  nnu: 3.046
+  omnu: 0.001429052186
+  w: -1
+  sigma8:
+    latex: \sigma_8
+  omegam:
+    min: 0.1
+    max: 0.6
+    latex: \Omega_\mathrm{m}
+  H0:
+    min: 55
+    max: 90
+    latex: H_0
+sampler:
+  mcmc:
+    Rminus1_stop: 0.01
+    drag: true
+    learn_proposal: true
+    learn_proposal_Rminus1_max: 2.0
+    max_tries: 100
+    proposal_scale: 2.4
+output: test_plc2015
+
+# following Planck 2015 baseline (same data set, same parameter setting etc)
+# Planck SZ + BAO + BBN + CCCP 
+# https://arxiv.org/abs/1502.01597
