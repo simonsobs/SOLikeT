@@ -108,4 +108,5 @@ theory:
     extra_args:
       num_massive_neutrinos: 0
       dark_energy_model: fluid
-    ignore_obsolete: True
+      kmax: 4.2
+    # ignore_obsolete: True
