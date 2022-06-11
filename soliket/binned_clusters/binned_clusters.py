@@ -460,11 +460,12 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 delta = np.log10(delta)
                 omz = om*((1. + z)**3.)/(Ez**2.)
 
-                dso = self.delta
-                if dso == 500.:
-                    dsoz = dso/omz   # M500c
-                elif dso == 200.:
-                    dsoz = dso     # M200m
+                if self.theorypred['md_hmf'] == '500c':
+                    dsoz = 500./omz   # M500c
+                elif self.theorypred['md_hmf'] == '200m':
+                    dsoz = 200     # M200m
+                else:
+                    raise NotImplementedError()
 
                 tck1 = interpolate.splrep(delta, par_aa)
                 tck2 = interpolate.splrep(delta, par_a)
@@ -494,7 +495,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         elif self.theorypred['massfunc_mode'] == 'ccl':
             # First, gather all the necessary ingredients for the number counts
-            mf = self.theory.get_nc_data()
+            mf = self.theory.get_nc_data()['HMF']
             cosmo = self.theory.get_CCL()['cosmo']
 
             h = self.theory.get_param("H0") / 100.0
@@ -574,9 +575,34 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         zz = self.zz
         marr = np.exp(self.marr)
         dlnm = self.dlnm
+        h = self.theory.get_param("H0") / 100.0
 
-        #M500c = self._get_M500c_from_M200m(marr, zz)
-        #marr = M500c ###### M200m
+        if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
+            if self.theorypred['choose_theory'] == 'CCL':
+                mf_data = self.theory.get_nc_data()
+                md_hmf = mf_data['md']
+
+                if self.theorypred['md_ym'] == '200m':
+                    md_ym = ccl.halos.MassDef200m(c_m='Bhattacharya13')
+                elif self.theorypred['md_ym'] == '200c':
+                    md_ym = ccl.halos.MassDef200c(c_m='Bhattacharya13')
+                elif self.theorypred['md_ym'] == '500c':
+                    md_ym = ccl.halos.MassDef(500, 'critical')
+                else:
+                    raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
+
+                cosmo = self.theory.get_CCL()['cosmo']
+                a = 1./(1. + zz)
+                marr_ymmd = np.array([md_hmf.translate_mass(cosmo, marr/h, ai, md_ym) for ai in a])*h
+            else:
+                if self.theorypred['md_hmf'] == '200m' and self.theorypred['md_ym'] == '500c':
+                    marr_ymmd = self._get_M500c_from_M200m(marr, zz)
+                else:
+                    raise NotImplementedError()
+        else:
+            marr_ymmd = marr
+
+        y0 = self._get_y0(marr_ymmd, zz, **params_values_dict)
 
         dVdzdO = self._get_dVdzdO(zz)
         dndlnm = self._get_dndlnm(zz, pk_intp, **params_values_dict)
@@ -584,7 +610,6 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         intgr = dndlnm * dVdzdO * surveydeg2
         intgr = intgr.T
 
-        y0 = self._get_y0(marr, zz, **params_values_dict)
         c = self._get_completeness(marr, zz, y0, **params_values_dict)
 
         #nzarr = np.linspace(0, 2.8, 29)
@@ -600,9 +625,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
             sum = 0.
             sumzs = np.zeros(len(zz))
-            ii = 0
             for ii in zs:
-                j = 0
                 for j in range(len(marr)):
                     sumzs[ii] += 0.5 * (intgr[ii,j]*c[ii,j] + intgr[ii+1,j]*c[ii+1,j]) * dlnm * (zz[ii+1] - zz[ii])
                     #sumzs[ii] += 0.5 * (intgr[ii,j] + intgr[ii+1,j]) * dlnm * (zz[ii+1] - zz[ii]) # no completness check
@@ -625,6 +648,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         marr = np.exp(self.marr)
         dlnm = self.dlnm
         Nq = self.Nq
+        h = self.theory.get_param("H0") / 100.0
 
         dVdzdO = self._get_dVdzdO(zz)
         dndlnm = self._get_dndlnm(zz, pk_intp, **params_values_dict)
@@ -632,19 +656,37 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         intgr = dndlnm * dVdzdO * surveydeg2
         intgr = intgr.T
 
-        # M500c = self._get_M500c_from_M200m(marr, zz)
-        # marr = M500c[:,0]
+        if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
+            if self.theorypred['choose_theory'] == 'CCL':
+                mf_data = self.theory.get_nc_data()
+                md_hmf = mf_data['md']
 
-        y0 = self._get_y0(marr, zz, **params_values_dict)
+                if self.theorypred['md_ym'] == '200m':
+                    md_ym = ccl.halos.MassDef200m(c_m='Bhattacharya13')
+                elif self.theorypred['md_ym'] == '200c':
+                    md_ym = ccl.halos.MassDef200c(c_m='Bhattacharya13')
+                elif self.theorypred['md_ym'] == '500c':
+                    md_ym = ccl.halos.MassDef(500, 'critical')
+                else:
+                    raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
+
+                cosmo = self.theory.get_CCL()['cosmo']
+                a = 1./(1. + zz)
+                marr_ymmd = np.array([md_hmf.translate_mass(cosmo, marr/h, ai, md_ym) for ai in a])*h
+            else:
+                if self.theorypred['md_hmf'] == '200m' and self.theorypred['md_ym'] == '500c':
+                    marr_ymmd = self._get_M500c_from_M200m(marr, zz).T
+                else:
+                    raise NotImplementedError()
+        else:
+            marr_ymmd = marr
+
+        y0 = self._get_y0(marr_ymmd, zz, **params_values_dict)
 
         cc = []
         for kk in range(Nq):
             cc.append(self._get_completeness2D(marr, zz, y0, kk, **params_values_dict))
         cc = np.asarray(cc)
-
-        print(intgr)
-        print(cc)
-        print(y0)
 
         #nzarr = np.linspace(0, 2.8, 29)
         nzarr = np.linspace(0, 2.9, 30)
@@ -706,7 +748,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         Ez = Ez[:,None]
         h = self.theory.get_param("H0") / 100.0
         mb = mass * bias
-        mpivot = 3e14 * h  # I put h and Boris put 0.7 here
+        #TODO: Is removing h correct here - matches Hasselfield but is different from before
+        Mpivot = self.YM['Mpivot']  # I put h and Boris put 0.7 here
 
         def theta(m):
 
@@ -717,7 +760,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             H0 = self.theory.get_param("H0")
             ttstar = thetastar * (H0/70.)**(-2./3.)
 
-            return ttstar*(m/3.e14*(100./H0))**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.)
+            return ttstar*(m/Mpivot)**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.)
 
         def splQ(x):
             if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
@@ -725,7 +768,6 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 newQ = interpolate.splev(x, tck)
             else:
                 newQ = []
-                i = 0
                 for i in range(len(self.Q[0])):
                     tck = interpolate.splrep(self.tt500, self.Q[:,i])
                     newQ.append(interpolate.splev(x, tck))
@@ -734,8 +776,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         def rel(m):
             #mm = m / mpivot
             #t = -0.008488*(mm*Ez[:,None])**(-0.585)
-            rel_cor = self.rel_correction
-            if rel_cor == 'yes':
+            if self.theorypred['rel_correction']:
                 t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
                 res = 1.+ 3.79*t - 28.2*(t**2.)
             else:
@@ -744,10 +785,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
             #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
-            y0 = A0 * (Ez**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) #* rel(mb) ###### M200m
+            y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ(theta(mb)) #* rel(mb) ###### M200m
             y0 = y0.T ###### M200m
         else:
-            y0 = A0 * (Ez ** 2.) * (mb / mpivot) ** (1. + B0) * splQ(theta(mb))
+            y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ(theta(mb))
             # y0 = np.transpose(arg, axes=[1, 2, 0])
 
         return y0
@@ -796,7 +837,6 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             yy = []
             lnyy = []
             dyy = []
-            i = 0
             lny = lnymin
 
             if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
@@ -818,7 +858,6 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             else:
                 for i in range(Ny):
                     y = np.exp(lny)
-                    j = 0
                     for j in range(Npatches):
                         arg = (y - qcut*noise[j])/np.sqrt(2.)/noise[j]
                         erfunc = (special.erf(arg) + 1.)/2.
@@ -947,7 +986,6 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                     qmin = qbins[kk]
                     qmax = qbins[kk+1]
 
-                    j = 0
                     for j in range(Npatches):
                         if self.theorypred['compl_mode'] == 'erf_prod':
                             if kk == 0:
@@ -1009,7 +1047,6 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, m
             if mode == 'single_tile' or average_Q:
                 arg = get_erf(y0[index_z, i], noise, qcut)
             else:
-                j = 0
                 arg = []
                 for j in range(len(skyfracs)):
                     arg.append(get_erf(y0[int(tile[j])-1, index_z, i], noise[j], qcut))
@@ -1024,7 +1061,6 @@ def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, m
                 arg = (lnyy - mu[index_z, i])/(np.sqrt(2.)*scatter)
                 res.append(np.dot(temp, fac*np.exp(-arg**2.)*dyy/yy))
             else:
-                j = 0
                 args = 0.
                 for j in range(len(skyfracs)):
                     arg = (lnyy[j,:] - mu[int(tile[j])-1, index_z, i])/(np.sqrt(2.)*scatter)
@@ -1039,10 +1075,6 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qbins, qbin, lny
     qmin = qbins[kk]
     qmax = qbins[kk+1]
 
-    # print(index_z)
-    # print(y0.shape)
-
-    i = 0
     res = []
     for i in range(Nm):
 
@@ -1059,7 +1091,6 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qbins, qbin, lny
                 elif compl_mode == 'erf_diff':
                     erfunc = get_erf_compl(y0[index_z,i], qmin, qmax, noise, qcut)
             else:
-                j = 0
                 erfunc = []
                 for j in range(len(skyfracs)):
                     if compl_mode == 'erf_prod':
@@ -1082,7 +1113,6 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qbins, qbin, lny
                 arg = (lnyy - mu[index_z,i])/(np.sqrt(2.)*scatter)
                 res.append(np.dot(temp, fac*np.exp(-arg**2.)*dyy/yy))
             else:
-                j = 0
                 args = 0.
                 for j in range(len(skyfracs)):
                     arg = (lnyy[j,:] - mu[int(tile[j])-1, index_z, i])/(np.sqrt(2.)*scatter)

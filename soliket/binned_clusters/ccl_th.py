@@ -66,6 +66,7 @@ class CCL(Theory):
     transfer_function: str = 'boltzmann_camb'
     matter_pk: str = 'halofit'
     baryons_pk: str = 'nobaryons'
+    md_hmf: str = '200m'
     # Params it can accept
     params = {'Omega_c': None,
               'Omega_b': None,
@@ -149,9 +150,17 @@ class CCL(Theory):
             elif req_res == 'Pk_interpolator':
                 state[req_res] = None
             elif req_res == 'nc_data':
-                md = ccl.halos.MassDef200m()
+                if self.md_hmf == '200m':
+                    md = ccl.halos.MassDef200m(c_m='Bhattacharya13')
+                elif self.md_hmf == '200c':
+                    md = ccl.halos.MassDef200c(c_m='Bhattacharya13')
+                elif self.md_hmf == '500c':
+                    md = ccl.halos.MassDef(500, 'critical', c_m_relation='Bhattacharya13')
+                else:
+                    raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
                 mf = ccl.halos.MassFuncTinker08(cosmo, mass_def=md)
-                state[req_res] = mf
+                state[req_res] = {'HMF': mf,
+                                  'md': md}
             elif req_res == 'CCL':
                 state[req_res] = {'cosmo': cosmo}
             elif attrs is None:

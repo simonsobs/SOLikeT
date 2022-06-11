@@ -8,18 +8,20 @@ likelihood:
 
     # Websky data
     data:
-      data_path: data/ACT/
-      cat_file: "DR5ClusterSearch/DR5_cluster-catalog_v1.1.fits"
-      Q_file: "DR5ClusterSearch/selFn/QFit.fits"
-      tile_file: "DR5ClusterSearch/selFn/tileAreas.txt"
-      rms_file: "DR5ClusterSearch/selFn/RMSTab.fits"
+      data_path: 'data/ACT/'
+      cat_file: 'DR5ClusterSearch/DR5_cluster-catalog_v1.1.fits'
+      Q_file: 'DR5ClusterSearch/selFn/QFit.fits'
+      tile_file: 'DR5ClusterSearch/selFn/tileAreas.txt'
+      rms_file: 'DR5ClusterSearch/selFn/RMSTab.fits'
 
     # Theory
     theorypred:
-      choose_dim: "2D"
-      choose_theory: "CCL"
-      rel_correction: "no"
+      choose_dim: '2D'
+      choose_theory: 'CCL'
+      rel_correction: False
       massfunc_mode: 'ccl'
+      md_hmf: '200m'
+      md_ym: '200c'
       compl_mode: 'erf_diff'
 
     YM:
@@ -28,8 +30,8 @@ likelihood:
     # Selection function
     selfunc:
       SNRcut: 5.
-      Q_optimise: "yes"
-      single_tile_test: "no"
+      Q_optimise: 'no'
+      single_tile_test: 'no'
       dwnsmpl_bins: 5
       average_Q: False
       mode: 'downsample'
@@ -96,6 +98,7 @@ theory:
   soliket.binned_clusters.CCL:
     transfer_function: 'boltzmann_camb'
     matter_pk: 'halofit'
-    baryons_pk: 'nobaryons
+    baryons_pk: 'nobaryons'
+    md_hmf: '200m'
 
 stop_at_error: true
