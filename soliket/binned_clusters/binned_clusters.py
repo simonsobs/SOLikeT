@@ -15,8 +15,6 @@ import nemo as nm
 import scipy.stats
 import pyccl as ccl
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 from pkg_resources import resource_filename
 
 pi = 3.1415926535897932384630
@@ -35,41 +33,51 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
     YM: dict = {}
     selfunc: dict = {}
     binning: dict = {}
+    verbose: bool = False
 
     params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
 
     def initialize(self):
 
-        logger.info('Initializing binned_clusters.py')
+        self.log = logging.getLogger('BinnedCluster')
+        handler = logging.StreamHandler()
+        self.log.addHandler(handler)
+        self.log.propagate = False
+        if self.verbose:
+            self.log.setLevel(logging.INFO)
+        else:
+            self.log.setLevel(logging.ERROR)
+
+        self.log.info('Initializing binned_clusters.py')
 
         # SNR cut
         self.qcut = self.selfunc['SNRcut']
 
         if self.selfunc['mode'] == 'single_tile':
-            logger.info('Running single tile.')
+            self.log.info('Running single tile.')
         elif self.selfunc['mode'] == 'full':
-            logger.info('Running full analysis. No downsampling.')
+            self.log.info('Running full analysis. No downsampling.')
         elif self.selfunc['mode'] == 'downsample':
             assert self.selfunc['dwnsmpl_bins'] is not None, 'mode = downsample but no bin number given. Aborting.'
-            logger.info('Downsampling selection function inputs.')
+            self.log.info('Downsampling selection function inputs.')
         elif self.selfunc['mode'] == 'inpt_dwnsmpld':
-            logger.info('Running on pre-downsampled input.')
+            self.log.info('Running on pre-downsampled input.')
 
         if self.selfunc['mode'] == 'single_tile':
-            logger.info('Considering only single tile.')
+            self.log.info('Considering only single tile.')
             self.datafile = self.data['test_cat_file']
         else:
-            logger.info("Considering full map.")
+            self.log.info("Considering full map.")
             self.datafile = self.data['cat_file']
 
         dimension = self.theorypred['choose_dim']
         if dimension == '2D':
-            logger.info('2D likelihood as a function of redshift and signal-to-noise.')
+            self.log.info('2D likelihood as a function of redshift and signal-to-noise.')
         else:
-            logger.info('1D likelihood as a function of redshift.')
+            self.log.info('1D likelihood as a function of redshift.')
 
         # reading catalogue
-        logger.info('Reading data catalog.')
+        self.log.info('Reading data catalog.')
         self.data_directory = self.data['data_path']
         list = fits.open(os.path.join(self.data_directory, self.datafile))
         data = list[1].data
@@ -78,22 +86,22 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         qcut = self.qcut
 
         Ncat = len(zcat)
-        logger.info('Total number of clusters in catalogue = {}.'.format(Ncat))
-        logger.info('SNR cut = {}.'.format(qcut))
+        self.log.info('Total number of clusters in catalogue = {}.'.format(Ncat))
+        self.log.info('SNR cut = {}.'.format(qcut))
 
         z = zcat[qcat >= qcut]
         snr = qcat[qcat >= qcut]
 
         Ncat = len(z)
-        logger.info('Number of clusters above the SNR cut = {}.'.format(Ncat))
-        logger.info('The highest redshift = {}'.format(z.max()))
+        self.log.info('Number of clusters above the SNR cut = {}.'.format(Ncat))
+        self.log.info('The highest redshift = {}'.format(z.max()))
 
         # redshift bins for N(z)
         zbins = np.arange(self.binning['z']['zmin'], self.binning['z']['zmax'] + self.binning['z']['dz'], self.binning['z']['dz'])
         zarr = 0.5*(zbins[:-1] + zbins[1:])
         self.zarr = zarr
 
-        logger.info("Number of redshift bins = {}.".format(len(zarr)))
+        self.log.info("Number of redshift bins = {}.".format(len(zarr)))
 
         # mass bin
         self.lnmmin = np.log(self.binning['M']['Mmin'])
@@ -102,7 +110,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         self.marr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
         # this is to be consist with szcounts.f90 - maybe switch to linspace?
 
-        logger.info('Number of mass bins for theory calculation {}.'.format(len(self.marr)))
+        self.log.info('Number of mass bins for theory calculation {}.'.format(len(self.marr)))
         #TODO: I removed the bin where everything is larger than zmax - is this ok?
         delNcat, _ = np.histogram(z, bins=zbins)
 
@@ -119,10 +127,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         qarr = 0.5*(qbins[:1] + qbins[1:])
 
         if dimension == "2D":
-            logger.info('The lowest SNR = {}.'.format(snr.min()))
-            logger.info('The highest SNR = {}.'.format(snr.max()))
-            logger.info('Number of SNR bins = {}.'.format(Nq))
-            logger.info('Edges of SNR bins = {}.'.format(qbins))
+            self.log.info('The lowest SNR = {}.'.format(snr.min()))
+            self.log.info('The highest SNR = {}.'.format(snr.max()))
+            self.log.info('Number of SNR bins = {}.'.format(Nq))
+            self.log.info('Edges of SNR bins = {}.'.format(qbins))
 
         delN2Dcat, _, _ = np.histogram2d(z, snr, bins=[zbins, qbins])
 
@@ -132,21 +140,21 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         self.dlogq = dlogq
         self.delN2Dcat = zarr, qarr, delN2Dcat
 
-        logger.info('Loading files describing selection function.')
-        logger.info('Reading Q as a function of theta.')
+        self.log.info('Loading files describing selection function.')
+        self.log.info('Reading Q as a function of theta.')
         if self.selfunc['mode'] == 'single_tile':
-            logger.info('Reading Q function for single tile.')
+            self.log.info('Reading Q function for single tile.')
             self.datafile_Q = self.data['test_Q_file']
             list = fits.open(os.path.join(self.data_directory, self.datafile_Q))
             data = list[1].data
             self.tt500 = data.field("theta500Arcmin")
             self.Q = data.field("PRIMARY")
             assert len(self.tt500) == len(self.Q)
-            logger.info("Number of Q functions = {}.".format(len(self.Q[0])))
+            self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
         else:
             if self.selfunc['mode'] == 'inpt_dwnsmpld':
-                logger.info('Reading pre-downsampled Q function.')
+                self.log.info('Reading pre-downsampled Q function.')
                 # for quick reading theta and Q data is saved first and just called
                 self.datafile_Q = self.data['Q_file']
                 Qfile = np.load(os.path.join(self.data_directory, self.datafile_Q))
@@ -155,13 +163,13 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 assert len(self.tt500) == len(self.allQ[:,0])
 
             else:
-                logger.info('Reading full Q function.')
+                self.log.info('Reading full Q function.')
                 self.datafile_Q = self.data['Q_file']
                 tile_area = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
                 tilename = tile_area[:, 0]
                 QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q), tileNames=tilename)
                 Nt = len(tilename)
-                logger.info("Number of tiles = {}.".format(Nt))
+                self.log.info("Number of tiles = {}.".format(Nt))
 
                 hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
                 data = hdulist[1].data
@@ -175,7 +183,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 self.tt500 = tt500
                 self.allQ = allQ
 
-        logger.info('Reading RMS.')
+        self.log.info('Reading RMS.')
         if self.selfunc['mode'] == 'single_tile':
             self.datafile_rms = self.data['test_rms_file']
 
@@ -183,7 +191,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             data = list[1].data
             self.skyfracs = data.field("areaDeg2")*np.deg2rad(1.)**2
             self.noise = data.field("y0RMS")
-            logger.info("Number of sky patches = {}.".format(self.skyfracs.size))
+            self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
         else:
             if self.selfunc['mode'] == 'inpt_dwnsmpld':
@@ -192,16 +200,16 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 # this way is a lot faster
                 # could recreate this file with different downsampling as well
                 # tile name is replaced by consecutive number from now on
-                logger.info('Reading pre-downsampled RMS table.')
+                self.log.info('Reading pre-downsampled RMS table.')
                 self.datafile_rms = self.data['rms_file']
                 file_rms = np.loadtxt(os.path.join(self.data_directory, self.datafile_rms))
                 self.noise = file_rms[:,0]
                 self.skyfracs = file_rms[:,1]
                 self.tname = file_rms[:,2]
-                logger.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
-                logger.info("Number of sky patches = {}.".format(self.skyfracs.size))
+                self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
+                self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
             else:
-                logger.info('Reading in full RMS table.')
+                self.log.info('Reading in full RMS table.')
                 self.datafile_rms = self.data['rms_file']
 
                 list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
@@ -210,11 +218,11 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 self.noise = file_rms['y0RMS']
                 self.skyfracs = file_rms['areaDeg2']*np.deg2rad(1.)**2
                 self.tname = file_rms['tileName']
-                logger.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
-                logger.info("Number of sky patches = {}.".format(self.skyfracs.size))
+                self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
+                self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
         if self.selfunc['mode'] == 'downsample':
-            logger.info('Downsampling RMS and Q function using {} bins.'.format(self.selfunc['dwnsmpl_bins']))
+            self.log.info('Downsampling RMS and Q function using {} bins.'.format(self.selfunc['dwnsmpl_bins']))
             binned_stat = scipy.stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
                                                        bins=self.selfunc['dwnsmpl_bins'])
             binned_area = binned_stat[0]
@@ -228,7 +236,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             for i in range(self.selfunc['dwnsmpl_bins']):
                 tempind = np.where(bin_ind == i + 1)[0]
                 if len(tempind) == 0:
-                    logger.info('Found empty bin.')
+                    self.log.info('Found empty bin.')
                     Qdwnsmpld[:, i] = np.zeros(self.allQ.shape[0])
                 else:
                     temparea = self.skyfracs[tempind]
@@ -239,7 +247,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
             self.skyfracs = binned_area
             self.allQ = Qdwnsmpld
-            logger.info("Number of downsampled sky patches = {}.".format(self.skyfracs.size))
+            self.log.info("Number of downsampled sky patches = {}.".format(self.skyfracs.size))
 
             assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.allQ.shape[1]
 
@@ -249,13 +257,13 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         if self.selfunc['average_Q']:
             self.Q = np.mean(self.allQ, axis=1)
-            logger.info("Number of Q functions = {}.".format(self.Q.ndim))
-            logger.info("Using one averaged Q function for optimisation")
+            self.log.info("Number of Q functions = {}.".format(self.Q.ndim))
+            self.log.info("Using one averaged Q function for optimisation")
         else:
             self.Q = self.allQ
-            logger.info("Number of Q functions = {}.".format(len(self.Q[0])))
+            self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
-        logger.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
+        self.log.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
 
 
         # finner binning for low redshift
@@ -715,8 +723,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         print("\r Total predicted 2D N = ", delN2D.sum())
 
         for i in range(len(zarr)):
-            logger.info('Number of clusters in redshift bin {}: {}.'.format(i, delN2D[i,:].sum()))
-        logger.info("Total predicted 2D N = {}.".format(delN2D.sum()))
+            self.log.info('Number of clusters in redshift bin {}: {}.'.format(i, delN2D[i,:].sum()))
+        self.log.info("Total predicted 2D N = {}.".format(delN2D.sum()))
 
         return delN2D
 
@@ -731,7 +739,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             delN = self._get_integrated2D(pk_intp, **params_values_dict)
 
         elapsed = t.time() - start
-        logger.info("Theory N calculation took {} seconds.".format(elapsed))
+        self.log.info("Theory N calculation took {} seconds.".format(elapsed))
 
         return delN
 
