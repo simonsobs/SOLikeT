@@ -19,3 +19,5 @@ params:
   A_IA:
     value: 0.54
     latex: A_{IA}
+  gs_des_bin1_deltaz:
+    value: -0.02
