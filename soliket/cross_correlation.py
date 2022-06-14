@@ -184,7 +184,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
             cl_unbinned = ccl.cls.angular_cl(cosmo, tracer1, tracer2, ells_theory)
 
             if self.m_nuisance_mode is not None:
-                m_bias = params_values['{}_deltaz'.format(sheartracer_name)]
+                m_bias = params_values['{}_m'.format(sheartracer_name)]
                 cl_unbinned = (1 + m_bias) * cl_unbinned
 
             cl_binned = np.dot(w_bins, cl_unbinned)
