@@ -13,7 +13,7 @@ ksz_gnfw,tsz_gnfw = np.loadtxt(gnfw_test_file,usecols=(1,2),unpack=True)
 
 ksz_differences = ksz_data - ksz_gnfw
 tsz_differences = tsz_data - tsz_gnfw 
-'''
+
 def test_ksz():
     info = {"params": {"Omega_m": 0.25,
                        "Omega_b": 0.044,
@@ -47,11 +47,8 @@ def test_ksz():
     ksz_theory = lhood._get_theory(**info["params"])
 
     diff_theory = ksz_data - ksz_theory 
+    assert np.allclose(ksz_differences,diff_theory,atol=1.e-3,rtol=0)
 
-    print("my gnfw",ksz_gnfw)
-    print("SO calc gnfw",ksz_theory)
-    assert np.array_equal(ksz_differences, diff_theory)
-'''
 def test_tsz():
     info = {"params": {"Omega_m": 0.25,
                        "Omega_b": 0.044,
@@ -84,9 +81,6 @@ def test_tsz():
 
     tsz_theory = lhood._get_theory(**info["params"])
 
-    diff_theory = tsz_data - tsz_theory 
-
-    print("my gnfw",tsz_gnfw)
-    print("SO calc gnfw",tsz_theory)
-    assert np.array_equal(tsz_differences, diff_theory)
+    diff_theory = tsz_data - tsz_theory
+    assert np.allclose(tsz_differences,diff_theory,atol=1.e-3,rtol=0)
 

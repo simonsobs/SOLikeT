@@ -38,7 +38,9 @@ class KSZLikelihood(SZLikelihood):
         model_params = {
             "gnfw":[np.log10(params_values['gnfw_rho0']),params_values['gnfw_al_ksz']
                 ,params_values['gnfw_bt_ksz'],params_values['gnfw_A2h_ksz']],
-            "obb":["similar_array"]
+            "obb":[params_values['obb_Gamma'],params_values['obb_alpha_Nth']
+                ,params_values['obb_logE'],params_values['obb_Ak2h']
+                ,params_values['obb_At2h']]
         }
         model_params = model_params.get(self.input_model)
 
@@ -62,7 +64,9 @@ class TSZLikelihood(SZLikelihood):
         model_params = {
             "gnfw":[params_values['gnfw_P0'],params_values['gnfw_xc_tsz']
             ,params_values['gnfw_bt_tsz'],params_values['gnfw_A2h_tsz']],
-            "obb":["similar_array"]
+            "obb":[params_values['obb_Gamma'],params_values['obb_alpha_Nth']
+                ,params_values['obb_logE'],params_values['obb_Ak2h']
+                ,params_values['obb_At2h']]
         }
         model_params = model_params.get(self.input_model)
 

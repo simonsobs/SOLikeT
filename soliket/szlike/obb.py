@@ -14,7 +14,7 @@ def nfw(x):
     ans = 1./(x*(1 + x)**2)
     return ans
 
-def gx(x):
+def gx(x): #eq 2b
     ans = (np.log(1. + x) - x/(1. + x))
     return ans
 
@@ -22,22 +22,22 @@ def gc(c):
     ans = 1./(np.log(1. + c) - c/(1. + c))
     return ans
 
-def Hc(c):
+def Hc(c): #eq 6b
     ans = (-1.*np.log(1 + c)/(1. + c) + c*(1. + 0.5*c)/((1. + c)**2))/gx(c)
     return ans
 
-def Sc(c):
+def Sc(c): #eq 11
     ans = (0.5*np.pi**2 - np.log(c)/2. - 0.5/c - 0.5/(1 + c)**2 - 3/(1 + c) +
            np.log(1 + c)*(0.5+0.5/c**2-2/c-1/(1+c)) +
            1.5*(np.log(1 + c))**2 + 3.*spence(c+1))
 
     return ans
 
-def del_s(c):
+def del_s(c): #eq 15
     ans = Sc(c) / (Sc(c) + (1./c**3)*Hc(c)*gx(c))
     return ans
 
-def K_c(c): 
+def K_c(c): #eq 16
     ans = 1./3.* Hc(c)/(1.-del_s(c))
     return ans
 
@@ -81,14 +81,14 @@ def rho_dm(x,M,z,provider):
     ans = M_cgs*(c/rvir)**3 / (4.*np.pi*gx(c)) * nfw(x)
     return ans
 
-def jx(x,c):
+def jx(x,c): #eq 25b
     ans = 1. - np.log(1. + x)/x
     ind = np.where(x > c) #[0]
     if (len(ind) > 0):
         ans[ind] = 1. -1./(1. + c) - (np.log(1. + c) - c/(1.+c))/x[ind]
     return ans
 
-def jx_f(x,c):
+def jx_f(x,c): #eq 25b again?
     if (x <= c):
         ans = 1. - np.log(1. + x)/x
     else:
