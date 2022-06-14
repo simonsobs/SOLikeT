@@ -80,6 +80,7 @@ def test_shearkappa_like():
 
     assert np.isfinite(loglikes)
 
+
 def test_shearkappa_deltaz():
 
     from soliket.cross_correlation import ShearKappaLikelihood
