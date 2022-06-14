@@ -92,3 +92,15 @@ def test_shearkappa_deltaz():
     loglikes, derived = model.loglikes()
 
     assert np.isfinite(loglikes)
+
+def test_shearkappa_m():
+
+    from soliket.cross_correlation import ShearKappaLikelihood
+
+    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
+                                                   "m_nuisance_mode": True}}
+
+    model = get_model(info) # noqa F841
+    loglikes, derived = model.loglikes()
+
+    assert np.isfinite(loglikes)

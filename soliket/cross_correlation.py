@@ -131,6 +131,8 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
             elif self.sacc_data.tracers[tracer_comb[0]].quantity == "galaxy_shear":
 
+                sheartracer_name = tracer_comb[0]
+
                 z_tracer1 = self.sacc_data.tracers[tracer_comb[0]].z
                 nz_tracer1 = self.sacc_data.tracers[tracer_comb[0]].nz
 
@@ -154,8 +156,10 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
             elif self.sacc_data.tracers[tracer_comb[1]].quantity == "galaxy_shear":
 
-                z_tracer2 = self.sacc_data.tracers[tracer_comb[0]].z
-                nz_tracer2 = self.sacc_data.tracers[tracer_comb[0]].nz
+                sheartracer_name = tracer_comb[1]
+
+                z_tracer2 = self.sacc_data.tracers[tracer_comb[1]].z
+                nz_tracer2 = self.sacc_data.tracers[tracer_comb[1]].nz
 
                 tracer2 = ccl.WeakLensingTracer(cosmo,
                                                 dndz=(z_tracer2, nz_tracer2),
@@ -165,7 +169,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
                     nz_tracer2 = self._get_nz(z_tracer2,
                                               tracer2,
-                                              tracer_comb[0],
+                                              tracer_comb[1],
                                               **params_values)
 
                     tracer2 = ccl.WeakLensingTracer(cosmo,
@@ -178,6 +182,10 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
             w_bins = bpw.weight.T
 
             cl_unbinned = ccl.cls.angular_cl(cosmo, tracer1, tracer2, ells_theory)
+
+            if self.m_nuisance_mode is not None:
+                m_bias = params_values['{}_deltaz'.format(sheartracer_name)]
+                cl_unbinned = (1 + m_bias) * cl_unbinned
 
             cl_binned = np.dot(w_bins, cl_unbinned)
 

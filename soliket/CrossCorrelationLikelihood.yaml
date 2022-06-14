@@ -6,6 +6,7 @@ datapath: soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits
 use_tracers: all
 
 z_nuisance_mode: null
+m_nuisance_mode: null
 
 params:
   b1: 
@@ -27,3 +28,19 @@ params:
     value: -0.02
   gs_des_bin4_deltaz:
     value: -0.02
+  gs_des_bin1_m:
+    value: -0.04
+  gs_des_bin2_m:
+    value: -0.04
+  gs_des_bin3_m:
+    value: -0.04
+  gs_des_bin4_m:
+    value: -0.04
+  gs_des_bin1_sigmam:
+    value: 0.01
+  gs_des_bin2_sigmam:
+    value: 0.01
+  gs_des_bin3_sigmam:
+    value: 0.01
+  gs_des_bin4_sigmam:
+    value: 0.01
