@@ -93,6 +93,7 @@ def test_shearkappa_deltaz():
 
     assert np.isfinite(loglikes)
 
+
 def test_shearkappa_m():
 
     from soliket.cross_correlation import ShearKappaLikelihood
