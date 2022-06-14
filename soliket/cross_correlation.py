@@ -136,9 +136,15 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                 z_tracer1 = self.sacc_data.tracers[tracer_comb[0]].z
                 nz_tracer1 = self.sacc_data.tracers[tracer_comb[0]].nz
 
+                if self.ia_mode is None:
+                    ia_z = None
+                else:
+                    A_IA = params_values['A_IA']
+                    ia_z = (z_tracer1, A_IA * np.ones_like(z_tracer1))
+
                 tracer1 = ccl.WeakLensingTracer(cosmo,
                                                 dndz=(z_tracer1, nz_tracer1),
-                                                ia_bias=None)
+                                                ia_bias=ia_z)
 
                 if self.z_nuisance_mode is not None:
 
@@ -149,7 +155,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
                     tracer1 = ccl.WeakLensingTracer(cosmo,
                                                     dndz=(z_tracer1, nz_tracer1),
-                                                    ia_bias=None)
+                                                    ia_bias=ia_z)
 
             if self.sacc_data.tracers[tracer_comb[1]].quantity == "cmb_convergence":
                 tracer2 = ccl.CMBLensingTracer(cosmo, z_source=1060)
@@ -161,9 +167,15 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                 z_tracer2 = self.sacc_data.tracers[tracer_comb[1]].z
                 nz_tracer2 = self.sacc_data.tracers[tracer_comb[1]].nz
 
+                if self.ia_mode is None:
+                    ia_z = None
+                else:
+                    A_IA = params_values['A_IA']
+                    ia_z = (z_tracer2, A_IA * np.ones_like(z_tracer1))
+
                 tracer2 = ccl.WeakLensingTracer(cosmo,
                                                 dndz=(z_tracer2, nz_tracer2),
-                                                ia_bias=None)
+                                                ia_bias=ia_z)
 
                 if self.z_nuisance_mode is not None:
 
@@ -174,7 +186,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
                     tracer2 = ccl.WeakLensingTracer(cosmo,
                                                     dndz=(z_tracer2, nz_tracer2),
-                                                    ia_bias=None)
+                                                    ia_bias=ia_z)
 
             bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
             bpw = self.sacc_data.get_bandpower_windows(bpw_idx)

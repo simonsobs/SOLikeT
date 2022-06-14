@@ -7,6 +7,7 @@ use_tracers: all
 
 z_nuisance_mode: null
 m_nuisance_mode: null
+ia_mode: null
 
 params:
   b1: 
