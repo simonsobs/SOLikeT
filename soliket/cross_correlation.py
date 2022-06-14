@@ -154,17 +154,23 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
             elif self.sacc_data.tracers[tracer_comb[1]].quantity == "galaxy_shear":
 
-                if self.z_nuisance_mode is None:
-                    z_tracer2 = self.sacc_data.tracers[tracer_comb[1]].z
-                    nz_tracer2 = self.sacc_data.tracers[tracer_comb[1]].nz
-                else:
-                    # import pdb
-                    # pdb.set_trace()
-                    z_tracer2, nz_tracer2 = self._get_nz(tracer2, tracer_comb[1])
+                z_tracer2 = self.sacc_data.tracers[tracer_comb[0]].z
+                nz_tracer2 = self.sacc_data.tracers[tracer_comb[0]].nz
 
                 tracer2 = ccl.WeakLensingTracer(cosmo,
                                                 dndz=(z_tracer2, nz_tracer2),
                                                 ia_bias=None)
+
+                if self.z_nuisance_mode is not None:
+
+                    nz_tracer2 = self._get_nz(z_tracer2,
+                                              tracer2,
+                                              tracer_comb[0],
+                                              **params_values)
+
+                    tracer2 = ccl.WeakLensingTracer(cosmo,
+                                                    dndz=(z_tracer2, nz_tracer2),
+                                                    ia_bias=None)
 
             bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
             bpw = self.sacc_data.get_bandpower_windows(bpw_idx)

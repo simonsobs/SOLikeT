@@ -3,7 +3,7 @@ cross_file: soliket/data/xcorr_simulated/clkg_noiseless.txt
 dndz_file: soliket/data/xcorr_simulated/dndz.txt
 
 datapath: soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits
-use_tracers: gs_des_bin1,ck_act
+use_tracers: all
 
 z_nuisance_mode: null
 
