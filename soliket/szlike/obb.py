@@ -95,7 +95,7 @@ def jx_f(x,c): #eq 25b again?
         ans = 1. -1./(1. + c) - (np.log(1. + c) - c/(1.+c))/x
     return ans
 
-def fx (x,c):
+def fx (x,c): #in integrand of eq 21, eq 5
     ans = np.log(1. + x)/x - 1./(1. + c)
     ind = np.where(x > c)[0]
     if (len(ind) > 0):
@@ -108,18 +108,18 @@ def fstar_func(M):
     ans = 2.5e-2 * (M / (7e13))**(-0.37) 
     return ans
 
-def xs_min_func(x,M,z):
+def xs_min_func(x,M,z): #limits for eq 21
     c = con(M,z)
     fstar = fstar_func(M)
     ans = gx(c)*fstar/(1. + fstar) - gx(x)
     return ans
 
-def xs_func(M,z):
+def xs_func(M,z): #limits for eq 21
     x0 = 1.0
     xs = newton(xs_min_func, x0, args=(M,z,))
     return xs
 
-def Ks(x_s,M,z):
+def Ks(x_s,M,z): #eq 21
     c = con(M,z)
     xx = np.arange(delx/2.,x_s,delx)
     ans = 1./gx(c)*(np.sum(Sc(xx)*xx**2) - 2./3.*np.sum(fx(xx,c)*xx/(1. + xx)**2) )*delx
