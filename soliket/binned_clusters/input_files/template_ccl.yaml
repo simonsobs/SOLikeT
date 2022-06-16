@@ -6,55 +6,57 @@ output: chains/test
 likelihood:
   soliket.BinnedClusterLikelihood:
 
-    # Websky data
+    # Data
     data:
-      data_path: 'data/ACT/'
-      cat_file: 'DR5ClusterSearch/DR5_cluster-catalog_v1.1.fits'
-      Q_file: 'DR5ClusterSearch/selFn/QFit.fits'
-      tile_file: 'DR5ClusterSearch/selFn/tileAreas.txt'
-      rms_file: 'DR5ClusterSearch/selFn/RMSTab.fits'
+      data_path: 'data/ACT/' # Path to data directory
+      cat_file: 'DR5ClusterSearch/DR5_cluster-catalog_v1.1.fits' # Path to cluster catalog file
+      Q_file: 'DR5ClusterSearch/selFn/QFit.fits' # Path to Q function file
+      tile_file: 'DR5ClusterSearch/selFn/tileAreas.txt' # Path to tile file
+      rms_file: 'DR5ClusterSearch/selFn/RMSTab.fits' # Path to RMS file
 
     # Theory
     theorypred:
-      choose_dim: '2D'
-      choose_theory: 'CCL'
-      rel_correction: False
-      massfunc_mode: 'ccl'
-      md_hmf: '200m'
-      md_ym: '200c'
-      compl_mode: 'erf_diff'
+      choose_dim: '2D' # Specify if likelihood in terms of N(q, z) (2D) or N(z) (1D)
+      choose_theory: 'CCL' # Theory prediction mode, possibilities are camb, class, CCL (CCL is all CCL)
+      rel_correction: False # Relativistic corrections for tSZ
+      massfunc_mode: 'ccl' # Method to compute mass function, possibilities are ccl, internal (Eunseong's implementation)
+      md_hmf: '200m' # Mass definition used for HMF
+      md_ym: '200c' # Mass definition used for Y-M relation
+      compl_mode: 'erf_diff' # Method to compute selection function, possibilities are erf_diff (difference of erfs), erf_prod (product of erfs)
 
+    # Y-M relation
     YM:
-      Mpivot: 3e14
+      Mpivot: 3e14 # Mpivot in Y-M relation in [h^-1 Msun]
 
     # Selection function
     selfunc:
-      SNRcut: 5.
-      Q_optimise: 'no'
-      single_tile_test: 'no'
-      dwnsmpl_bins: 5
-      average_Q: False
+      SNRcut: 5. # S/N cutoff in number counts
+      # Model for selection function, possibilities are
+      # downsample: average rms map, Q into n dwnsmpl_bins
+      # inpt_dwnsampld: input rms, Q already pre-downsampled
+      # full: consider full map, Q function, no downsampling
+      # single_tile: run for single tile, no downsampling
       mode: 'downsample'
+      dwnsmpl_bins: 5 # If mode=downsample, number of bins to use
+      save_dwsmpld: False # Save downsampled Q and rms to npz file and once it exists read those
+      average_Q: False # Use average Q function
 
     binning:
-      # redshift setting
+      # redshift bins for number counts
       z:
         zmin: 0.
         zmax: 2.8
         dz: 0.1
-      # SNR setting
+      # SNR bins for number counts
       q:
         log10qmin: 0.6
         log10qmax: 2.0
         dlog10q: 0.25
-      # mass setting
+      # mass bins for number counts
       M:
         Mmin: 1e13
         Mmax: 1e16
         dlogM: 0.05
-
-    # mass definition
-    delta: 200.
 
 params:
   logA:

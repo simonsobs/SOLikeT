@@ -138,7 +138,6 @@ class CCL(Theory):
                               baryons_power_spectrum=self.baryons_pk)
 
 
-        # Compute sigma8 (we should actually only do this if required -- TODO)
         state['derived'] = {'H0': cosmo.cosmo.params.H0}
         for req_res, attrs in self._required_results.items():
             if req_res == 'Hubble':
@@ -155,7 +154,7 @@ class CCL(Theory):
                 elif self.md_hmf == '200c':
                     md = ccl.halos.MassDef200c(c_m='Bhattacharya13')
                 elif self.md_hmf == '500c':
-                    md = ccl.halos.MassDef(500, 'critical', c_m_relation='Bhattacharya13')
+                    md = ccl.halos.MassDef(500, 'critical')
                 else:
                     raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
                 mf = ccl.halos.MassFuncTinker08(cosmo, mass_def=md)
