@@ -65,7 +65,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         if self.selfunc['mode'] == 'single_tile':
             self.log.info('Considering only single tile.')
-            self.datafile = self.data['test_cat_file']
+            self.datafile = self.data['cat_file']
         else:
             self.log.info("Considering full map.")
             self.datafile = self.data['cat_file']
@@ -82,7 +82,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         list = fits.open(os.path.join(self.data_directory, self.datafile))
         data = list[1].data
         zcat = data.field("redshift")
-        qcat = data.field("SNR") # note that there are another SNR in the catalogue
+        qcat = data.field("SNR") #NB note that there are another SNR in the catalogue
         qcut = self.qcut
 
         Ncat = len(zcat)
@@ -144,7 +144,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         self.log.info('Reading Q as a function of theta.')
         if self.selfunc['mode'] == 'single_tile':
             self.log.info('Reading Q function for single tile.')
-            self.datafile_Q = self.data['test_Q_file']
+            self.datafile_Q = self.data['Q_file']
             list = fits.open(os.path.join(self.data_directory, self.datafile_Q))
             data = list[1].data
             self.tt500 = data.field("theta500Arcmin")
@@ -163,29 +163,45 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 assert len(self.tt500) == len(self.allQ[:,0])
 
             else:
-                self.log.info('Reading full Q function.')
                 self.datafile_Q = self.data['Q_file']
-                tile_area = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
-                tilename = tile_area[:, 0]
-                QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q), tileNames=tilename)
-                Nt = len(tilename)
-                self.log.info("Number of tiles = {}.".format(Nt))
+                filename_Q, ext = os.path.splitext(self.datafile_Q)
+                datafile_Q_dwsmpld = os.path.join(self.data_directory,
+                            filename_Q + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
 
-                hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
-                data = hdulist[1].data
-                tt500 = data.field("theta500Arcmin")
+                print(datafile_Q_dwsmpld)
+                print(not os.path.exists(datafile_Q_dwsmpld))
+                print(self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] and not os.path.exists(datafile_Q_dwsmpld))
 
-                # reading in all Q functions
-                allQ = np.zeros((len(tt500), Nt))
-                for i in range(Nt):
-                    allQ[:, i] = QFit.getQ(tt500, tileName=tile_area[:, 0][i])
-                assert len(tt500) == len(allQ[:, 0])
-                self.tt500 = tt500
-                self.allQ = allQ
+                if self.selfunc['mode'] == 'full' or (
+                        self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] is False)  or (
+                        self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] and not os.path.exists(datafile_Q_dwsmpld)):
+                    self.log.info('Reading full Q function.')
+                    tile_area = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
+                    tilename = tile_area[:, 0]
+                    QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q), tileNames=tilename)
+                    Nt = len(tilename)
+                    self.log.info("Number of tiles = {}.".format(Nt))
+
+                    hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
+                    data = hdulist[1].data
+                    tt500 = data.field("theta500Arcmin")
+
+                    # reading in all Q functions
+                    allQ = np.zeros((len(tt500), Nt))
+                    for i in range(Nt):
+                        allQ[:, i] = QFit.getQ(tt500, tileName=tile_area[:, 0][i])
+                    assert len(tt500) == len(allQ[:, 0])
+                    self.tt500 = tt500
+                    self.allQ = allQ
+                else:
+                    self.log.info('Reading in binned Q function from file.')
+                    Qfile = np.load(datafile_Q_dwsmpld)
+                    self.allQ = Qfile['Q_dwsmpld']
+                    self.tt500 = Qfile['tt500']
 
         self.log.info('Reading RMS.')
         if self.selfunc['mode'] == 'single_tile':
-            self.datafile_rms = self.data['test_rms_file']
+            self.datafile_rms = self.data['rms_file']
 
             list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
             data = list[1].data
@@ -209,47 +225,64 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
                 self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
             else:
-                self.log.info('Reading in full RMS table.')
                 self.datafile_rms = self.data['rms_file']
+                filename_rms, ext = os.path.splitext(self.datafile_rms)
+                datafile_rms_dwsmpld = os.path.join(self.data_directory,
+                        filename_rms + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.' + '.npz')
+                if self.selfunc['mode'] == 'full' or (
+                        self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] is False)  or (
+                        self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] and not os.path.exists(datafile_rms_dwsmpld)):
+                    self.log.info('Reading in full RMS table.')
 
-                list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
-                file_rms = list[1].data
+                    list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
+                    file_rms = list[1].data
 
-                self.noise = file_rms['y0RMS']
-                self.skyfracs = file_rms['areaDeg2']*np.deg2rad(1.)**2
-                self.tname = file_rms['tileName']
-                self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
-                self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
+                    self.noise = file_rms['y0RMS']
+                    self.skyfracs = file_rms['areaDeg2']*np.deg2rad(1.)**2
+                    self.tname = file_rms['tileName']
+                    self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
+                    self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
+                else:
+                    self.log.info('Reading in binned RMS table from file.')
+                    rms = np.load(datafile_rms_dwsmpld)
+                    self.noise = rms['noise']
+                    self.skyfracs = rms['skyfracs']
+                    self.log.info("Number of rms bins = {}.".format(self.skyfracs.size))
 
         if self.selfunc['mode'] == 'downsample':
-            self.log.info('Downsampling RMS and Q function using {} bins.'.format(self.selfunc['dwnsmpl_bins']))
-            binned_stat = scipy.stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
-                                                       bins=self.selfunc['dwnsmpl_bins'])
-            binned_area = binned_stat[0]
-            binned_rms_edges = binned_stat[1]
+            if self.selfunc['save_dwsmpld'] is False or (self.selfunc['save_dwsmpld'] and not os.path.exists(datafile_Q_dwsmpld)):
+                self.log.info('Downsampling RMS and Q function using {} bins.'.format(self.selfunc['dwnsmpl_bins']))
+                binned_stat = scipy.stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
+                                                           bins=self.selfunc['dwnsmpl_bins'])
+                binned_area = binned_stat[0]
+                binned_rms_edges = binned_stat[1]
 
-            bin_ind = np.digitize(self.noise, binned_rms_edges)
-            tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
+                bin_ind = np.digitize(self.noise, binned_rms_edges)
+                tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
 
-            Qdwnsmpld = np.zeros((self.allQ.shape[0], self.selfunc['dwnsmpl_bins']))
+                Qdwnsmpld = np.zeros((self.allQ.shape[0], self.selfunc['dwnsmpl_bins']))
 
-            for i in range(self.selfunc['dwnsmpl_bins']):
-                tempind = np.where(bin_ind == i + 1)[0]
-                if len(tempind) == 0:
-                    self.log.info('Found empty bin.')
-                    Qdwnsmpld[:, i] = np.zeros(self.allQ.shape[0])
-                else:
-                    temparea = self.skyfracs[tempind]
-                    temptiles = self.tname[tempind]
-                    test = [tiledict[key] for key in temptiles]
-                    Qdwnsmpld[:, i] = np.average(self.allQ[:, test], axis=1, weights=temparea)
+                for i in range(self.selfunc['dwnsmpl_bins']):
+                    tempind = np.where(bin_ind == i + 1)[0]
+                    if len(tempind) == 0:
+                        self.log.info('Found empty bin.')
+                        Qdwnsmpld[:, i] = np.zeros(self.allQ.shape[0])
+                    else:
+                        temparea = self.skyfracs[tempind]
+                        temptiles = self.tname[tempind]
+                        test = [tiledict[key] for key in temptiles]
+                        Qdwnsmpld[:, i] = np.average(self.allQ[:, test], axis=1, weights=temparea)
 
-            self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
-            self.skyfracs = binned_area
-            self.allQ = Qdwnsmpld
-            self.log.info("Number of downsampled sky patches = {}.".format(self.skyfracs.size))
+                self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
+                self.skyfracs = binned_area
+                self.allQ = Qdwnsmpld
+                self.log.info("Number of downsampled sky patches = {}.".format(self.skyfracs.size))
 
-            assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.allQ.shape[1]
+                assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.allQ.shape[1]
+
+                if self.selfunc['save_dwsmpld']:
+                    np.savez(datafile_Q_dwsmpld, Q_dwsmpld=Qdwnsmpld, tt500=self.tt500)
+                    np.savez(datafile_rms_dwsmpld, noise=self.noise, skyfracs=self.skyfracs)
 
         elif self.selfunc['mode'] == 'full':
             tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
