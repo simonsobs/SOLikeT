@@ -24,6 +24,8 @@ Mpc = 3.08568025e22              # [m]
 G = 6.67300e-11                  # [m3 kg-1 s-2]
 msun = 1.98892e30                # [kg]
 
+MPIVOT_THETA = 3e14 # [Msun]
+
 class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
     name = "BinnedCluster"
@@ -48,7 +50,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         else:
             self.log.setLevel(logging.ERROR)
 
-        self.log.info('Initializing binned_clusters.py')
+        self.log.info('Initializing binned_clusters_test.py')
 
         # SNR cut
         self.qcut = self.selfunc['SNRcut']
@@ -82,7 +84,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         list = fits.open(os.path.join(self.data_directory, self.datafile))
         data = list[1].data
         zcat = data.field("redshift")
-        qcat = data.field("SNR") #NB note that there are another SNR in the catalogue
+        qcat = data.field("fixed_SNR") #NB note that there are another SNR in the catalogue
         qcut = self.qcut
 
         Ncat = len(zcat)
@@ -167,10 +169,6 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 filename_Q, ext = os.path.splitext(self.datafile_Q)
                 datafile_Q_dwsmpld = os.path.join(self.data_directory,
                             filename_Q + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
-
-                print(datafile_Q_dwsmpld)
-                print(not os.path.exists(datafile_Q_dwsmpld))
-                print(self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] and not os.path.exists(datafile_Q_dwsmpld))
 
                 if self.selfunc['mode'] == 'full' or (
                         self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] is False)  or (
@@ -722,7 +720,17 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         else:
             marr_ymmd = marr
 
-        y0 = self._get_y0(marr_ymmd, zz, **params_values_dict)
+        if self.theorypred['md_ym'] != '500c':
+            mf_data = self.theory.get_nc_data()
+            md_hmf = mf_data['md']
+            md_500c = ccl.halos.MassDef(500, 'critical')
+            cosmo = self.theory.get_CCL()['cosmo']
+            a = 1. / (1. + zz)
+            marr_500c = np.array([md_hmf.translate_mass(cosmo, marr / h, ai, md_500c) for ai in a]) * h
+        else:
+            marr_500c = None
+
+        y0 = self._get_y0(marr_ymmd, zz, marr_500c, **params_values_dict)
 
         cc = []
         for kk in range(Nq):
@@ -778,7 +786,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
 
     # y-m scaling relation for completeness
-    def _get_y0(self, mass, z, **params_values_dict):
+    def _get_y0(self, mass, z, mass_500c, **params_values_dict):
+
+        if mass_500c is None:
+            mass_500c = mass
 
         A0 = params_values_dict["tenToA0"]
         B0 = params_values_dict["B0"]
@@ -788,7 +799,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         Ez = self._get_Ez(z)
         Ez = Ez[:,None]
         h = self.theory.get_param("H0") / 100.0
+
         mb = mass * bias
+        mb_500c = mass_500c*bias
         #TODO: Is removing h correct here - matches Hasselfield but is different from before
         Mpivot = self.YM['Mpivot']  # I put h and Boris put 0.7 here
 
@@ -801,7 +814,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             H0 = self.theory.get_param("H0")
             ttstar = thetastar * (H0/70.)**(-2./3.)
 
-            return ttstar*(m/Mpivot)**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.)
+            return ttstar*(m/MPIVOT_THETA/h)**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.)
 
         def splQ(x):
             if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
@@ -826,10 +839,10 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
             #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
-            y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ(theta(mb)) #* rel(mb) ###### M200m
+            y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ(theta(mb_500c)) #* rel(mb) ###### M200m
             y0 = y0.T ###### M200m
         else:
-            y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ(theta(mb))
+            y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ(theta(mb_500c))
             # y0 = np.transpose(arg, axes=[1, 2, 0])
 
         return y0
@@ -1199,7 +1212,7 @@ class BinnedClusterLikelihoodPlanck(BinnedPoissonLikelihood):
 
     def initialize(self):
 
-        print('\r :::::: this is initialisation in binned_clusters.py')
+        print('\r :::::: this is initialisation in binned_clusters_test.py')
         print('\r :::::: reading Planck 2015 catalogue')
 
         # full sky (sky fraction handled in skyfracs file)
