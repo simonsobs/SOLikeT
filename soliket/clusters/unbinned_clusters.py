@@ -19,7 +19,7 @@ class SZModel:
     pass
 
 
-class ClusterLikelihood(PoissonLikelihood):
+class UnbinnedClusterLikelihood(PoissonLikelihood):
     name = "Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err"]
     data_path = resource_filename("soliket", "clusters/data/selFn_equD56")

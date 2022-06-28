@@ -1,7 +1,8 @@
 from .lensing import LensingLiteLikelihood, LensingLikelihood  # noqa: F401
 from .gaussian import GaussianLikelihood, MultiGaussianLikelihood  # noqa: F401
 from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401
-from .clusters import ClusterLikelihood  # noqa: F401
+from .clusters_both import UnbinnedClusterLikelihood#, BinnedClusterLikelihood  # noqa: F401
+from .binned_clusters import BinnedClusterLikelihood
 from .mflike import MFLike  # noqa: F401
 from .mflike import TheoryForge_MFLike
 from .xcorr import XcorrLikelihood  # noqa: F401
