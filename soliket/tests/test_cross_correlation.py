@@ -117,3 +117,17 @@ def test_shearkappa_ia():
     loglikes, derived = model.loglikes()
 
     assert np.isfinite(loglikes)
+
+def test_shearkappa_hmcode():
+
+    from soliket.cross_correlation import ShearKappaLikelihood
+
+    info["likelihood"] = {"ShearKappaLikelihood": ShearKappaLikelihood}
+    info["theory"] = {"camb": {'extra_args': {'halofit_version': 'mead2020_feedback',
+                                              'HMCode_logT_AGN': 7.8}},
+                      "ccl": {"external": CCL, "nonlinear": False}}
+
+    model = get_model(info) # noqa F841
+    loglikes, derived = model.loglikes()
+
+    assert np.isfinite(loglikes)
