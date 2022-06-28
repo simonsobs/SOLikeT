@@ -225,6 +225,12 @@ theory:
     stop_at_error: False
     extra_args:
       lens_potential_accuracy: 1
+  soliket.TheoryForge_MFLike: 
+    stop_at_error: True
+  soliket.Foreground:
+    stop_at_error: True
+  soliket.BandPass:
+    stop_at_error: True
 
 sampler:
   evaluate:
