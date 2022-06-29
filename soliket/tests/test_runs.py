@@ -11,7 +11,8 @@ from cobaya.run import run
                           "lensing_lite",
                           "multi",
                           "cross_correlation",
-                          "xcorr"])
+                          # "xcorr"
+                          ])
 def test_evaluate(lhood):
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
@@ -26,7 +27,8 @@ def test_evaluate(lhood):
                           "lensing_lite",
                           "multi",
                           "cross_correlation",
-                          "xcorr"])
+                          # "xcorr"
+                          ])
 def test_mcmc(lhood):
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
