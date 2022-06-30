@@ -85,6 +85,11 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         data = list[1].data
         zcat = data.field("redshift")
         qcat = data.field("fixed_SNR") #NB note that there are another SNR in the catalogue
+
+        # SPT-style SNR bias correction
+        debiasDOF = 2
+        qcat = np.sqrt(np.power(qcat, 2) - debiasDOF)
+
         qcut = self.qcut
 
         Ncat = len(zcat)
@@ -325,7 +330,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         if self.theorypred['choose_theory'] == "camb":
             req = {"Hubble":  {"z": self.zz},
                    "angular_diameter_distance": {"z": self.zz},
-                   "H0": None, # H0 is derived
+                   "H0": None, #NB H0 is derived
                    "Pk_interpolator": {"z": np.linspace(0, 3., 140), # should be less than 150
                                        "k_max": 4.0,
                                        "nonlinear": False,
@@ -345,7 +350,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                     'Hubble': {'z': self.zz},
                     'angular_diameter_distance': {'z': self.zz},
                     'Pk_interpolator': {},
-                    'H0': None  #  H0 is derived
+                    'H0': None  #NB H0 is derived
                     }
         else:
             raise NotImplementedError('Only theory modules camb, class and CCL implemented so far.')
@@ -667,7 +672,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             for ii in zs:
                 for j in range(len(marr)):
                     sumzs[ii] += 0.5 * (intgr[ii,j]*c[ii,j] + intgr[ii+1,j]*c[ii+1,j]) * dlnm * (zz[ii+1] - zz[ii])
-                    #sumzs[ii] += 0.5 * (intgr[ii,j] + intgr[ii+1,j]) * dlnm * (zz[ii+1] - zz[ii]) # no completness check
+                    #sumzs[ii] += 0.5 * (intgr[ii,j] + intgr[ii+1,j]) * dlnm * (zz[ii+1] - zz[ii]) #NB no completness check
 
                 sum += sumzs[ii]
 
@@ -740,7 +745,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         #nzarr = np.linspace(0, 2.8, 29)
         nzarr = np.linspace(0, 2.9, 30)
 
-        delN2D = np.zeros((len(zarr)+1, Nq+1))
+        delN2D = np.zeros((len(zarr), Nq))
 
         for kk in range(Nq):
             for i in range(len(zarr)):
@@ -755,7 +760,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 for ii in zs:
                     for j in range(len(marr)):
                         sumzs[ii] += 0.5 * (intgr[ii,j]*cc[kk,ii,j] + intgr[ii+1,j]*cc[kk,ii+1,j]) * dlnm * (zz[ii+1] - zz[ii])
-                        #sumzs[ii] += 0.5 * (intgr[ii,j] + intgr[ii+1,j]) * dlnm * (zz[ii+1] - zz[ii]) # no completness check
+                        # sumzs[ii] += 0.5 * (intgr[ii,j] + intgr[ii+1,j]) * dlnm * (zz[ii+1] - zz[ii]) #NB no completness check
 
                     sum += sumzs[ii]
 
