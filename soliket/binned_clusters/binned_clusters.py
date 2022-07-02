@@ -131,7 +131,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         # TODO: I removed the bin where everything is larger than qmax - is this ok?
         Nq = int((logqmax - logqmin)/dlogq) + 1
         qbins = 10**np.arange(logqmin, logqmax+dlogq, dlogq)
-        qarr = 0.5*(qbins[:1] + qbins[1:])
+        qarr = 0.5*(qbins[:-1] + qbins[1:])
 
         if dimension == "2D":
             self.log.info('The lowest SNR = {}.'.format(snr.min()))
