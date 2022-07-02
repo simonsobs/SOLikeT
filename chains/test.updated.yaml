@@ -1,0 +1,119 @@
+theory:
+  soliket.binned_clusters.CCL:
+    transfer_function: boltzmann_camb
+    matter_pk: halofit
+    baryons_pk: nobaryons
+    md_hmf: 200m
+    params:
+      Omega_c: null
+      Omega_b: null
+      h: null
+      n_s: null
+      sigma8: null
+      m_nu: null
+    speed: -1
+    stop_at_error: false
+    version: null
+likelihood:
+  soliket.BinnedClusterLikelihood:
+    name: BinnedCluster
+    data:
+      data_path: /Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/binned_clusters/data/advact/
+      cat_file: DR5_cluster-catalog_v1.1.fits
+      Q_file: DR5ClusterSearch/selFn/QFit.fits
+      tile_file: DR5ClusterSearch/selFn/tileAreas.txt
+      rms_file: DR5ClusterSearch/selFn/RMSTab.fits
+    theorypred:
+      choose_dim: 2D
+      choose_theory: CCL
+      rel_correction: false
+      massfunc_mode: ccl
+      md_hmf: 200m
+      md_ym: 200c
+      compl_mode: erf_diff
+    YM:
+      Mpivot: 300000000000000.0
+    selfunc:
+      SNRcut: 5.0
+      mode: downsample
+      dwnsmpl_bins: 5
+      save_dwsmpld: true
+      average_Q: false
+    binning:
+      z:
+        zmin: 0.0
+        zmax: 2.8
+        dz: 0.1
+      q:
+        log10qmin: 0.6
+        log10qmax: 2.0
+        dlog10q: 0.25
+      M:
+        Mmin: 10000000000000.0
+        Mmax: 1.0e+16
+        dlogM: 0.05
+    verbose: false
+    type: []
+    speed: -1
+    stop_at_error: false
+    version: null
+params:
+  logA:
+    prior:
+      min: 2.0
+      max: 4.0
+    ref:
+      dist: norm
+      loc: 3.1
+      scale: 0.001
+    proposal: 0.001
+    latex: \log(10^{10} A_\mathrm{s})
+    drop: true
+  A_s:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+    latex: A_\mathrm{s}
+    derived: true
+  tenToA0:
+    derived: false
+    value: 4.35e-05
+  B0:
+    derived: false
+    value: 0.08
+  C0:
+    derived: false
+    value: 2.0
+  scatter_sz:
+    derived: false
+    value: 0.0
+  bias_sz:
+    derived: false
+    value: 1.0
+  omega_b:
+    value: 0.0226576
+  omega_cdm:
+    value: 0.1206864
+  n_s:
+    derived: false
+    value: 0.965
+  tau:
+    value: 0.055
+  Omega_c:
+    derived: false
+  Omega_b:
+    derived: false
+  h:
+    derived: false
+  sigma8:
+    derived: false
+  m_nu:
+    derived: false
+sampler:
+  evaluate:
+    N: 1
+    override:
+      logA: 3.007
+    seed: null
+    version: null
+output: test
+stop_at_error: true
+version: 3.2.1

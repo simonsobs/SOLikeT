@@ -4,4 +4,4 @@ from .ps import PSLikelihood, BinnedPSLikelihood
 from .clusters import ClusterLikelihood
 from .mflike import MFLike
 from .ccl import CCL
-from .binned_clusters import BinnedClusterLikelihood, BinnedClusterLikelihoodPlanck
+from .binned_clusters import BinnedClusterLikelihood

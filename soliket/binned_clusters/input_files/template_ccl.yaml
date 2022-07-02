@@ -33,8 +33,8 @@ likelihood:
       SNRcut: 5. # S/N cutoff in number counts
       # Model for selection function, possibilities are
       # downsample: average rms map, Q into n dwnsmpl_bins
-      # inpt_dwnsampld: input rms, Q already pre-downsampled
-      # full: consider full map, Q function, no downsampling
+      # inpt_dwnsampld: input rms, Q already pre-downsampled --- from eunseong's implementation
+      # full: consider full map, Q function, no downsampling --- exact evaluation.
       # single_tile: run for single tile, no downsampling
       mode: 'downsample'
       dwnsmpl_bins: 5 # If mode=downsample, number of bins to use
