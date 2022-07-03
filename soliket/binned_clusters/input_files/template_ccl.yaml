@@ -8,8 +8,8 @@ likelihood:
 
     # Data
     data:
-      data_path: 'data/ACT/' # Path to data directory
-      cat_file: 'DR5ClusterSearch/DR5_cluster-catalog_v1.1.fits' # Path to cluster catalog file
+      data_path: '/path/to/data/' # Path to data directory
+      cat_file: 'DR5_cluster-catalog_v1.1.fits' # Path to cluster catalog file
       Q_file: 'DR5ClusterSearch/selFn/QFit.fits' # Path to Q function file
       tile_file: 'DR5ClusterSearch/selFn/tileAreas.txt' # Path to tile file
       rms_file: 'DR5ClusterSearch/selFn/RMSTab.fits' # Path to RMS file
@@ -59,42 +59,27 @@ likelihood:
         dlogM: 0.05
 
 params:
-  logA:
-    prior:
-      min: 2.
-      max: 4.
-    ref:
-      dist: norm
-      loc: 3.1
-      scale: 0.001
-    proposal: 0.001
-    latex: \log(10^{10} A_\mathrm{s})
-    drop: true
-  A_s:
-    value: 'lambda logA: 1e-10*np.exp(logA)'
-    latex: A_\mathrm{s}
-
-  tenToA0: 4.35e-5
+  h: 0.68
+  n_s: 0.965
+  Omega_b: 0.049
+  Omega_c: 0.26
+  sigma8: 0.81
+  tenToA0: 1.9e-05
   B0: 0.08
-  C0: 2.
   scatter_sz: 0.
   bias_sz: 1.
+  m_nu: 0.0
+  C0: 2
 
-  omega_b: 0.0226576
-  omega_cdm: 0.1206864
-  n_s: 0.965
-  tau: 0.055
-  H0: 68.
-
-  sigma8:
-    latex: \sigma_8
-  Omega_m:
-    latex: \Omega_\mathrm{m}
+#  sigma8:
+#    latex: \sigma_8
+#  Omega_m:
+#    latex: \Omega_\mathrm{m}
 
 sampler:
   evaluate:
-      override:
-        logA: 3.007
+#      override:
+#        logA: 3.007
 
 theory:
   soliket.binned_clusters.CCL:
