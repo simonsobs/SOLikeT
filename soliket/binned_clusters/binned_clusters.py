@@ -150,7 +150,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             self.log.info('Number of SNR bins = {}.'.format(Nq))
             self.log.info('Edges of SNR bins = {}.'.format(qbins))
 
-        delN2Dcat, _, _ = np.histogram2d(z, snr, bins=[zbins, qbins])
+        delN2Dcat, _, _ = np.histogram2d(z, snr, bins=[zbins, 10**qbins])
 
         self.Nq = Nq
         self.qarr = qarr
@@ -158,6 +158,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         self.qbins = 10**qbins
         self.dlogq = dlogq
         self.delN2Dcat = zarr, qarr, delN2Dcat
+        # print(self.delN2Dcat)
+        # exit()
 
         # print('zbin:',zarr)
 

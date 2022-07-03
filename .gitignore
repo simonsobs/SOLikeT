@@ -118,3 +118,5 @@ soliket/clusters/data/selFn_SO.zip
 soliket/clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits
 
 soliket/cosmopower/chains
+soliket/binned_clusters/notebooks/DR5-compare-SOLikeT-mocks-sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned.ipynb
+soliket/binned_clusters/notebooks/DR5-compare-SOLikeT-mocks-sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned.ipynb
