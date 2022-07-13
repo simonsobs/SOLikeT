@@ -43,6 +43,11 @@ def test_clusters_unbinned_model():
     model_fiducial = get_model(info_unbinned)
 
 
+def test_clusters_unbinned_model():
+
+    model_fiducial = get_model(info_unbinned)
+
+
 def test_clusters_unbinned_loglike():
 
     model_fiducial = get_model(info_unbinned)
