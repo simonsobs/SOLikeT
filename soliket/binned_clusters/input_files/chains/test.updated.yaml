@@ -1,0 +1,157 @@
+theory:
+  classy:
+    path: null
+    speed: 0.2
+    stop_at_error: true
+    extra_args: null
+    ignore_obsolete: false
+    use_renames: false
+    renames:
+      As: A_s
+      ns: n_s
+      nrun: alpha_s
+      nrunrun: beta_s
+      nt: n_t
+      ntrun: alpha_t
+      rdrag: rs_drag
+      omegak: Omega_k
+      omegal: Omega_Lambda
+      w: w0_fld
+      wa: wa_fld
+      omegabh2: omega_b
+      omegab: Omega_b
+      omegach2: omega_cdm
+      omegac: Omega_cdm
+      omegam: Omega_m
+      omegan: Omega_nu
+      tau: tau_reio
+      zrei: z_reio
+      deltazrei: reionization_width
+      helium_redshift: helium_fullreio_redshift
+      helium_delta_redshift: helium_fullreio_width
+      yhe: YHe
+      yheused: YHe
+    version: v3.2.0
+    input_params:
+    - As
+    - omega_b
+    - omega_cdm
+    - n_s
+    - tau_reio
+    - H0
+    output_params:
+    - sigma8
+likelihood:
+  soliket.BinnedClusterLikelihood:
+    name: BinnedCluster
+    data:
+      data_path: /Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/binned_clusters/data/advact/
+      cat_file: DR5_cluster-catalog_v1.1.fits
+      Q_file: DR5ClusterSearch/selFn/QFit.fits
+      tile_file: DR5ClusterSearch/selFn/tileAreas.txt
+      rms_file: DR5ClusterSearch/selFn/RMSTab.fits
+    theorypred:
+      choose_dim: 2D
+      choose_theory: class
+      rel_correction: false
+      massfunc_mode: internal
+      md_hmf: 500c
+      md_ym: 500c
+      compl_mode: erf_diff
+      use_class_sz: true
+    YM:
+      Mpivot: 300000000000000.0
+    selfunc:
+      SNRcut: 5.0
+      mode: downsample
+      dwnsmpl_bins: 5
+      save_dwsmpld: true
+      average_Q: false
+    binning:
+      z:
+        zmin: 0.0
+        zmax: 2.9
+        dz: 0.1
+      q:
+        log10qmin: 0.6
+        log10qmax: 2.0
+        dlog10q: 0.5
+      M:
+        Mmin: 5000000000000.0
+        Mmax: 1.0e+16
+        dlogM: 0.1
+    verbose: true
+    type: []
+    speed: -1
+    stop_at_error: false
+    version: null
+    input_params:
+    - tenToA0
+    - B0
+    - C0
+    - scatter_sz
+    - bias_sz
+    output_params: []
+params:
+  logA:
+    prior:
+      min: 2.0
+      max: 4.0
+    ref:
+      dist: norm
+      loc: 3.1
+      scale: 0.001
+    proposal: 0.001
+    latex: \log(10^{10} A_\mathrm{s})
+    drop: true
+  As:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+    latex: A_\mathrm{s}
+    derived: true
+    renames:
+    - A_s
+  sigma8:
+    derived: true
+  omega_b:
+    value: 0.0226576
+    renames:
+    - omegabh2
+  omega_cdm:
+    value: 0.1206864
+    renames:
+    - omegach2
+  n_s:
+    value: 0.965
+    renames:
+    - ns
+  tau_reio:
+    value: 0.055
+    renames:
+    - tau
+  H0:
+    value: 68.0
+  tenToA0:
+    derived: false
+    value: 4.35e-05
+  B0:
+    derived: false
+    value: 0.08
+  C0:
+    derived: false
+    value: 0.0
+  scatter_sz:
+    derived: false
+    value: 0.0
+  bias_sz:
+    derived: false
+    value: 1.0
+sampler:
+  evaluate:
+    N: 1
+    override:
+      logA: 3.10034
+    seed: null
+    version: null
+output: test
+stop_at_error: true
+version: 3.2.1

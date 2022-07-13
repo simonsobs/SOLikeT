@@ -420,6 +420,8 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             self.log.info('[class_sz] test dndlnm : {}'.format(self.get_dndlnM_at_z_and_M(0.1,3e14)))
             self.log.info('[class_sz] test ym : {}'.format(self.get_y_at_m_and_z(3e14,0.1)))
             self.log.info('[class_sz] test theta : {}'.format(self.get_theta_at_m_and_z(3e14,0.1)))
+        # if self.theorypred['MiraTitanHMFemulator']:
+        #     print('using MiraTitanHMFemulator')
 
         super().initialize()
 

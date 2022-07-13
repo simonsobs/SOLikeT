@@ -1,0 +1,2 @@
+#        weight    minuslogpost            logA              As          sigma8   minuslogprior minuslogprior__0            chi2 chi2__soliket.BinnedClusterLikelihood
+              1       8746.8757         3.10034     2.22055e-09      0.84916952      0.69314718       0.69314718       17492.365                             17492.365

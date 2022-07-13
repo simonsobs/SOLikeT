@@ -24,7 +24,7 @@ likelihood:
       md_hmf: '500c' # Mass definition used for HMF
       md_ym: '500c' # Mass definition used for Y-M relation
       compl_mode: 'erf_diff' # Method to compute selection function, possibilities are erf_diff (difference of erfs), erf_prod (product of erfs)
-      use_class_sz: False
+      use_class_sz: True
     # Y-M relation
     YM:
       Mpivot: 3e14 # Mpivot in Y-M relation in [ Msun]
