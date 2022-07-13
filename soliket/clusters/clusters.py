@@ -23,7 +23,6 @@ class SZModel:
 
 class BinnedClusterLikelihood(CashCLikelihood):
     name = "Binned Clusters"
-    print('hi')
 
     def initialize(self):
 
