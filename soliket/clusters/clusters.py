@@ -691,33 +691,14 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         return model
 
     def _get_catalog(self):
-        self.survey = SurveyData(
-            self.data_path, self.data_name,szarMock=True
-        )  # , MattMock=False,tiles=False)
+        return get_catalog(self)
 
-        self.szutils = szutils(self.survey)
-
-        df = pd.DataFrame(
-            {
-                "z": self.survey.clst_z.byteswap().newbyteorder(),
-                "tsz_signal": self.survey.clst_y0.byteswap().newbyteorder(),
-                "tsz_signal_err": self.survey.clst_y0err.byteswap().newbyteorder(),
-            }
-        )
-        return df
-
-    # def _get_om(self):
-    #     return (self.theory.get_param("omch2") + self.theory.get_param("ombh2")) / (
-    #         (self.theory.get_param("H0") / 100.0) ** 2
-    #     )
 
     def _get_ob(self):
         return (self.theory.get_param("ombh2")) / (
             (self.theory.get_param("H0") / 100.0) ** 2
         )
 
-    # def _get_Ez(self):
-    #     return self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
 
     # NOT GOOD!
     def _get_Ez_interpolator(self):
@@ -771,6 +752,15 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         }
         return param_vals
 
+    def _get_rate_fn_parallels(self, **kwargs):
+            rate_densities = np.array(
+                [
+                    self._get_rate_fn(**{c: self.catalog[c].values[i] for c in self.columns})
+                    for i in range(len(self))
+                ]
+            )
+            return rate_densities
+
     def _get_rate_fn(self, **kwargs):
         HMF = self._get_HMF()
         param_vals = self._get_param_vals(**kwargs)
@@ -782,7 +772,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         h = self.theory.get_param("H0") / 100.0
 
-        def Prob_per_cluster(z, tsz_signal, tsz_signal_err):
+
+
+        def Prob_per_cluster(z,tsz_signal,tsz_signal_err):
+            # print('computing prob per cluster for len_z:',z)
             c_y = tsz_signal
             c_yerr = tsz_signal_err
             c_z = z
@@ -795,7 +788,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
             return ans
-
+        # print('ans = %.5e'%Prob_per_cluster)
         return Prob_per_cluster
         # Implement a function that returns a rate function (function of (tsz_signal, z))
 
@@ -1117,3 +1110,23 @@ def get_erf_compl(y, qmin, qmax, rms, qcut):
     arg2 = (y/rms - qlim)/np.sqrt(2.)
     erf_compl = (scipy.special.erf(arg2) - scipy.special.erf(arg1)) / 2.
     return erf_compl
+
+
+
+def get_catalog(both):
+    print('collecting catalog')
+    both.survey = SurveyData(
+        both.data_path, both.data_name,szarMock=True
+    )  # , MattMock=False,tiles=False)
+
+    both.szutils = szutils(both.survey)
+
+    df = pd.DataFrame(
+        {
+            "z": both.survey.clst_z.byteswap().newbyteorder(),
+            "tsz_signal": both.survey.clst_y0.byteswap().newbyteorder(),
+            "tsz_signal_err": both.survey.clst_y0err.byteswap().newbyteorder(),
+        }
+    )
+    print('catalog collected')
+    return df

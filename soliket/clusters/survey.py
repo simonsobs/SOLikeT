@@ -137,7 +137,7 @@ class SurveyData:
         szarMock=False,
         MattMock=False,
         tiles=False,
-        num_noise_bins=20,
+        num_noise_bins=2,
     ):
         self.nemodir = nemoOutputDir
 
