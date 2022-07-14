@@ -650,15 +650,15 @@ class BinnedClusterLikelihood(CashCLikelihood):
 class UnbinnedClusterLikelihood(PoissonLikelihood):
     name = "Unbinned Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err"]
-    data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
-    # data_path = resource_filename("soliket", "clusters/data/selFn_SO")
-    data_name = resource_filename("soliket", "clusters/data/E-D56Clusters.fits")
-    # data_name = resource_filename("soliket",
-    #                   "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
+    # data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
+    data_path = resource_filename("soliket", "clusters/data/selFn_SO")
+    # data_name = resource_filename("soliket", "clusters/data/E-D56Clusters.fits")
+    data_name = resource_filename("soliket",
+                      "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
     theorypred: dict = {}
 
     def initialize(self):
-        self.zarr = np.arange(0, 2, 0.05)
+        self.zarr = np.arange(0, 3, 0.05) # redshift bounds should correspond to catalogue
         self.k = np.logspace(-4, np.log10(5), 200)
         # self.mdef = ccl.halos.MassDef(500, 'critical')
 
@@ -692,7 +692,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     def _get_catalog(self):
         self.survey = SurveyData(
-            self.data_path, self.data_name
+            self.data_path, self.data_name,szarMock=True
         )  # , MattMock=False,tiles=False)
 
         self.szutils = szutils(self.survey)
@@ -721,7 +721,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     # NOT GOOD!
     def _get_Ez_interpolator(self):
-        return interp1d(self.zarr, get_Ez(self,self.zarr))
+        # zarr_interp = np.linspace(self.zarr[0],self.zarr[-1],200)
+        return interp1d(self.zarr , get_Ez(self,self.zarr))
 
     def _get_DAz(self):
         return self.theory.get_angular_diameter_distance(self.zarr)
@@ -832,6 +833,30 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             )
 
         return Ntot
+
+    def _get_nz_expected(self, **kwargs):
+         # def Ntot_survey(self,int_HMF,fsky,Ythresh,param_vals):
+
+        HMF = self._get_HMF()
+        param_vals = self._get_param_vals()
+        Ez_fn = self._get_Ez_interpolator()
+        DA_fn = self._get_DAz_interpolator()
+
+        z_arr = self.zarr
+
+        h = self.theory.get_param("H0") / 100.0
+
+        Ntot = 0
+        dVdz = get_dVdz(self,z_arr)
+        dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h ** 4.0  # getting rid of hs
+
+        for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
+            Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
+            N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0)
+             # Ntot += np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * self.survey.fskytotal * frac
+
+
+        return (z_arr,N_z*dVdz)
 
     def _test_n_tot(self, **kwargs):
 

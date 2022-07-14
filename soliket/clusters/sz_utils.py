@@ -200,7 +200,6 @@ def calcR500Mpc(z, M500, Ez_fn, H0,rho_crit0H100):
             "M500 is a string - check M500MSun in your .yml config file:\
              use, e.g., 1.0e+14 (not 1e14 or 1e+14)"
         )
-
     Ez = Ez_fn(z)
 
     criticalDensity = rho_crit0H100 * (H0 / 100.) ** 2 * Ez ** 2

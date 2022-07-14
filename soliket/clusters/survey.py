@@ -4,7 +4,6 @@ import numpy as np
 from scipy import interpolate
 import astropy.io.fits as pyfits
 
-# from astLib import astWCS
 from astropy.wcs import WCS
 from astropy.io import fits
 import astropy.table as atpy
@@ -45,7 +44,7 @@ def read_matt_mock_cat(fitsfile, qmin):
     Y0 = data.field("fixed_y_c")
     Y0err = data.field("fixed_err_y_c")
     SNR = data.field("fixed_SNR")
-    M = data.field("true_M500")
+    # M = data.field("true_M500")
     ind = np.where(SNR >= qmin)[0]
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
 
@@ -69,7 +68,7 @@ def loadAreaMask(extName, DIR):
     """
     areaImg = pyfits.open(os.path.join(DIR, "areaMask%s.fits.gz" % (extName)))
     areaMap = areaImg[0].data
-    wcs = WCS(areaImg[0].header)  # , mode="pyfits")
+    wcs = WCS(areaImg[0].header)
     areaImg.close()
 
     return areaMap, wcs
@@ -83,7 +82,7 @@ def loadRMSmap(extName, DIR):
         os.path.join(DIR, "RMSMap_Arnaud_M2e14_z0p4%s.fits.gz" % (extName))
     )
     areaMap = areaImg[0].data
-    wcs = WCS(areaImg[0].header)  # , mode="pyfits")
+    wcs = WCS(areaImg[0].header)
     areaImg.close()
 
     return areaMap, wcs
@@ -149,7 +148,7 @@ class SurveyData:
 
         if szarMock:
             print("mock catalog")
-            self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_mock_cat(
+            self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_matt_mock_cat(
                 ClusterCat, self.qmin
             )
         elif MattMock:
@@ -191,8 +190,13 @@ class SurveyData:
 
             self.fskytotal = np.sum(self.fsky)
         else:
-            self.rms, self.rwcs = loadRMSmap("", self.nemodir)
-            self.mask, self.mwcs = loadAreaMask("", self.nemodir)
+            # self.rms, self.rwcs = loadRMSmap("", self.nemodir)
+            # self.mask, self.mwcs = loadAreaMask("", self.nemodir)
+            # tcat = '/Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/clusters/data/selFn_SO/stitched_RMSMap_Arnaud_M2e14_z0p4.fits'
+            tcat = os.path.join(self.nemodir, "stitched_RMSMap_Arnaud_M2e14_z0p4.fits")
+            list = pyfits.open(tcat)
+            self.rms = list[1].data
+
             self.rmstotal = self.rms[self.rms > 0]
             self.fskytotal = 987.5 / 41252.9612
 
@@ -205,7 +209,8 @@ class SurveyData:
 
     @property
     def Q(self):
-        if self.tiles:
-            return self.tckQFit["Q"]
-        else:
-            return self.tckQFit["PRIMARY"]
+        # if self.tiles:
+        return self.tckQFit["Q"]
+        # else:
+        #     print(self.tckQFit.keys())
+        #     return self.tckQFit["PRIMARY"]
