@@ -11,13 +11,16 @@ fiducial_params = {
     "tau": 0.06,
     "As": 2.2e-9,
     "ns": 0.96,
-    "mnu": 0.06,
+    "mnu": 0.0,
     "nnu": 3.046,
+    "omnuh2": 0.,
 }
 
 info_unbinned = {
     "params": fiducial_params,
-    "likelihood": {"soliket.UnbinnedClusterLikelihood": {"stop_at_error": True}},
+    "likelihood": {"soliket.UnbinnedClusterLikelihood":
+    {"stop_at_error": True,
+     "theorypred":{"choose_theory":'camb'}}},
     "theory": {
         "camb": {
             "extra_args": {
@@ -54,7 +57,10 @@ def test_clusters_unbinned_loglike():
 
     lnl = model_fiducial.loglikes({})[0]
 
-    assert np.isclose(lnl, -855.0)
+    print('lnl: ',lnl)
+    # exit(0)
+
+    assert np.isclose(lnl, -885.678)
 
 
 def test_clusters_unbinned_n_expected():
@@ -65,9 +71,16 @@ def test_clusters_unbinned_n_expected():
 
     like = model_fiducial.likelihood["soliket.UnbinnedClusterLikelihood"]
 
+    print('like._get_n_expected():',like._get_n_expected())
+
     assert like._get_n_expected() > 40
 
 
 def test_clusters_binned_model():
 
     model_fiducial = get_model(info_binned)
+
+# for debugging purposes:
+test_clusters_unbinned_loglike()
+test_clusters_unbinned_model()
+test_clusters_unbinned_n_expected()

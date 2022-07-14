@@ -11,18 +11,26 @@ class CashCLikelihood(Likelihood):
 
     def initialize(self):
 
-        x, N = self._get_data()
-        self.data = CashCData(self.name, N)
+        ## should be like this:
+        #x, N = self._get_data()
+        # with x being q and z?...
+
+        N = self._get_data()
+        self.data = CashCData(self.name,N)
 
     def _get_data(self):
-        data = np.loadtxt(self.datapath, unpack=False)
-        N = data[:, -1] # assume data stored like column_stack([z, q, N])
-        x = data[:, :-1]
-        return x, N
+        raise NotImplementedError
 
     def _get_theory(self, pk_intp, **kwargs):
         raise NotImplementedError
 
     def logp(self, **params_values):
-        theory = self._get_theory(**params_values)
+        # if self.name == "Unbinned Clusters":
+        #     theory = self._get_theory(**params_values)
+        #
+        # elif self.name == "Binned Clusters":
+        pk_intp = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False)
+        theory = self._get_theory(pk_intp, **params_values)
+
+
         return self.data.loglike(theory)

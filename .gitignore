@@ -102,3 +102,8 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+
+# clusters
+soliket/clusters/chains
+soliket/clusters/data/advact

@@ -1,0 +1,60 @@
+# run from SOLikeT/soliket/clusters
+# command:
+# $ cobaya-run input_files/test_unbinned_lkl_camb.yaml -f
+
+output: chains/test_unbinned_lkl_camb
+
+likelihood:
+  soliket.UnbinnedClusterLikelihood:
+    stop_at_error: True
+
+    theorypred:
+      choose_theory: 'camb' # Theory prediction mode, possibilities are camb, class, CCL (CCL is all CCL)
+
+params:
+  logA:
+    prior:
+      min: 2.
+      max: 4.
+    ref:
+      dist: norm
+      loc: 3.1
+      scale: 0.001
+    proposal: 0.001
+    latex: \log(10^{10} A_\mathrm{s})
+    drop: true
+  As:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+    latex: A_\mathrm{s}
+  H0:
+    prior:
+      min: 50
+      max: 100
+    ref:
+      dist: norm
+      loc: 70
+      scale: 1
+  ombh2: 0.0226576  # for omb = 0.049
+  omch2: 0.1206864
+  ns: 0.965
+  tau: 0.055
+  mnu: 0.0
+  nnu: 3.046
+  omnuh2: 0.
+  w: -1
+
+
+sampler:
+  evaluate:
+      override:
+        H0: 68
+        logA: 3.007
+
+
+theory:
+  camb:
+    stop_at_error: true
+    extra_args:
+      num_massive_neutrinos: 0
+      dark_energy_model: fluid
+    ignore_obsolete: True

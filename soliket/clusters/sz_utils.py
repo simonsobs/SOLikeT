@@ -8,8 +8,7 @@ from ..constants import h_Planck, k_Boltzmann, electron_mass_kg, elementary_char
 
 # from .clusters import C_KM_S as C_in_kms
 
-rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
-                        / G_CGS * MPC2CM / MSUN_CGS
+
 
 
 def gaussian(xx, mu, sig, noNorm=False):
@@ -21,9 +20,16 @@ def gaussian(xx, mu, sig, noNorm=False):
 
 
 class szutils:
+    rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
+                        / G_CGS * MPC2CM / MSUN_CGS
+    MPIVOT_THETA = 3e14 # [Msun]
+
     def __init__(self, Survey):
         self.LgY = np.arange(-6, -2.5, 0.01)
         self.Survey = Survey
+        # self.rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
+        #                         / G_CGS * MPC2CM / MSUN_CGS
+        # self.theory = Theory
 
         # self.rho_crit0H100 = (3. / (8. * np.pi) * \
         #                           (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
@@ -41,7 +47,8 @@ class szutils:
             B0=param_vals["B0"],
             H0=param_vals["H0"],
             Ez_fn=Ez_fn,
-            Da_fn=Da_fn
+            Da_fn=Da_fn,
+            rho_crit0H100 = self.rho_crit0H100
         )
         Y = 10 ** LgY
 
@@ -70,6 +77,7 @@ class szutils:
             H0=param_vals["H0"],
             Ez_fn=Ez_fn,
             Da_fn=Da_fn,
+            rho_crit0H100 = self.rho_crit0H100
         )
         Y = 10 ** LgY
 
@@ -182,7 +190,7 @@ class szutils:
 
 
 # ----------------------------------------------------------------------------------------
-def calcR500Mpc(z, M500, Ez_fn, H0):
+def calcR500Mpc(z, M500, Ez_fn, H0,rho_crit0H100):
     """Given z, M500 (in MSun), returns R500 in Mpc, with respect to critical density.
 
     """
@@ -202,13 +210,13 @@ def calcR500Mpc(z, M500, Ez_fn, H0):
 
 
 # ----------------------------------------------------------------------------------------
-def calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0):
+def calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0,rho_crit0H100):
     """Given z, M500 (in MSun), returns angular size equivalent to R500, with respect to
     critical density.
 
     """
 
-    R500Mpc = calcR500Mpc(z, M500, Ez_fn, H0)
+    R500Mpc = calcR500Mpc(z, M500, Ez_fn, H0,rho_crit0H100)
     DAz = Da_fn(z)
 
     theta500Arcmin = np.degrees(np.arctan(R500Mpc / DAz)) * 60.0
@@ -361,7 +369,8 @@ def y0FromLogM500(
         fRelWeightsDict={148.0: 1.0},
         H0=70.,
         Ez_fn=None,
-        Da_fn=None
+        Da_fn=None,
+        rho_crit0H100 = None
 ):
     """Predict y0~ given logM500 (in MSun) and redshift. Default scaling relation
     parameters are A10 (as in H13).
@@ -386,7 +395,7 @@ def y0FromLogM500(
     # need to recalculate Q.
     # We just need to recalculate theta500Arcmin and E(z) only
     M500 = np.power(10, log10M500)
-    theta500Arcmin = calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0)
+    theta500Arcmin = calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0, rho_crit0H100)
     Q = calcQ(theta500Arcmin, tckQFit)
 
     Ez = Ez_fn(z)
