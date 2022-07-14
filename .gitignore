@@ -104,6 +104,7 @@ venv.bak/
 .mypy_cache/
 
 # binned clusters
+soliket/clusters
 .DS_Store
 soliket/binned_clusters/chains/*
 soliket/binned_clusters/data/*
