@@ -106,6 +106,7 @@ def test_shearkappa_m():
 
     assert np.isfinite(loglikes)
 
+
 def test_shearkappa_ia():
 
     from soliket.cross_correlation import ShearKappaLikelihood
@@ -117,6 +118,7 @@ def test_shearkappa_ia():
     loglikes, derived = model.loglikes()
 
     assert np.isfinite(loglikes)
+
 
 def test_shearkappa_hmcode():
 
