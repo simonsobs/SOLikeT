@@ -38,14 +38,14 @@ def read_mock_cat(fitsfile, qmin):
 def read_matt_mock_cat(fitsfile, qmin):
     list = fits.open(fitsfile)
     data = list[1].data
-    ra = data.field("RADeg")
-    dec = data.field("decDeg")
+    # ra = data.field("RADeg")
+    # dec = data.field("decDeg")
     z = data.field("redshift")
     zerr = data.field("redshiftErr")
     Y0 = data.field("fixed_y_c")
     Y0err = data.field("fixed_err_y_c")
     SNR = data.field("fixed_SNR")
-    M = data.field("true_M500")
+    # M = data.field("true_M500")
     ind = np.where(SNR >= qmin)[0]
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
 

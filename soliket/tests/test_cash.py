@@ -19,5 +19,5 @@ def test_cash():
     cashdata1d = CashCData("toy 1d", data1d)
     cashdata2d = CashCData("toy 2d", data2d)
 
-    assert(np.allclose(cashdata1d.loglike(theory1d), -37.3710640070228))
-    assert(np.allclose(cashdata2d.loglike(theory2d), -2349.5353718742294))
+    assert np.allclose(cashdata1d.loglike(theory1d), -37.3710640070228)
+    assert np.allclose(cashdata2d.loglike(theory2d), -2349.5353718742294)
