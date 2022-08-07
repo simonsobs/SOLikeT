@@ -7,7 +7,11 @@ import numpy as np
 from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
-packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
+# packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
+#     tempfile.gettempdir(), "lensing_packages"
+# )
+
+packages_path = os.path.join(
     tempfile.gettempdir(), "lensing_packages"
 )
 
