@@ -46,7 +46,7 @@ class TheoryForge_MFLike(Theory):
                                      ]
 
         # Initialize template for marginalization, if needed
-        if(self.systematics_template["has_file"]):
+        if self.systematics_template["has_file"]:
             self._init_template_from_file()
 
 
@@ -122,7 +122,7 @@ class TheoryForge_MFLike(Theory):
         cmbfg_dict = self._get_rotated_spectra(cmbfg_dict, **nuis_params)
 
         # Introduce templates of systematics from file, if needed
-        if(self.systematics_template['has_file']):
+        if self.systematics_template['has_file']:
             cmbfg_dict = self._get_template_from_file(cmbfg_dict, **nuis_params)
 
 
