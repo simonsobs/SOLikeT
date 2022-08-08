@@ -68,7 +68,7 @@ def test_galaxykappa_like():
     assert np.isclose(loglikes[0], 88.2, atol=0.2, rtol=0.0)
 
 
-@pytest.mark.xfail(reason="data file not in repo")
+# @pytest.mark.xfail(reason="data file not in repo")
 def test_shearkappa_like():
 
     from soliket.cross_correlation import ShearKappaLikelihood
