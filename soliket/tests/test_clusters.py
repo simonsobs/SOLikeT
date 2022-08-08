@@ -34,7 +34,7 @@ info_fiducial = {
 
 def test_clusters_model():
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(info_fiducial) # noqa F841
 
 
 def test_clusters_loglike():
@@ -54,4 +54,5 @@ def test_clusters_n_expected():
 
     like = model_fiducial.likelihood["soliket.ClusterLikelihood"]
 
+    assert np.isfinite(lnl)
     assert like._get_n_expected() > 40
