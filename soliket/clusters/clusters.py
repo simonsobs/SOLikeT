@@ -6,7 +6,7 @@ import pandas as pd
 from scipy.interpolate import interp1d
 from pkg_resources import resource_filename
 
-# import pyccl as ccl
+import pyccl as ccl
 
 from ..poisson import PoissonLikelihood
 from . import massfunc as mf
@@ -59,7 +59,7 @@ class ClusterLikelihood(PoissonLikelihood):
             cosmo, mass_def=self.mdef, mass_def_strict=False
         )
         model.hmc = ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
-        model.szk = SZTracer(cosmo)
+        # model.szk = SZTracer(cosmo)
         return model
 
     def _get_catalog(self):
@@ -216,9 +216,9 @@ class ClusterLikelihood(PoissonLikelihood):
     def _test_n_tot(self, **kwargs):
 
         HMF = self._get_HMF()
-        param_vals = self._get_param_vals(**kwargs)
-        Ez_fn = self._get_Ez_interpolator()
-        DA_fn = self._get_DAz_interpolator()
+        # param_vals = self._get_param_vals(**kwargs)
+        # Ez_fn = self._get_Ez_interpolator()
+        # DA_fn = self._get_DAz_interpolator()
 
         z_arr = self.zarr
 

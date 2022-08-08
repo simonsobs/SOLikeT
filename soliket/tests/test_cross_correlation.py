@@ -45,7 +45,8 @@ def test_shearkappa():
                        "ns": cosmo_params['n_s'],
                        "As": 2.1e-9,
                        "tau": 0.054,
-                       "A_IA": 0.0},
+                       "A_IA": 0.0,
+                       "b1": 1},
             "likelihood": {"ShearKappaLikelihood":
                             {"external": ShearKappaLikelihood,
                              "dndz_file": "soliket/tests/data/dndz_hsc.txt"  # noqa E501
