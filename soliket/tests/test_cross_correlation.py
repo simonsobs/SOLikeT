@@ -97,34 +97,6 @@ def test_shearkappa_like():
     model = get_model(info)
     loglikes, derived = model.loglikes()
 
-    # lhood = model.likelihood["ShearKappaLikelihood"]
-
-    # from matplotlib import pyplot as plt
-    # from matplotlib import rc
-
-    # rc('text', usetex=True)
-    # rc('font', family='serif')
-    # rc('font', size=11)
-    # plt.figure(1, figsize=(4.5, 3.75))
-    # plt.plot(lhood.data.x, lhood.data.y, 'o',
-    #          label='CS82$\\times$\emph{Planck} (Hall \& Taylor 2014)')
-    # plt.plot(lhood.data.x, lhood._get_theory(**info["params"]),
-    #          label='\\textsc{ShearKappaLikelihood')
-    # plt.title(r"Binned $C_{\ell}$")
-    # plt.ylabel(r"$C_{\ell}$")
-    # plt.xlabel(r"$\ell$")
-    # # plt.xscale('log')
-    # plt.yscale('log')
-    # plt.legend(loc="upper right")
-    # # plt.ylim([-0.5, 1.6])
-    # # plt.xlim([60, 2000])
-    # plt.axhline(0, color="k", linestyle="dashed", alpha=0.4)
-    # plt.savefig(
-    #     "./cs82-validation.png",
-    #     dpi=300,
-    #     bbox_inches="tight",
-    # )
-
     assert np.isclose(loglikes, 637.64473666)
 
 
