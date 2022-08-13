@@ -73,12 +73,59 @@ def test_shearkappa_like():
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": ShearKappaLikelihood}
+    test_datapath = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
+
+    info["likelihood"] = {
+        "ShearKappaLikelihood": {"external": ShearKappaLikelihood,
+                                 "datapath": test_datapath}
+    }
+
+    # Cosmological parameters for the test data, digitized from
+    # Fig. 3 and Eq. 8 of Hall & Taylor (2014).
+    # See https://github.com/simonsobs/SOLikeT/pull/58 for validation plots
+    info['params'] = {"omch2": 0.118,  # Planck + lensing + WP + highL
+                      "ombh2": 0.0222,
+                      "H0": 68.0,
+                      "ns": 0.962,
+                      "As": 2.1e-9,
+                      "tau": 0.094,
+                      "mnu": 0.0,
+                      "nnu": 3.046,
+                      "s1": 0.4,
+                      "b1": 1.0}
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    # lhood = model.likelihood["ShearKappaLikelihood"]
+
+    # from matplotlib import pyplot as plt
+    # from matplotlib import rc
+
+    # rc('text', usetex=True)
+    # rc('font', family='serif')
+    # rc('font', size=11)
+    # plt.figure(1, figsize=(4.5, 3.75))
+    # plt.plot(lhood.data.x, lhood.data.y, 'o',
+    #          label='CS82$\\times$\emph{Planck} (Hall \& Taylor 2014)')
+    # plt.plot(lhood.data.x, lhood._get_theory(**info["params"]),
+    #          label='\\textsc{ShearKappaLikelihood')
+    # plt.title(r"Binned $C_{\ell}$")
+    # plt.ylabel(r"$C_{\ell}$")
+    # plt.xlabel(r"$\ell$")
+    # # plt.xscale('log')
+    # plt.yscale('log')
+    # plt.legend(loc="upper right")
+    # # plt.ylim([-0.5, 1.6])
+    # # plt.xlim([60, 2000])
+    # plt.axhline(0, color="k", linestyle="dashed", alpha=0.4)
+    # plt.savefig(
+    #     "./cs82-validation.png",
+    #     dpi=300,
+    #     bbox_inches="tight",
+    # )
+
+    assert np.isclose(loglikes, 637.64473666)
 
 
 def test_shearkappa_deltaz():

@@ -191,9 +191,11 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
             bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
             bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
             ells_theory = bpw.values
+            ells_theory = np.asarray(ells_theory, dtype=int)
             w_bins = bpw.weight.T
 
             cl_unbinned = ccl.cls.angular_cl(cosmo, tracer1, tracer2, ells_theory)
+
 
             if self.m_nuisance_mode is not None:
                 m_bias = params_values['{}_m'.format(sheartracer_name)]
