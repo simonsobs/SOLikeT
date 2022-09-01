@@ -14,6 +14,7 @@ import logging
 import nemo as nm
 import scipy.stats
 import pyccl as ccl
+import soliket.binned_clusters.nemo_mocks as selfunc
 
 from pkg_resources import resource_filename
 
@@ -87,7 +88,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         qcat = data.field("fixed_SNR") #NB note that there are another SNR in the catalogue
 
         # SPT-style SNR bias correction
-        debiasDOF = 2
+        debiasDOF = 0
         qcat = np.sqrt(np.power(qcat, 2) - debiasDOF)
 
         qcut = self.qcut
@@ -160,7 +161,9 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
         else:
-            if self.selfunc['mode'] == 'inpt_dwnsmpld':
+            if self.selfunc['mode'] == 'injection':
+                self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut, qbins)
+            elif self.selfunc['mode'] == 'inpt_dwnsmpld':
                 self.log.info('Reading pre-downsampled Q function.')
                 # for quick reading theta and Q data is saved first and just called
                 self.datafile_Q = self.data['Q_file']
@@ -203,7 +206,13 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                     self.tt500 = Qfile['tt500']
 
         self.log.info('Reading RMS.')
-        if self.selfunc['mode'] == 'single_tile':
+        if self.selfunc['mode'] == 'injection':
+            self.datafile_rms = self.data['rms_file']
+            list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
+            file_rms = list[1].data
+
+            self.skyfracs = file_rms['areaDeg2'] * np.deg2rad(1.) ** 2
+        elif self.selfunc['mode'] == 'single_tile':
             self.datafile_rms = self.data['rms_file']
 
             list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
@@ -231,7 +240,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 self.datafile_rms = self.data['rms_file']
                 filename_rms, ext = os.path.splitext(self.datafile_rms)
                 datafile_rms_dwsmpld = os.path.join(self.data_directory,
-                        filename_rms + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.' + '.npz')
+                        filename_rms + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
                 if self.selfunc['mode'] == 'full' or (
                         self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] is False)  or (
                         self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] and not os.path.exists(datafile_rms_dwsmpld)):
@@ -291,13 +300,14 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
             tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
             self.tile_list = [tiledict[key]+1 for key in self.tname]
 
-        if self.selfunc['average_Q']:
-            self.Q = np.mean(self.allQ, axis=1)
-            self.log.info("Number of Q functions = {}.".format(self.Q.ndim))
-            self.log.info("Using one averaged Q function for optimisation")
-        else:
-            self.Q = self.allQ
-            self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
+        if self.selfunc['mode'] != 'injection':
+            if self.selfunc['average_Q']:
+                self.Q = np.mean(self.allQ, axis=1)
+                self.log.info("Number of Q functions = {}.".format(self.Q.ndim))
+                self.log.info("Using one averaged Q function for optimisation")
+            else:
+                self.Q = self.allQ
+                self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
         self.log.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
 
@@ -735,11 +745,14 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         else:
             marr_500c = None
 
-        y0 = self._get_y0(marr_ymmd, zz, marr_500c, **params_values_dict)
+        if self.selfunc['mode'] != 'injection':
+            y0 = self._get_y0(marr_ymmd, zz, marr_500c, **params_values_dict)
+        else:
+            y0 = None
 
         cc = []
         for kk in range(Nq):
-            cc.append(self._get_completeness2D(marr, zz, y0, kk, **params_values_dict))
+            cc.append(self._get_completeness2D(marr, zz, y0, kk, marr_500c, **params_values_dict))
         cc = np.asarray(cc)
 
         #nzarr = np.linspace(0, 2.8, 29)
@@ -789,9 +802,36 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         return delN
 
+    def _theta(self, mass_500c, z, Ez=None):
+
+        thetastar = 6.997
+        alpha_theta = 1. / 3.
+        H0 = self.theory.get_param("H0")
+        h = H0/100.0
+
+        if Ez is None:
+            Ez = self._get_Ez(z)
+            Ez = Ez[:, None]
+
+        DAz = self._get_DAz(z) * h
+        DAz = DAz[:, None]
+        ttstar = thetastar * (H0 / 70.) ** (-2. / 3.)
+
+        return ttstar * (mass_500c / MPIVOT_THETA / h) ** alpha_theta * Ez ** (-2. / 3.) * (100. * DAz / 500 / H0) ** (-1.)
+
+    def _splQ(self, theta):
+        if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
+            tck = interpolate.splrep(self.tt500, self.Q)
+            newQ = interpolate.splev(theta, tck)
+        else:
+            newQ = []
+            for i in range(len(self.Q[0])):
+                tck = interpolate.splrep(self.tt500, self.Q[:, i])
+                newQ.append(interpolate.splev(theta, tck))
+        return np.asarray(np.abs(newQ))
 
     # y-m scaling relation for completeness
-    def _get_y0(self, mass, z, mass_500c, **params_values_dict):
+    def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
 
         if mass_500c is None:
             mass_500c = mass
@@ -803,34 +843,11 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         Ez = self._get_Ez(z)
         Ez = Ez[:,None]
-        h = self.theory.get_param("H0") / 100.0
 
         mb = mass * bias
         mb_500c = mass_500c*bias
         #TODO: Is removing h correct here - matches Hasselfield but is different from before
         Mpivot = self.YM['Mpivot']  # I put h and Boris put 0.7 here
-
-        def theta(m):
-
-            thetastar = 6.997
-            alpha_theta = 1./3.
-            DAz = self._get_DAz(z) * h
-            DAz = DAz[:,None]
-            H0 = self.theory.get_param("H0")
-            ttstar = thetastar * (H0/70.)**(-2./3.)
-
-            return ttstar*(m/MPIVOT_THETA/h)**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.)
-
-        def splQ(x):
-            if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
-                tck = interpolate.splrep(self.tt500, self.Q)
-                newQ = interpolate.splev(x, tck)
-            else:
-                newQ = []
-                for i in range(len(self.Q[0])):
-                    tck = interpolate.splrep(self.tt500, self.Q[:,i])
-                    newQ.append(interpolate.splev(x, tck))
-            return np.asarray(np.abs(newQ))
 
         def rel(m):
             #mm = m / mpivot
@@ -842,15 +859,36 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                 res = 1.
             return res
 
+        if use_Q is True:
+            theta = self._theta(mb_500c, z, Ez)
+            splQ = self._splQ(theta)
+        else:
+            splQ = 1.
+
         if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
             #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
-            y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ(theta(mb_500c)) #* rel(mb) ###### M200m
+            y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ #* rel(mb) ###### M200m
             y0 = y0.T ###### M200m
         else:
-            y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ(theta(mb_500c))
+            y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ
             # y0 = np.transpose(arg, axes=[1, 2, 0])
 
+        # For some cosmological parameters, we can still get the odd -ve y0
+        y0[y0 <= 0] = 1e-9
+
         return y0
+
+    def get_completeness2D_inj(self, mass, z, mass_500c, qbin, **params_values_dict):
+
+        y0 = self._get_y0(mass, z, mass_500c, use_Q=False, **params_values_dict)
+        theta = self._theta(mass_500c, z)
+
+        comp = np.zeros_like(theta)
+        for i in range(theta.shape[0]):
+            comp[i, :] = self.compThetaInterpolator[qbin](theta[i, :], y0[i, :]/1e-4, grid=False)
+        comp[comp < 0] = 0
+
+        return comp
 
     # completeness 1D
     def _get_completeness(self, marr, zarr, y0, **params_values_dict):
@@ -953,122 +991,31 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
         return comp
 
     # completeness 2D
-    def _get_completeness2D(self, marr, zarr, y0, qbin, **params_values_dict):
+    def _get_completeness2D(self, marr, zarr, y0, qbin, marr_500c=None, **params_values_dict):
 
-        scatter = params_values_dict["scatter_sz"]
-        noise = self.noise
-        qcut = self.qcut
-        skyfracs = self.skyfracs/self.skyfracs.sum()
-        Npatches = len(skyfracs)
-
-        if self.selfunc['mode'] != 'single_tile' and not self.selfunc['average_Q']:
-            if self.selfunc['mode'] == 'inpt_dwnsmpld':
-                tile_list = self.tname
-            elif self.selfunc['mode'] == 'downsample':
-                tile_list = np.arange(noise.shape[0])+1
-            elif self.selfunc['mode'] == 'full':
-                tile_list = self.tile_list
-        else:
-            tile_list = None
-
-        Nq = self.Nq
-        qbins = self.qbins
-
-        if scatter == 0.:
-            a_pool = multiprocessing.Pool()
-            completeness = a_pool.map(partial(get_comp_zarr2D,
-                                            Nm=len(marr),
-                                            qcut=qcut,
-                                            noise=noise,
-                                            skyfracs=skyfracs,
-                                            y0=y0,
-                                            Nq=Nq,
-                                            qbins=qbins,
-                                            qbin=qbin,
-                                            lnyy=None,
-                                            dyy=None,
-                                            yy=None,
-                                            temp=None,
-                                            mode=self.selfunc['mode'],
-                                            compl_mode=self.theorypred['compl_mode'],
-                                            tile=tile_list,
-                                            average_Q=self.selfunc['average_Q'],
-                                            scatter=scatter),range(len(zarr)))
-
-        else:
-            lnymin = -25.     #ln(1e-10) = -23
-            lnymax = 0.       #ln(1e-2) = -4.6
-            dlny = 0.05
-            Ny = m.floor((lnymax - lnymin)/dlny)
-            temp = []
-            yy = []
-            lnyy = []
-            dyy = []
-            lny = lnymin
+        if self.selfunc['mode'] != 'injection':
+            scatter = params_values_dict["scatter_sz"]
+            noise = self.noise
+            qcut = self.qcut
+            skyfracs = self.skyfracs/self.skyfracs.sum()
+            Npatches = len(skyfracs)
 
             if self.selfunc['mode'] != 'single_tile' and not self.selfunc['average_Q']:
-
-                for i in range(Ny):
-                    yy0 = np.exp(lny)
-
-                    kk = qbin
-                    qmin = qbins[kk]
-                    qmax = qbins[kk+1]
-
-                    if self.theorypred['compl_mode'] == 'erf_prod':
-                        if kk == 0:
-                            cc = get_erf(yy0, noise, qcut)*(1. - get_erf(yy0, noise, qmax))
-                        elif kk == Nq-1:
-                            cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)
-                        else:
-                            cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)*(1. - get_erf(yy0, noise, qmax))
-                    elif self.theorypred['compl_mode'] == 'erf_diff':
-                        cc = get_erf_compl(yy0, qmin, qmax, noise, qcut)
-
-                    temp.append(np.dot(cc.T, skyfracs))
-                    yy.append(yy0)
-                    lnyy.append(lny)
-                    dyy.append(np.exp(lny + dlny*0.5) - np.exp(lny - dlny*0.5))
-                    lny += dlny
-
-                temp = np.asarray(temp)
-                yy = np.asarray(yy)
-                lnyy = np.asarray(lnyy)
-                dyy = np.asarray(dyy)
-
+                if self.selfunc['mode'] == 'inpt_dwnsmpld':
+                    tile_list = self.tname
+                elif self.selfunc['mode'] == 'downsample':
+                    tile_list = np.arange(noise.shape[0])+1
+                elif self.selfunc['mode'] == 'full':
+                    tile_list = self.tile_list
             else:
+                tile_list = None
 
-                for i in range(Ny):
-                    yy0 = np.exp(lny)
+            Nq = self.Nq
+            qbins = self.qbins
 
-                    kk = qbin
-                    qmin = qbins[kk]
-                    qmax = qbins[kk+1]
-
-                    for j in range(Npatches):
-                        if self.theorypred['compl_mode'] == 'erf_prod':
-                            if kk == 0:
-                                cc = get_erf(yy0, noise[j], qcut)*(1. - get_erf(yy0, noise[j], qmax))
-                            elif kk == Nq:
-                                cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)
-                            else:
-                                cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)*(1. - get_erf(yy0, noise[j], qmax))
-                        elif self.theorypred['compl_mode'] == 'erf_diff':
-                            cc = get_erf_compl(yy0, qmin, qmax, noise[j], qcut)
-
-                        temp.append(cc*skyfracs[j])
-                        yy.append(yy0)
-                        lnyy.append(lny)
-                        dyy.append(np.exp(lny + dlny*0.5) - np.exp(lny - dlny*0.5))
-                    lny += dlny
-
-                temp = np.asarray(np.array_split(temp, Npatches))
-                yy = np.asarray(np.array_split(yy, Npatches))
-                lnyy = np.asarray(np.array_split(lnyy, Npatches))
-                dyy = np.asarray(np.array_split(dyy, Npatches))
-
-            a_pool = multiprocessing.Pool()
-            completeness = a_pool.map(partial(get_comp_zarr2D,
+            if scatter == 0.:
+                a_pool = multiprocessing.Pool()
+                completeness = a_pool.map(partial(get_comp_zarr2D,
                                                 Nm=len(marr),
                                                 qcut=qcut,
                                                 noise=noise,
@@ -1077,23 +1024,117 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
                                                 Nq=Nq,
                                                 qbins=qbins,
                                                 qbin=qbin,
-                                                lnyy=lnyy,
-                                                dyy=dyy,
-                                                yy=yy,
-                                                temp=temp,
+                                                lnyy=None,
+                                                dyy=None,
+                                                yy=None,
+                                                temp=None,
                                                 mode=self.selfunc['mode'],
                                                 compl_mode=self.theorypred['compl_mode'],
                                                 tile=tile_list,
                                                 average_Q=self.selfunc['average_Q'],
                                                 scatter=scatter),range(len(zarr)))
 
-        a_pool.close()
-        comp = np.asarray(completeness)
-        comp[comp < 0.] = 0.
-        comp[comp > 1.] = 1.
+            else:
+                lnymin = -25.     #ln(1e-10) = -23
+                lnymax = 0.       #ln(1e-2) = -4.6
+                dlny = 0.05
+                Ny = m.floor((lnymax - lnymin)/dlny)
+                temp = []
+                yy = []
+                lnyy = []
+                dyy = []
+                lny = lnymin
+
+                if self.selfunc['mode'] != 'single_tile' and not self.selfunc['average_Q']:
+
+                    for i in range(Ny):
+                        yy0 = np.exp(lny)
+
+                        kk = qbin
+                        qmin = qbins[kk]
+                        qmax = qbins[kk+1]
+
+                        if self.theorypred['compl_mode'] == 'erf_prod':
+                            if kk == 0:
+                                cc = get_erf(yy0, noise, qcut)*(1. - get_erf(yy0, noise, qmax))
+                            elif kk == Nq-1:
+                                cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)
+                            else:
+                                cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)*(1. - get_erf(yy0, noise, qmax))
+                        elif self.theorypred['compl_mode'] == 'erf_diff':
+                            cc = get_erf_compl(yy0, qmin, qmax, noise, qcut)
+
+                        temp.append(np.dot(cc.T, skyfracs))
+                        yy.append(yy0)
+                        lnyy.append(lny)
+                        dyy.append(np.exp(lny + dlny*0.5) - np.exp(lny - dlny*0.5))
+                        lny += dlny
+
+                    temp = np.asarray(temp)
+                    yy = np.asarray(yy)
+                    lnyy = np.asarray(lnyy)
+                    dyy = np.asarray(dyy)
+
+                else:
+
+                    for i in range(Ny):
+                        yy0 = np.exp(lny)
+
+                        kk = qbin
+                        qmin = qbins[kk]
+                        qmax = qbins[kk+1]
+
+                        for j in range(Npatches):
+                            if self.theorypred['compl_mode'] == 'erf_prod':
+                                if kk == 0:
+                                    cc = get_erf(yy0, noise[j], qcut)*(1. - get_erf(yy0, noise[j], qmax))
+                                elif kk == Nq:
+                                    cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)
+                                else:
+                                    cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)*(1. - get_erf(yy0, noise[j], qmax))
+                            elif self.theorypred['compl_mode'] == 'erf_diff':
+                                cc = get_erf_compl(yy0, qmin, qmax, noise[j], qcut)
+
+                            temp.append(cc*skyfracs[j])
+                            yy.append(yy0)
+                            lnyy.append(lny)
+                            dyy.append(np.exp(lny + dlny*0.5) - np.exp(lny - dlny*0.5))
+                        lny += dlny
+
+                    temp = np.asarray(np.array_split(temp, Npatches))
+                    yy = np.asarray(np.array_split(yy, Npatches))
+                    lnyy = np.asarray(np.array_split(lnyy, Npatches))
+                    dyy = np.asarray(np.array_split(dyy, Npatches))
+
+                a_pool = multiprocessing.Pool()
+                completeness = a_pool.map(partial(get_comp_zarr2D,
+                                                    Nm=len(marr),
+                                                    qcut=qcut,
+                                                    noise=noise,
+                                                    skyfracs=skyfracs,
+                                                    y0=y0,
+                                                    Nq=Nq,
+                                                    qbins=qbins,
+                                                    qbin=qbin,
+                                                    lnyy=lnyy,
+                                                    dyy=dyy,
+                                                    yy=yy,
+                                                    temp=temp,
+                                                    mode=self.selfunc['mode'],
+                                                    compl_mode=self.theorypred['compl_mode'],
+                                                    tile=tile_list,
+                                                    average_Q=self.selfunc['average_Q'],
+                                                    scatter=scatter),range(len(zarr)))
+
+            a_pool.close()
+            comp = np.asarray(completeness)
+            comp[comp < 0.] = 0.
+            comp[comp > 1.] = 1.
+
+        else:
+            comp = self.get_completeness2D_inj(marr, zarr, marr_500c, qbin, **params_values_dict)
 
         return comp
-
 
 def get_comp_zarr(index_z, Nm, qcut, noise, skyfracs, lnyy, dyy, yy, y0, temp, mode, average_Q, tile, scatter):
 
