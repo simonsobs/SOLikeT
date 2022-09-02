@@ -62,9 +62,9 @@ likelihood:
         dlog10q: 0.5
       # mass bins for number counts
       M:
-        Mmin: 5e12
-        Mmax: 1e16
-        dlogM: 0.1
+        Mmin: 1e13
+        Mmax: 5e15
+        dlogM: 0.05
 
 params:
   # logA:
