@@ -118,3 +118,5 @@ soliket/clusters/data/selFn_SO.zip
 soliket/clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits
 
 soliket/cosmopower/chains
+soliket/clusters/data/
+soliket/clusters/chains
