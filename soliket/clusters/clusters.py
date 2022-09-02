@@ -17,7 +17,8 @@ import time # for timing
 import multiprocessing
 from functools import partial
 
-# import pyccl as ccl
+import pyccl as ccl
+from classy_sz import Class # TBD: change this import as optional
 
 from ..poisson import PoissonLikelihood
 from ..cash import CashCLikelihood
@@ -58,7 +59,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
         else:
             self.log.setLevel(logging.ERROR)
 
-        self.log.info('Initializing binned_clusters_test.py')
+        self.log.info('Initializing clusters.py')
 
         # SNR cut
         self.qcut = self.selfunc['SNRcut']
