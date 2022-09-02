@@ -207,6 +207,7 @@ class BinnedClusterLikelihood(BinnedPoissonLikelihood):
 
         self.log.info('Reading RMS.')
         if self.selfunc['mode'] == 'injection':
+            self.log.info('Using completeness calculated using injection method.')
             self.datafile_rms = self.data['rms_file']
             list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
             file_rms = list[1].data
