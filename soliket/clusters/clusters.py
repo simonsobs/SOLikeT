@@ -726,6 +726,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     data_name = resource_filename("soliket",
                       "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
     theorypred: dict = {}
+    verbose: bool = False
 
     def initialize(self):
         self.zarr = np.arange(0, 3, 0.05) # redshift bounds should correspond to catalogue

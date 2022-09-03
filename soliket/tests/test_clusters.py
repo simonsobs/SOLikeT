@@ -29,8 +29,9 @@ info_unbinned = {
                 "redshifts": np.linspace(0, 2, 41),
                 "nonlinear": False,
                 "kmax": 10.0,
-                "dark_energy_model": "ppf",
-            }
+                "dark_energy_model": "ppf"
+            },
+            "ignore_obsolete": True
         },
     },
 }
