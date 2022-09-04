@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import interpolate
+import scipy
 # from astropy.cosmology import FlatLambdaCDM
 
 # from nemo import signals
@@ -35,7 +36,7 @@ class szutils:
         # self.rho_crit0H100 = (3. / (8. * np.pi) * \
         #                           (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
 
-    def P_Yo(self, LgY, M, z, param_vals, Ez_fn, Da_fn):
+    def P_Yo(self, rms_bin_index,LgY, M, z, param_vals, Ez_fn, Da_fn):
         H0 = param_vals["H0"]
 
         Ma = np.outer(M, np.ones(len(LgY[0, :])))
@@ -43,7 +44,7 @@ class szutils:
         Ytilde, theta0, Qfilt = y0FromLogM500(
             np.log10(param_vals["massbias"] * Ma / (H0 / 100.0)),
             z,
-            self.lkl.allQ,
+            self.lkl.allQ[:,rms_bin_index],
             self.lkl.tt500,
             sigma_int=param_vals["scat"],
             B0=param_vals["B0"],
@@ -66,14 +67,14 @@ class szutils:
         )
         return ans
 
-    def P_Yo_vec(self, LgY, M, z, param_vals, Ez_fn, Da_fn):
+    def P_Yo_vec(self, rms_index, LgY, M, z, param_vals, Ez_fn, Da_fn):
         H0 = param_vals["H0"]
         # Ma = np.outer(M, np.ones(len(LgY[0, :])))
 
         Ytilde, theta0, Qfilt = y0FromLogM500(
             np.log10(param_vals["massbias"] * M / (H0 / 100.0)),
             z,
-            self.lkl.allQ,
+            self.lkl.allQ[:,rms_index],
             self.lkl.tt500,
             sigma_int=param_vals["scat"],
             B0=param_vals["B0"],
@@ -87,7 +88,7 @@ class szutils:
         Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
 
 
-        Y = np.transpose(Y, (0, 2, 1))
+        # Y = np.transpose(Y, (0, 2, 1))
         print('shapeY',np.shape(Y))
         print('shapeYtilde',np.shape(Ytilde))
         # exit(0)
@@ -105,7 +106,7 @@ class szutils:
         ans[Y - qmin * Ynoise > 0] = 1.0
         return ans
 
-    def P_of_gt_SN(self, LgY, MM, zz, Ynoise, param_vals, Ez_fn, Da_fn):
+    def P_of_gt_SN(self, rms_index, LgY, MM, zz, Ynoise, param_vals, Ez_fn, Da_fn):
         Y = 10 ** LgY
 
         sig_tr = np.outer(np.ones([MM.shape[0], MM.shape[1]]), self.Y_erf(Y, Ynoise))
@@ -115,23 +116,23 @@ class szutils:
         LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
         LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
 
-        P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, MM, zz, param_vals, Ez_fn, Da_fn))
+        P_Y = np.nan_to_num(self.P_Yo_vec(rms_index,LgYa2, MM, zz, param_vals, Ez_fn, Da_fn))
 
 
         print('shapeLgY',np.shape(LgY))
         print('P_Y',np.shape(P_Y))
         print('sig_thresh',np.shape(sig_thresh))
-        sig_thresh = np.transpose(sig_thresh, (0, 2, 1))
+        # sig_thresh = np.transpose(sig_thresh, (0, 2, 1))
         ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10)
         return ans
 
-    def PfuncY(self, YNoise, M, z_arr, param_vals, Ez_fn, Da_fn):
+    def PfuncY(self, rms_index, YNoise, M, z_arr, param_vals, Ez_fn, Da_fn):
         LgY = self.LgY
 
         P_func = np.outer(M, np.zeros([len(z_arr)]))
         M_arr = np.outer(M, np.ones([len(z_arr)]))
         print('YNoise',YNoise)
-        P_func = self.P_of_gt_SN(LgY, M_arr, z_arr, YNoise, param_vals, Ez_fn, Da_fn)
+        P_func = self.P_of_gt_SN(rms_index, LgY, M_arr, z_arr, YNoise, param_vals, Ez_fn, Da_fn)
         return P_func
 
     def P_of_Y_per(self, LgY, MM, zz, Y_c, Y_err, param_vals):
@@ -152,12 +153,14 @@ class szutils:
         ans = gaussian(Y, Y_c, YNoise)
         return ans
 
-    def Pfunc_per(self, MM, zz, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
+    def Pfunc_per(self, rms_bin_index,MM, zz, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
         LgY = self.LgY
         LgYa = np.outer(np.ones(len(MM)), LgY)
-
+        print('computing yprob')
         P_Y_sig = self.Y_prob(Y_c, LgY, Y_err)
-        P_Y = np.nan_to_num(self.P_Yo(LgYa, MM, zz, param_vals, Ez_fn, Da_fn))
+        print('P_Y_sig',np.shape(P_Y_sig))
+        P_Y = np.nan_to_num(self.P_Yo(rms_bin_index,LgYa, MM, zz, param_vals, Ez_fn, Da_fn))
+        print('shapeP_Y_sig',np.shape(P_Y_sig))
         ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
 
         return ans
@@ -179,7 +182,7 @@ class szutils:
         # P_Y = np.nan_to_num(self.P_Yo(LgYa2, Marr, zarr, param_vals, Ez_fn))
 
         P_Y_sig = self.Y_prob(Y_c, self.LgY, Y_err)
-        P_Y = np.nan_to_num(self.P_Yo(self.LgY, Marr, zarr, param_vals, Ez_fn, Da_fn))
+        P_Y = np.nan_to_num(self.P_Yo(rms_bin_index,self.LgY, Marr, zarr, param_vals, Ez_fn, Da_fn))
 
         ans = np.trapz(P_Y * P_Y_sig, x=self.LgY, axis=2)
 
@@ -415,7 +418,9 @@ def y0FromLogM500(
     # We just need to recalculate theta500Arcmin and E(z) only
     M500 = np.power(10, log10M500)
     theta500Arcmin = calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0, rho_crit0H100)
-    Q = calcQ(theta500Arcmin, tckQFit,tt500)
+    Q_INTERP  = scipy.interpolate.splrep(tt500, tckQFit)
+    Q = scipy.interpolate.splev(theta500Arcmin, Q_INTERP)
+    # Q = calcQ(theta500Arcmin, tckQFit,tt500)
 
     Ez = Ez_fn(z)
 

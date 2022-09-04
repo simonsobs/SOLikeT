@@ -39,7 +39,7 @@ class PoissonLikelihood(Likelihood):
         print('rate_fn',rate_fn)
         n_expected = self._get_n_expected(**params_values)
         print('n_expected:',n_expected)
-        exit(0)
+        # exit(0)
         # nz_expected = self._get_nz_expected(**params_values)
         # print('nz_expected:',nz_expected)
         return self.data.loglike(rate_fn, n_expected)

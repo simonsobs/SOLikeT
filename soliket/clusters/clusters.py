@@ -637,8 +637,12 @@ class BinnedClusterLikelihood(CashCLikelihood):
             y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ#(theta(mb_500c)) #* rel(mb) ###### M200m
             y0 = y0.T ###### M200m
         else:
+
+            print('shape(splQ)',np.shape(splQ))
+            print('len z, m',np.shape(Ez),np.shape(mb))
             y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ#(theta(mb_500c))
             # y0 = np.transpose(arg, axes=[1, 2, 0])
+            print('shape y0',np.shape(y0))
 
         # print('mb:',mb)
         # print('z:',z)
@@ -719,7 +723,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
 class UnbinnedClusterLikelihood(PoissonLikelihood):
     name = "Unbinned Clusters"
-    columns = ["tsz_signal", "z", "tsz_signal_err"]
+    columns = ["tsz_signal", "z", "tsz_signal_err","tile_name"]
     # data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
     data_path = resource_filename("soliket", "clusters/data/selFn_SO")
     # data_name = resource_filename("soliket", "clusters/data/E-D56Clusters.fits")
@@ -749,23 +753,39 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         self.log.info('Reading data catalog.')
         self.datafile = self.data['cat_file']
         self.data_directory = self.data['data_path']
-        list = fits.open(os.path.join(self.data_directory, self.datafile))
-        data = list[1].data
+        catf = fits.open(os.path.join(self.data_directory, self.datafile))
+        data = catf[1].data
         zcat = data.field("redshift")
         qcat = data.field("fixed_SNR") #NB note that there are another SNR in the catalogue
         cat_tsz_signal = data.field("fixed_y_c")
         cat_tsz_signal_err = data.field("fixed_err_y_c")
+        cat_tile_name = data.field("tileName")
         print(len(cat_tsz_signal),cat_tsz_signal)
         print(len(cat_tsz_signal_err),cat_tsz_signal_err)
+        print(catf[1].columns)
+        catQ = data.field("Q")
+        print(np.shape(catQ))
+        # hdr
+        # hdr.keys()
+        # exit(0)
         print('self.qcut',self.qcut)
         ind = np.where(qcat >= self.qcut)[0]
         print('ind',ind)
         self.z_cat = zcat[ind]
         self.cat_tsz_signal = cat_tsz_signal[ind]
         self.cat_tsz_signal_err = cat_tsz_signal_err[ind]
+        self.cat_tile_name = cat_tile_name[ind]
         print(len(self.cat_tsz_signal),self.cat_tsz_signal)
         print(len(self.cat_tsz_signal_err),self.cat_tsz_signal_err)
+        print(len(self.cat_tile_name),self.cat_tile_name)
         # exit(0)
+        # datafile_tiles_dwsmpld = os.path.join(self.data_directory,
+        #         'tile_names' + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy')
+        #
+        # tiles_dwnsmpld = np.load(datafile_tiles_dwsmpld,allow_pickle='TRUE').item()
+        # print(tiles_dwnsmpld)
+        # exit(0)
+
 
         self.zarr = np.arange(0, 3, 0.05) # redshift bounds should correspond to catalogue
         self.k = np.logspace(-4, np.log10(5), 200)
@@ -923,13 +943,21 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
 
 
-        def Prob_per_cluster(z,tsz_signal,tsz_signal_err):
-            print('computing prob per cluster for cluster:',z,tsz_signal,tsz_signal_err)
+        def Prob_per_cluster(z,tsz_signal,tsz_signal_err,tile_name):
+            print('computing prob per cluster for cluster:',z,tsz_signal,tsz_signal_err,tile_name)
             c_y = tsz_signal
             c_yerr = tsz_signal_err
             c_z = z
-            print('masses:',HMF.M)
+            cat_tile_name = tile_name
+            print('masses:',np.shape(HMF.M))
+            print(self.tiles_dwnsmpld)
+            # value = {i for i in self.tiles_dwnsmpld if self.tiles_dwnsmpld[i]==tile_name}
+            # print("key by value:",value)
+            rms_bin_index = self.tiles_dwnsmpld[cat_tile_name]
+            print(rms_bin_index)
+            # exit(0)
             Pfunc_ind = self.szutils.Pfunc_per(
+                rms_bin_index,
                 HMF.M,
                 c_z,
                 c_y * 1e-4,
@@ -943,7 +971,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp(c_z, np.log10(HMF.M))) * h**4.0
 
 
-            exit(0)
+            # exit(0)
 
             ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
             return ans
@@ -982,16 +1010,25 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         print(self.allQ[:,0])
         print(self.tt500[0])
         print(self.allQ[0,2])
-        exit(0)
+        #exit(0)
 
+        rms_index = 0
         for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
-            Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
+            Pfunc = self.szutils.PfuncY(rms_index,Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
             print('np.shape(Pfunc)',np.shape(Pfunc))
             print('np.shape(dn_dzdm)',np.shape(dn_dzdm))
             print('np.shape(dn_dzdm*Pfunc)',np.shape(dn_dzdm*Pfunc))
             print('param_vals',param_vals)
+            print('HMF.M[:, None]',len(HMF.M[:, None]))
             N_z = np.trapz(
-                dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=1
+                dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0
+            )
+            Np = (
+                np.trapz(N_z * dVdz, x=z_arr)
+                * 4.0
+                * np.pi
+                * self.survey.fskytotal
+                * frac
             )
             Ntot += (
                 np.trapz(N_z * dVdz, x=z_arr)
@@ -1000,6 +1037,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 * self.survey.fskytotal
                 * frac
             )
+            rms_index += 1
+            print('Ntot:',rms_index,Np)
         # print('self.survey.fskytotal')
 
         return Ntot
@@ -1311,7 +1350,9 @@ def get_catalog(both):
         {
             "z": both.z_cat.byteswap().newbyteorder(),#both.survey.clst_z.byteswap().newbyteorder(),
             "tsz_signal": both.cat_tsz_signal.byteswap().newbyteorder(), #both.survey.clst_y0.byteswap().newbyteorder(),
-            "tsz_signal_err": both.cat_tsz_signal_err.byteswap().newbyteorder()#survey.clst_y0err.byteswap().newbyteorder(),
+            "tsz_signal_err": both.cat_tsz_signal_err.byteswap().newbyteorder(),#survey.clst_y0err.byteswap().newbyteorder(),
+            "tile_name": both.cat_tile_name.byteswap().newbyteorder()#survey.clst_y0err.byteswap().newbyteorder(),
+
         }
     )
     print('catalog collected')

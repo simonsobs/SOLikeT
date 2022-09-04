@@ -180,6 +180,8 @@ class SurveyData:
         filename_rms, ext = os.path.splitext(self.datafile_rms)
         datafile_rms_dwsmpld = os.path.join(lkl.data_directory,
                 filename_rms + 'dwsmpld_nbins={}'.format(lkl.selfunc['dwnsmpl_bins']) + '.npz')
+        datafile_tiles_dwsmpld = os.path.join(lkl.data_directory,
+                'tile_names' + 'dwsmpld_nbins={}'.format(lkl.selfunc['dwnsmpl_bins']) + '.npy')
         # if (self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] is False)  or (
         #     self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] and not os.path.exists(datafile_rms_dwsmpld)):
 
@@ -190,6 +192,10 @@ class SurveyData:
             lkl.noise = rms['noise']
             lkl.skyfracs = rms['skyfracs']
             lkl.log.info("Number of rms bins = {}.".format(lkl.skyfracs.size))
+
+            lkl.tiles_dwnsmpld = np.load(datafile_tiles_dwsmpld,allow_pickle='TRUE').item()
+            print(lkl.tiles_dwnsmpld)
+            # exit(0)
         else:
             lkl.log.info('Reading in full RMS table.')
 
@@ -201,6 +207,7 @@ class SurveyData:
             self.tname = file_rms['tileName']
             lkl.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
             lkl.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
+            # exit(0)
 
             lkl.log.info('Downsampling RMS and Q function using {} bins.'.format(lkl.selfunc['dwnsmpl_bins']))
             binned_stat = scipy.stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
@@ -212,6 +219,7 @@ class SurveyData:
             tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
 
             Qdwnsmpld = np.zeros((lkl.allQ.shape[0], lkl.selfunc['dwnsmpl_bins']))
+            tiles_dwnsmpld = {}
 
             for i in range(lkl.selfunc['dwnsmpl_bins']):
                 tempind = np.where(bin_ind == i + 1)[0]
@@ -219,14 +227,22 @@ class SurveyData:
                     lkl.log.info('Found empty bin.')
                     Qdwnsmpld[:, i] = np.zeros(lkl.allQ.shape[0])
                 else:
+                    print('dowsampled rms bin ',i)
                     temparea = self.skyfracs[tempind]
+                    print('areas of tiles in bin',temparea)
                     temptiles = self.tname[tempind]
+                    print('names of tiles in bin',temptiles)
+                    for t in temptiles:
+                        tiles_dwnsmpld[t] = i
+
                     test = [tiledict[key] for key in temptiles]
                     Qdwnsmpld[:, i] = np.average(lkl.allQ[:, test], axis=1, weights=temparea)
 
             lkl.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
             lkl.skyfracs = binned_area
             lkl.allQ = Qdwnsmpld
+            lkl.tiles_dwnsmpld = tiles_dwnsmpld
+            print('len(tiles_dwnsmpld)',tiles_dwnsmpld)
             lkl.log.info("Number of downsampled sky patches = {}.".format(lkl.skyfracs.size))
 
             assert lkl.noise.shape[0] == lkl.skyfracs.shape[0] and lkl.noise.shape[0] == lkl.allQ.shape[1]
@@ -234,7 +250,7 @@ class SurveyData:
             if lkl.selfunc['save_dwsmpld']:
                 np.savez(datafile_Q_dwsmpld, Q_dwsmpld=Qdwnsmpld, tt500=lkl.tt500)
                 np.savez(datafile_rms_dwsmpld, noise=lkl.noise, skyfracs=lkl.skyfracs)
-
+                np.save(datafile_tiles_dwsmpld, lkl.tiles_dwnsmpld)
 
         # exit(0)
         self.qmin = lkl.qcut
