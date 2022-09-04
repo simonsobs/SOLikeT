@@ -24,9 +24,10 @@ class szutils:
                         / G_CGS * MPC2CM / MSUN_CGS
     MPIVOT_THETA = 3e14 # [Msun]
 
-    def __init__(self, Survey):
+    def __init__(self, lkl, Survey):
         self.LgY = np.arange(-6, -2.5, 0.01)
         self.Survey = Survey
+        self.lkl = lkl
         # self.rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
         #                         / G_CGS * MPC2CM / MSUN_CGS
         # self.theory = Theory
@@ -42,7 +43,8 @@ class szutils:
         Ytilde, theta0, Qfilt = y0FromLogM500(
             np.log10(param_vals["massbias"] * Ma / (H0 / 100.0)),
             z,
-            self.Survey.Q,
+            self.lkl.allQ,
+            self.lkl.tt500,
             sigma_int=param_vals["scat"],
             B0=param_vals["B0"],
             H0=param_vals["H0"],
@@ -71,7 +73,8 @@ class szutils:
         Ytilde, theta0, Qfilt = y0FromLogM500(
             np.log10(param_vals["massbias"] * M / (H0 / 100.0)),
             z,
-            self.Survey.Q,
+            self.lkl.allQ,
+            self.lkl.tt500,
             sigma_int=param_vals["scat"],
             B0=param_vals["B0"],
             H0=param_vals["H0"],
@@ -83,7 +86,13 @@ class szutils:
 
         Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
 
+
+        Y = np.transpose(Y, (0, 2, 1))
+        print('shapeY',np.shape(Y))
+        print('shapeYtilde',np.shape(Ytilde))
+        # exit(0)
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
+
         ans = (
                 1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) *
                 np.exp(numer / (2.0 * param_vals["scat"] ** 2))
@@ -108,6 +117,11 @@ class szutils:
 
         P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, MM, zz, param_vals, Ez_fn, Da_fn))
 
+
+        print('shapeLgY',np.shape(LgY))
+        print('P_Y',np.shape(P_Y))
+        print('sig_thresh',np.shape(sig_thresh))
+        sig_thresh = np.transpose(sig_thresh, (0, 2, 1))
         ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10)
         return ans
 
@@ -116,7 +130,7 @@ class szutils:
 
         P_func = np.outer(M, np.zeros([len(z_arr)]))
         M_arr = np.outer(M, np.ones([len(z_arr)]))
-
+        print('YNoise',YNoise)
         P_func = self.P_of_gt_SN(LgY, M_arr, z_arr, YNoise, param_vals, Ez_fn, Da_fn)
         return P_func
 
@@ -224,15 +238,20 @@ def calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0,rho_crit0H100):
 
 
 # ----------------------------------------------------------------------------------------
-def calcQ(theta500Arcmin, tck):
+def calcQ(theta500Arcmin, Q,tt500):
     """Returns Q, given theta500Arcmin, and a set of spline fit knots for (theta, Q).
 
     """
 
     # Q=np.poly1d(coeffs)(theta500Arcmin)
-    Q = interpolate.splev(theta500Arcmin, tck)
+    # Q = interpolate.splev(theta500Arcmin, tck)
+    # return Q
+    newQ = []
+    for i in range(len(Q[0])):
+        tck = interpolate.splrep(tt500, Q[:, i])
+        newQ.append(interpolate.splev(theta500Arcmin, tck))
+    return np.asarray(np.abs(newQ))
 
-    return Q
 
 
 # ----------------------------------------------------------------------------------------
@@ -361,6 +380,7 @@ def y0FromLogM500(
         log10M500,
         z,
         tckQFit,
+        tt500,
         tenToA0=4.95e-5,
         B0=0.08,
         Mpivot=3e14,
@@ -395,9 +415,12 @@ def y0FromLogM500(
     # We just need to recalculate theta500Arcmin and E(z) only
     M500 = np.power(10, log10M500)
     theta500Arcmin = calcTheta500Arcmin(z, M500, Ez_fn, Da_fn, H0, rho_crit0H100)
-    Q = calcQ(theta500Arcmin, tckQFit)
+    Q = calcQ(theta500Arcmin, tckQFit,tt500)
 
     Ez = Ez_fn(z)
+
+    # print('rms,z,m',len(Q),len(z),len(log10M500))
+    # exit(0)
 
     # Relativistic correction: now a little more complicated, to account for fact y0~ maps
     # are weighted sum of individual frequency maps, and relativistic correction size

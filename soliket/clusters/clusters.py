@@ -60,7 +60,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
         else:
             self.log.setLevel(logging.ERROR)
 
-        self.log.info('Initializing clusters.py')
+        self.log.info('Initializing clusters.py (binned)')
 
         # SNR cut
         self.qcut = self.selfunc['SNRcut']
@@ -538,13 +538,13 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
     def _splQ(self, theta):
         if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
-            tck = interpolate.splrep(self.tt500, self.Q)
-            newQ = interpolate.splev(theta, tck)
+            tck = scipy.interpolate.splrep(self.tt500, self.Q)
+            newQ = scipy.interpolate.splev(theta, tck)
         else:
             newQ = []
             for i in range(len(self.Q[0])):
-                tck = interpolate.splrep(self.tt500, self.Q[:, i])
-                newQ.append(interpolate.splev(theta, tck))
+                tck = scipy.interpolate.splrep(self.tt500, self.Q[:, i])
+                newQ.append(scipy.interpolate.splev(theta, tck))
         return np.asarray(np.abs(newQ))
 
     def _theta(self, mass_500c, z, Ez=None):
@@ -725,31 +725,109 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     # data_name = resource_filename("soliket", "clusters/data/E-D56Clusters.fits")
     data_name = resource_filename("soliket",
                       "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
-    theorypred: dict = {}
+
     verbose: bool = False
+    data: dict = {}
+    theorypred: dict = {}
+    selfunc: dict = {}
 
     def initialize(self):
+        self.log = logging.getLogger('UnbinnedCluster')
+        handler = logging.StreamHandler()
+        self.log.addHandler(handler)
+        self.log.propagate = False
+        if self.verbose:
+            self.log.setLevel(logging.INFO)
+        else:
+            self.log.setLevel(logging.ERROR)
+
+        self.log.info('Initializing clusters.py (unbinned)')
+
+        self.qcut = self.selfunc['SNRcut']
+
+        # reading catalogue
+        self.log.info('Reading data catalog.')
+        self.datafile = self.data['cat_file']
+        self.data_directory = self.data['data_path']
+        list = fits.open(os.path.join(self.data_directory, self.datafile))
+        data = list[1].data
+        zcat = data.field("redshift")
+        qcat = data.field("fixed_SNR") #NB note that there are another SNR in the catalogue
+        cat_tsz_signal = data.field("fixed_y_c")
+        cat_tsz_signal_err = data.field("fixed_err_y_c")
+        print(len(cat_tsz_signal),cat_tsz_signal)
+        print(len(cat_tsz_signal_err),cat_tsz_signal_err)
+        print('self.qcut',self.qcut)
+        ind = np.where(qcat >= self.qcut)[0]
+        print('ind',ind)
+        self.z_cat = zcat[ind]
+        self.cat_tsz_signal = cat_tsz_signal[ind]
+        self.cat_tsz_signal_err = cat_tsz_signal_err[ind]
+        print(len(self.cat_tsz_signal),self.cat_tsz_signal)
+        print(len(self.cat_tsz_signal_err),self.cat_tsz_signal_err)
+        # exit(0)
+
         self.zarr = np.arange(0, 3, 0.05) # redshift bounds should correspond to catalogue
         self.k = np.logspace(-4, np.log10(5), 200)
         # self.mdef = ccl.halos.MassDef(500, 'critical')
 
+        self.log.info('Using completeness calculated using injection method.')
+        self.datafile_rms = self.data['rms_file']
+        list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
+        file_rms = list[1].data
+        self.skyfracs = file_rms['areaDeg2'] * np.deg2rad(1.) ** 2
+        self.log.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
+
+
         super().initialize()
 
+    # def get_requirements(self):
+    #     return {
+    #         "Pk_interpolator": {
+    #             "z": self.zarr,
+    #             "k_max": 5.0,
+    #             "nonlinear": False,
+    #             "hubble_units": False,  # cobaya told me to
+    #             "k_hunit": False,  # cobaya told me to
+    #             "vars_pairs": [["delta_nonu", "delta_nonu"]],
+    #         },
+    #         "Hubble": {"z": self.zarr},
+    #         "angular_diameter_distance": {"z": self.zarr},
+    #         "comoving_radial_distance": {"z": self.zarr}
+    #         # "CCL": {"methods": {"sz_model": self._get_sz_model}, "kmax": 10},
+    #     }
+
     def get_requirements(self):
-        return {
-            "Pk_interpolator": {
-                "z": self.zarr,
-                "k_max": 5.0,
-                "nonlinear": False,
-                "hubble_units": False,  # cobaya told me to
-                "k_hunit": False,  # cobaya told me to
-                "vars_pairs": [["delta_nonu", "delta_nonu"]],
-            },
-            "Hubble": {"z": self.zarr},
-            "angular_diameter_distance": {"z": self.zarr},
-            "comoving_radial_distance": {"z": self.zarr}
-            # "CCL": {"methods": {"sz_model": self._get_sz_model}, "kmax": 10},
-        }
+        if self.theorypred['choose_theory'] == "camb":
+            req = {"Hubble":  {"z": self.zarr},
+                   "angular_diameter_distance": {"z": self.zarr},
+                   "H0": None, #NB H0 is derived
+                   "Pk_interpolator": {"z": self.zarr,#np.linspace(0, 3., 140), # should be less than 150
+                                       "k_max": 6.0,
+                                       "nonlinear": False,
+                                       "hubble_units": False, # CLASS doesn't like this
+                                       "k_hunit": False, # CLASS doesn't like this
+                                       "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
+        elif self.theorypred['choose_theory'] == "class":
+            req = {"Hubble":  {"z": self.zarr},
+                   "angular_diameter_distance": {"z": self.zarr},
+                   "Pk_interpolator": {"z": self.zarr,#np.linspace(0, 3., 100), # should be less than 110
+                                       "k_max": 6.0,
+                                       "nonlinear": False,
+                                       "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
+        elif self.theorypred['choose_theory'] == 'CCL':
+            req = {'CCL': {},
+                    'nc_data': {},
+                    'Hubble': {'z': self.zarr},
+                    'angular_diameter_distance': {'z': self.zarr},
+                    'Pk_interpolator': {},
+                    'H0': None  #NB H0 is derived
+                    }
+        else:
+            raise NotImplementedError('Only theory modules camb, class and CCL implemented so far.')
+        return req
+
+
 
     def _get_sz_model(self, cosmo):
         model = SZModel()
@@ -758,7 +836,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             cosmo, mass_def=self.mdef, mass_def_strict=False
         )
         model.hmc = ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
-        model.szk = SZTracer(cosmo)
+        # model.szk = SZTracer(cosmo)
         return model
 
     def _get_catalog(self):
@@ -823,14 +901,14 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         }
         return param_vals
 
-    def _get_rate_fn_parallels(self, **kwargs):
-            rate_densities = np.array(
-                [
-                    self._get_rate_fn(**{c: self.catalog[c].values[i] for c in self.columns})
-                    for i in range(len(self))
-                ]
-            )
-            return rate_densities
+    # def _get_rate_fn_parallels(self, **kwargs):
+    #         rate_densities = np.array(
+    #             [
+    #                 self._get_rate_fn(**{c: self.catalog[c].values[i] for c in self.columns})
+    #                 for i in range(len(self))
+    #             ]
+    #         )
+    #         return rate_densities
 
     def _get_rate_fn(self, **kwargs):
         HMF = self._get_HMF()
@@ -846,16 +924,26 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
 
         def Prob_per_cluster(z,tsz_signal,tsz_signal_err):
-            # print('computing prob per cluster for len_z:',z)
+            print('computing prob per cluster for cluster:',z,tsz_signal,tsz_signal_err)
             c_y = tsz_signal
             c_yerr = tsz_signal_err
             c_z = z
-
+            print('masses:',HMF.M)
             Pfunc_ind = self.szutils.Pfunc_per(
-                HMF.M, c_z, c_y * 1e-4, c_yerr * 1e-4, param_vals, Ez_fn, DA_fn
+                HMF.M,
+                c_z,
+                c_y * 1e-4,
+                c_yerr * 1e-4,
+                param_vals,
+                Ez_fn,
+                DA_fn
             )
 
+
             dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp(c_z, np.log10(HMF.M))) * h**4.0
+
+
+            exit(0)
 
             ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
             return ans
@@ -883,10 +971,27 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h**4.0  # getting rid of hs
 
+        print('self.survey.Ythresh',
+        len(self.survey.Ythresh),
+        len(self.survey.frac_of_survey),
+        self.survey.Ythresh)
+        # exit(0)
+        print('len(self.allQ)',len(self.allQ[:,0]))
+        print('len(self.allQ)',len(self.allQ[0,:]))
+        print('len(self.tt500)',len(self.tt500))
+        print(self.allQ[:,0])
+        print(self.tt500[0])
+        print(self.allQ[0,2])
+        exit(0)
+
         for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
             Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
+            print('np.shape(Pfunc)',np.shape(Pfunc))
+            print('np.shape(dn_dzdm)',np.shape(dn_dzdm))
+            print('np.shape(dn_dzdm*Pfunc)',np.shape(dn_dzdm*Pfunc))
+            print('param_vals',param_vals)
             N_z = np.trapz(
-                dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0
+                dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=1
             )
             Ntot += (
                 np.trapz(N_z * dVdz, x=z_arr)
@@ -895,6 +1000,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 * self.survey.fskytotal
                 * frac
             )
+        # print('self.survey.fskytotal')
 
         return Ntot
 
@@ -913,6 +1019,9 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         Ntot = 0
         dVdz = get_dVdz(self,z_arr)
         dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h ** 4.0  # getting rid of hs
+        print('self.skyfracs',self.skyfracs)
+        print('self.survey.Ythresh',self.survey.Ythresh)
+        print('self.survey.frac_of_survey',self.survey.frac_of_survey)
 
         for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
             Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
@@ -1186,17 +1295,23 @@ def get_erf_compl(y, qmin, qmax, rms, qcut):
 
 def get_catalog(both):
     print('collecting catalog')
+    print('loading survey data')
+    print(both.data['Q_file'])
     both.survey = SurveyData(
-        both.data_path, both.data_name,szarMock=True
+        both,both.data_path, both.data_name,szarMock=True
     )  # , MattMock=False,tiles=False)
-
-    both.szutils = szutils(both.survey)
-
+    print('survey data loaded')
+    print('loading sz utils')
+    both.szutils = szutils(both,both.survey)
+    print('sz utils loaded')
+    # print('both.survey.clst_z.byteswap().newbyteorder()',both.survey.clst_z.byteswap().newbyteorder())
+    # print(both.z_cat)
+    # exit(0)
     df = pd.DataFrame(
         {
-            "z": both.survey.clst_z.byteswap().newbyteorder(),
-            "tsz_signal": both.survey.clst_y0.byteswap().newbyteorder(),
-            "tsz_signal_err": both.survey.clst_y0err.byteswap().newbyteorder(),
+            "z": both.z_cat.byteswap().newbyteorder(),#both.survey.clst_z.byteswap().newbyteorder(),
+            "tsz_signal": both.cat_tsz_signal.byteswap().newbyteorder(), #both.survey.clst_y0.byteswap().newbyteorder(),
+            "tsz_signal_err": both.cat_tsz_signal_err.byteswap().newbyteorder()#survey.clst_y0err.byteswap().newbyteorder(),
         }
     )
     print('catalog collected')

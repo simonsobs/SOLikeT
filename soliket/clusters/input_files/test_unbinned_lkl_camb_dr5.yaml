@@ -8,16 +8,21 @@ likelihood:
   soliket.UnbinnedClusterLikelihood:
     stop_at_error: True
     verbose: True
-    # 
-    # # Data
-    # data:
-    #   data_path: '/Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/clusters/data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
-    #   cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
-    #   Q_file: 'selFn/QFit.fits' # Path to Q function file
-    #   tile_file: 'selFn/tileAreas.txt' # Path to tile file
-    #   rms_file: 'selFn/RMSTab.fits' # Path to RMS file
     #
-    #
+    # Data
+    data:
+      data_path: '/Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/clusters/data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
+      cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
+      Q_file: 'selFn/QFit.fits' # Path to Q function file
+      tile_file: 'selFn/tileAreas.txt' # Path to tile file
+      rms_file: 'selFn/RMSTab.fits' # Path to RMS file
+
+    # Selection function
+    selfunc:
+      SNRcut: 6. # S/N cutoff in number counts
+      dwnsmpl_bins: 3
+      save_dwsmpld : True
+      mode : 'downsample'
 
     theorypred:
       choose_theory: 'camb' # Theory prediction mode, possibilities are camb, class, CCL (CCL is all CCL)
