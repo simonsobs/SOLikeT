@@ -11,7 +11,7 @@ likelihood:
     #
     # Data
     data:
-      data_path: '/Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/clusters/data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
+      data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
       cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
       Q_file: 'selFn/QFit.fits' # Path to Q function file
       tile_file: 'selFn/tileAreas.txt' # Path to tile file
@@ -19,12 +19,12 @@ likelihood:
 
     # Y-M relation
     YM:
-      Mpivot: 2.9e14 # Mpivot in Y-M relation in [h^-1 Msun]
+      Mpivot: 3e14 # Mpivot in Y-M relation in [h^-1 Msun]
 
 
     # Selection function
     selfunc:
-      SNRcut: 6. # S/N cutoff in number counts
+      SNRcut: 5. # S/N cutoff in number counts
       dwnsmpl_bins: 3
       save_dwsmpld : True
       mode : 'downsample'
@@ -37,22 +37,11 @@ likelihood:
       massfunc_mode: 'ccl'
       choose_dim: "2D"
       compl_mode: 'erf_diff'
-      md_hmf: '200m'
+      md_hmf: '500c'
       md_ym: '500c'
       use_class_sz : False
 
     binning:
-      # redshift bins for number counts
-      z:
-        zmin: 0.
-        zmax: 2.9
-        dz: 0.1
-      # SNR bins for number counts
-      q:
-        log10qmin: 0.6
-        log10qmax: 2.0
-        dlog10q: 0.5
-      # mass bins for number counts
       M:
         Mmin: 1e13
         Mmax: 5e15
@@ -116,7 +105,7 @@ params:
   # sigma8 : 0.81
   tenToA0 : 4.35e-5
   B0 : 0.08
-  scatter_sz : 0.0
+  scatter_sz : 0.
   bias_sz : 1.
   m_nu : 0.0
   C0 : 0. # doesnt matter
@@ -150,7 +139,7 @@ params:
 sampler:
   evaluate:
       override:
-        # sigma8: 0.81
+        sigma8: 0.81
 
 
 
@@ -207,4 +196,4 @@ theory:
       transfer_function : 'boltzmann_camb'
       matter_pk : 'halofit'
       baryons_pk : 'nobaryons'
-      md_hmf : '200m'
+      md_hmf : '500c'

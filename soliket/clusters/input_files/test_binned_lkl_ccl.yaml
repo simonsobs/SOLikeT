@@ -8,11 +8,19 @@ likelihood:
 
     # Data
     data:
-      data_path: 'data/advact/' # Path to data directory
-      cat_file: 'DR5_cluster-catalog_v1.1.fits' # Path to cluster catalog file
-      Q_file: 'DR5ClusterSearch/selFn/QFit.fits' # Path to Q function file
-      tile_file: 'DR5ClusterSearch/selFn/tileAreas.txt' # Path to tile file
-      rms_file: 'DR5ClusterSearch/selFn/RMSTab.fits' # Path to RMS file
+      # data_path: 'data/advact/' # Path to data directory
+      # cat_file: 'DR5_cluster-catalog_v1.1.fits' # Path to cluster catalog file
+      # Q_file: 'DR5ClusterSearch/selFn/QFit.fits' # Path to Q function file
+      # tile_file: 'DR5ClusterSearch/selFn/tileAreas.txt' # Path to tile file
+      # rms_file: 'DR5ClusterSearch/selFn/RMSTab.fits' # Path to RMS file
+
+      data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
+      cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
+      Q_file: 'selFn/QFit.fits' # Path to Q function file
+      tile_file: 'selFn/tileAreas.txt' # Path to tile file
+      rms_file: 'selFn/RMSTab.fits' # Path to RMS file
+
+
     verbose: True
 
     # Theory
@@ -21,7 +29,7 @@ likelihood:
       massfunc_mode: 'ccl'
       choose_dim: "2D"
       compl_mode: 'erf_diff'
-      md_hmf: '200m'
+      md_hmf: '500c'
       md_ym: '500c'
       use_class_sz : False
     # Y-M relation
@@ -44,7 +52,7 @@ likelihood:
       SNRcut : 5.
       single_tile_test : "no"
       mode : 'downsample'
-      dwnsmpl_bins : 6
+      dwnsmpl_bins : 3
       save_dwsmpld : True
       average_Q : False
 
@@ -159,7 +167,7 @@ params:
 sampler:
   evaluate:
       override:
-        # sigma8: 0.81
+        sigma8: 0.81
 
 
 # theory:
@@ -174,7 +182,7 @@ theory:
       transfer_function : 'boltzmann_camb'
       matter_pk : 'halofit'
       baryons_pk : 'nobaryons'
-      md_hmf : '200m'
+      md_hmf : '500c'
   # classy:
   #   stop_at_error: true
   #   extra_args:
