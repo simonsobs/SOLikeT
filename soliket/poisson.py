@@ -24,7 +24,7 @@ class PoissonLikelihood(Likelihood):
         catalog = pd.read_csv(self.data_path)
         return catalog
 
-    def _get_rate_fn(self, **kwargs):
+    def _get_rate_fn(self, pk_intp,**kwargs):
         """Returns a callable rate function that takes each of 'columns' as kwargs.
         """
         raise NotImplementedError
@@ -35,9 +35,11 @@ class PoissonLikelihood(Likelihood):
         raise NotImplementedError
 
     def logp(self, **params_values):
-        rate_fn = self._get_rate_fn(**params_values)
+        pk_intp = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False)
+        print('got pk_intp')
+        rate_fn = self._get_rate_fn(pk_intp,**params_values)
         print('rate_fn',rate_fn)
-        n_expected = self._get_n_expected(**params_values)
+        n_expected = self._get_n_expected(pk_intp,**params_values)
         print('n_expected:',n_expected)
         # exit(0)
         # nz_expected = self._get_nz_expected(**params_values)

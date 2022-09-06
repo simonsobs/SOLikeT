@@ -734,6 +734,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     data: dict = {}
     theorypred: dict = {}
     selfunc: dict = {}
+    binning: dict = {}
+    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
 
     def initialize(self):
         self.log = logging.getLogger('UnbinnedCluster')
@@ -786,6 +788,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         # print(tiles_dwnsmpld)
         # exit(0)
 
+        self.lnmmin = np.log(self.binning['M']['Mmin'])
+        self.lnmmax = np.log(self.binning['M']['Mmax'])
+        self.dlnm = self.binning['M']['dlogM']
+        self.marr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
 
         self.zarr = np.arange(0, 3, 0.05) # redshift bounds should correspond to catalogue
         self.k = np.logspace(-4, np.log10(5), 200)
@@ -797,6 +803,191 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         file_rms = list[1].data
         self.skyfracs = file_rms['areaDeg2'] * np.deg2rad(1.) ** 2
         self.log.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
+
+
+        self.datafile_Q = self.data['Q_file']
+        filename_Q, ext = os.path.splitext(self.datafile_Q)
+        datafile_Q_dwsmpld = os.path.join(self.data_directory,
+                             filename_Q + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
+        if os.path.exists(datafile_Q_dwsmpld):
+            self.log.info('Reading in binned Q function from file.')
+            Qfile = np.load(datafile_Q_dwsmpld)
+            self.allQ = Qfile['Q_dwsmpld']
+            self.tt500 = Qfile['tt500']
+        # exit(0)
+
+        else:
+            self.log.info('Reading full Q function.')
+            tile_area = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
+            tilename = tile_area[:, 0]
+            QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q), tileNames=tilename)
+            Nt = len(tilename)
+            self.log.info("Number of tiles = {}.".format(Nt))
+
+            hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
+            data = hdulist[1].data
+            tt500 = data.field("theta500Arcmin")
+
+            # reading in all Q functions
+            allQ = np.zeros((len(tt500), Nt))
+            for i in range(Nt):
+                allQ[:, i] = QFit.getQ(tt500, tileName=tile_area[:, 0][i])
+            assert len(tt500) == len(allQ[:, 0])
+            self.tt500 = tt500
+            self.allQ = allQ
+
+        self.log.info('Reading full RMS.')
+        self.datafile_rms = self.datafile_rms
+        filename_rms, ext = os.path.splitext(self.datafile_rms)
+        datafile_rms_dwsmpld = os.path.join(self.data_directory,
+                filename_rms + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
+        datafile_tiles_dwsmpld = os.path.join(self.data_directory,
+                'tile_names' + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy')
+        # if (self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] is False)  or (
+        #     self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] and not os.path.exists(datafile_rms_dwsmpld)):
+
+        if os.path.exists(datafile_rms_dwsmpld):
+            rms = np.load(datafile_rms_dwsmpld)
+            # print(len(rms['noise']))
+            # exit(0)
+            self.noise = rms['noise']
+            self.skyfracs = rms['skyfracs']
+            self.log.info("Number of rms bins = {}.".format(self.skyfracs.size))
+
+            self.tiles_dwnsmpld = np.load(datafile_tiles_dwsmpld,allow_pickle='TRUE').item()
+            print(self.tiles_dwnsmpld)
+            # exit(0)
+        else:
+            self.log.info('Reading in full RMS table.')
+
+            list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
+            file_rms = list[1].data
+
+            self.noise = file_rms['y0RMS']
+            self.skyfracs = self.skyfracs#file_rms['areaDeg2']*np.deg2rad(1.)**2
+            self.tname = file_rms['tileName']
+            self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
+            self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
+            # exit(0)
+
+            self.log.info('Downsampling RMS and Q function using {} bins.'.format(self.selfunc['dwnsmpl_bins']))
+            binned_stat = scipy.stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
+                                                       bins=self.selfunc['dwnsmpl_bins'])
+            binned_area = binned_stat[0]
+            binned_rms_edges = binned_stat[1]
+
+            bin_ind = np.digitize(self.noise, binned_rms_edges)
+            tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
+
+            Qdwnsmpld = np.zeros((self.allQ.shape[0], self.selfunc['dwnsmpl_bins']))
+            tiles_dwnsmpld = {}
+
+            for i in range(self.selfunc['dwnsmpl_bins']):
+                tempind = np.where(bin_ind == i + 1)[0]
+                if len(tempind) == 0:
+                    self.log.info('Found empty bin.')
+                    Qdwnsmpld[:, i] = np.zeros(self.allQ.shape[0])
+                else:
+                    print('dowsampled rms bin ',i)
+                    temparea = self.skyfracs[tempind]
+                    print('areas of tiles in bin',temparea)
+                    temptiles = self.tname[tempind]
+                    print('names of tiles in bin',temptiles)
+                    for t in temptiles:
+                        tiles_dwnsmpld[t] = i
+
+                    test = [tiledict[key] for key in temptiles]
+                    Qdwnsmpld[:, i] = np.average(self.allQ[:, test], axis=1, weights=temparea)
+
+            self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
+            self.skyfracs = binned_area
+            self.allQ = Qdwnsmpld
+            self.tiles_dwnsmpld = tiles_dwnsmpld
+            print('len(tiles_dwnsmpld)',tiles_dwnsmpld)
+            self.log.info("Number of downsampled sky patches = {}.".format(self.skyfracs.size))
+
+            assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.allQ.shape[1]
+
+            if self.selfunc['save_dwsmpld']:
+                np.savez(datafile_Q_dwsmpld, Q_dwsmpld=Qdwnsmpld, tt500=self.tt500)
+                np.savez(datafile_rms_dwsmpld, noise=self.noise, skyfracs=self.skyfracs)
+                np.save(datafile_tiles_dwsmpld, self.tiles_dwnsmpld)
+
+        # exit(0)
+        self.qmin = self.qcut
+        # self.tiles = tiles
+        self.num_noise_bins = self.skyfracs.size
+
+        # if szarMock:
+        #     print("mock catalog, using read_matt_mock_cat")
+        #     self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_matt_mock_cat(
+        #         ClusterCat, self.qmin
+        #     )
+        # elif MattMock:
+        #     print("Matt mock catalog")
+        #     self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_matt_cat(
+        #         ClusterCat, self.qmin
+        #     )
+        # else:
+        #     print("real catalog")
+        #     self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_clust_cat(
+        #         ClusterCat, self.qmin
+        #     )
+        #
+        # if tiles:
+        #     self.filetile = self.nemodir + "/tileAreas.txt"
+        #     self.tilenames = np.loadtxt(
+        #         self.filetile, dtype=np.str, usecols=0, unpack=True
+        #     )
+        #     self.tilearea = np.loadtxt(
+        #         self.filetile, dtype=np.float, usecols=1, unpack=True
+        #     )
+        #
+        #     self.fsky = []
+        #     self.mask = []
+        #     self.mwcs = []
+        #     self.rms = []
+        #     self.rwcs = []
+        #     self.rmstotal = np.array([])
+        #
+        #     for i in range(len(self.tilearea)):
+        #         self.fsky.append(self.tilearea[i] / 41252.9612)
+        #         tempmask, tempmwcs = loadAreaMask("#" + self.tilenames[i], self.nemodir)
+        #         self.mask.append(tempmask)
+        #         self.mwcs.append(tempmwcs)
+        #         temprms, temprwcs = loadRMSmap("#" + self.tilenames[i], self.nemodir)
+        #         self.rms.append(temprms)
+        #         self.rwcs.append(temprwcs)
+        #         self.rmstotal = np.append(self.rmstotal, temprms[temprms > 0])
+        #
+        #     self.fskytotal = np.sum(self.fsky)
+        # else:
+        #     # self.rms, self.rwcs = loadRMSmap("", self.nemodir)
+        #     # self.mask, self.mwcs = loadAreaMask("", self.nemodir)
+        #     # tcat = '/Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/clusters/data/selFn_SO/stitched_RMSMap_Arnaud_M2e14_z0p4.fits'
+        #     tcat = os.path.join(self.nemodir, "stitched_RMSMap_Arnaud_M2e14_z0p4.fits")
+        #     list = pyfits.open(tcat)
+        #     self.rms = list[1].data
+        #
+        #     self.rmstotal = self.rms[self.rms > 0]
+        #     self.fskytotal = 987.5 / 41252.9612
+        #
+        # count_temp, bin_edge = np.histogram(
+        #     np.log10(self.rmstotal), bins=self.num_noise_bins
+        # )
+
+        # self.frac_of_survey = count_temp * 1.0 / np.sum(count_temp)
+        # self.Ythresh = 10 ** ((bin_edge[:-1] + bin_edge[1:]) / 2.0)
+
+        self.frac_of_survey  = self.skyfracs
+        self.fskytotal = self.skyfracs.sum()
+        self.Ythresh = self.noise
+        print('self.Ythresh',len(self.Ythresh),self.Ythresh)
+
+
+
+
+
 
 
         super().initialize()
@@ -930,14 +1121,18 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     #         )
     #         return rate_densities
 
-    def _get_rate_fn(self, **kwargs):
-        HMF = self._get_HMF()
-        param_vals = self._get_param_vals(**kwargs)
+    def _get_rate_fn(self,pk_intp, **kwargs):
+        # HMF = self._get_HMF()
+        # param_vals = self._get_param_vals(**kwargs)
+        # print(param_vals)
 
         Ez_fn = self._get_Ez_interpolator()
         DA_fn = self._get_DAz_interpolator()
+        z_arr = self.zarr
+        dndlnm = get_dndlnm(self,z_arr, pk_intp, **kwargs)
+        print('dndlnm',np.shape(dndlnm))
 
-        dn_dzdm_interp = HMF.inter_dndmLogm(delta=500)
+        # dn_dzdm_interp = HMF.inter_dndmLogm(delta=500)
 
         h = self.theory.get_param("H0") / 100.0
 
@@ -981,11 +1176,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
 
 
-    def _get_n_expected(self, **kwargs):
+    def _get_n_expected(self, pk_intp,**kwargs):
         # def Ntot_survey(self,int_HMF,fsky,Ythresh,param_vals):
 
-        HMF = self._get_HMF()
-        param_vals = self._get_param_vals(**kwargs)
+        # HMF = self._get_HMF()
+        # param_vals = self._get_param_vals(**kwargs)
         Ez_fn = self._get_Ez_interpolator()
         DA_fn = self._get_DAz_interpolator()
 
@@ -993,16 +1188,21 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         h = self.theory.get_param("H0") / 100.0
 
+
         Ntot = 0
 
-        dVdz = get_dVdz(self,z_arr)
+        dVdz = get_dVdz(self,z_arr)*h**3
 
-        dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h**4.0  # getting rid of hs
+        # dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h**4.0  # getting rid of hs
+        # print('dndzdm',np.shape(dn_dzdm))
+        dndlnm = get_dndlnm(self,z_arr, pk_intp, **kwargs)
+
+        # exit(0)
 
         print('self.survey.Ythresh',
-        len(self.survey.Ythresh),
-        len(self.survey.frac_of_survey),
-        self.survey.Ythresh)
+        len(self.Ythresh),
+        len(self.frac_of_survey),
+        self.Ythresh)
         # exit(0)
         print('len(self.allQ)',len(self.allQ[:,0]))
         print('len(self.allQ)',len(self.allQ[0,:]))
@@ -1010,35 +1210,44 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         print(self.allQ[:,0])
         print(self.tt500[0])
         print(self.allQ[0,2])
-        #exit(0)
+
+        # param_vals = self.theory.get_param
+        param_vals = kwargs
+        print(kwargs)
+        # exit(0)
 
         rms_index = 0
-        for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
-            Pfunc = self.szutils.PfuncY(rms_index,Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
+        for Yt, frac in zip(self.Ythresh, self.frac_of_survey):
+            Pfunc = self.szutils.PfuncY(rms_index,Yt, self.marr, z_arr, param_vals, Ez_fn, DA_fn)
             print('np.shape(Pfunc)',np.shape(Pfunc))
-            print('np.shape(dn_dzdm)',np.shape(dn_dzdm))
-            print('np.shape(dn_dzdm*Pfunc)',np.shape(dn_dzdm*Pfunc))
+            print('np.shape(dndlnm)',np.shape(dndlnm))
+            # print('np.shape(dn_dzdm*Pfunc)',np.shape(dn_dzdm*Pfunc))
             print('param_vals',param_vals)
-            print('HMF.M[:, None]',len(HMF.M[:, None]))
+            print('mass',len(self.marr))
+            marr = self.marr[:,None]
+            print('pfunc:')
+            print(Pfunc)
+            exit(0)
             N_z = np.trapz(
-                dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0
+                dndlnm * Pfunc, dx=np.diff(np.log(marr), axis=0), axis=0
             )
             Np = (
                 np.trapz(N_z * dVdz, x=z_arr)
                 * 4.0
                 * np.pi
-                * self.survey.fskytotal
+                * self.fskytotal
                 * frac
             )
             Ntot += (
                 np.trapz(N_z * dVdz, x=z_arr)
                 * 4.0
                 * np.pi
-                * self.survey.fskytotal
+                * self.fskytotal
                 * frac
             )
+            print('Np:',rms_index,Np)
             rms_index += 1
-            print('Ntot:',rms_index,Np)
+
         # print('self.survey.fskytotal')
 
         return Ntot
@@ -1059,10 +1268,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         dVdz = get_dVdz(self,z_arr)
         dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h ** 4.0  # getting rid of hs
         print('self.skyfracs',self.skyfracs)
-        print('self.survey.Ythresh',self.survey.Ythresh)
-        print('self.survey.frac_of_survey',self.survey.frac_of_survey)
+        print('self.Ythresh',self.Ythresh)
+        print('self.frac_of_survey',self.frac_of_survey)
 
-        for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
+        for Yt, frac in zip(self.Ythresh, self.frac_of_survey):
             Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
             N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0)
              # Ntot += np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * self.survey.fskytotal * frac
@@ -1091,7 +1300,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             np.trapz(N_z * dVdz, x=z_arr)
             * 4.0
             * np.pi
-            * (600.0 / (4 * np.pi * (180 / np.pi) ** 2))
+            * (600.0 / (4 * np.pi * (180 / np.pi) ** 2)) # incorrect
         )
 
         return Ntot
@@ -1336,12 +1545,12 @@ def get_catalog(both):
     print('collecting catalog')
     print('loading survey data')
     print(both.data['Q_file'])
-    both.survey = SurveyData(
-        both,both.data_path, both.data_name,szarMock=True
-    )  # , MattMock=False,tiles=False)
+    # both.survey = SurveyData(
+    #     both,both.data_path, both.data_name,szarMock=True
+    # )  # , MattMock=False,tiles=False)
     print('survey data loaded')
     print('loading sz utils')
-    both.szutils = szutils(both,both.survey)
+    both.szutils = szutils(both)
     print('sz utils loaded')
     # print('both.survey.clst_z.byteswap().newbyteorder()',both.survey.clst_z.byteswap().newbyteorder())
     # print(both.z_cat)

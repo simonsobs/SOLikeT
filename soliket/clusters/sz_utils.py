@@ -25,9 +25,9 @@ class szutils:
                         / G_CGS * MPC2CM / MSUN_CGS
     MPIVOT_THETA = 3e14 # [Msun]
 
-    def __init__(self, lkl, Survey):
+    def __init__(self, lkl):
         self.LgY = np.arange(-6, -2.5, 0.01)
-        self.Survey = Survey
+        # self.Survey = Survey
         self.lkl = lkl
         # self.rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
         #                         / G_CGS * MPC2CM / MSUN_CGS
@@ -70,13 +70,14 @@ class szutils:
     def P_Yo_vec(self, rms_index, LgY, M, z, param_vals, Ez_fn, Da_fn):
         H0 = param_vals["H0"]
         # Ma = np.outer(M, np.ones(len(LgY[0, :])))
-
+        # print('M',np.exp(M))
+        # exit(0)
         Ytilde, theta0, Qfilt = y0FromLogM500(
-            np.log10(param_vals["massbias"] * M / (H0 / 100.0)),
+            np.log10(param_vals["bias_sz"] * np.exp(M) / (H0 / 100.0)), # TBD: check h units here. 
             z,
             self.lkl.allQ[:,rms_index],
             self.lkl.tt500,
-            sigma_int=param_vals["scat"],
+            sigma_int=param_vals["scatter_sz"],
             B0=param_vals["B0"],
             H0=param_vals["H0"],
             Ez_fn=Ez_fn,
@@ -89,45 +90,59 @@ class szutils:
 
 
         # Y = np.transpose(Y, (0, 2, 1))
-        print('shapeY',np.shape(Y))
-        print('shapeYtilde',np.shape(Ytilde))
+        print('shapeY',np.shape(Y),Y)
+        print('shapeYtilde',np.shape(Ytilde),Ytilde)
         # exit(0)
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
 
         ans = (
-                1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) *
-                np.exp(numer / (2.0 * param_vals["scat"] ** 2))
+                1.0 / (param_vals["scatter_sz"] * np.sqrt(2 * np.pi)) *
+                np.exp(numer / (2.0 * param_vals["scatter_sz"] ** 2))
         )
+        if param_vals["scatter_sz"] == 0:
+            ans[:,:,:] = 1
+        print('ans',ans)
+        print(np.shape(ans))
+        # exit(0)
         return ans
 
     def Y_erf(self, Y, Ynoise):
-        qmin = self.Survey.qmin
+        qmin = self.lkl.qmin
         ans = Y * 0.0
         ans[Y - qmin * Ynoise > 0] = 1.0
         return ans
 
     def P_of_gt_SN(self, rms_index, LgY, MM, zz, Ynoise, param_vals, Ez_fn, Da_fn):
         Y = 10 ** LgY
-
+        print('MM.shape[0]',MM.shape[0])  # mass dim
+        print('MM.shape[1]',MM.shape[1])  # redshift dim
+        # exit(0)
         sig_tr = np.outer(np.ones([MM.shape[0], MM.shape[1]]), self.Y_erf(Y, Ynoise))
         sig_thresh = np.reshape(sig_tr,
                                 (MM.shape[0], MM.shape[1], len(self.Y_erf(Y, Ynoise))))
 
         LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
         LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
+        print('LgYa2',np.shape(LgYa2),LgYa2)
+        # exit(0)
 
+        # replace nan with 0's:
         P_Y = np.nan_to_num(self.P_Yo_vec(rms_index,LgYa2, MM, zz, param_vals, Ez_fn, Da_fn))
 
 
         print('shapeLgY',np.shape(LgY))
-        print('P_Y',np.shape(P_Y))
-        print('sig_thresh',np.shape(sig_thresh))
+        print('P_Y',np.shape(P_Y),P_Y)
+        print('sig_thresh',np.shape(sig_thresh),sig_thresh)
+        # exit(0)
         # sig_thresh = np.transpose(sig_thresh, (0, 2, 1))
-        ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10)
+        ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) #* np.log(10)
+        print('ans',ans)
+        exit(0)
         return ans
 
     def PfuncY(self, rms_index, YNoise, M, z_arr, param_vals, Ez_fn, Da_fn):
         LgY = self.LgY
+        print('shapeLgY',np.shape(LgY))
 
         P_func = np.outer(M, np.zeros([len(z_arr)]))
         M_arr = np.outer(M, np.ones([len(z_arr)]))
@@ -387,7 +402,7 @@ def y0FromLogM500(
         tenToA0=4.95e-5,
         B0=0.08,
         Mpivot=3e14,
-        sigma_int=0.2,
+        sigma_int=0.2, # does not depend on sigma_int
         fRelWeightsDict={148.0: 1.0},
         H0=70.,
         Ez_fn=None,
