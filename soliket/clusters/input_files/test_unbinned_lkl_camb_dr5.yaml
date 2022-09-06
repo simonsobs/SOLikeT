@@ -17,12 +17,18 @@ likelihood:
       tile_file: 'selFn/tileAreas.txt' # Path to tile file
       rms_file: 'selFn/RMSTab.fits' # Path to RMS file
 
+    # Y-M relation
+    YM:
+      Mpivot: 2.9e14 # Mpivot in Y-M relation in [h^-1 Msun]
+
+
     # Selection function
     selfunc:
       SNRcut: 6. # S/N cutoff in number counts
       dwnsmpl_bins: 3
       save_dwsmpld : True
       mode : 'downsample'
+      average_Q: False # Use average Q function
 
     # theorypred:
     #   choose_theory: 'camb' # Theory prediction mode, possibilities are camb, class, CCL (CCL is all CCL)
@@ -110,7 +116,7 @@ params:
   # sigma8 : 0.81
   tenToA0 : 4.35e-5
   B0 : 0.08
-  scatter_sz : 0.2
+  scatter_sz : 0.0
   bias_sz : 1.
   m_nu : 0.0
   C0 : 0. # doesnt matter

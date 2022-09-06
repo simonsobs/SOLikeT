@@ -11,7 +11,7 @@ class PoissonLikelihood(Likelihood):
     columns = None
 
     def initialize(self):
-        print('initializing poisson')
+        # print('initializing poisson')
         catalog = self._get_catalog()
         if self.columns is None:
             self.columns = catalog.columns
@@ -36,12 +36,7 @@ class PoissonLikelihood(Likelihood):
 
     def logp(self, **params_values):
         pk_intp = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False)
-        print('got pk_intp')
         rate_fn = self._get_rate_fn(pk_intp,**params_values)
-        print('rate_fn',rate_fn)
         n_expected = self._get_n_expected(pk_intp,**params_values)
-        print('n_expected:',n_expected)
-        # exit(0)
-        # nz_expected = self._get_nz_expected(**params_values)
-        # print('nz_expected:',nz_expected)
+
         return self.data.loglike(rate_fn, n_expected)

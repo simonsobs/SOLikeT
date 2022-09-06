@@ -40,13 +40,15 @@ class szutils:
         H0 = param_vals["H0"]
 
         Ma = np.outer(M, np.ones(len(LgY[0, :])))
+        print('Ma',np.exp(Ma))
+        # exit(0)
 
         Ytilde, theta0, Qfilt = y0FromLogM500(
-            np.log10(param_vals["massbias"] * Ma / (H0 / 100.0)),
+            np.log10(param_vals["bias_sz"] * np.exp(Ma) / (H0 / 100.0)), # not sure about h
             z,
             self.lkl.allQ[:,rms_bin_index],
             self.lkl.tt500,
-            sigma_int=param_vals["scat"],
+            sigma_int=param_vals["scatter_sz"],
             B0=param_vals["B0"],
             H0=param_vals["H0"],
             Ez_fn=Ez_fn,
@@ -62,8 +64,8 @@ class szutils:
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
         ans = (
-                1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) *
-                np.exp(numer / (2.0 * param_vals["scat"] ** 2))
+                1.0 / (param_vals["scatter_sz"] * np.sqrt(2 * np.pi)) *
+                np.exp(numer / (2.0 * param_vals["scatter_sz"] ** 2))
         )
         return ans
 
@@ -72,8 +74,11 @@ class szutils:
         # Ma = np.outer(M, np.ones(len(LgY[0, :])))
         # print('M',np.exp(M))
         # exit(0)
+        # self._get_y0(mass, z, mass_500c, use_Q=True, **params_values_dict):
+
+
         Ytilde, theta0, Qfilt = y0FromLogM500(
-            np.log10(param_vals["bias_sz"] * np.exp(M) / (H0 / 100.0)), # TBD: check h units here. 
+            np.log10(param_vals["bias_sz"] * np.exp(M) / (H0 / 100.0)), # TBD: check h units here.
             z,
             self.lkl.allQ[:,rms_index],
             self.lkl.tt500,
@@ -99,7 +104,7 @@ class szutils:
                 1.0 / (param_vals["scatter_sz"] * np.sqrt(2 * np.pi)) *
                 np.exp(numer / (2.0 * param_vals["scatter_sz"] ** 2))
         )
-        if param_vals["scatter_sz"] == 0:
+        if param_vals["scatter_sz"] == 0: # not sure what to do yet...
             ans[:,:,:] = 1
         print('ans',ans)
         print(np.shape(ans))
@@ -137,7 +142,7 @@ class szutils:
         # sig_thresh = np.transpose(sig_thresh, (0, 2, 1))
         ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) #* np.log(10)
         print('ans',ans)
-        exit(0)
+        # exit(0)
         return ans
 
     def PfuncY(self, rms_index, YNoise, M, z_arr, param_vals, Ez_fn, Da_fn):
@@ -179,42 +184,42 @@ class szutils:
         ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
 
         return ans
-
-    def Pfunc_per_parallel(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
-        # LgY = self.LgY
-        # LgYa = np.outer(np.ones(Marr.shape[0]), LgY)
-
-        # LgYa = np.outer(np.ones([Marr.shape[0], Marr.shape[1]]), LgY)
-        # LgYa2 = np.reshape(LgYa, (Marr.shape[0], Marr.shape[1], len(LgY)))
-
-        # Yc_arr = np.outer(np.ones(Marr.shape[0]), Y_c)
-        # Yerr_arr = np.outer(np.ones(Marr.shape[0]), Y_err)
-
-        # Yc_arr = np.repeat(Yc_arr[:, :, np.newaxis], len(LgY), axis=2)
-        # Yerr_arr = np.repeat(Yerr_arr[:, :, np.newaxis], len(LgY), axis=2)
-
-        # P_Y_sig = self.Y_prob(Yc_arr, LgYa2, Yerr_arr)
-        # P_Y = np.nan_to_num(self.P_Yo(LgYa2, Marr, zarr, param_vals, Ez_fn))
-
-        P_Y_sig = self.Y_prob(Y_c, self.LgY, Y_err)
-        P_Y = np.nan_to_num(self.P_Yo(rms_bin_index,self.LgY, Marr, zarr, param_vals, Ez_fn, Da_fn))
-
-        ans = np.trapz(P_Y * P_Y_sig, x=self.LgY, axis=2)
-
-        return ans
-
-    def Pfunc_per_zarr(self, MM, z_c, Y_c, Y_err, int_HMF, param_vals):
-        LgY = self.LgY
-
-        # old was z_arr
-        # P_func = np.outer(MM, np.zeros([len(z_arr)]))
-        # M_arr = np.outer(MM, np.ones([len(z_arr)]))
-        # M200 = np.outer(MM, np.zeros([len(z_arr)]))
-        # zarr = np.outer(np.ones([len(M)]), z_arr)
-
-        P_func = self.P_of_Y_per(LgY, MM, z_c, Y_c, Y_err, param_vals)
-
-        return P_func
+    # more parallelized implementation... maybe not needed...
+    # def Pfunc_per_parallel(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
+    #     # LgY = self.LgY
+    #     # LgYa = np.outer(np.ones(Marr.shape[0]), LgY)
+    #
+    #     # LgYa = np.outer(np.ones([Marr.shape[0], Marr.shape[1]]), LgY)
+    #     # LgYa2 = np.reshape(LgYa, (Marr.shape[0], Marr.shape[1], len(LgY)))
+    #
+    #     # Yc_arr = np.outer(np.ones(Marr.shape[0]), Y_c)
+    #     # Yerr_arr = np.outer(np.ones(Marr.shape[0]), Y_err)
+    #
+    #     # Yc_arr = np.repeat(Yc_arr[:, :, np.newaxis], len(LgY), axis=2)
+    #     # Yerr_arr = np.repeat(Yerr_arr[:, :, np.newaxis], len(LgY), axis=2)
+    #
+    #     # P_Y_sig = self.Y_prob(Yc_arr, LgYa2, Yerr_arr)
+    #     # P_Y = np.nan_to_num(self.P_Yo(LgYa2, Marr, zarr, param_vals, Ez_fn))
+    #
+    #     P_Y_sig = self.Y_prob(Y_c, self.LgY, Y_err)
+    #     P_Y = np.nan_to_num(self.P_Yo(rms_bin_index,self.LgY, Marr, zarr, param_vals, Ez_fn, Da_fn))
+    #
+    #     ans = np.trapz(P_Y * P_Y_sig, x=self.LgY, axis=2)
+    #
+    #     return ans
+    #
+    # def Pfunc_per_zarr(self, MM, z_c, Y_c, Y_err, int_HMF, param_vals):
+    #     LgY = self.LgY
+    #
+    #     # old was z_arr
+    #     # P_func = np.outer(MM, np.zeros([len(z_arr)]))
+    #     # M_arr = np.outer(MM, np.ones([len(z_arr)]))
+    #     # M200 = np.outer(MM, np.zeros([len(z_arr)]))
+    #     # zarr = np.outer(np.ones([len(M)]), z_arr)
+    #
+    #     P_func = self.P_of_Y_per(LgY, MM, z_c, Y_c, Y_err, param_vals)
+    #
+    #     return P_func
 
 
 ###

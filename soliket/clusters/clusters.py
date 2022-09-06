@@ -23,15 +23,26 @@ from classy_sz import Class # TBD: change this import as optional
 from ..poisson import PoissonLikelihood
 from ..cash import CashCLikelihood
 from . import massfunc as mf
-from .survey import SurveyData
-from .sz_utils import szutils
+
+
 import soliket.clusters.nemo_mocks as selfunc
+from ..constants import MPC2CM, MSUN_CGS, G_CGS, C_M_S, T_CMB
+from ..constants import h_Planck, k_Boltzmann, electron_mass_kg, elementary_charge
+
 
 C_KM_S = 2.99792e5
+MPIVOT_THETA = 3e14 # [Msun]
+rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
+                    / G_CGS * MPC2CM / MSUN_CGS
 
 
-class SZModel:
-    pass
+def gaussian(xx, mu, sig, noNorm=False):
+    if noNorm:
+        return np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
+    else:
+        return 1.0 / (sig * np.sqrt(2 * np.pi)) \
+                            * np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
+
 
 
 class BinnedClusterLikelihood(CashCLikelihood):
@@ -119,6 +130,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
         zbins = np.arange(self.binning['z']['zmin'], self.binning['z']['zmax'] + self.binning['z']['dz'], self.binning['z']['dz'])
         zarr = 0.5*(zbins[:-1] + zbins[1:])
         self.zarr = zarr
+        self.zbins = zbins
 
         self.log.info("Number of redshift bins = {}.".format(len(zarr)))
 
@@ -142,14 +154,11 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         # TODO: I removed the bin where everything is larger than qmax - is this ok?
         Nq = int((logqmax - logqmin)/dlogq) + 1
-        # qbins = 10**np.arange(logqmin, logqmax+dlogq, dlogq)
-        # qarr = 0.5*(qbins[:1] + qbins[1:])
 
         # constant binning in log10
         qbins = np.arange(logqmin, logqmax+dlogq, dlogq)
         qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
 
-        # print('qbins:',np.log10(qarr))
 
         if dimension == "2D":
             self.log.info('The lowest SNR = {}.'.format(snr.min()))
@@ -161,14 +170,10 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         self.Nq = Nq
         self.qarr = qarr
-        # self.qbins = qbins
+
         self.qbins = 10**qbins
         self.dlogq = dlogq
         self.delN2Dcat = zarr, qarr, delN2Dcat
-        # print(self.delN2Dcat)
-        # exit()
-
-        # print('zbin:',zarr)
 
         self.log.info('Loading files describing selection function.')
         self.log.info('Reading Q as a function of theta.')
@@ -191,8 +196,8 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 self.datafile_Q = self.data['Q_file']
                 Qfile = np.load(os.path.join(self.data_directory, self.datafile_Q))
                 self.tt500 = Qfile['theta']
-                self.allQ = Qfile['Q']
-                assert len(self.tt500) == len(self.allQ[:,0])
+                self.Q = Qfile['Q']
+                assert len(self.tt500) == len(self.Q[:,0])
 
             else:
                 self.datafile_Q = self.data['Q_file']
@@ -220,11 +225,11 @@ class BinnedClusterLikelihood(CashCLikelihood):
                         allQ[:, i] = QFit.getQ(tt500, tileName=tile_area[:, 0][i])
                     assert len(tt500) == len(allQ[:, 0])
                     self.tt500 = tt500
-                    self.allQ = allQ
+                    self.Q = allQ
                 else:
                     self.log.info('Reading in binned Q function from file.')
                     Qfile = np.load(datafile_Q_dwsmpld)
-                    self.allQ = Qfile['Q_dwsmpld']
+                    self.Q = Qfile['Q_dwsmpld']
                     self.tt500 = Qfile['tt500']
 
         self.log.info('Reading RMS.')
@@ -295,25 +300,25 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 bin_ind = np.digitize(self.noise, binned_rms_edges)
                 tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
 
-                Qdwnsmpld = np.zeros((self.allQ.shape[0], self.selfunc['dwnsmpl_bins']))
+                Qdwnsmpld = np.zeros((self.Q.shape[0], self.selfunc['dwnsmpl_bins']))
 
                 for i in range(self.selfunc['dwnsmpl_bins']):
                     tempind = np.where(bin_ind == i + 1)[0]
                     if len(tempind) == 0:
                         self.log.info('Found empty bin.')
-                        Qdwnsmpld[:, i] = np.zeros(self.allQ.shape[0])
+                        Qdwnsmpld[:, i] = np.zeros(self.Q.shape[0])
                     else:
                         temparea = self.skyfracs[tempind]
                         temptiles = self.tname[tempind]
                         test = [tiledict[key] for key in temptiles]
-                        Qdwnsmpld[:, i] = np.average(self.allQ[:, test], axis=1, weights=temparea)
+                        Qdwnsmpld[:, i] = np.average(self.Q[:, test], axis=1, weights=temparea)
 
                 self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
                 self.skyfracs = binned_area
-                self.allQ = Qdwnsmpld
+                self.Q = Qdwnsmpld
                 self.log.info("Number of downsampled sky patches = {}.".format(self.skyfracs.size))
 
-                assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.allQ.shape[1]
+                assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.Q.shape[1]
 
                 if self.selfunc['save_dwsmpld']:
                     np.savez(datafile_Q_dwsmpld, Q_dwsmpld=Qdwnsmpld, tt500=self.tt500)
@@ -325,11 +330,11 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         if self.selfunc['mode'] != 'injection':
             if self.selfunc['average_Q']:
-                self.Q = np.mean(self.allQ, axis=1)
+                self.Q = np.mean(self.Q, axis=1)
                 self.log.info("Number of Q functions = {}.".format(self.Q.ndim))
                 self.log.info("Using one averaged Q function for optimisation")
             else:
-                self.Q = self.allQ
+                self.Q = self.Q
                 self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
         self.log.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
@@ -355,41 +360,13 @@ class BinnedClusterLikelihood(CashCLikelihood):
             zi = self._get_hres_z(zi)
         if zz[0] == 0. : zz[0] = 1e-4 # 1e-8 = steps_z(Nz) in f90
         self.zz = zz
-        print(" Nz for higher resolution = ", len(zz))
-        # if self.theorypred['MiraTitanHMFemulator']:
-        #     print('using MiraTitanHMFemulator')
+        # print(" Nz for higher resolution = ", len(zz))
+
 
         super().initialize()
 
     def get_requirements(self):
-        if self.theorypred['choose_theory'] == "camb":
-            req = {"Hubble":  {"z": self.zz},
-                   "angular_diameter_distance": {"z": self.zz},
-                   "H0": None, #NB H0 is derived
-                   "Pk_interpolator": {"z": np.linspace(0, 3., 140), # should be less than 150
-                                       "k_max": 4.0,
-                                       "nonlinear": False,
-                                       "hubble_units": False, # CLASS doesn't like this
-                                       "k_hunit": False, # CLASS doesn't like this
-                                       "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
-        elif self.theorypred['choose_theory'] == "class":
-            req = {"Hubble":  {"z": self.zz},
-                   "angular_diameter_distance": {"z": self.zz},
-                   "Pk_interpolator": {"z": np.linspace(0, 3., 100), # should be less than 110
-                                       "k_max": 4.0,
-                                       "nonlinear": False,
-                                       "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
-        elif self.theorypred['choose_theory'] == 'CCL':
-            req = {'CCL': {},
-                    'nc_data': {},
-                    'Hubble': {'z': self.zz},
-                    'angular_diameter_distance': {'z': self.zz},
-                    'Pk_interpolator': {},
-                    'H0': None  #NB H0 is derived
-                    }
-        else:
-            raise NotImplementedError('Only theory modules camb, class and CCL implemented so far.')
-        return req
+        return get_requirements(self)
 
     def _get_hres_z(self, zi):
         # bins in redshifts are defined with higher resolution for low redshift
@@ -427,14 +404,13 @@ class BinnedClusterLikelihood(CashCLikelihood):
         marr = np.exp(self.marr)
         dlnm = self.dlnm
         Nq = self.Nq
+
+
+
+        dVdzdO = get_dVdz(self,zz)
+
         h = self.theory.get_param("H0") / 100.0
 
-
-        dVdzdO = get_dVdz(self,zz)*h**3
-
-        # h = self.theory.get_param("H0") / 100.0
-        # dVdzdO = (c_ms/1e3)*(((1. + self.zarr)*dAz)**2.)/Hz
-        # return dVdzdO * h**3.
 
         dndlnm = get_dndlnm(self,zz, pk_intp, **params_values_dict)
 
@@ -479,31 +455,19 @@ class BinnedClusterLikelihood(CashCLikelihood):
             marr_500c = None
 
         if self.selfunc['mode'] != 'injection':
-            y0 = self._get_y0(marr_ymmd, zz, marr_500c, **params_values_dict)
-            print('y0 needed:',y0)
-            y0_nick = 0
-            print('y0 nick: sort this out!',y0_nick)
+            y0 = _get_y0(self,marr_ymmd, zz, marr_500c, **params_values_dict)
         else:
             y0 = None
-        # print('shape y0:',np.shape(y0))
-        # exit(0)
+
 
         cc = []
         for kk in range(Nq):
             cc.append(self._get_completeness2D(marr, zz, y0, kk, marr_500c, **params_values_dict))
         cc = np.asarray(cc)
-        # print('cc shape:',np.shape(cc))
-        # for qq in range(np.shape(cc)[0]):
-        #     print(qq,cc[qq][10])
-
-        #nzarr = np.linspace(0, 2.8, 29)
-        nzarr = np.linspace(0, 2.9, 30)
 
         delN2D = np.zeros((len(zarr), Nq))
 
-        # print('zz:',zz)
-        # print('zarr:',zarr)
-        # print('nzarr:',nzarr)
+        nzarr = self.zbins
 
         for kk in range(Nq):
             for i in range(len(zarr)):
@@ -511,8 +475,6 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 i1 = np.argmin(test)
                 test = np.abs(zz - nzarr[i+1])
                 i2 = np.argmin(test)
-                # if kk == 0:
-                #     print('steps id min max :',i,i1, i2-1)
                 zs = np.arange(i1, i2)
 
                 sum = 0.
@@ -536,124 +498,10 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         return delN2D
 
-    def _splQ(self, theta):
-        if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
-            tck = scipy.interpolate.splrep(self.tt500, self.Q)
-            newQ = scipy.interpolate.splev(theta, tck)
-        else:
-            newQ = []
-            for i in range(len(self.Q[0])):
-                tck = scipy.interpolate.splrep(self.tt500, self.Q[:, i])
-                newQ.append(scipy.interpolate.splev(theta, tck))
-        return np.asarray(np.abs(newQ))
-
-    def _theta(self, mass_500c, z, Ez=None):
-
-        thetastar = 6.997
-        alpha_theta = 1. / 3.
-        H0 = self.theory.get_param("H0")
-        h = H0/100.0
-
-        if Ez is None:
-            Ez = get_Ez(self,z)
-            Ez = Ez[:, None]
-
-        DAz = self.theory.get_angular_diameter_distance(z) * h #self._get_DAz(z) * h
-        DAz = DAz[:, None]
-        ttstar = thetastar * (H0 / 70.) ** (-2. / 3.)
-
-        # Ez = get_Ez(self,z)
-        # print(Ez)
-        print(mass_500c)
-        # print(DAz)
-        # print(szutils.MPIVOT_THETA)
-        return ttstar * (mass_500c / szutils.MPIVOT_THETA / h) ** alpha_theta * Ez ** (-2. / 3.) * (100. * DAz / 500 / H0) ** (-1.)
-
-
-    # y-m scaling relation for completeness
-    # needs to be syncronized with unbinned !
-    def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
-        # print('mass_500c:',mass_500c)
-        if mass_500c is None:
-            mass_500c = mass
-        # print('y0 in',mass_500c)
-
-        A0 = params_values_dict["tenToA0"]
-        B0 = params_values_dict["B0"]
-        C0 = params_values_dict["C0"]
-        bias = params_values_dict["bias_sz"]
-
-        Ez = get_Ez(self,z)
-        Ez = Ez[:,None]
-        h = self.theory.get_param("H0") / 100.0
-
-        mb = mass* bias
-        mb_500c = mass_500c*bias
-        # print('in y0',mb_500c)
-        #TODO: Is removing h correct here - matches Hasselfield but is different from before
-        Mpivot = self.YM['Mpivot']*h  # convert to Msun/h.
-
-        # def theta(m):
-        #
-        #     thetastar = 6.997
-        #     alpha_theta = 1./3.
-        #     DAz = self.theory.get_angular_diameter_distance(z) * h
-        #     DAz = DAz[:,None]
-        #     H0 = self.theory.get_param("H0")
-        #     ttstar = thetastar * (H0/70.)**(-2./3.)
-        #
-        #     return ttstar*(m/szutils.MPIVOT_THETA/h)**alpha_theta * Ez**(-2./3.) * (100.*DAz/500/H0)**(-1.)
-
-        # def splQ(x):
-        #     if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
-        #         tck = scipy.interpolate.splrep(self.tt500, self.Q)
-        #         newQ = scipy.interpolate.splev(x, tck)
-        #     else:
-        #         newQ = []
-        #         for i in range(len(self.Q[0])):
-        #             tck = scipy.interpolate.splrep(self.tt500, self.Q[:,i])
-        #             newQ.append(scipy.interpolate.splev(x, tck))
-        #     return np.asarray(np.abs(newQ))
-
-        def rel(m):
-            #mm = m / mpivot
-            #t = -0.008488*(mm*Ez[:,None])**(-0.585)
-            if self.theorypred['rel_correction']:
-                t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
-                res = 1.+ 3.79*t - 28.2*(t**2.)
-            else:
-                res = 1.
-            return res
-
-        if use_Q is True:
-            theta = self._theta(mb_500c, z, Ez)
-            splQ = self._splQ(theta)
-        else:
-            splQ = 1.
-
-
-        if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
-            #y0 = A0 * (Ez[:,None]**2.) * (mb / mpivot)**(1. + B0) * splQ(theta(mb)) * rel(mb)
-            y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ#(theta(mb_500c)) #* rel(mb) ###### M200m
-            y0 = y0.T ###### M200m
-        else:
-
-            print('shape(splQ)',np.shape(splQ))
-            print('len z, m',np.shape(Ez),np.shape(mb))
-            y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ#(theta(mb_500c))
-            # y0 = np.transpose(arg, axes=[1, 2, 0])
-            print('shape y0',np.shape(y0))
-
-        # print('mb:',mb)
-        # print('z:',z)
-        # print('Ez:',Ez)
-
-        return y0
-
     def get_completeness2D_inj(self, mass, z, mass_500c, qbin, **params_values_dict):
 
-        y0 = self._get_y0(mass, z, mass_500c, use_Q=False, **params_values_dict)
-        theta = self._theta(mass_500c, z)
+        y0 = _get_y0(self,mass, z, mass_500c, use_Q=False, **params_values_dict)
+        theta = _theta(self,mass_500c, z)
 
         comp = np.zeros_like(theta)
         for i in range(theta.shape[0]):
@@ -715,26 +563,16 @@ class BinnedClusterLikelihood(CashCLikelihood):
         return comp
 
 
-
-
-
-
-
-
 class UnbinnedClusterLikelihood(PoissonLikelihood):
     name = "Unbinned Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err","tile_name"]
-    # data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
-    data_path = resource_filename("soliket", "clusters/data/selFn_SO")
-    # data_name = resource_filename("soliket", "clusters/data/E-D56Clusters.fits")
-    data_name = resource_filename("soliket",
-                      "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
 
     verbose: bool = False
     data: dict = {}
     theorypred: dict = {}
     selfunc: dict = {}
     binning: dict = {}
+    YM: dict = {}
     params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
 
     def initialize(self):
@@ -751,6 +589,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         self.qcut = self.selfunc['SNRcut']
 
+        self.LgY = np.arange(-6, -2.5, 0.01) # for integration over y when scatter != 0
+
         # reading catalogue
         self.log.info('Reading data catalog.')
         self.datafile = self.data['cat_file']
@@ -762,38 +602,22 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         cat_tsz_signal = data.field("fixed_y_c")
         cat_tsz_signal_err = data.field("fixed_err_y_c")
         cat_tile_name = data.field("tileName")
-        print(len(cat_tsz_signal),cat_tsz_signal)
-        print(len(cat_tsz_signal_err),cat_tsz_signal_err)
-        print(catf[1].columns)
+
+        # to print all columns: print(catf[1].columns)
         catQ = data.field("Q")
-        print(np.shape(catQ))
-        # hdr
-        # hdr.keys()
-        # exit(0)
-        print('self.qcut',self.qcut)
         ind = np.where(qcat >= self.qcut)[0]
-        print('ind',ind)
+
         self.z_cat = zcat[ind]
         self.cat_tsz_signal = cat_tsz_signal[ind]
         self.cat_tsz_signal_err = cat_tsz_signal_err[ind]
         self.cat_tile_name = cat_tile_name[ind]
-        print(len(self.cat_tsz_signal),self.cat_tsz_signal)
-        print(len(self.cat_tsz_signal_err),self.cat_tsz_signal_err)
-        print(len(self.cat_tile_name),self.cat_tile_name)
-        # exit(0)
-        # datafile_tiles_dwsmpld = os.path.join(self.data_directory,
-        #         'tile_names' + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy')
-        #
-        # tiles_dwnsmpld = np.load(datafile_tiles_dwsmpld,allow_pickle='TRUE').item()
-        # print(tiles_dwnsmpld)
-        # exit(0)
 
         self.lnmmin = np.log(self.binning['M']['Mmin'])
         self.lnmmax = np.log(self.binning['M']['Mmax'])
         self.dlnm = self.binning['M']['dlogM']
         self.marr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
 
-        self.zarr = np.arange(0, 3, 0.05) # redshift bounds should correspond to catalogue
+        self.zz = np.arange(0, 3, 0.05) # redshift bounds should correspond to catalogue
         self.k = np.logspace(-4, np.log10(5), 200)
         # self.mdef = ccl.halos.MassDef(500, 'critical')
 
@@ -812,7 +636,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         if os.path.exists(datafile_Q_dwsmpld):
             self.log.info('Reading in binned Q function from file.')
             Qfile = np.load(datafile_Q_dwsmpld)
-            self.allQ = Qfile['Q_dwsmpld']
+            self.Q = Qfile['Q_dwsmpld']
             self.tt500 = Qfile['tt500']
         # exit(0)
 
@@ -834,7 +658,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 allQ[:, i] = QFit.getQ(tt500, tileName=tile_area[:, 0][i])
             assert len(tt500) == len(allQ[:, 0])
             self.tt500 = tt500
-            self.allQ = allQ
+            self.Q = allQ
 
         self.log.info('Reading full RMS.')
         self.datafile_rms = self.datafile_rms
@@ -843,20 +667,15 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 filename_rms + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
         datafile_tiles_dwsmpld = os.path.join(self.data_directory,
                 'tile_names' + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy')
-        # if (self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] is False)  or (
-        #     self.selfunc['mode'] == 'downsample' and self.selfunc['save_dwsmpld'] and not os.path.exists(datafile_rms_dwsmpld)):
 
         if os.path.exists(datafile_rms_dwsmpld):
             rms = np.load(datafile_rms_dwsmpld)
-            # print(len(rms['noise']))
-            # exit(0)
             self.noise = rms['noise']
             self.skyfracs = rms['skyfracs']
             self.log.info("Number of rms bins = {}.".format(self.skyfracs.size))
 
             self.tiles_dwnsmpld = np.load(datafile_tiles_dwsmpld,allow_pickle='TRUE').item()
-            print(self.tiles_dwnsmpld)
-            # exit(0)
+
         else:
             self.log.info('Reading in full RMS table.')
 
@@ -879,14 +698,14 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             bin_ind = np.digitize(self.noise, binned_rms_edges)
             tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
 
-            Qdwnsmpld = np.zeros((self.allQ.shape[0], self.selfunc['dwnsmpl_bins']))
+            Qdwnsmpld = np.zeros((self.Q.shape[0], self.selfunc['dwnsmpl_bins']))
             tiles_dwnsmpld = {}
 
             for i in range(self.selfunc['dwnsmpl_bins']):
                 tempind = np.where(bin_ind == i + 1)[0]
                 if len(tempind) == 0:
                     self.log.info('Found empty bin.')
-                    Qdwnsmpld[:, i] = np.zeros(self.allQ.shape[0])
+                    Qdwnsmpld[:, i] = np.zeros(self.Q.shape[0])
                 else:
                     print('dowsampled rms bin ',i)
                     temparea = self.skyfracs[tempind]
@@ -897,415 +716,199 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                         tiles_dwnsmpld[t] = i
 
                     test = [tiledict[key] for key in temptiles]
-                    Qdwnsmpld[:, i] = np.average(self.allQ[:, test], axis=1, weights=temparea)
+                    Qdwnsmpld[:, i] = np.average(self.Q[:, test], axis=1, weights=temparea)
 
             self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
             self.skyfracs = binned_area
-            self.allQ = Qdwnsmpld
+            self.Q = Qdwnsmpld
             self.tiles_dwnsmpld = tiles_dwnsmpld
             print('len(tiles_dwnsmpld)',tiles_dwnsmpld)
             self.log.info("Number of downsampled sky patches = {}.".format(self.skyfracs.size))
 
-            assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.allQ.shape[1]
+            assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.Q.shape[1]
 
             if self.selfunc['save_dwsmpld']:
                 np.savez(datafile_Q_dwsmpld, Q_dwsmpld=Qdwnsmpld, tt500=self.tt500)
                 np.savez(datafile_rms_dwsmpld, noise=self.noise, skyfracs=self.skyfracs)
                 np.save(datafile_tiles_dwsmpld, self.tiles_dwnsmpld)
 
-        # exit(0)
         self.qmin = self.qcut
-        # self.tiles = tiles
+
         self.num_noise_bins = self.skyfracs.size
 
-        # if szarMock:
-        #     print("mock catalog, using read_matt_mock_cat")
-        #     self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_matt_mock_cat(
-        #         ClusterCat, self.qmin
-        #     )
-        # elif MattMock:
-        #     print("Matt mock catalog")
-        #     self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_matt_cat(
-        #         ClusterCat, self.qmin
-        #     )
-        # else:
-        #     print("real catalog")
-        #     self.clst_z, self.clst_zerr, self.clst_y0, self.clst_y0err = read_clust_cat(
-        #         ClusterCat, self.qmin
-        #     )
-        #
-        # if tiles:
-        #     self.filetile = self.nemodir + "/tileAreas.txt"
-        #     self.tilenames = np.loadtxt(
-        #         self.filetile, dtype=np.str, usecols=0, unpack=True
-        #     )
-        #     self.tilearea = np.loadtxt(
-        #         self.filetile, dtype=np.float, usecols=1, unpack=True
-        #     )
-        #
-        #     self.fsky = []
-        #     self.mask = []
-        #     self.mwcs = []
-        #     self.rms = []
-        #     self.rwcs = []
-        #     self.rmstotal = np.array([])
-        #
-        #     for i in range(len(self.tilearea)):
-        #         self.fsky.append(self.tilearea[i] / 41252.9612)
-        #         tempmask, tempmwcs = loadAreaMask("#" + self.tilenames[i], self.nemodir)
-        #         self.mask.append(tempmask)
-        #         self.mwcs.append(tempmwcs)
-        #         temprms, temprwcs = loadRMSmap("#" + self.tilenames[i], self.nemodir)
-        #         self.rms.append(temprms)
-        #         self.rwcs.append(temprwcs)
-        #         self.rmstotal = np.append(self.rmstotal, temprms[temprms > 0])
-        #
-        #     self.fskytotal = np.sum(self.fsky)
-        # else:
-        #     # self.rms, self.rwcs = loadRMSmap("", self.nemodir)
-        #     # self.mask, self.mwcs = loadAreaMask("", self.nemodir)
-        #     # tcat = '/Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/clusters/data/selFn_SO/stitched_RMSMap_Arnaud_M2e14_z0p4.fits'
-        #     tcat = os.path.join(self.nemodir, "stitched_RMSMap_Arnaud_M2e14_z0p4.fits")
-        #     list = pyfits.open(tcat)
-        #     self.rms = list[1].data
-        #
-        #     self.rmstotal = self.rms[self.rms > 0]
-        #     self.fskytotal = 987.5 / 41252.9612
-        #
-        # count_temp, bin_edge = np.histogram(
-        #     np.log10(self.rmstotal), bins=self.num_noise_bins
-        # )
-
-        # self.frac_of_survey = count_temp * 1.0 / np.sum(count_temp)
-        # self.Ythresh = 10 ** ((bin_edge[:-1] + bin_edge[1:]) / 2.0)
 
         self.frac_of_survey  = self.skyfracs
         self.fskytotal = self.skyfracs.sum()
         self.Ythresh = self.noise
-        print('self.Ythresh',len(self.Ythresh),self.Ythresh)
-
-
-
-
-
-
-
         super().initialize()
 
-    # def get_requirements(self):
-    #     return {
-    #         "Pk_interpolator": {
-    #             "z": self.zarr,
-    #             "k_max": 5.0,
-    #             "nonlinear": False,
-    #             "hubble_units": False,  # cobaya told me to
-    #             "k_hunit": False,  # cobaya told me to
-    #             "vars_pairs": [["delta_nonu", "delta_nonu"]],
-    #         },
-    #         "Hubble": {"z": self.zarr},
-    #         "angular_diameter_distance": {"z": self.zarr},
-    #         "comoving_radial_distance": {"z": self.zarr}
-    #         # "CCL": {"methods": {"sz_model": self._get_sz_model}, "kmax": 10},
-    #     }
-
     def get_requirements(self):
-        if self.theorypred['choose_theory'] == "camb":
-            req = {"Hubble":  {"z": self.zarr},
-                   "angular_diameter_distance": {"z": self.zarr},
-                   "H0": None, #NB H0 is derived
-                   "Pk_interpolator": {"z": self.zarr,#np.linspace(0, 3., 140), # should be less than 150
-                                       "k_max": 6.0,
-                                       "nonlinear": False,
-                                       "hubble_units": False, # CLASS doesn't like this
-                                       "k_hunit": False, # CLASS doesn't like this
-                                       "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
-        elif self.theorypred['choose_theory'] == "class":
-            req = {"Hubble":  {"z": self.zarr},
-                   "angular_diameter_distance": {"z": self.zarr},
-                   "Pk_interpolator": {"z": self.zarr,#np.linspace(0, 3., 100), # should be less than 110
-                                       "k_max": 6.0,
-                                       "nonlinear": False,
-                                       "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
-        elif self.theorypred['choose_theory'] == 'CCL':
-            req = {'CCL': {},
-                    'nc_data': {},
-                    'Hubble': {'z': self.zarr},
-                    'angular_diameter_distance': {'z': self.zarr},
-                    'Pk_interpolator': {},
-                    'H0': None  #NB H0 is derived
-                    }
-        else:
-            raise NotImplementedError('Only theory modules camb, class and CCL implemented so far.')
-        return req
-
-
-
-    def _get_sz_model(self, cosmo):
-        model = SZModel()
-        model.hmf = ccl.halos.MassFuncTinker08(cosmo, mass_def=self.mdef)
-        model.hmb = ccl.halos.HaloBiasTinker10(
-            cosmo, mass_def=self.mdef, mass_def_strict=False
-        )
-        model.hmc = ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
-        # model.szk = SZTracer(cosmo)
-        return model
+        return get_requirements(self)
 
     def _get_catalog(self):
         return get_catalog(self)
 
 
-    def _get_ob(self):
-        return (self.theory.get_param("ombh2")) / (
-            (self.theory.get_param("H0") / 100.0) ** 2
-        )
-
-
-    # NOT GOOD!
-    def _get_Ez_interpolator(self):
-        # zarr_interp = np.linspace(self.zarr[0],self.zarr[-1],200)
-        return interp1d(self.zarr , get_Ez(self,self.zarr))
-
-    def _get_DAz(self):
-        return self.theory.get_angular_diameter_distance(self.zarr)
-
-    def _get_DAz_interpolator(self):
-        return interp1d(self.zarr, self._get_DAz())
-
-    def _get_HMF(self):
-        h = self.theory.get_param("H0") / 100.0
-
-        Pk_interpolator = self.theory.get_Pk_interpolator(
-            ("delta_nonu", "delta_nonu"), nonlinear=False
-        ).P
-        pks = Pk_interpolator(self.zarr, self.k)
-        # pkstest = Pk_interpolator(0.125, self.k )
-        # print (pkstest * h**3 )
-
-        Ez = (
-            get_Ez(self,self.zarr)
-        )  # self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
-        om = get_om(self)
-
-        hmf = mf.HMF(om, Ez, pk=pks * h**3, kh=self.k / h, zarr=self.zarr)
-
-        return hmf
-
-    def _get_param_vals(self, **kwargs):
-        # Read in scaling relation parameters
-        # scat = kwargs['scat']
-        # massbias = kwargs['massbias']
-        # B0 = kwargs['B']
-        B0 = 0.08
-        scat = 0.2
-        massbias = 1.0
-
-        H0 = self.theory.get_param("H0")
-        ob = self._get_ob()
-        om = get_om(self)
-        param_vals = {
-            "om": om,
-            "ob": ob,
-            "H0": H0,
-            "B0": B0,
-            "scat": scat,
-            "massbias": massbias,
-        }
-        return param_vals
-
-    # def _get_rate_fn_parallels(self, **kwargs):
-    #         rate_densities = np.array(
-    #             [
-    #                 self._get_rate_fn(**{c: self.catalog[c].values[i] for c in self.columns})
-    #                 for i in range(len(self))
-    #             ]
-    #         )
-    #         return rate_densities
-
     def _get_rate_fn(self,pk_intp, **kwargs):
-        # HMF = self._get_HMF()
-        # param_vals = self._get_param_vals(**kwargs)
-        # print(param_vals)
 
-        Ez_fn = self._get_Ez_interpolator()
-        DA_fn = self._get_DAz_interpolator()
-        z_arr = self.zarr
+        z_arr = self.zz
         dndlnm = get_dndlnm(self,z_arr, pk_intp, **kwargs)
-        print('dndlnm',np.shape(dndlnm))
 
-        # dn_dzdm_interp = HMF.inter_dndmLogm(delta=500)
+        param_vals = kwargs
+
+        dn_dzdm_interp = scipy.interpolate.interp2d( self.zz, self.marr, np.log(dndlnm), kind='linear',
+        copy=True, bounds_error=False,
+        fill_value=-np.inf)
 
         h = self.theory.get_param("H0") / 100.0
 
 
 
         def Prob_per_cluster(z,tsz_signal,tsz_signal_err,tile_name):
-            print('computing prob per cluster for cluster:',z,tsz_signal,tsz_signal_err,tile_name)
-            c_y = tsz_signal
-            c_yerr = tsz_signal_err
-            c_z = z
-            cat_tile_name = tile_name
-            print('masses:',np.shape(HMF.M))
-            print(self.tiles_dwnsmpld)
-            # value = {i for i in self.tiles_dwnsmpld if self.tiles_dwnsmpld[i]==tile_name}
-            # print("key by value:",value)
-            rms_bin_index = self.tiles_dwnsmpld[cat_tile_name]
-            print(rms_bin_index)
-            # exit(0)
-            Pfunc_ind = self.szutils.Pfunc_per(
+            self.log.info('computing prob per cluster for cluster: %.5e %.5e %.5e %s'%(z,tsz_signal,tsz_signal_err,tile_name))
+
+            rms_bin_index = self.tiles_dwnsmpld[tile_name]
+            Pfunc_ind = self.Pfunc_per(
                 rms_bin_index,
-                HMF.M,
-                c_z,
-                c_y * 1e-4,
-                c_yerr * 1e-4,
+                self.marr,
+                z,
+                tsz_signal * 1e-4,
+                tsz_signal_err * 1e-4,
                 param_vals,
-                Ez_fn,
-                DA_fn
             )
 
+            dn_dzdm = np.exp(dn_dzdm_interp(z,self.marr))
+            dn_dzdm = np.squeeze(dn_dzdm)
 
-            dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp(c_z, np.log10(HMF.M))) * h**4.0
 
-
-            # exit(0)
-
-            ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
+            ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(self.marr, axis=0), axis=0)
             return ans
-        # print('ans = %.5e'%Prob_per_cluster)
+
         return Prob_per_cluster
         # Implement a function that returns a rate function (function of (tsz_signal, z))
 
 
 
     def _get_n_expected(self, pk_intp,**kwargs):
-        # def Ntot_survey(self,int_HMF,fsky,Ythresh,param_vals):
-
-        # HMF = self._get_HMF()
-        # param_vals = self._get_param_vals(**kwargs)
-        Ez_fn = self._get_Ez_interpolator()
-        DA_fn = self._get_DAz_interpolator()
-
-        z_arr = self.zarr
-
-        h = self.theory.get_param("H0") / 100.0
-
+        dVdz = get_dVdz(self,self.zz)
+        dndlnm = get_dndlnm(self,self.zz, pk_intp, **kwargs)
 
         Ntot = 0
-
-        dVdz = get_dVdz(self,z_arr)*h**3
-
-        # dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h**4.0  # getting rid of hs
-        # print('dndzdm',np.shape(dn_dzdm))
-        dndlnm = get_dndlnm(self,z_arr, pk_intp, **kwargs)
-
-        # exit(0)
-
-        print('self.survey.Ythresh',
-        len(self.Ythresh),
-        len(self.frac_of_survey),
-        self.Ythresh)
-        # exit(0)
-        print('len(self.allQ)',len(self.allQ[:,0]))
-        print('len(self.allQ)',len(self.allQ[0,:]))
-        print('len(self.tt500)',len(self.tt500))
-        print(self.allQ[:,0])
-        print(self.tt500[0])
-        print(self.allQ[0,2])
-
-        # param_vals = self.theory.get_param
-        param_vals = kwargs
-        print(kwargs)
-        # exit(0)
-
         rms_index = 0
         for Yt, frac in zip(self.Ythresh, self.frac_of_survey):
-            Pfunc = self.szutils.PfuncY(rms_index,Yt, self.marr, z_arr, param_vals, Ez_fn, DA_fn)
-            print('np.shape(Pfunc)',np.shape(Pfunc))
-            print('np.shape(dndlnm)',np.shape(dndlnm))
-            # print('np.shape(dn_dzdm*Pfunc)',np.shape(dn_dzdm*Pfunc))
-            print('param_vals',param_vals)
-            print('mass',len(self.marr))
-            marr = self.marr[:,None]
-            print('pfunc:')
-            print(Pfunc)
-            exit(0)
+            Pfunc = self.PfuncY(rms_index,Yt, self.marr, self.zz, kwargs) # dim (m,z)
             N_z = np.trapz(
-                dndlnm * Pfunc, dx=np.diff(np.log(marr), axis=0), axis=0
-            )
+                dndlnm * Pfunc, dx=np.diff(self.marr[:,None], axis=0), axis=0
+            ) # dim (z)
+
             Np = (
-                np.trapz(N_z * dVdz, x=z_arr)
+                np.trapz(N_z * dVdz, x=self.zz)
                 * 4.0
                 * np.pi
                 * self.fskytotal
                 * frac
             )
-            Ntot += (
-                np.trapz(N_z * dVdz, x=z_arr)
-                * 4.0
-                * np.pi
-                * self.fskytotal
-                * frac
-            )
-            print('Np:',rms_index,Np)
+            Ntot += Np
             rms_index += 1
-
-        # print('self.survey.fskytotal')
-
+        self.log.info("Number of clusters = %.5e"%Ntot)
         return Ntot
 
-    def _get_nz_expected(self, **kwargs):
-         # def Ntot_survey(self,int_HMF,fsky,Ythresh,param_vals):
+    def P_Yo(self, rms_bin_index,LgY, M, z, param_vals):
 
-        HMF = self._get_HMF()
-        param_vals = self._get_param_vals()
-        Ez_fn = self._get_Ez_interpolator()
-        DA_fn = self._get_DAz_interpolator()
+        Ma = np.outer(M, np.ones(len(LgY[0, :])))
+        mass_500c = None
+        y0_new = _get_y0(self,np.exp(Ma), z, mass_500c, use_Q=True, **param_vals)
+        y0_new = y0_new[rms_bin_index]
+        Ytilde = y0_new
+        Y = 10 ** LgY
 
-        z_arr = self.zarr
-
-        h = self.theory.get_param("H0") / 100.0
-
-        Ntot = 0
-        dVdz = get_dVdz(self,z_arr)
-        dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h ** 4.0  # getting rid of hs
-        print('self.skyfracs',self.skyfracs)
-        print('self.Ythresh',self.Ythresh)
-        print('self.frac_of_survey',self.frac_of_survey)
-
-        for Yt, frac in zip(self.Ythresh, self.frac_of_survey):
-            Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
-            N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0)
-             # Ntot += np.trapz(N_z * dVdz, x=z_arr) * 4.0 * np.pi * self.survey.fskytotal * frac
-
-
-        return (z_arr,N_z*dVdz)
-
-    def _test_n_tot(self, **kwargs):
-
-        HMF = self._get_HMF()
-        param_vals = self._get_param_vals(**kwargs)
-        Ez_fn = self._get_Ez_interpolator()
-        DA_fn = self._get_DAz_interpolator()
-
-        z_arr = self.zarr
-
-        h = self.theory.get_param("H0") / 100.0
-
-        Ntot = 0
-        dVdz = get_dVdz(self,z_arr)
-        dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h**4.0  # getting rid of hs
-        # Test Mass function against Nemo.
-        Pfunc = 1.0
-        N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0)
-        Ntot = (
-            np.trapz(N_z * dVdz, x=z_arr)
-            * 4.0
-            * np.pi
-            * (600.0 / (4 * np.pi * (180 / np.pi) ** 2)) # incorrect
+        numer = -1.0 * (np.log(Y / Ytilde)) ** 2
+        ans = (
+                1.0 / (param_vals["scatter_sz"] * np.sqrt(2 * np.pi)) *
+                np.exp(numer / (2.0 * param_vals["scatter_sz"] ** 2))
         )
+        return ans
 
-        return Ntot
+    def P_Yo_vec(self, rms_index, LgY, M, z, param_vals):
 
+        mass_500c = None
+        y0_new = _get_y0(self,np.exp(M), z, mass_500c, use_Q=True, **param_vals)
+        y0_new = y0_new[rms_index]
+        Y = 10 ** LgY
+        Ytilde = np.repeat(y0_new[:, :, np.newaxis], LgY.shape[2], axis=2)
 
+        numer = -1.0 * (np.log(Y / Ytilde)) ** 2
+
+        ans = (
+                1.0 / (param_vals["scatter_sz"] * np.sqrt(2 * np.pi)) *
+                np.exp(numer / (2.0 * param_vals["scatter_sz"] ** 2))
+        )
+        return ans
+
+    def Y_erf(self, Y, Ynoise):
+        qmin = self.qmin
+        ans = Y * 0.0
+        ans[Y - qmin * Ynoise > 0] = 1.0
+        return ans
+
+    def P_of_gt_SN(self, rms_index, LgY, MM, zz, Ynoise, param_vals):
+        if param_vals['scatter_sz'] != 0:
+            Y = 10 ** LgY
+
+            Yerf = self.Y_erf(Y, Ynoise) # array of size dim Y
+            sig_tr = np.outer(np.ones([MM.shape[0], # (dim mass)
+                                        MM.shape[1]]), # (dim z)
+                                        Yerf )
+
+            sig_thresh = np.reshape(sig_tr,
+                                    (MM.shape[0], MM.shape[1], len(Yerf)))
+
+            LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
+            LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
+
+            # replace nan with 0's:
+            P_Y = np.nan_to_num(self.P_Yo_vec(rms_index,LgYa2, MM, zz, param_vals))
+            ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10) # why log10?
+
+        else:
+            mass_500c = None
+            y0_new = _get_y0(self,np.exp(MM), zz, mass_500c, use_Q=True, **param_vals)
+            y0_new = y0_new[rms_index]
+            ans = y0_new * 0.0
+            ans[y0_new - self.qmin *self.Ythresh[rms_index] > 0] = 1.0
+            ans = np.nan_to_num(ans)
+
+        return ans
+
+    def PfuncY(self, rms_index, YNoise, M, z_arr, param_vals):
+        LgY = self.LgY
+        P_func = np.outer(M, np.zeros([len(z_arr)]))
+        M_arr = np.outer(M, np.ones([len(z_arr)]))
+        P_func = self.P_of_gt_SN(rms_index, LgY, M_arr, z_arr, YNoise, param_vals)
+        return P_func
+
+    def Y_prob(self, Y_c, LgY, YNoise):
+        Y = 10 ** (LgY)
+
+        ans = gaussian(Y, Y_c, YNoise)
+        return ans
+
+    def Pfunc_per(self, rms_bin_index,MM, zz, Y_c, Y_err, param_vals):
+        if param_vals["scatter_sz"] != 0:
+            LgY = self.LgY
+            LgYa = np.outer(np.ones(len(MM)), LgY)
+            P_Y_sig = self.Y_prob(Y_c, LgY, Y_err)
+            P_Y = np.nan_to_num(self.P_Yo(rms_bin_index,LgYa, MM, zz, param_vals))
+            ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
+        else:
+            mass_500c = None
+            y0_new = _get_y0(self,np.exp(MM), zz, mass_500c, use_Q=True, **param_vals)
+            y0_new = y0_new[rms_bin_index]
+            LgY = np.log10(y0_new)
+            P_Y_sig = np.nan_to_num(self.Y_prob(Y_c, LgY, Y_err))
+            ans = P_Y_sig
+
+        return ans
 
 def get_dVdz(both,zarr):
     """dV/dzdOmega"""
@@ -1316,12 +919,12 @@ def get_dVdz(both,zarr):
         * (1.0 + zarr) ** 2
         / (both.theory.get_Hubble(zarr) / C_KM_S)
     )
-
-    # dV_dz *= (self.theory.get_param("H0") / 100.0) ** 3.0  # was h0
-    return dV_dz
+    h = both.theory.get_param("H0") / 100.0
+    return dV_dz*h**3
 
 def get_Ez(both,zarr):
-    return both.theory.get_Hubble(zarr) / both.theory.get_param("H0")
+    Ez_interp = interp1d(both.zz , both.theory.get_Hubble(both.zz) / both.theory.get_param("H0"))
+    return Ez_interp(zarr)
 
 
 def get_om(both):
@@ -1341,8 +944,6 @@ def get_om(both):
 
 def get_dndlnm(self, z, pk_intp, **params_values_dict):
 
-    #TODO: Why is zarr not used?
-    # zarr = self.zarr
     marr = self.marr  # Mass in units of Msun/h
 
     if self.theorypred['massfunc_mode'] == 'internal':
@@ -1350,7 +951,7 @@ def get_dndlnm(self, z, pk_intp, **params_values_dict):
         Ez = get_Ez(self,z)
 
         om = get_om(self)
-        rhocrit0 = szutils.rho_crit0H100 # [h2 msun Mpc-3]
+        rhocrit0 = rho_crit0H100 # [h2 msun Mpc-3]
 
         rhom0 = rhocrit0 * om
 
@@ -1542,19 +1143,8 @@ def get_erf_compl(y, qmin, qmax, rms, qcut):
 
 
 def get_catalog(both):
-    print('collecting catalog')
-    print('loading survey data')
-    print(both.data['Q_file'])
-    # both.survey = SurveyData(
-    #     both,both.data_path, both.data_name,szarMock=True
-    # )  # , MattMock=False,tiles=False)
-    print('survey data loaded')
-    print('loading sz utils')
-    both.szutils = szutils(both)
-    print('sz utils loaded')
-    # print('both.survey.clst_z.byteswap().newbyteorder()',both.survey.clst_z.byteswap().newbyteorder())
-    # print(both.z_cat)
-    # exit(0)
+
+
     df = pd.DataFrame(
         {
             "z": both.z_cat.byteswap().newbyteorder(),#both.survey.clst_z.byteswap().newbyteorder(),
@@ -1564,5 +1154,130 @@ def get_catalog(both):
 
         }
     )
-    print('catalog collected')
+
     return df
+
+
+
+def get_requirements(self):
+    if self.theorypred['choose_theory'] == "camb":
+        req = {"Hubble":  {"z": self.zz},
+               "angular_diameter_distance": {"z": self.zz},
+               "H0": None, #NB H0 is derived
+               "Pk_interpolator": {"z": np.linspace(0, 3., 140), # should be less than 150
+                                   "k_max": 4.0,
+                                   "nonlinear": False,
+                                   "hubble_units": False, # CLASS doesn't like this
+                                   "k_hunit": False, # CLASS doesn't like this
+                                   "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
+    elif self.theorypred['choose_theory'] == "class":
+        req = {"Hubble":  {"z": self.zz},
+               "angular_diameter_distance": {"z": self.zz},
+               "Pk_interpolator": {"z": np.linspace(0, 3., 100), # should be less than 110
+                                   "k_max": 4.0,
+                                   "nonlinear": False,
+                                   "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
+    elif self.theorypred['choose_theory'] == 'CCL':
+        req = {'CCL': {},
+                'nc_data': {},
+                'Hubble': {'z': self.zz},
+                'angular_diameter_distance': {'z': self.zz},
+                'Pk_interpolator': {},
+                'H0': None  #NB H0 is derived
+                }
+    else:
+        raise NotImplementedError('Only theory modules camb, class and CCL implemented so far.')
+    return req
+
+
+
+
+def _splQ(self, theta):
+    if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
+        tck = scipy.interpolate.splrep(self.tt500, self.Q)
+        newQ = scipy.interpolate.splev(theta, tck)
+    else:
+        newQ = []
+        for i in range(len(self.Q[0])):
+            tck = scipy.interpolate.splrep(self.tt500, self.Q[:, i])
+            newQ.append(scipy.interpolate.splev(theta, tck))
+    return np.asarray(np.abs(newQ))
+
+def _theta(self, mass_500c, z, Ez=None):
+
+    thetastar = 6.997
+    alpha_theta = 1. / 3.
+    H0 = self.theory.get_param("H0")
+    h = H0/100.0
+
+    if Ez is None:
+        Ez = get_Ez(self,z)
+        Ez = Ez[:, None]
+
+    # DAz = self.theory.get_angular_diameter_distance(z) * h #self._get_DAz(z) * h
+    DAz_interp = interp1d(self.zz , self.theory.get_angular_diameter_distance(self.zz) * h)
+    DAz = DAz_interp(z)
+    try:
+        DAz = DAz[:, None]
+    except:
+        DAz = DAz
+    ttstar = thetastar * (H0 / 70.) ** (-2. / 3.)
+
+    if self.name == "Unbinned Clusters":
+        Ez = Ez.T
+        DAz = DAz.T
+
+    return ttstar * (mass_500c / MPIVOT_THETA / h) ** alpha_theta * Ez ** (-2. / 3.) * (100. * DAz / 500 / H0) ** (-1.)
+
+
+# y-m scaling relation for completeness
+def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
+    if mass_500c is None:
+        mass_500c = mass
+
+    A0 = params_values_dict["tenToA0"]
+    B0 = params_values_dict["B0"]
+    C0 = params_values_dict["C0"]
+    bias = params_values_dict["bias_sz"]
+
+    Ez = get_Ez(self,z)
+    try:
+        Ez = Ez[:,None]
+    except:
+        Ez = Ez
+
+    h = self.theory.get_param("H0") / 100.0
+
+    mb = mass* bias
+    mb_500c = mass_500c*bias
+
+    Mpivot = self.YM['Mpivot']*h  # convert to Msun/h.
+
+    def rel(m):
+        #mm = m / mpivot
+        #t = -0.008488*(mm*Ez[:,None])**(-0.585)
+        if self.theorypred['rel_correction']:
+            t = -0.008488*(mm*Ez)**(-0.585) ###### M200m
+            res = 1.+ 3.79*t - 28.2*(t**2.)
+        else:
+            res = 1.
+        return res
+
+    if use_Q is True:
+        theta = _theta(self,mb_500c, z, Ez)
+        splQ = _splQ(self,theta)
+    else:
+        splQ = 1.
+
+
+    if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
+        y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ
+        y0 = y0.T ###### M200m
+    else:
+        if self.name == "Unbinned Clusters":
+            Ez = Ez.T
+
+        y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ
+        # print('shape y0',np.shape(y0))
+
+    return y0
