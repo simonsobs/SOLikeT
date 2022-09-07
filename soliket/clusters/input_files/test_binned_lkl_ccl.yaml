@@ -1,3 +1,7 @@
+# Direction:
+# download sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned from https://astro.ukzn.ac.za/~mjh/ACT/DR5CosmoSims/distribution/
+# put in directory as above.
+
 # run from SOLikeT/soliket/clusters
 # command:
 # $ cobaya-run input_files/test_binned_lkl_ccl.yaml -f
