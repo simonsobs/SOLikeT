@@ -138,10 +138,10 @@ class BinnedClusterLikelihood(CashCLikelihood):
         self.lnmmin = np.log(self.binning['M']['Mmin'])
         self.lnmmax = np.log(self.binning['M']['Mmax'])
         self.dlnm = self.binning['M']['dlogM']
-        self.marr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
+        self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
         # this is to be consist with szcounts.f90 - maybe switch to linspace?
 
-        self.log.info('Number of mass bins for theory calculation {}.'.format(len(self.marr)))
+        self.log.info('Number of mass bins for theory calculation {}.'.format(len(self.lnmarr)))
         #TODO: I removed the bin where everything is larger than zmax - is this ok?
         delNcat, _ = np.histogram(z, bins=zbins)
 
@@ -401,8 +401,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         zarr = self.zarr
         zz = self.zz
-        marr = np.exp(self.marr)
-        dlnm = self.dlnm
+        marr = np.exp(self.lnmarr)
         Nq = self.Nq
 
 
@@ -481,7 +480,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 sumzs = np.zeros(len(zz))
                 for ii in zs:
                     for j in range(len(marr)):
-                        sumzs[ii] += 0.5 * (intgr[ii,j]*cc[kk,ii,j] + intgr[ii+1,j]*cc[kk,ii+1,j]) * dlnm * (zz[ii+1] - zz[ii])
+                        sumzs[ii] += 0.5 * (intgr[ii,j]*cc[kk,ii,j] + intgr[ii+1,j]*cc[kk,ii+1,j]) * self.dlnm * (zz[ii+1] - zz[ii])
                         # sumzs[ii] += 0.5 * (intgr[ii,j] + intgr[ii+1,j]) * dlnm * (zz[ii+1] - zz[ii]) #NB no completness check
 
                     sum += sumzs[ii]
@@ -615,7 +614,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         self.lnmmin = np.log(self.binning['M']['Mmin'])
         self.lnmmax = np.log(self.binning['M']['Mmax'])
         self.dlnm = self.binning['M']['dlogM']
-        self.marr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
+        self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
 
         self.zz = np.arange(0, 3, 0.05) # redshift bounds should correspond to catalogue
         self.k = np.logspace(-4, np.log10(5), 200)
@@ -756,7 +755,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         param_vals = kwargs
 
-        dn_dzdm_interp = scipy.interpolate.interp2d( self.zz, self.marr, np.log(dndlnm), kind='linear',
+        dn_dzdm_interp = scipy.interpolate.interp2d( self.zz, self.lnmarr, np.log(dndlnm), kind='linear',
         copy=True, bounds_error=False,
         fill_value=-np.inf)
 
@@ -770,18 +769,18 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             rms_bin_index = self.tiles_dwnsmpld[tile_name]
             Pfunc_ind = self.Pfunc_per(
                 rms_bin_index,
-                self.marr,
+                self.lnmarr,
                 z,
                 tsz_signal * 1e-4,
                 tsz_signal_err * 1e-4,
                 param_vals,
             )
 
-            dn_dzdm = np.exp(dn_dzdm_interp(z,self.marr))
+            dn_dzdm = np.exp(dn_dzdm_interp(z,self.lnmarr))
             dn_dzdm = np.squeeze(dn_dzdm)
 
 
-            ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(self.marr, axis=0), axis=0)
+            ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(self.lnmarr, axis=0), axis=0)
             return ans
 
         return Prob_per_cluster
@@ -796,9 +795,9 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         Ntot = 0
         rms_index = 0
         for Yt, frac in zip(self.Ythresh, self.frac_of_survey):
-            Pfunc = self.PfuncY(rms_index,Yt, self.marr, self.zz, kwargs) # dim (m,z)
+            Pfunc = self.PfuncY(rms_index,Yt, self.lnmarr, self.zz, kwargs) # dim (m,z)
             N_z = np.trapz(
-                dndlnm * Pfunc, dx=np.diff(self.marr[:,None], axis=0), axis=0
+                dndlnm * Pfunc, dx=np.diff(self.lnmarr[:,None], axis=0), axis=0
             ) # dim (z)
 
             Np = (
@@ -944,7 +943,7 @@ def get_om(both):
 
 def get_dndlnm(self, z, pk_intp, **params_values_dict):
 
-    marr = self.marr  # Mass in units of Msun/h
+    marr = self.lnmarr  # Mass in units of Msun/h
 
     if self.theorypred['massfunc_mode'] == 'internal':
         h = self.theory.get_param("H0")/100.0
