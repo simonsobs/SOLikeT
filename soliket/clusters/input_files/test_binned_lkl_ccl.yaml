@@ -1,6 +1,7 @@
 # Direction:
 # download sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned from https://astro.ukzn.ac.za/~mjh/ACT/DR5CosmoSims/distribution/
-# put in directory as above.
+# put in soliket/clusters/data/advact/DR5CosmoSims directory.
+
 
 # run from SOLikeT/soliket/clusters
 # command:
