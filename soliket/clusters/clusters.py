@@ -113,14 +113,13 @@ class BinnedClusterLikelihood(CashCLikelihood):
         debiasDOF = 0
         qcat = np.sqrt(np.power(qcat, 2) - debiasDOF)
 
-        qcut = self.qcut
 
         Ncat = len(zcat)
         self.log.info('Total number of clusters in catalogue = {}.'.format(Ncat))
-        self.log.info('SNR cut = {}.'.format(qcut))
+        self.log.info('SNR cut = {}.'.format(self.qcut))
 
-        z = zcat[qcat >= qcut]
-        snr = qcat[qcat >= qcut]
+        z = zcat[qcat >= self.qcut]
+        snr = qcat[qcat >= self.qcut]
 
         Ncat = len(z)
         self.log.info('Number of clusters above the SNR cut = {}.'.format(Ncat))
@@ -731,14 +730,6 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 np.savez(datafile_rms_dwsmpld, noise=self.noise, skyfracs=self.skyfracs)
                 np.save(datafile_tiles_dwsmpld, self.tiles_dwnsmpld)
 
-        self.qmin = self.qcut
-
-        self.num_noise_bins = self.skyfracs.size
-
-
-        self.frac_of_survey  = self.skyfracs
-        self.fskytotal = self.skyfracs.sum()
-        self.Ythresh = self.noise
         super().initialize()
 
     def get_requirements(self):
@@ -794,7 +785,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         Ntot = 0
         rms_index = 0
         marr = np.exp(self.lnmarr)
-        for Yt, frac in zip(self.Ythresh, self.frac_of_survey):
+        for Yt, frac in zip(self.noise, self.skyfracs):
             Pfunc = self.PfuncY(rms_index,Yt, marr, self.zz, kwargs) # dim (m,z)
             N_z = np.trapz(
                 dndlnm * Pfunc, dx=np.diff(self.lnmarr[:,None], axis=0), axis=0
@@ -802,12 +793,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             Np = (
                 np.trapz(N_z * dVdz, x=self.zz)
-                * self.fskytotal
                 * frac
             )
             Ntot += Np
             rms_index += 1
-        self.log.info("Number of clusters = %.5e"%Ntot)
+        self.log.info("\r Total predicted N = {}".format(Ntot))
         return Ntot
 
     def P_Yo(self, rms_bin_index,LgY, marr, z, param_vals):
@@ -844,9 +834,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         return ans
 
     def Y_erf(self, Y, Ynoise):
-        qmin = self.qmin
         ans = Y * 0.0
-        ans[Y - qmin * Ynoise > 0] = 1.0
+        ans[Y - self.qcut * Ynoise > 0] = 1.0
         return ans
 
     def P_of_gt_SN(self, rms_index, LgY, marr, zz, Ynoise, param_vals):
@@ -874,7 +863,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             y0_new = _get_y0(self,marr, zz, mass_500c, use_Q=True, **param_vals)
             y0_new = y0_new[rms_index]
             ans = y0_new * 0.0
-            ans[y0_new - self.qmin *self.Ythresh[rms_index] > 0] = 1.0
+            ans[y0_new - self.qcut * self.noise[rms_index] > 0] = 1.0
             ans = np.nan_to_num(ans)
 
         return ans

@@ -45,7 +45,7 @@ likelihood:
       M:
         Mmin: 1e13
         Mmax: 5e15
-        dlogM: 0.05
+        dlogM: 0.03
 params:
   # logA:
   #   prior:

@@ -34,7 +34,7 @@ likelihood:
       use_class_sz : False
     # Y-M relation
     YM:
-      Mpivot: 3e14 # Mpivot in Y-M relation 
+      Mpivot: 3e14 # Mpivot in Y-M relation
 
     # Selection function
     selfunc:
@@ -65,14 +65,14 @@ likelihood:
         dz: 0.1
       # SNR bins for number counts
       q:
-        log10qmin: 0.6
+        log10qmin: 0.1
         log10qmax: 2.0
-        dlog10q: 0.5
+        dlog10q: 2.
       # mass bins for number counts
       M:
         Mmin: 1e13
         Mmax: 5e15
-        dlogM: 0.05
+        dlogM: 0.03
 
 params:
   # logA:
@@ -161,8 +161,7 @@ params:
       scale: 0.001
     proposal: 0.001
     latex: \sigma_8
-  # Omega_m:
-  #   latex: \Omega_\mathrm{m}
+
 
 sampler:
   evaluate:
