@@ -27,7 +27,7 @@ likelihood:
 
     # Y-M relation
     YM:
-      Mpivot: 2.9e14 # Mpivot in Y-M relation in [h^-1 Msun]
+      Mpivot: 2.9e14 # Mpivot in Y-M relation 
 
     # Selection function
     selfunc:

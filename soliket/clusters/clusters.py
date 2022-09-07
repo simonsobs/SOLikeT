@@ -451,7 +451,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
             a = 1. / (1. + zz)
             marr_500c = np.array([md_hmf.translate_mass(cosmo, marr / h, ai, md_500c) for ai in a]) * h
         else:
-            marr_500c = None
+            marr_500c = marr_ymmd
 
         if self.selfunc['mode'] != 'injection':
             y0 = _get_y0(self,marr_ymmd, zz, marr_500c, **params_values_dict)
@@ -748,12 +748,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         return get_catalog(self)
 
 
-    def _get_rate_fn(self,pk_intp, **kwargs):
+    def _get_rate_fn(self,pk_intp, **param_vals):
 
         z_arr = self.zz
-        dndlnm = get_dndlnm(self,z_arr, pk_intp, **kwargs)
+        dndlnm = get_dndlnm(self,z_arr, pk_intp, **param_vals)
 
-        param_vals = kwargs
 
         dn_dzdm_interp = scipy.interpolate.interp2d( self.zz, self.lnmarr, np.log(dndlnm), kind='linear',
         copy=True, bounds_error=False,
@@ -765,11 +764,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         def Prob_per_cluster(z,tsz_signal,tsz_signal_err,tile_name):
             self.log.info('computing prob per cluster for cluster: %.5e %.5e %.5e %s'%(z,tsz_signal,tsz_signal_err,tile_name))
-
+            marr = np.exp(self.lnmarr)
             rms_bin_index = self.tiles_dwnsmpld[tile_name]
             Pfunc_ind = self.Pfunc_per(
                 rms_bin_index,
-                self.lnmarr,
+                marr,
                 z,
                 tsz_signal * 1e-4,
                 tsz_signal_err * 1e-4,
@@ -794,16 +793,15 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         Ntot = 0
         rms_index = 0
+        marr = np.exp(self.lnmarr)
         for Yt, frac in zip(self.Ythresh, self.frac_of_survey):
-            Pfunc = self.PfuncY(rms_index,Yt, self.lnmarr, self.zz, kwargs) # dim (m,z)
+            Pfunc = self.PfuncY(rms_index,Yt, marr, self.zz, kwargs) # dim (m,z)
             N_z = np.trapz(
                 dndlnm * Pfunc, dx=np.diff(self.lnmarr[:,None], axis=0), axis=0
             ) # dim (z)
 
             Np = (
                 np.trapz(N_z * dVdz, x=self.zz)
-                * 4.0
-                * np.pi
                 * self.fskytotal
                 * frac
             )
@@ -812,11 +810,12 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         self.log.info("Number of clusters = %.5e"%Ntot)
         return Ntot
 
-    def P_Yo(self, rms_bin_index,LgY, M, z, param_vals):
+    def P_Yo(self, rms_bin_index,LgY, marr, z, param_vals):
 
-        Ma = np.outer(M, np.ones(len(LgY[0, :])))
-        mass_500c = None
-        y0_new = _get_y0(self,np.exp(Ma), z, mass_500c, use_Q=True, **param_vals)
+        marr = np.outer(marr, np.ones(len(LgY[0, :])))
+        # Mass conversion needed!
+        mass_500c = marr
+        y0_new = _get_y0(self,marr, z, mass_500c, use_Q=True, **param_vals)
         y0_new = y0_new[rms_bin_index]
         Ytilde = y0_new
         Y = 10 ** LgY
@@ -828,10 +827,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         )
         return ans
 
-    def P_Yo_vec(self, rms_index, LgY, M, z, param_vals):
-
-        mass_500c = None
-        y0_new = _get_y0(self,np.exp(M), z, mass_500c, use_Q=True, **param_vals)
+    def P_Yo_vec(self, rms_index, LgY, marr, z, param_vals):
+        # mass conversion needed!
+        mass_500c = marr
+        y0_new = _get_y0(self,marr, z, mass_500c, use_Q=True, **param_vals)
         y0_new = y0_new[rms_index]
         Y = 10 ** LgY
         Ytilde = np.repeat(y0_new[:, :, np.newaxis], LgY.shape[2], axis=2)
@@ -850,28 +849,29 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         ans[Y - qmin * Ynoise > 0] = 1.0
         return ans
 
-    def P_of_gt_SN(self, rms_index, LgY, MM, zz, Ynoise, param_vals):
+    def P_of_gt_SN(self, rms_index, LgY, marr, zz, Ynoise, param_vals):
         if param_vals['scatter_sz'] != 0:
             Y = 10 ** LgY
 
             Yerf = self.Y_erf(Y, Ynoise) # array of size dim Y
-            sig_tr = np.outer(np.ones([MM.shape[0], # (dim mass)
-                                        MM.shape[1]]), # (dim z)
+            sig_tr = np.outer(np.ones([marr.shape[0], # (dim mass)
+                                        marr.shape[1]]), # (dim z)
                                         Yerf )
 
             sig_thresh = np.reshape(sig_tr,
-                                    (MM.shape[0], MM.shape[1], len(Yerf)))
+                                    (marr.shape[0], marr.shape[1], len(Yerf)))
 
-            LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
-            LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
+            LgYa = np.outer(np.ones([marr.shape[0], marr.shape[1]]), LgY)
+            LgYa2 = np.reshape(LgYa, (marr.shape[0], marr.shape[1], len(LgY)))
 
             # replace nan with 0's:
-            P_Y = np.nan_to_num(self.P_Yo_vec(rms_index,LgYa2, MM, zz, param_vals))
+            P_Y = np.nan_to_num(self.P_Yo_vec(rms_index,LgYa2, marr, zz, param_vals))
             ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10) # why log10?
 
         else:
-            mass_500c = None
-            y0_new = _get_y0(self,np.exp(MM), zz, mass_500c, use_Q=True, **param_vals)
+            # mass conversion needed!
+            mass_500c = marr
+            y0_new = _get_y0(self,marr, zz, mass_500c, use_Q=True, **param_vals)
             y0_new = y0_new[rms_index]
             ans = y0_new * 0.0
             ans[y0_new - self.qmin *self.Ythresh[rms_index] > 0] = 1.0
@@ -879,11 +879,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         return ans
 
-    def PfuncY(self, rms_index, YNoise, M, z_arr, param_vals):
+    def PfuncY(self, rms_index, YNoise, marr, z_arr, param_vals):
         LgY = self.LgY
-        P_func = np.outer(M, np.zeros([len(z_arr)]))
-        M_arr = np.outer(M, np.ones([len(z_arr)]))
-        P_func = self.P_of_gt_SN(rms_index, LgY, M_arr, z_arr, YNoise, param_vals)
+        P_func = np.outer(marr, np.zeros([len(z_arr)]))
+        marr = np.outer(marr, np.ones([len(z_arr)]))
+        P_func = self.P_of_gt_SN(rms_index, LgY, marr, z_arr, YNoise, param_vals)
         return P_func
 
     def Y_prob(self, Y_c, LgY, YNoise):
@@ -892,16 +892,17 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         ans = gaussian(Y, Y_c, YNoise)
         return ans
 
-    def Pfunc_per(self, rms_bin_index,MM, zz, Y_c, Y_err, param_vals):
+    def Pfunc_per(self, rms_bin_index,marr, zz, Y_c, Y_err, param_vals):
         if param_vals["scatter_sz"] != 0:
             LgY = self.LgY
-            LgYa = np.outer(np.ones(len(MM)), LgY)
+            LgYa = np.outer(np.ones(len(marr)), LgY)
             P_Y_sig = self.Y_prob(Y_c, LgY, Y_err)
-            P_Y = np.nan_to_num(self.P_Yo(rms_bin_index,LgYa, MM, zz, param_vals))
+            P_Y = np.nan_to_num(self.P_Yo(rms_bin_index,LgYa, marr, zz, param_vals))
             ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
         else:
-            mass_500c = None
-            y0_new = _get_y0(self,np.exp(MM), zz, mass_500c, use_Q=True, **param_vals)
+            # mass conversion needed!
+            mass_500c = marr
+            y0_new = _get_y0(self,marr, zz, mass_500c, use_Q=True, **param_vals)
             y0_new = y0_new[rms_bin_index]
             LgY = np.log10(y0_new)
             P_Y_sig = np.nan_to_num(self.Y_prob(Y_c, LgY, Y_err))
@@ -1111,7 +1112,7 @@ def get_dndlnm(self, z, pk_intp, **params_values_dict):
         # return self.get_dndlnM_at_z_and_M(z,marr)
 
 
-### check these in szutils in some form??
+
 def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qbins, qbin, lnyy, dyy, yy, temp, mode, compl_mode, average_Q, tile, scatter):
 
     kk = qbin
@@ -1120,11 +1121,47 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qbins, qbin, lny
 
     res = []
     for i in range(Nm):
-        erfunc = []
-        for j in range(len(skyfracs)):
-            erfunc.append(get_erf_compl(y0[int(tile[j])-1,index_z,i], qmin, qmax, noise[j], qcut))
-        erfunc = np.asarray(erfunc)
-        res.append(np.dot(erfunc, skyfracs))
+
+        if scatter == 0.:
+
+            if mode == 'single_tile' or average_Q:
+                if compl_mode == 'erf_prod':
+                    if kk == 0:
+                        erfunc = get_erf(y0[index_z,i], noise, qcut)*(1. - get_erf(y0[index_z,i], noise, qmax))
+                    elif kk == Nq:
+                        erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)
+                    else:
+                        erfunc = get_erf(y0[index_z,i], noise, qcut)*get_erf(y0[index_z,i], noise, qmin)*(1. - get_erf(y0[index_z,i], noise, qmax))
+                elif compl_mode == 'erf_diff':
+                    erfunc = get_erf_compl(y0[index_z,i], qmin, qmax, noise, qcut)
+            else:
+                erfunc = []
+                for j in range(len(skyfracs)):
+                    if compl_mode == 'erf_prod':
+                        if kk == 0:
+                            erfunc.append(get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qcut)*(1. - get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qmax)))
+                        elif kk == Nq:
+                            erfunc.append(get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qcut)*get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qmin))
+                        else:
+                            erfunc.append(get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qcut)*get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qmin)*(1. - get_erf(y0[int(tile[j])-1,index_z,i], noise[j], qmax)))
+                    elif compl_mode == 'erf_diff':
+                        erfunc.append(get_erf_compl(y0[int(tile[j])-1,index_z,i], qmin, qmax, noise[j], qcut))
+                erfunc = np.asarray(erfunc)
+            res.append(np.dot(erfunc, skyfracs))
+
+        else:
+
+            fac = 1./np.sqrt(2.*pi*scatter**2)
+            mu = np.log(y0)
+            if mode == 'single_tile' or average_Q:
+                arg = (lnyy - mu[index_z,i])/(np.sqrt(2.)*scatter)
+                res.append(np.dot(temp, fac*np.exp(-arg**2.)*dyy/yy))
+            else:
+                args = 0.
+                for j in range(len(skyfracs)):
+                    arg = (lnyy[j,:] - mu[int(tile[j])-1, index_z, i])/(np.sqrt(2.)*scatter)
+                    args += np.dot(temp[j,:], fac*np.exp(-arg**2.)*dyy[j,:]/yy[j,:])
+                res.append(args)
 
     return res
 
@@ -1231,8 +1268,8 @@ def _theta(self, mass_500c, z, Ez=None):
 
 # y-m scaling relation for completeness
 def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
-    if mass_500c is None:
-        mass_500c = mass
+    # if mass_500c is None:
+    #     mass_500c = mass
 
     A0 = params_values_dict["tenToA0"]
     B0 = params_values_dict["B0"]

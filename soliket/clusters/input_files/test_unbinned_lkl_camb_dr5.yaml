@@ -19,7 +19,7 @@ likelihood:
 
     # Y-M relation
     YM:
-      Mpivot: 3e14 # Mpivot in Y-M relation in [h^-1 Msun]
+      Mpivot: 3e14 # Mpivot in Y-M relation
 
 
     # Selection function

@@ -34,7 +34,7 @@ likelihood:
       use_class_sz : False
     # Y-M relation
     YM:
-      Mpivot: 3e14 # Mpivot in Y-M relation in [ Msun]
+      Mpivot: 3e14 # Mpivot in Y-M relation 
 
     # Selection function
     selfunc:
