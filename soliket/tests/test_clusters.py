@@ -75,6 +75,7 @@ def test_clusters_unbinned_n_expected():
     print('like._get_n_expected():',like._get_n_expected())
     print('like._get_nz_expected():',like._get_nz_expected())
 
+    assert np.isfinite(lnl)
     assert like._get_n_expected() > 40
 
 
