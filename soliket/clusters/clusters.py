@@ -18,7 +18,7 @@ import multiprocessing
 from functools import partial
 
 import pyccl as ccl
-from classy_sz import Class # TBD: change this import as optional
+# from classy_sz import Class # TBD: change this import as optional
 
 from ..poisson import PoissonLikelihood
 from ..cash import CashCLikelihood
