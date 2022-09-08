@@ -609,13 +609,23 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         self.cat_tsz_signal = cat_tsz_signal[ind]
         self.cat_tsz_signal_err = cat_tsz_signal_err[ind]
         self.cat_tile_name = cat_tile_name[ind]
+        # self.catalog = pd.DataFrame(catalog)[columns]
+        self.catalog = pd.DataFrame(
+            {
+                "z": self.z_cat.byteswap().newbyteorder(),#both.survey.clst_z.byteswap().newbyteorder(),
+                "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(), #both.survey.clst_y0.byteswap().newbyteorder(),
+                "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),#survey.clst_y0err.byteswap().newbyteorder(),
+                "tile_name": self.cat_tile_name.byteswap().newbyteorder()#survey.clst_y0err.byteswap().newbyteorder(),
+
+            }
+        )
 
         self.lnmmin = np.log(self.binning['M']['Mmin'])
         self.lnmmax = np.log(self.binning['M']['Mmax'])
         self.dlnm = self.binning['M']['dlogM']
         self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
 
-        self.zz = np.arange(0, 3, 0.05) # redshift bounds should correspond to catalogue
+        self.zz = np.arange(0, 8, 0.05) # redshift bounds should correspond to catalogue
         self.k = np.logspace(-4, np.log10(5), 200)
         # self.mdef = ccl.halos.MassDef(500, 'critical')
 
@@ -738,45 +748,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     def _get_catalog(self):
         return get_catalog(self)
 
-
-    def _get_rate_fn(self,pk_intp, **param_vals):
-
-        z_arr = self.zz
-        dndlnm = get_dndlnm(self,z_arr, pk_intp, **param_vals)
-
-
-        dn_dzdm_interp = scipy.interpolate.interp2d( self.zz, self.lnmarr, np.log(dndlnm), kind='linear',
-        copy=True, bounds_error=False,
-        fill_value=-np.inf)
-
-        h = self.theory.get_param("H0") / 100.0
-
-
-
-        def Prob_per_cluster(z,tsz_signal,tsz_signal_err,tile_name):
-            self.log.info('computing prob per cluster for cluster: %.5e %.5e %.5e %s'%(z,tsz_signal,tsz_signal_err,tile_name))
-            marr = np.exp(self.lnmarr)
-            rms_bin_index = self.tiles_dwnsmpld[tile_name]
-            Pfunc_ind = self.Pfunc_per(
-                rms_bin_index,
-                marr,
-                z,
-                tsz_signal * 1e-4,
-                tsz_signal_err * 1e-4,
-                param_vals,
-            )
-
-            dn_dzdm = np.exp(dn_dzdm_interp(z,self.lnmarr))
-            dn_dzdm = np.squeeze(dn_dzdm)
-
-
-            ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(self.lnmarr, axis=0), axis=0)
-            return ans
-
-        return Prob_per_cluster
-        # Implement a function that returns a rate function (function of (tsz_signal, z))
-
-
+    def _get_dndlnm(self,z, pk_intp, **kwargs):
+        return get_dndlnm(self,z, pk_intp, **kwargs)
 
     def _get_n_expected(self, pk_intp,**kwargs):
         dVdz = get_dVdz(self,self.zz)
