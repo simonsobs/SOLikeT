@@ -133,12 +133,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         self.log.info("Number of redshift bins = {}.".format(len(zarr)))
 
-        # mass bin
-        self.lnmmin = np.log(self.binning['M']['Mmin'])
-        self.lnmmax = np.log(self.binning['M']['Mmax'])
-        self.dlnm = self.binning['M']['dlogM']
-        self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
-        # this is to be consist with szcounts.f90 - maybe switch to linspace?
+        initialize_commom(self)
 
         self.log.info('Number of mass bins for theory calculation {}.'.format(len(self.lnmarr)))
         #TODO: I removed the bin where everything is larger than zmax - is this ok?
@@ -620,13 +615,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             }
         )
 
-        self.lnmmin = np.log(self.binning['M']['Mmin'])
-        self.lnmmax = np.log(self.binning['M']['Mmax'])
-        self.dlnm = self.binning['M']['dlogM']
-        self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
+        initialize_commom(self)
 
         self.zz = np.arange(0, 8, 0.05) # redshift bounds should correspond to catalogue
-        self.k = np.logspace(-4, np.log10(5), 200)
+        # self.k = np.logspace(-4, np.log10(5), 200)
         # self.mdef = ccl.halos.MassDef(500, 'critical')
 
         self.log.info('Using completeness calculated using injection method.')
@@ -872,6 +864,17 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         return ans
 
+def initialize_commom(self):
+        # mass bin
+        self.lnmmin = np.log(self.binning['M']['Mmin'])
+        self.lnmmax = np.log(self.binning['M']['Mmax'])
+        self.dlnm = self.binning['M']['dlogM']
+        self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
+        # this is to be consist with szcounts.f90 - maybe switch to linspace?
+        self.k = np.logspace(-4, np.log10(4), 200,endpoint=False)
+
+
+
 def get_dVdz(both,zarr):
     """dV/dzdOmega"""
     DA_z = both.theory.get_angular_diameter_distance(zarr)
@@ -922,7 +925,7 @@ def get_dndlnm(self, z, pk_intp, **params_values_dict):
         if zpk[0] == 0.:
             zpk[0] = 1e-5
 
-        k = np.logspace(-4, np.log10(4), 200, endpoint=False)
+        k = self.k#np.logspace(-4, np.log10(4), 200, endpoint=False)
         pks0 = pk_intp.P(zpk, k)
 
         def pks_zbins(newz):

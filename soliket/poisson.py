@@ -5,8 +5,8 @@ from cobaya.likelihood import Likelihood
 from .poisson_data import PoissonData
 import scipy.interpolate
 import numpy as np
-import multiprocessing
-from functools import partial
+# import multiprocessing
+# from functools import partial
 
 
 class PoissonLikelihood(Likelihood):
@@ -45,20 +45,24 @@ class PoissonLikelihood(Likelihood):
         copy=True, bounds_error=False,
         fill_value=-np.inf)
 
+        ncat = len(self.catalog["z"])
+
 
         # a_pool = multiprocessing.Pool()
         # rate_densities = a_pool.map(partial(Prob_per_cluster,
-        #                                     self = self,
+        #                                     # self = self,
         #                                     pk_intp = pk_intp,
         #                                     dn_dzdm_intp = dn_dzdm_intp,
         #                                     params_values = params_values
         #                                     ),
-        #                                     range(5))
+        #                                     range(ncat))
         # a_pool.close()
         # rate_densities = np.asarray(rate_densities)
+        # exit(0)
 
-        # vectorize implementation:
-        ncat = len(self.catalog["z"])
+        # vectorize implementation
+        # apparently faster than parallel implementation
+
         Prob_per_cluster_vec = np.vectorize(Prob_per_cluster)
         rate_densities = Prob_per_cluster_vec(np.arange(ncat),
                              self,
@@ -75,7 +79,11 @@ class PoissonLikelihood(Likelihood):
         return self.data.loglike(rate_densities, n_expected)
 
 
-def Prob_per_cluster(cat_index, self, pk_intp, dn_dzdm_intp,params_values):
+def Prob_per_cluster(cat_index,
+                     self,
+                     pk_intp,
+                     dn_dzdm_intp,
+                     params_values):
 
     z,tsz_signal,tsz_signal_err,tile_name = [self.catalog[c].values[cat_index] for c in self.columns]
     # self.log.info('computing prob per cluster for cluster: %.5e %.5e %.5e %s'%(z,tsz_signal,tsz_signal_err,tile_name))
@@ -95,4 +103,5 @@ def Prob_per_cluster(cat_index, self, pk_intp, dn_dzdm_intp,params_values):
 
 
     ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(self.lnmarr, axis=0), axis=0)
+    # ans = 0
     return ans
