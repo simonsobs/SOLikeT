@@ -15,18 +15,12 @@ class PoissonLikelihood(Likelihood):
     columns = None
 
     def initialize(self):
-        # print('initializing poisson')
-        catalog = self._get_catalog()
-        if self.columns is None:
-            self.columns = catalog.columns
-        self.data = PoissonData(self.name, catalog, self.columns)
+        self.data = PoissonData(self.name, self.catalog, self.columns)
+        return {}
 
     def get_requirements(self):
         return {}
 
-    def _get_catalog(self):
-        catalog = pd.read_csv(self.data_path)
-        return catalog
 
     def _get_rate_fn(self, pk_intp,dn_dzdm_intp,**kwargs):
         """Returns a callable rate function that takes each of 'columns' as kwargs.
@@ -42,11 +36,8 @@ class PoissonLikelihood(Likelihood):
         pk_intp = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False)
         dndlnm = self._get_dndlnm(self.zz, pk_intp, **params_values)
         dn_dzdm_intp = scipy.interpolate.interp2d( self.zz, self.lnmarr, np.log(dndlnm), kind='linear',
-        copy=True, bounds_error=False,
-        fill_value=-np.inf)
-
-        ncat = len(self.catalog["z"])
-
+                                                   copy=True, bounds_error=False,
+                                                   fill_value=-np.inf)
 
         # a_pool = multiprocessing.Pool()
         # rate_densities = a_pool.map(partial(Prob_per_cluster,
@@ -64,7 +55,7 @@ class PoissonLikelihood(Likelihood):
         # apparently faster than parallel implementation
 
         Prob_per_cluster_vec = np.vectorize(Prob_per_cluster)
-        rate_densities = Prob_per_cluster_vec(np.arange(ncat),
+        rate_densities = Prob_per_cluster_vec(np.arange(self.N_cat),
                              self,
                              pk_intp,
                              dn_dzdm_intp,
