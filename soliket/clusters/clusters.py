@@ -60,26 +60,15 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
     def initialize(self):
         # redshift bins for N(z)
-        zbins = np.arange(self.binning['z']['zmin'], self.binning['z']['zmax'] + self.binning['z']['dz'], self.binning['z']['dz'])
-        zarr = 0.5*(zbins[:-1] + zbins[1:])
-        self.zarr = zarr
-        self.zbins = zbins
-
-        self.log.info("Number of redshift bins = {}.".format(len(zarr)))
-
-
-        logqmin = self.binning['q']['log10qmin']
-        logqmax = self.binning['q']['log10qmax']
-        dlogq = self.binning['q']['dlog10q']
+        self.zbins = np.arange(self.binning['z']['zmin'], self.binning['z']['zmax'] + self.binning['z']['dz'], self.binning['z']['dz'])
+        self.zarr =  0.5*(self.zbins[:-1] + self.zbins[1:])
+        self.log.info("Number of redshift bins = {}.".format(len(self.zarr)))
 
         # constant binning in log10
-        qbins = np.arange(logqmin, logqmax+dlogq, dlogq)
-        qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
-        self.Nq = int((logqmax - logqmin)/dlogq) + 1
-        self.qarr = qarr
-
+        qbins = np.arange(self.binning['q']['log10qmin'], self.binning['q']['log10qmax']+self.binning['q']['dlog10q'], self.binning['q']['dlog10q'])
         self.qbins = 10**qbins
-        self.dlogq = dlogq
+        self.qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
+        self.Nq = int((self.binning['q']['log10qmax'] - self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']) + 1
 
         initialize_commom(self)
 
@@ -88,24 +77,21 @@ class BinnedClusterLikelihood(CashCLikelihood):
         else:
             self.log.info('1D likelihood as a function of redshift.')
 
-
-        self.log.info('Number of mass bins for theory calculation {}.'.format(len(self.lnmarr)))
-
-        delNcat, _ = np.histogram(self.z_cat, bins=zbins)
-        self.delNcat = zarr, delNcat
+        delNcat, _ = np.histogram(self.z_cat, bins=self.zbins)
+        self.delNcat = self.zarr, delNcat
 
 
         if self.theorypred['choose_dim'] == "2D":
             self.log.info('Number of SNR bins = {}.'.format(self.Nq))
             self.log.info('Edges of SNR bins = {}.'.format(self.qbins))
 
-        delN2Dcat, _, _ = np.histogram2d(self.z_cat, self.q_cat, bins=[zbins, self.qbins])
-        self.delN2Dcat = zarr, qarr, delN2Dcat
+        delN2Dcat, _, _ = np.histogram2d(self.z_cat, self.q_cat, bins=[self.zbins, self.qbins])
+        self.delN2Dcat = self.zarr, self.qarr, delN2Dcat
 
 
         # finner binning for low redshift
-        minz = zarr[0]
-        maxz = zarr[-1]
+        minz = self.zarr[0]
+        maxz = self.zarr[-1]
         if minz < 0: minz = 0.0
         zi = minz
 
@@ -547,6 +533,8 @@ def initialize_commom(self):
         self.lnmmax = np.log(self.binning['M']['Mmax'])
         self.dlnm = self.binning['M']['dlogM']
         self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
+        self.log.info('Number of mass points for theory calculation {}.'.format(len(self.lnmarr)))
+
         # this is to be consist with szcounts.f90 - maybe switch to linspace?
         self.k = np.logspace(-4, np.log10(4), 200,endpoint=False)
         self.datafile_rms = self.data['rms_file']
