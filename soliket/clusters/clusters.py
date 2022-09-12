@@ -70,6 +70,13 @@ class BinnedClusterLikelihood(CashCLikelihood):
         self.qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
         self.Nq = int((self.binning['q']['log10qmax'] - self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']) + 1
 
+        # Ytrue bins if scatter != 0:
+        lnymin = -25.  # ln(1e-10) = -23
+        lnymax = 0.  # ln(1e-2) = -4.6
+        dlny = 0.05
+        lnybins = np.arange(lnymin, lnymax, dlny)
+        self.lny = 0.5*(lnybins[:-1] + lnybins[1:])
+
         initialize_commom(self)
 
         if self.theorypred['choose_dim'] == '2D':
@@ -247,13 +254,29 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
     def get_completeness2D_inj(self, mass, z, mass_500c, qbin, **params_values_dict):
 
+        scatter = params_values_dict["scatter_sz"]
+
         y0 = _get_y0(self,mass, z, mass_500c, use_Q=False, **params_values_dict)
         theta = _theta(self,mass_500c, z)
 
-        comp = np.zeros_like(theta)
-        for i in range(theta.shape[0]):
-            comp[i, :] = self.compThetaInterpolator[qbin](theta[i, :], y0[i, :]/1e-4, grid=False)
-        comp[comp < 0] = 0
+        if scatter == 0:
+            comp = np.zeros_like(theta)
+            for i in range(theta.shape[0]):
+                comp[i, :] = self.compThetaInterpolator[qbin](theta[i, :], y0[i, :]/1e-4, grid=False)
+            comp[comp < 0] = 0
+
+        else:
+
+            comp = np.zeros((theta.shape[0], theta.shape[1], self.lny.shape[0]))
+            for i in range(theta.shape[0]):
+                comp[i, :] = self.compThetaInterpolator[qbin](theta[i, :], np.exp(self.lny)/1e-4, grid=True)
+            comp[comp < 0] = 0
+
+            fac = 1. / np.sqrt(2. * np.pi * scatter ** 2)
+            arg = (self.lny[None, None, :] - np.log(y0[:, :, None])) / (np.sqrt(2.) * scatter)
+            PY = fac * np.exp(-arg ** 2.)
+            comp = np.trapz(comp*PY, self.lny, axis=-1)
+
         return comp
 
 
