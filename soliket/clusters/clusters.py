@@ -256,7 +256,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         scatter = params_values_dict["scatter_sz"]
 
-        y0 = _get_y0(self,mass, z, mass_500c, use_Q=False, **params_values_dict)
+        y0 = _get_y0(self,mass, z, mass_500c, **params_values_dict)
         theta = _theta(self,mass_500c, z)
 
         if scatter == 0:
@@ -289,12 +289,12 @@ class BinnedClusterLikelihood(CashCLikelihood):
             skyfracs = self.skyfracs/self.skyfracs.sum()
             Npatches = len(skyfracs)
 
-            if self.selfunc['mode'] != 'single_tile' and not self.selfunc['average_Q']:
-                if self.selfunc['mode'] == 'inpt_dwnsmpld':
+            if self.selfunc['Qmode'] != 'single_tile' and not self.selfunc['average_Q']:
+                if self.selfunc['Qmode'] == 'inpt_dwnsmpld':
                     tile_list = self.tname
-                elif self.selfunc['mode'] == 'downsample':
+                elif self.selfunc['Qmode'] == 'downsample':
                     tile_list = np.arange(noise.shape[0])+1
-                elif self.selfunc['mode'] == 'full':
+                elif self.selfunc['Qmode'] == 'full':
                     tile_list = self.tile_list
             else:
                 tile_list = None
@@ -316,7 +316,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
                                             dyy=None,
                                             yy=None,
                                             temp=None,
-                                            mode=self.selfunc['mode'],
+                                            Qmode=self.selfunc['Qmode'],
                                             compl_mode=self.theorypred['compl_mode'],
                                             tile=tile_list,
                                             average_Q=self.selfunc['average_Q'],
@@ -495,19 +495,19 @@ def initialize_commom(self):
         self.datafile = self.data['cat_file']
         self.data_directory = self.data['data_path']
 
-        if self.selfunc['mode'] == 'single_tile':
-            self.log.info('Running single tile.')
-        elif self.selfunc['mode'] == 'full':
-            self.log.info('Running full analysis. No downsampling.')
-        elif self.selfunc['mode'] == 'downsample':
+        if self.selfunc['Qmode'] == 'single_tile':
+            self.log.info('Running Q-fit completeness with single tile.')
+        elif self.selfunc['Qmode'] == 'full':
+            self.log.info('Running Q-fit completeness with full analysis. No downsampling.')
+        elif self.selfunc['Qmode'] == 'downsample':
             assert self.selfunc['dwnsmpl_bins'] is not None, 'mode = downsample but no bin number given. Aborting.'
-            self.log.info('Downsampling selection function inputs.')
-        elif self.selfunc['mode'] == 'inpt_dwnsmpld':
-            self.log.info('Running on pre-downsampled input.')
+            self.log.info('Running Q-fit completeness with downsampling selection function inputs.')
+        elif self.selfunc['Qmode'] == 'inpt_dwnsmpld':
+            self.log.info('Running Q-fit completeness on pre-downsampled input.')
         elif self.selfunc['mode'] == 'injection':
             self.log.info('Running injection based selection function.')
 
-        if self.selfunc['mode'] == 'single_tile':
+        if self.selfunc['Qmode'] == 'single_tile':
             self.log.info('Considering only single tile.')
         else:
             self.log.info("Considering full map.")
@@ -563,7 +563,7 @@ def initialize_commom(self):
         self.datafile_rms = self.data['rms_file']
         self.datafile_Q = self.data['Q_file']
 
-        if self.selfunc['mode'] == 'downsample':
+        if self.selfunc['Qmode'] == 'downsample':
             list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
             file_rms = list[1].data
             self.skyfracs = file_rms['areaDeg2'] * np.deg2rad(1.) ** 2
@@ -582,7 +582,8 @@ def initialize_commom(self):
                 self.log.info('Reading full Q function.')
                 tile_area = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
                 tilename = tile_area[:, 0]
-                QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q), tileNames=tilename)
+                QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
+                                       tileNames=tilename, QSource='injection', selFnDir=self.data_directory+'/selFn')
                 Nt = len(tilename)
                 self.log.info("Number of tiles = {}.".format(Nt))
 
@@ -670,7 +671,7 @@ def initialize_commom(self):
                     np.savez(datafile_rms_dwsmpld, noise=self.noise, skyfracs=self.skyfracs)
                     np.save(datafile_tiles_dwsmpld, self.tiles_dwnsmpld)
 
-        elif self.selfunc['mode'] == 'single_tile':
+        elif self.selfunc['Qmode'] == 'single_tile':
 
             self.log.info('Reading Q function for single tile.')
             list = fits.open(os.path.join(self.data_directory, self.datafile_Q))
@@ -680,11 +681,7 @@ def initialize_commom(self):
             assert len(self.tt500) == len(self.Q)
             self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
-        elif self.selfunc['mode'] == 'injection':
-
-            self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut, self.qbins)
-
-        elif self.selfunc['mode'] == 'inpt_dwnsmpld':
+        elif self.selfunc['Qmode'] == 'inpt_dwnsmpld':
 
             self.log.info('Reading pre-downsampled Q function.')
             # for quick reading theta and Q data is saved first and just called
@@ -693,11 +690,12 @@ def initialize_commom(self):
             self.Q = Qfile['Q']
             assert len(self.tt500) == len(self.Q[:,0])
 
-        elif self.selfunc['mode'] == 'full':
+        elif self.selfunc['Qmode'] == 'full':
             self.log.info('Reading full Q function.')
             tile_area = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
             tilename = tile_area[:, 0]
-            QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q), tileNames=tilename)
+            QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
+                                   tileNames=tilename, QSource='injection', selFnDir=self.data_directory+'/selFn')
             Nt = len(tilename)
             self.log.info("Number of tiles = {}.".format(Nt))
 
@@ -713,25 +711,23 @@ def initialize_commom(self):
             self.tt500 = tt500
             self.Q = allQ
 
-        if self.selfunc['mode'] != 'injection':
-            if self.selfunc['average_Q']:
-                self.Q = np.mean(self.Q, axis=1)
-                self.log.info("Number of Q functions = {}.".format(self.Q.ndim))
-                self.log.info("Using one averaged Q function for optimisation")
-            else:
-                self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
+        if self.selfunc['average_Q']:
+            self.Q = np.mean(self.Q, axis=1)
+            self.log.info("Number of Q functions = {}.".format(self.Q.ndim))
+            self.log.info("Using one averaged Q function for optimisation")
+        else:
+            self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
+        if self.selfunc['mode'] == 'injection':
+            Q_interp = scipy.interpolate.splrep(self.tt500, self.Q)
+            self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut,
+                                                                            self.qbins, Q_interp)
+            # self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut,
+            #                                                                 self.qbins)
 
         #self.log.info('Reading RMS.')
 
-        if self.selfunc['mode'] == 'injection':
-
-            self.log.info('Using completeness calculated using injection method.')
-            list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
-            file_rms = list[1].data
-            self.skyfracs = file_rms['areaDeg2'] * np.deg2rad(1.) ** 2
-
-        elif self.selfunc['mode'] == 'single_tile':
+        if self.selfunc['Qmode'] == 'single_tile':
 
             list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
             data = list[1].data
@@ -739,7 +735,7 @@ def initialize_commom(self):
             self.noise = data.field("y0RMS")
             self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
-        elif self.selfunc['mode'] == 'inpt_dwnsmpld':
+        elif self.selfunc['Qmode'] == 'inpt_dwnsmpld':
 
             self.log.info('Reading pre-downsampled RMS table.')
             file_rms = np.loadtxt(os.path.join(self.data_directory, self.datafile_rms))
@@ -749,7 +745,7 @@ def initialize_commom(self):
             self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
             self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
-        elif self.selfunc['mode'] == 'full':
+        elif self.selfunc['Qmode'] == 'full':
             self.log.info('Reading in full RMS table.')
 
             list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
@@ -761,7 +757,7 @@ def initialize_commom(self):
             self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
             self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
-        if self.selfunc['mode'] == 'full':
+        if self.selfunc['Qmode'] == 'full':
             tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
             self.tile_list = [tiledict[key]+1 for key in self.tname]
 
@@ -974,7 +970,7 @@ def get_dndlnm(self, z, pk_intp, **params_values_dict):
 
 
 
-def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qbins, qbin, lnyy, dyy, yy, temp, mode, compl_mode, average_Q, tile, scatter):
+def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qbins, qbin, lnyy, dyy, yy, temp, Qmode, compl_mode, average_Q, tile, scatter):
 
     kk = qbin
     qmin = qbins[kk]
@@ -985,7 +981,7 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qbins, qbin, lny
 
         if scatter == 0.:
 
-            if mode == 'single_tile' or average_Q:
+            if Qmode == 'single_tile' or average_Q:
                 if compl_mode == 'erf_prod':
                     if kk == 0:
                         erfunc = get_erf(y0[index_z,i], noise, qcut)*(1. - get_erf(y0[index_z,i], noise, qmax))
@@ -1014,7 +1010,7 @@ def get_comp_zarr2D(index_z, Nm, qcut, noise, skyfracs, y0, Nq, qbins, qbin, lny
 
             fac = 1./np.sqrt(2.*pi*scatter**2)
             mu = np.log(y0)
-            if mode == 'single_tile' or average_Q:
+            if Qmode == 'single_tile' or average_Q:
                 arg = (lnyy - mu[index_z,i])/(np.sqrt(2.)*scatter)
                 res.append(np.dot(temp, fac*np.exp(-arg**2.)*dyy/yy))
             else:
@@ -1073,7 +1069,7 @@ def get_requirements(self):
 
 
 def _splQ(self, theta):
-    if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
+    if self.selfunc['Qmode'] == 'single_tile' or self.selfunc['average_Q']:
         tck = scipy.interpolate.splrep(self.tt500, self.Q)
         newQ = scipy.interpolate.splev(theta, tck)
     else:
@@ -1150,7 +1146,7 @@ def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
         splQ = 1.
 
 
-    if self.selfunc['mode'] == 'single_tile' or self.selfunc['average_Q']:
+    if (self.selfunc['mode'] == 'Qfit' and self.selfunc['Qmode'] == 'single_tile') or (self.selfunc['mode'] == 'Qfit' and self.selfunc['average_Q']):
         y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ
         y0 = y0.T ###### M200m
     else:
