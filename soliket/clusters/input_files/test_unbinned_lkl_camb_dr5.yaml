@@ -16,7 +16,7 @@ likelihood:
     #
     # Data
     data:
-      data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
+      data_path: '../../../../../data/sims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
       cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
       Q_file: 'selFn/QFit.fits' # Path to Q function file
       tile_file: 'selFn/tileAreas.txt' # Path to tile file
@@ -32,7 +32,8 @@ likelihood:
       SNRcut: 5. # S/N cutoff in number counts
       dwnsmpl_bins: 3
       save_dwsmpld : True
-      mode : 'downsample'
+      mode: 'Qfit'
+      Qmode : 'downsample'
       average_Q: False # Use average Q function
 
     # theorypred:

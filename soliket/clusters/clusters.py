@@ -174,37 +174,12 @@ class BinnedClusterLikelihood(CashCLikelihood):
         intgr = intgr.T
 
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
-            if self.theorypred['choose_theory'] == 'CCL':
-                mf_data = self.theory.get_nc_data()
-                md_hmf = mf_data['md']
-
-                if self.theorypred['md_ym'] == '200m':
-                    md_ym = ccl.halos.MassDef200m(c_m='Bhattacharya13')
-                elif self.theorypred['md_ym'] == '200c':
-                    md_ym = ccl.halos.MassDef200c(c_m='Bhattacharya13')
-                elif self.theorypred['md_ym'] == '500c':
-                    md_ym = ccl.halos.MassDef(500, 'critical')
-                else:
-                    raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
-
-                cosmo = self.theory.get_CCL()['cosmo']
-                a = 1./(1. + zz)
-                marr_ymmd = np.array([md_hmf.translate_mass(cosmo, marr/h, ai, md_ym) for ai in a])*h
-            else:
-                if self.theorypred['md_hmf'] == '200m' and self.theorypred['md_ym'] == '500c':
-                    marr_ymmd = self._get_M500c_from_M200m(marr, zz).T
-                else:
-                    raise NotImplementedError()
+            marr_ymmd = convert_masses(self, marr, zz)
         else:
             marr_ymmd = marr
 
         if self.theorypred['md_ym'] != '500c':
-            mf_data = self.theory.get_nc_data()
-            md_hmf = mf_data['md']
-            md_500c = ccl.halos.MassDef(500, 'critical')
-            cosmo = self.theory.get_CCL()['cosmo']
-            a = 1. / (1. + zz)
-            marr_500c = np.array([md_hmf.translate_mass(cosmo, marr / h, ai, md_500c) for ai in a]) * h
+            marr_500c = get_m500c(self, marr, zz)
         else:
             marr_500c = marr_ymmd
 
@@ -458,6 +433,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         marr = np.exp(self.lnmarr)
         for Yt, frac in zip(self.noise, self.skyfracs):
             Pfunc = self.PfuncY(rms_index,Yt, marr, self.zz, kwargs) # dim (m,z)
+            Pfunc = Pfunc.T
             N_z = np.trapz(
                 dndlnm * Pfunc, dx=np.diff(self.lnmarr[:,None], axis=0), axis=0
             ) # dim (z)
@@ -489,9 +465,17 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         return ans
 
     def P_Yo_vec(self, rms_index, LgY, marr, z, param_vals):
-        # mass conversion needed!
-        mass_500c = marr
-        y0_new = _get_y0(self,marr, z, mass_500c, use_Q=True, **param_vals)
+        # Mass conversion
+        if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
+            marr_ymmd = convert_masses(self, marr, z)
+        else:
+            marr_ymmd = marr
+        if self.theorypred['md_ym'] != '500c':
+            marr_500c = get_m500c(self, marr, z)
+        else:
+            marr_500c = marr_ymmd
+
+        y0_new = _get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, **param_vals)
         y0_new = y0_new[rms_index]
         Y = 10 ** LgY
         Ytilde = np.repeat(y0_new[:, :, np.newaxis], LgY.shape[2], axis=2)
@@ -515,23 +499,30 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             Yerf = self.Y_erf(Y, Ynoise) # array of size dim Y
             sig_tr = np.outer(np.ones([marr.shape[0], # (dim mass)
-                                        marr.shape[1]]), # (dim z)
+                                        zz.shape[0]]), # (dim z)
                                         Yerf )
 
             sig_thresh = np.reshape(sig_tr,
-                                    (marr.shape[0], marr.shape[1], len(Yerf)))
+                                    (marr.shape[0], zz.shape[0], len(Yerf)))
 
-            LgYa = np.outer(np.ones([marr.shape[0], marr.shape[1]]), LgY)
-            LgYa2 = np.reshape(LgYa, (marr.shape[0], marr.shape[1], len(LgY)))
+            LgYa = np.outer(np.ones([marr.shape[0], zz.shape[0]]), LgY)
+            LgYa2 = np.reshape(LgYa, (marr.shape[0], zz.shape[0], len(LgY)))
 
             # replace nan with 0's:
             P_Y = np.nan_to_num(self.P_Yo_vec(rms_index,LgYa2, marr, zz, param_vals))
             ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10) # why log10?
 
         else:
-            # mass conversion needed!
-            mass_500c = marr
-            y0_new = _get_y0(self,marr, zz, mass_500c, use_Q=True, **param_vals)
+            # Mass conversion
+            if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
+                marr_ymmd = convert_masses(self, marr, zz)
+            else:
+                marr_ymmd = marr
+            if self.theorypred['md_ym'] != '500c':
+                marr_500c = get_m500c(self, marr, zz)
+            else:
+                marr_500c = marr_ymmd
+            y0_new = _get_y0(self, marr_ymmd, zz, marr_500c, use_Q=True, **param_vals)
             y0_new = y0_new[rms_index]
             ans = y0_new * 0.0
             ans[y0_new - self.qcut * self.noise[rms_index] > 0] = 1.0
@@ -542,7 +533,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     def PfuncY(self, rms_index, YNoise, marr, z_arr, param_vals):
         LgY = self.LgY
         P_func = np.outer(marr, np.zeros([len(z_arr)]))
-        marr = np.outer(marr, np.ones([len(z_arr)]))
+        # marr = np.outer(marr, np.ones([len(z_arr)]))
         P_func = self.P_of_gt_SN(rms_index, LgY, marr, z_arr, YNoise, param_vals)
         return P_func
 
@@ -1157,7 +1148,44 @@ def get_requirements(self):
     return req
 
 
+def convert_masses(both, marr, zz):
 
+    h = both.theory.get_param("H0") / 100.0
+    if both.theorypred['choose_theory'] == 'CCL':
+        mf_data = both.theory.get_nc_data()
+        md_hmf = mf_data['md']
+
+        if both.theorypred['md_ym'] == '200m':
+            md_ym = ccl.halos.MassDef200m(c_m='Bhattacharya13')
+        elif both.theorypred['md_ym'] == '200c':
+            md_ym = ccl.halos.MassDef200c(c_m='Bhattacharya13')
+        elif both.theorypred['md_ym'] == '500c':
+            md_ym = ccl.halos.MassDef(500, 'critical')
+        else:
+            raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
+
+        cosmo = both.theory.get_CCL()['cosmo']
+        a = 1. / (1. + zz)
+        marr_ymmd = np.array([md_hmf.translate_mass(cosmo, marr / h, ai, md_ym) for ai in a]) * h
+    else:
+        if both.theorypred['md_hmf'] == '200m' and both.theorypred['md_ym'] == '500c':
+            marr_ymmd = both._get_M500c_from_M200m(marr, zz).T
+        else:
+            raise NotImplementedError()
+    return marr_ymmd
+
+
+def get_m500c(both, marr, zz):
+
+    h = both.theory.get_param("H0") / 100.0
+    mf_data = both.theory.get_nc_data()
+    md_hmf = mf_data['md']
+    md_500c = ccl.halos.MassDef(500, 'critical')
+    cosmo = both.theory.get_CCL()['cosmo']
+    a = 1. / (1. + zz)
+    marr_500c = np.array([md_hmf.translate_mass(cosmo, marr / h, ai, md_500c) for ai in a]) * h
+
+    return marr_500c
 
 def _splQ(self, theta):
     if self.selfunc['Qmode'] == 'single_tile' or self.selfunc['average_Q']:
@@ -1190,9 +1218,9 @@ def _theta(self, mass_500c, z, Ez=None):
         DAz = DAz
     ttstar = thetastar * (H0 / 70.) ** (-2. / 3.)
 
-    if self.name == "Unbinned Clusters":
-        Ez = Ez.T
-        DAz = DAz.T
+    # if self.name == "Unbinned Clusters":
+    #     Ez = Ez.T
+    #     DAz = DAz.T
 
     return ttstar * (mass_500c / MPIVOT_THETA / h) ** alpha_theta * Ez ** (-2. / 3.) * (100. * DAz / 500 / H0) ** (-1.)
 
@@ -1241,8 +1269,8 @@ def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
         y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ
         y0 = y0.T ###### M200m
     else:
-        if self.name == "Unbinned Clusters":
-            Ez = Ez.T
+        # if self.name == "Unbinned Clusters":
+        #     Ez = Ez.T
 
         y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ
         # print('shape y0',np.shape(y0))
