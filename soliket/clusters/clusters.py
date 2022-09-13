@@ -77,7 +77,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
         lnybins = np.arange(lnymin, lnymax, dlny)
         self.lny = 0.5*(lnybins[:-1] + lnybins[1:])
 
-        initialize_commom(self)
+        initialize_common(self)
 
         if self.theorypred['choose_dim'] == '2D':
             self.log.info('2D likelihood as a function of redshift and signal-to-noise.')
@@ -302,32 +302,123 @@ class BinnedClusterLikelihood(CashCLikelihood):
             Nq = self.Nq
             qbins = self.qbins
 
-            a_pool = multiprocessing.Pool()
-            completeness = a_pool.map(partial(get_comp_zarr2D,
-                                            Nm=len(marr),
-                                            qcut=qcut,
-                                            noise=noise,
-                                            skyfracs=skyfracs,
-                                            y0=y0,
-                                            Nq=Nq,
-                                            qbins=qbins,
-                                            qbin=qbin,
-                                            lnyy=None,
-                                            dyy=None,
-                                            yy=None,
-                                            temp=None,
-                                            Qmode=self.selfunc['Qmode'],
-                                            compl_mode=self.theorypred['compl_mode'],
-                                            tile=tile_list,
-                                            average_Q=self.selfunc['average_Q'],
-                                            scatter=scatter),range(len(zarr)))
+            if scatter == 0.:
+                a_pool = multiprocessing.Pool()
+                completeness = a_pool.map(partial(get_comp_zarr2D,
+                                                Nm=len(marr),
+                                                qcut=qcut,
+                                                noise=noise,
+                                                skyfracs=skyfracs,
+                                                y0=y0,
+                                                Nq=Nq,
+                                                qbins=qbins,
+                                                qbin=qbin,
+                                                lnyy=None,
+                                                dyy=None,
+                                                yy=None,
+                                                temp=None,
+                                                Qmode=self.selfunc['Qmode'],
+                                                compl_mode=self.theorypred['compl_mode'],
+                                                tile=tile_list,
+                                                average_Q=self.selfunc['average_Q'],
+                                                scatter=scatter),range(len(zarr)))
 
+            else:
+                lnymin = -25.     #ln(1e-10) = -23
+                lnymax = 0.       #ln(1e-2) = -4.6
+                dlny = 0.05
+                Ny = m.floor((lnymax - lnymin)/dlny)
+                temp = []
+                yy = []
+                lnyy = []
+                dyy = []
+                lny = lnymin
+
+                if self.selfunc['Qmode'] != 'single_tile' and not self.selfunc['average_Q']:
+
+                    for i in range(Ny):
+                        yy0 = np.exp(lny)
+
+                        kk = qbin
+                        qmin = qbins[kk]
+                        qmax = qbins[kk+1]
+
+                        if self.theorypred['compl_mode'] == 'erf_prod':
+                            if kk == 0:
+                                cc = get_erf(yy0, noise, qcut)*(1. - get_erf(yy0, noise, qmax))
+                            elif kk == Nq-1:
+                                cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)
+                            else:
+                                cc = get_erf(yy0, noise, qcut)*get_erf(yy0, noise, qmin)*(1. - get_erf(yy0, noise, qmax))
+                        elif self.theorypred['compl_mode'] == 'erf_diff':
+                            cc = get_erf_compl(yy0, qmin, qmax, noise, qcut)
+
+                        temp.append(np.dot(cc.T, skyfracs))
+                        yy.append(yy0)
+                        lnyy.append(lny)
+                        dyy.append(np.exp(lny + dlny*0.5) - np.exp(lny - dlny*0.5))
+                        lny += dlny
+
+                    temp = np.asarray(temp)
+                    yy = np.asarray(yy)
+                    lnyy = np.asarray(lnyy)
+                    dyy = np.asarray(dyy)
+
+                else:
+
+                    for i in range(Ny):
+                        yy0 = np.exp(lny)
+
+                        kk = qbin
+                        qmin = qbins[kk]
+                        qmax = qbins[kk+1]
+
+                        for j in range(Npatches):
+                            if self.theorypred['compl_mode'] == 'erf_prod':
+                                if kk == 0:
+                                    cc = get_erf(yy0, noise[j], qcut)*(1. - get_erf(yy0, noise[j], qmax))
+                                elif kk == Nq:
+                                    cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)
+                                else:
+                                    cc = get_erf(yy0, noise[j], qcut)*get_erf(yy0, noise[j], qmin)*(1. - get_erf(yy0, noise[j], qmax))
+                            elif self.theorypred['compl_mode'] == 'erf_diff':
+                                cc = get_erf_compl(yy0, qmin, qmax, noise[j], qcut)
+
+                            temp.append(cc*skyfracs[j])
+                            yy.append(yy0)
+                            lnyy.append(lny)
+                            dyy.append(np.exp(lny + dlny*0.5) - np.exp(lny - dlny*0.5))
+                        lny += dlny
+
+                    temp = np.asarray(np.array_split(temp, Npatches))
+                    yy = np.asarray(np.array_split(yy, Npatches))
+                    lnyy = np.asarray(np.array_split(lnyy, Npatches))
+                    dyy = np.asarray(np.array_split(dyy, Npatches))
+
+                a_pool = multiprocessing.Pool()
+                completeness = a_pool.map(partial(get_comp_zarr2D,
+                                                    Nm=len(marr),
+                                                    qcut=qcut,
+                                                    noise=noise,
+                                                    skyfracs=skyfracs,
+                                                    y0=y0,
+                                                    Nq=Nq,
+                                                    qbins=qbins,
+                                                    qbin=qbin,
+                                                    lnyy=lnyy,
+                                                    dyy=dyy,
+                                                    yy=yy,
+                                                    temp=temp,
+                                                    Qmode=self.selfunc['Qmode'],
+                                                    compl_mode=self.theorypred['compl_mode'],
+                                                    tile=tile_list,
+                                                    average_Q=self.selfunc['average_Q'],
+                                                    scatter=scatter),range(len(zarr)))
 
             a_pool.close()
             comp = np.asarray(completeness)
             comp[comp < 0.] = 0.
             comp[comp > 1.] = 1.
-            # comp[comp > 0.] = 1.
         else:
             comp = self.get_completeness2D_inj(marr, zarr, marr_500c, qbin, **params_values_dict)
         return comp
@@ -346,7 +437,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
 
     def initialize(self):
-        initialize_commom(self)
+        initialize_common(self)
         self.LgY = np.arange(-6, -2.5, 0.01) # for integration over y when scatter != 0
         self.zz = np.arange(0, 8, 0.05) # redshift bounds should correspond to catalogue
         super().initialize()
@@ -479,7 +570,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         return ans
 
-def initialize_commom(self):
+def initialize_common(self):
         self.log = logging.getLogger(self.name)
         handler = logging.StreamHandler()
         self.log.addHandler(handler)
