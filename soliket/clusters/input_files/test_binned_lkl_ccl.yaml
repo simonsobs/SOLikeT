@@ -56,8 +56,9 @@ likelihood:
 
       SNRcut : 5.
       single_tile_test : "no"
-      mode : 'downsample'
-      dwnsmpl_bins : 3
+      mode: 'Qfit'
+      Qmode : 'downsample'
+      dwnsmpl_bins : 50
       save_dwsmpld : True
       average_Q : False
 
