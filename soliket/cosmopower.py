@@ -67,9 +67,7 @@ class CosmoPower(BoltzmannBase):
         state["tt"] = self.cp_tt_nn.ten_to_predictions_np(cmb_params)[0, :]
         state["te"] = self.cp_te_nn.predictions_np(cmb_params)[0, :]
         state["ee"] = self.cp_ee_nn.ten_to_predictions_np(cmb_params)[0, :]
-        state["ell"] = (np.arange(state["tt"].shape[0]) + 2).astype(
-            int
-        )  # ells of the TT/TE/EE power spectra [ell = 2 ... ]
+        state["ell"] = self.cp_tt_nn.modes
 
     def get_Cl(self, ell_factor=False, units="FIRASmuK2"):
         cls_old = self.current_state.copy()
