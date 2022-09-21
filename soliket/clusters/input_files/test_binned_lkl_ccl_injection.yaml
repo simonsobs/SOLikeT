@@ -44,10 +44,10 @@ likelihood:
       # single_tile: run for single tile, no downsampling
       # injection: estimate completeness using source injection method from nemo (i.e. no Q)
       mode: 'injection'
-      qmode: 'full'
+      Qmode: 'full'
       dwnsmpl_bins: 50 # If mode=downsample, number of bins to use
       save_dwsmpld: False # Save downsampled Q and rms to npz file and once it exists read those
-      average_Q: True # Use average Q function
+      average_Q: False # Use average Q function
 
     binning:
       # redshift bins for number counts
@@ -74,7 +74,7 @@ params:
   sigma8: 0.81
   tenToA0: 1.9e-05
   B0: 0.08
-  scatter_sz: 0.
+  scatter_sz: 0.2
   bias_sz: 1.
   m_nu: 0.0
   C0: 2

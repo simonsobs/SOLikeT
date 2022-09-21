@@ -58,7 +58,7 @@ likelihood:
       single_tile_test : "no"
       mode: 'Qfit'
       Qmode : 'downsample'
-      dwnsmpl_bins : 50
+      dwnsmpl_bins : 3 #50
       save_dwsmpld : True
       average_Q : False
 
@@ -67,18 +67,18 @@ likelihood:
       # redshift bins for number counts
       z:
         zmin: 0.
-        zmax: 2.9
+        zmax: 2.8 #2.9
         dz: 0.1
       # SNR bins for number counts
       q:
-        log10qmin: 0.1
+        log10qmin: 0.6 #0.1
         log10qmax: 2.0
-        dlog10q: 2.
+        dlog10q: 0.25 #2.0
       # mass bins for number counts
       M:
         Mmin: 1e13
         Mmax: 5e15
-        dlogM: 0.03
+        dlogM: 0.05
 
 params:
   # logA:
@@ -139,7 +139,7 @@ params:
   # sigma8 : 0.81
   tenToA0 : 4.35e-5
   B0 : 0.08
-  scatter_sz : 0.
+  scatter_sz : 0.2
   bias_sz : 1.
   m_nu : 0.0
   C0 : 0. # doesnt matter
@@ -216,4 +216,4 @@ theory:
   # camb:
     # provides: H0
 
-stop_at_error: False
+stop_at_error: True
