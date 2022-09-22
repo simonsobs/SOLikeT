@@ -110,6 +110,7 @@ soliket/clusters/data/*zip
 soliket/clusters/data/*fits
 soliket/clusters/chains
 soliket/clusters/notebooks/figures
+soliket/clusters/data/act
 soliket/clusters/data/advact
 soliket/binned_clusters
 .DS_Store
