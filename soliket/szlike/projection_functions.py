@@ -120,7 +120,7 @@ def project_ksz(tht, M, z, beam_txt, model_params, provider): #input_model
     sig_all_beam = (
         (2 * sig - sig2) * provider.get_param('v_rms') * ST_CGS * T_CMB * 1e6 * ((2.0 + 2.0 * XH) / (3.0 + 5.0 * XH)) / MP_CGS
     ) #units in muK*sr
-    sig_all_beam *= sr2sqarcmin #units in muK*sqarcmin
+    #sig_all_beam *= sr2sqarcmin #units in muK*sqarcmin
     return sig_all_beam
 
 def project_tsz(tht, M, z, nu, beam_txt, model_params, beam_response, provider):
@@ -254,7 +254,7 @@ def project_tsz(tht, M, z, nu, beam_txt, model_params, beam_response, provider):
             * 1e6
             * ((2.0 + 2.0 * XH) / (3.0 + 5.0 * XH))
         )  #units in muK*sr
-    sig_all_p_beam *= sr2sqarcmin #units in muK*sqarcmin
+    #sig_all_p_beam *= sr2sqarcmin #units in muK*sqarcmin #test
     return sig_all_p_beam
 
 def project_obb(tht, M, z, theta, theta2, nu, fbeam): #this originally didn't have theta2??

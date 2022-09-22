@@ -1,9 +1,10 @@
-sz_data_file: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/TNG_data.txt
-beam_file: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/beam_f150_daynight.txt 
+#sz_data_file: /home/cemoser/Repositories/SOLikeT/soliket/szlike/TNG_data.txt
+sz_data_file: /home/cemoser/SOLikeT_emcee_test/example_gnfw_projections.txt
+beam_file: /home/cemoser/Repositories/SOLikeT/soliket/szlike/beam_f150_daynight.txt 
 #optional beam response file
-beam_response: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt #False, or give file
-cov_ksz_file: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/cov_diskring_ksz_varweight_bootstrap.txt
-cov_tsz_file: /Users/emilymoser/Desktop/SOLikeT/soliket/szlike/cov_diskring_tsz_varweight_bootstrap.txt
+beam_response: /home/cemoser/Repositories/SOLikeT/soliket/szlike/act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt #False, or give file
+cov_ksz_file: /home/cemoser/Repositories/SOLikeT/soliket/szlike/cov_diskring_ksz_varweight_bootstrap.txt
+cov_tsz_file: /home/cemoser/Repositories/SOLikeT/soliket/szlike/cov_diskring_tsz_varweight_bootstrap.txt
 
 redshift: 0.55 
 mass_halo_mean_Msol: 10**13.
@@ -28,84 +29,75 @@ params:
   v_rms:
     value: 1.06e-3 #v_rms/c
 
-  #how do al<bt prior for gnfw ksz?
-  gnfw_rho0:
-    prior:
-      min: 1.0
-      max: 6.0
-    #proposal: 1536.17633526 #this should maybe be ref, not proposal?
-    latex: \log_{10}\rho_0
-  gnfw_al_ksz:
-    prior:
-      min: 0.1
-      max: 6.0
-    #proposal: 1.02481552231
-    latex: \alpha_k
-  gnfw_bt_ksz:
-    prior:
-      min: 1.0
-      max: 10.0
-    #proposal: 3.45493977635
-    latex: \beta_k
-  gnfw_A2h_ksz:
-    prior:
-      min: 0.01
-      max: 5.0
-    #proposal: 1.0
-    latex: A_{k2h}
+  #gnfw_rho0:
+  #  prior:
+  #    min: 1.0
+  #    max: 6.0
+  #  ref: 3.2
+  #  latex: \log_{10}\rho_0
+  #gnfw_bt_ksz:
+  #  prior:
+  #    min: 1.0
+  #    max: 10.0
+  #  ref: 3.45
+  #  latex: \beta_k
+  #gnfw_A2h_ksz:
+  #  prior:
+  #    min: 0.01
+  #    max: 5.0
+  #  ref: 1.0
+  #  latex: A_{k2h}
+
   gnfw_P0:
     prior:
       min: 0.1
       max: 30.0
-    #proposal: 9.10766709141
+    ref: 10
     latex: P_0
-  gnfw_xc_tsz:
-    prior:
-      min: 0.01
-      max: 1.0
-    #proposal: 0.698455690636
-    latex: x_{c,t}
   gnfw_bt_tsz:
     prior:
       min: 1.0
       max: 10.0
-    #proposal: 4.76625102519
+    ref: 4.8
     latex: \beta_t
   gnfw_A2h_tsz:
     prior:
       min: 0.01
       max: 5.0
-    #proposal: 1.0
+    ref: 1.0
     latex: A_{t2h}
 
-  obb_Gamma: #how do we do gauss prior with min and max? it's truncated. maybe proposal for width?
-    prior:
-      min: 1.
-      max: 5./3
-    ref:
-      dist: norm
-      loc: 1.2
-      scale: 0.2
-    latex: \Gamma
-  obb_alpha_Nth:
-    prior:
-      min: 0.01
-      max: 0.8
-    latex: \alpha_{Nth}
-  obb_logE:
-    prior:
-      min: -4.8
-      max: -4.0
-    latex: \log_{10}\epsilon
-  obb_Ak2h:
-    prior:
-      min: 0.01
-      max: 5.0
-    latex: A_{k2h}
-  obb_At2h:
-    prior:
-      min: 0.01
-      max: 5.0
-    latex: A_{t2h}
+  #obb_Gamma: #how do we do gauss prior with min and max? it's truncated. maybe proposal for width?
+  #  prior:
+  #    min: 1.
+  #    max: 5./3
+  #  ref:
+  #    dist: norm
+  #    loc: 1.2
+  #    scale: 0.2
+  #  latex: \Gamma
+  #obb_alpha_Nth:
+  #  prior:
+  #    min: 0.01
+  #    max: 0.8
+  #  latex: \alpha_{Nth}
+  #obb_logE:
+  #  prior:
+  #    min: -4.8
+  #    max: -4.0
+  #  latex: \log_{10}\epsilon
+  #obb_Ak2h:
+  #  prior:
+  #    min: 0.01
+  #    max: 5.0
+  #  latex: A_{k2h}
+  #obb_At2h:
+  #  prior:
+  #    min: 0.01
+  #    max: 5.0
+  #  latex: A_{t2h}
 
+#prior: #al<bt for ksz
+#   ksz_al_less_than_bt: 'lambda gnfw_al_ksz,gnfw_bt_ksz:
+#                        stats.uniform.logpdf(gnfw_bt_ksz-gnfw_al_ksz,0,10.)'
 

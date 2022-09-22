@@ -30,9 +30,9 @@ def rho_gnfw1h(x, M, z, theta, provider):
         r200c = r200(m, z, provider)
         rvir = r200c / kpc_cgs / 1e3  # Mpc
         xc = 0.5
-        #al = 0.88 * (m / 1e14) ** (-0.03) * (1 + z) ** 0.19
+        al = 0.88 * (m / 1e14) ** (-0.03) * (1 + z) ** 0.19
         gm = -0.2
-        rho0,al,bt = theta
+        rho0,bt = theta
         #rho0, xc, bt = theta
         rho.append(
             10 ** rho0
@@ -47,7 +47,7 @@ def rho_gnfw1h(x, M, z, theta, provider):
 
 
 def rho_gnfw2h(xx, theta2h):
-    rho_file = np.genfromtxt("twohalo_cmass_average.txt")
+    rho_file = np.genfromtxt("/home/cemoser/Repositories/SOLikeT/soliket/szlike/twohalo_cmass_average.txt")
     x1 = rho_file[:, 0]
     rho2h = rho_file[:, 1]
     ans = np.interp(xx, x1, rho2h)
@@ -55,8 +55,8 @@ def rho_gnfw2h(xx, theta2h):
 
 
 def rho_gnfw(xx, M, z, theta, provider):
-    theta1h = theta[0], theta[1], theta[2]
-    theta2h = theta[3]
+    theta1h = theta[0], theta[1]
+    theta2h = theta[2]
     ans = rho_gnfw1h(xx, M, z, theta1h, provider) + rho_gnfw2h(xx, theta2h)
     return ans
 
@@ -100,9 +100,9 @@ def Pth_gnfw1h(x, M, z, theta, provider):
         rvir = r200c / kpc_cgs / 1e3  # Mpc
         M_cgs = m * MSUN_CGS
         P200c = G_CGS * M_cgs * 200.0 * rho_cz(z, provider) * fb / (2.0 * r200c)
-        P0, xc, bt = theta
+        P0, bt = theta
         al = 1.0
-        #xc = 0.497 * (m / 1e14) ** (-0.00865) * (1 + z) ** 0.731
+        xc = 0.497 * (m / 1e14) ** (-0.00865) * (1 + z) ** 0.731
         gm = -0.3
         pth.append(P0 * (x / rvir / xc) ** gm * (1 + (x / rvir / xc) ** al) ** (-bt) * P200c)
     pth = np.array(pth)
@@ -111,7 +111,7 @@ def Pth_gnfw1h(x, M, z, theta, provider):
 
 
 def Pth_gnfw2h(xx, z, theta2h):
-    pth_file = np.genfromtxt("twohalo_cmass_average.txt")
+    pth_file = np.genfromtxt("/home/cemoser/Repositories/SOLikeT/soliket/szlike/twohalo_cmass_average.txt")
     x1 = pth_file[:, 0]
     pth2h = pth_file[:, 2]
     ans = np.interp(xx, x1, pth2h)
@@ -119,7 +119,7 @@ def Pth_gnfw2h(xx, z, theta2h):
 
 
 def Pth_gnfw(xx, M, z, theta, provider):
-    theta1h = theta[0], theta[1], theta[2]
-    theta2h = theta[3]
+    theta1h = theta[0], theta[1]
+    theta2h = theta[2]
     ans = Pth_gnfw1h(xx, M, z, theta1h, provider) + Pth_gnfw2h(xx, z, theta2h)
     return ans
