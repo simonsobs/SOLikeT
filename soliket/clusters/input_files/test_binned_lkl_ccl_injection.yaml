@@ -38,16 +38,17 @@ likelihood:
     selfunc:
       SNRcut: 5. # S/N cutoff in number counts
       # Model for selection function, possibilities are
-      # downsample: average rms map, Q into n dwnsmpl_bins
-      # inpt_dwnsampld: input rms, Q already pre-downsampled
-      # full: consider full map, Q function, no downsampling
-      # single_tile: run for single tile, no downsampling
-      # injection: estimate completeness using source injection method from nemo (i.e. no Q)
+      # mode: Qfit / injection
+      #   Qfit: using data output from nemo run
+      #   injection: estimate completeness using source injection method from nemo (i.e. no Q)
       mode: 'injection'
-      Qmode: 'full'
-      dwnsmpl_bins: 50 # If mode=downsample, number of bins to use
-      save_dwsmpld: False # Save downsampled Q and rms to npz file and once it exists read those
-      average_Q: False # Use average Q function
+      # Qmode: full / downsample
+      #   downsample: average rms map, Q into n dwnsmpl_bins
+      #   full: consider full map, Q function, no downsampling
+      Qmode: 'full' # for injection it doesn't matter
+      #dwnsmpl_bins: 50 # If Qmode=downsample, number of bins to use
+      #save_dwsmpld: False # Save downsampled Q and rms to npz file and once it exists read those
+      average_Q: True # Should use average_Q with injection method
 
     binning:
       # redshift bins for number counts
@@ -71,7 +72,7 @@ params:
   n_s: 0.965
   Omega_b: 0.049
   Omega_c: 0.26
-  sigma8: 0.81
+  #sigma8: 0.81
   tenToA0: 1.9e-05
   B0: 0.08
   scatter_sz: 0.2
@@ -79,15 +80,21 @@ params:
   m_nu: 0.0
   C0: 2
 
-#  sigma8:
-#    latex: \sigma_8
-#  Omega_m:
-#    latex: \Omega_\mathrm{m}
+  sigma8:
+    prior:
+      min: 0.
+      max: 4.
+    ref:
+      dist: norm
+      loc: 0.8
+      scale: 0.001
+    proposal: 0.001
+    latex: \sigma_8
 
 sampler:
   evaluate:
-#      override:
-#        logA: 3.007
+      override:
+        sigma8: 0.81
 
 theory:
   soliket.clusters.CCL:
@@ -96,4 +103,4 @@ theory:
     baryons_pk: 'nobaryons'
     md_hmf: '200c'
 
-stop_at_error: true
+stop_at_error: True

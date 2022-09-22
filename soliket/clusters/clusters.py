@@ -20,7 +20,7 @@ from scipy import special
 import math as m
 
 import pyccl as ccl
-# from classy_sz import Class # TBD: change this import as optional
+#from classy_sz import Class # TBD: change this import as optional
 
 from ..poisson import PoissonLikelihood
 from ..cash import CashCLikelihood
@@ -118,7 +118,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
             zi = self._get_hres_z(zi)
         if zz[0] == 0. : zz[0] = 1e-4 # 1e-8 = steps_z(Nz) in f90
         self.zz = zz
-        #print(" Nz for higher resolution = ", zz, len(zz))
+        self.log.info('Number of redshift points for theory calculation {}.'.format(len(self.zz)))
 
         super().initialize()
 
@@ -143,10 +143,9 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
 
     def _get_theory(self, pk_intp, **params_values_dict):
+
         start = time.time()
-
         delN = self._get_integrated2D(pk_intp, **params_values_dict)
-
         elapsed = time.time() - start
         self.log.info("Theory N calculation took {} seconds.".format(elapsed))
 
@@ -184,7 +183,6 @@ class BinnedClusterLikelihood(CashCLikelihood):
         else:
             y0 = None
 
-        # Let's get rid of for loops here :D
         cc = np.asarray([self._get_completeness2D(marr, zz, y0, kk, marr_500c, **params_values_dict) for kk in range(Nq)])
 
         nzarr = self.zbins
@@ -251,10 +249,8 @@ class BinnedClusterLikelihood(CashCLikelihood):
             skyfracs = self.skyfracs/self.skyfracs.sum()
             Npatches = len(skyfracs)
 
-            if self.selfunc['Qmode'] != 'single_tile' and not self.selfunc['average_Q']:
-                if self.selfunc['Qmode'] == 'inpt_dwnsmpld':
-                    tile_list = self.tname
-                elif self.selfunc['Qmode'] == 'downsample':
+            if not self.selfunc['average_Q']:
+                if self.selfunc['Qmode'] == 'downsample':
                     tile_list = np.arange(noise.shape[0])+1
                 elif self.selfunc['Qmode'] == 'full':
                     tile_list = self.tile_list
@@ -264,10 +260,8 @@ class BinnedClusterLikelihood(CashCLikelihood):
             Nq = self.Nq
             qbins = self.qbins
 
-            Qmode = self.selfunc['Qmode']
             compl_mode = self.theorypred['compl_mode']
             tile = tile_list
-            average_Q = self.selfunc['average_Q']
 
             # can I do something about loop for SNR?
             kk = qbin
@@ -276,7 +270,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
             if scatter == 0.:
 
-                if Qmode == 'single_tile' or average_Q:
+                if self.selfunc['average_Q']:
                     if compl_mode == 'erf_prod':
                         if kk == 0:
                             erfunc = get_erf(y0, noise, qcut)*(1. - get_erf(y0, noise, qmax))
@@ -289,7 +283,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
                     comp = erfunc.T
 
-                else: # using all Q
+                else:
                     arg = []
                     for i in range(len(skyfracs)):
                         if compl_mode == 'erf_prod':
@@ -324,7 +318,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
                     yy0 = np.exp(lny)
 
-                    if Qmode == 'single_tile' or average_Q:
+                    if self.selfunc['average_Q']:
                         if compl_mode == 'erf_prod':
                             if kk == 0:
                                 cc0 = get_erf(yy0, noise, qcut)*(1. - get_erf(yy0, noise, qmax))
@@ -359,7 +353,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
                     lny += dlny
 
-                if Qmode == 'single_tile' or average_Q:
+                if self.selfunc['average_Q']:
                     cc = np.asarray(cc)
                     yy = np.asarray(yy)
                     lnyy = np.asarray(lnyy)
@@ -371,7 +365,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
                     dyy = np.asarray(np.array_split(dyy, Npatches))
 
 
-                if Qmode == 'single_tile' or average_Q:
+                if self.selfunc['average_Q']:
                     arg = (lnyy[:,None,None] - mu)/(np.sqrt(2.)*scatter)
                     completeness += np.einsum('ijk,i->jk', fac*np.exp(-arg**2.)*dyy[:,None,None]/yy[:,None,None], cc).T
                 else:
@@ -567,22 +561,14 @@ def initialize_common(self):
         self.datafile = self.data['cat_file']
         self.data_directory = self.data['data_path']
 
-        if self.selfunc['Qmode'] == 'single_tile':
-            self.log.info('Running Q-fit completeness with single tile.')
-        elif self.selfunc['Qmode'] == 'full':
+        if self.selfunc['Qmode'] == 'full':
             self.log.info('Running Q-fit completeness with full analysis. No downsampling.')
         elif self.selfunc['Qmode'] == 'downsample':
             assert self.selfunc['dwnsmpl_bins'] is not None, 'mode = downsample but no bin number given. Aborting.'
             self.log.info('Running Q-fit completeness with downsampling selection function inputs.')
-        elif self.selfunc['Qmode'] == 'inpt_dwnsmpld':
-            self.log.info('Running Q-fit completeness on pre-downsampled input.')
-        elif self.selfunc['mode'] == 'injection':
-            self.log.info('Running injection based selection function.')
 
-        if self.selfunc['Qmode'] == 'single_tile':
-            self.log.info('Considering only single tile.')
-        else:
-            self.log.info("Considering full map.")
+        if self.selfunc['mode'] == 'injection':
+            self.log.info('Running injection based selection function. Currently using one average Q function.')
 
         catf = fits.open(os.path.join(self.data_directory, self.datafile))
         data = catf[1].data
@@ -631,7 +617,7 @@ def initialize_common(self):
         self.log.info('Number of mass points for theory calculation {}.'.format(len(self.lnmarr)))
 
         # this is to be consist with szcounts.f90 - maybe switch to linspace?
-        self.k = np.logspace(-4, np.log10(4), 200,endpoint=False)
+        self.k = np.logspace(-4, np.log10(4), 200, endpoint=False)
         self.datafile_rms = self.data['rms_file']
         self.datafile_Q = self.data['Q_file']
 
@@ -643,12 +629,12 @@ def initialize_common(self):
             filename_Q, ext = os.path.splitext(self.datafile_Q)
             datafile_Q_dwsmpld = os.path.join(self.data_directory,
                                  filename_Q + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
+
             if os.path.exists(datafile_Q_dwsmpld):
                 self.log.info('Reading in binned Q function from file.')
                 Qfile = np.load(datafile_Q_dwsmpld)
                 self.Q = Qfile['Q_dwsmpld']
                 self.tt500 = Qfile['tt500']
-            # exit(0)
 
             else:
                 self.log.info('Reading full Q function.')
@@ -671,7 +657,6 @@ def initialize_common(self):
                 self.tt500 = tt500
                 self.Q = allQ
 
-            # self.log.info('Reading full RMS.')
             self.datafile_rms = self.datafile_rms
             filename_rms, ext = os.path.splitext(self.datafile_rms)
             datafile_rms_dwsmpld = os.path.join(self.data_directory,
@@ -698,7 +683,6 @@ def initialize_common(self):
                 self.tname = file_rms['tileName']
                 self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
                 self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
-                # exit(0)
 
                 self.log.info('Downsampling RMS and Q function using {} bins.'.format(self.selfunc['dwnsmpl_bins']))
                 binned_stat = scipy.stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
@@ -743,25 +727,6 @@ def initialize_common(self):
                     np.savez(datafile_rms_dwsmpld, noise=self.noise, skyfracs=self.skyfracs)
                     np.save(datafile_tiles_dwsmpld, self.tiles_dwnsmpld)
 
-        elif self.selfunc['Qmode'] == 'single_tile':
-
-            self.log.info('Reading Q function for single tile.')
-            list = fits.open(os.path.join(self.data_directory, self.datafile_Q))
-            data = list[1].data
-            self.tt500 = data.field("theta500Arcmin")
-            self.Q = data.field("PRIMARY")
-            assert len(self.tt500) == len(self.Q)
-            self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
-
-        elif self.selfunc['Qmode'] == 'inpt_dwnsmpld':
-
-            self.log.info('Reading pre-downsampled Q function.')
-            # for quick reading theta and Q data is saved first and just called
-            Qfile = np.load(os.path.join(self.data_directory, self.datafile_Q))
-            self.tt500 = Qfile['theta']
-            self.Q = Qfile['Q']
-            assert len(self.tt500) == len(self.Q[:,0])
-
         elif self.selfunc['Qmode'] == 'full':
             self.log.info('Reading full Q function.')
             tile_area = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
@@ -783,45 +748,25 @@ def initialize_common(self):
             self.tt500 = tt500
             self.Q = allQ
 
+
+
+
         if self.selfunc['average_Q']:
             self.Q = np.mean(self.Q, axis=1)
-            self.noise = np.mean(self.noise)
             self.log.info("Number of Q functions = {}.".format(self.Q.ndim))
             self.log.info("Using one averaged Q function for optimisation")
         else:
             self.log.info("Number of Q functions = {}.".format(len(self.Q[0])))
 
+
         if self.selfunc['mode'] == 'injection':
 
-            #print(np.shape(self.tt500), np.shape(self.Q))
             Q_interp = scipy.interpolate.splrep(self.tt500, self.Q)
-
             self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut,
                                                                             self.qbins, Q_interp)
-            # self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut,
-            #                                                                 self.qbins)
 
-        #self.log.info('Reading RMS.')
 
-        if self.selfunc['Qmode'] == 'single_tile':
-
-            list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
-            data = list[1].data
-            self.skyfracs = data.field("areaDeg2")*np.deg2rad(1.)**2
-            self.noise = data.field("y0RMS")
-            self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
-
-        elif self.selfunc['Qmode'] == 'inpt_dwnsmpld':
-
-            self.log.info('Reading pre-downsampled RMS table.')
-            file_rms = np.loadtxt(os.path.join(self.data_directory, self.datafile_rms))
-            self.noise = file_rms[:,0]
-            self.skyfracs = file_rms[:,1]
-            self.tname = file_rms[:,2]
-            self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
-            self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
-
-        elif self.selfunc['Qmode'] == 'full':
+        if self.selfunc['Qmode'] == 'full':
             self.log.info('Reading in full RMS table.')
 
             list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
@@ -833,7 +778,6 @@ def initialize_common(self):
             self.log.info("Number of tiles = {}. ".format(len(np.unique(self.tname))))
             self.log.info("Number of sky patches = {}.".format(self.skyfracs.size))
 
-        if self.selfunc['Qmode'] == 'full':
             tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
             self.tile_list = [tiledict[key]+1 for key in self.tname]
 
@@ -1132,7 +1076,7 @@ def get_m500c(both, marr, zz):
     return marr_500c
 
 def _splQ(self, theta):
-    if self.selfunc['Qmode'] == 'single_tile' or self.selfunc['average_Q']:
+    if self.selfunc['average_Q']:
         tck = scipy.interpolate.splrep(self.tt500, self.Q)
         newQ = scipy.interpolate.splev(theta, tck)
     else:
@@ -1206,14 +1150,12 @@ def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
     else:
         splQ = 1.
 
-
-    if (self.selfunc['mode'] == 'Qfit' and self.selfunc['Qmode'] == 'single_tile') or (self.selfunc['mode'] == 'Qfit' and self.selfunc['average_Q']):
+    if (self.selfunc['mode'] == 'Qfit' and self.selfunc['average_Q']):
         y0 = A0 * (Ez**2.) * (mb / Mpivot)**(1. + B0) * splQ
         y0 = y0.T
     else:
         # if self.name == "Unbinned Clusters":
         #     Ez = Ez.T
-
         y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ
 
     return y0

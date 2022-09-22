@@ -10,23 +10,15 @@ output: chains/test
 
 likelihood:
   soliket.BinnedClusterLikelihood:
+    verbose: True
 
     # Data
     data:
-      # data_path: 'data/advact/' # Path to data directory
-      # cat_file: 'DR5_cluster-catalog_v1.1.fits' # Path to cluster catalog file
-      # Q_file: 'DR5ClusterSearch/selFn/QFit.fits' # Path to Q function file
-      # tile_file: 'DR5ClusterSearch/selFn/tileAreas.txt' # Path to tile file
-      # rms_file: 'DR5ClusterSearch/selFn/RMSTab.fits' # Path to RMS file
-
       data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
       cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
       Q_file: 'selFn/QFit.fits' # Path to Q function file
       tile_file: 'selFn/tileAreas.txt' # Path to tile file
       rms_file: 'selFn/RMSTab.fits' # Path to RMS file
-
-
-    verbose: True
 
     # Theory
     theorypred:
@@ -37,31 +29,26 @@ likelihood:
       md_hmf: '500c'
       md_ym: '500c'
       use_class_sz : False
+
     # Y-M relation
     YM:
       Mpivot: 3e14 # Mpivot in Y-M relation
 
     # Selection function
     selfunc:
-      # SNRcut: 5. # S/N cutoff in number counts
+      SNRcut : 5. # S/N cutoff in number counts
       # Model for selection function, possibilities are
-      # downsample: average rms map, Q into n dwnsmpl_bins
-      # inpt_dwnsampld: input rms, Q already pre-downsampled --- from eunseong's implementation
-      # full: consider full map, Q function, no downsampling --- exact evaluation.
-      # single_tile: run for single tile, no downsampling
-      # mode: 'downsample' #'downsample'
-      # dwnsmpl_bins: 3 # If mode=downsample, number of bins to use
-      # save_dwsmpld: True # Save downsampled Q and rms to npz file and once it exists read those
-      # average_Q: False # Use average Q function
-
-      SNRcut : 5.
-      single_tile_test : "no"
+      # mode: Qfit / injection
+      #   Qfit: using data output from nemo run
+      #   injection: estimate completeness using source injection method from nemo (i.e. no Q)
       mode: 'Qfit'
+      # Qmode: full / downsample
+      #   downsample: average rms map, Q into n dwnsmpl_bins
+      #   full: consider full map, Q function, no downsampling
       Qmode : 'downsample'
-      dwnsmpl_bins : 3 #50
-      save_dwsmpld : True
-      average_Q : False
-
+      dwnsmpl_bins : 10 # If Qmode=downsample, number of bins to use
+      save_dwsmpld : True # Save downsampled Q and rms to npz file and once it exists read those
+      average_Q : False # Use average Q function
 
     binning:
       # redshift bins for number counts
@@ -81,41 +68,6 @@ likelihood:
         dlogM: 0.05
 
 params:
-  # logA:
-  #   prior:
-  #     min: 2.
-  #     max: 4.
-  #   ref:
-  #     dist: norm
-  #     loc: 3.1
-  #     scale: 0.001
-  #   proposal: 0.001
-  #   latex: \log(10^{10} A_\mathrm{s})
-  #   drop: true
-  # As:
-  #   value: 'lambda logA: 1e-10*np.exp(logA)'
-  #   latex: A_\mathrm{s}
-  # sigma8: 0.81
-
-  # H0:
-  #   derived:
-
-  # theta_MC_100:
-  #   prior:
-  #     min: 0.5
-  #     max: 10
-  #   ref:
-  #     dist: norm
-  #     loc: 1.0411
-  #     scale: 0.0004
-  #   proposal: 0.0002
-  #   latex: 100\theta_\mathrm{MC}
-  #   drop: true
-  #   renames: theta
-  # cosmomc_theta:
-  #   value: 'lambda theta_MC_100: 1.e-2*theta_MC_100'
-  #   derived: false
-
   # ombh2: 0.0226576  # for omb = 0.049
   # omch2: 0.1206864
   # ns: 0.965
@@ -124,13 +76,6 @@ params:
   # nnu: 3.046
   # omnuh2: 0.
   # w: -1
-
-  # omega_b: 0.0226576
-  # omega_cdm: 0.1206864
-  # n_s: 0.965
-  # tau_reio: 0.055
-  # H0: 68.
-  # sigma8: 0.81
 
   h : 0.68
   n_s : 0.965
@@ -143,13 +88,6 @@ params:
   bias_sz : 1.
   m_nu : 0.0
   C0 : 0. # doesnt matter
-
-
-  # tenToA0: 4.35e-5
-  # B0: 0.08
-  # C0: 0.
-  # scatter_sz: 0.
-  # bias_sz: 1.
 
   # omega_b: 0.0226576
   # omega_cdm: 0.1206864
@@ -173,14 +111,6 @@ sampler:
   evaluate:
       override:
         sigma8: 0.81
-
-
-# theory:
-#   soliket.binned_clusters.CCL:
-#     transfer_function: 'boltzmann_camb'
-#     matter_pk: 'halofit'
-#     baryons_pk: 'nobaryons'
-#     md_hmf: '200m'
 
 theory:
   soliket.clusters.CCL :
