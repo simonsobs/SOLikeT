@@ -16,7 +16,7 @@ likelihood:
     #
     # Data
     data:
-      data_path: '../../../../../data/sims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
+      data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
       cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
       Q_file: 'selFn/QFit.fits' # Path to Q function file
       tile_file: 'selFn/tileAreas.txt' # Path to tile file
@@ -30,11 +30,18 @@ likelihood:
     # Selection function
     selfunc:
       SNRcut: 5. # S/N cutoff in number counts
-      dwnsmpl_bins: 3
-      save_dwsmpld : True
+      # Model for selection function, possibilities are
+      # mode: Qfit / injection
+      #   Qfit: using data output from nemo run
+      #   injection: estimate completeness using source injection method from nemo (i.e. no Q)
       mode: 'Qfit'
+      # Qmode: full / downsample
+      #   downsample: average rms map, Q into n dwnsmpl_bins
+      #   full: consider full map, Q function, no downsampling
       Qmode : 'downsample'
-      average_Q: False # Use average Q function
+      dwnsmpl_bins: 3
+      #save_dwsmpld : True
+      average_Q: False #False # Use average Q function
 
     # theorypred:
     #   choose_theory: 'camb' # Theory prediction mode, possibilities are camb, class, CCL (CCL is all CCL)
@@ -111,7 +118,7 @@ params:
   # sigma8 : 0.81
   tenToA0 : 4.35e-5
   B0 : 0.08
-  scatter_sz : 0.
+  scatter_sz : 0.2
   bias_sz : 1.
   m_nu : 0.0
   C0 : 0. # doesnt matter

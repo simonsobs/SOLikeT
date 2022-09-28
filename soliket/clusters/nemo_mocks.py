@@ -133,11 +133,15 @@ def get_completess_inj_theta_y(pathdata, SNRCut, qbins, Q_interp):
 		raise Exception(
 			"%s not found - run a source injection test to generate (now required for completeness calculations)." % (
 				injDataPath))
+	#if qbins != None:
 	theta500s, binCentres, compThetaGrid = _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins, Q_interp)
 	nq = qbins.shape[0]-1
 	compThetaInterpolator = [0 for i in range(nq)]
 	for i in range(nq):
 		compThetaInterpolator[i] = scipy.interpolate.RectBivariateSpline(theta500s, binCentres, compThetaGrid[i, :], kx=3, ky=3)
+	# else:
+	# 	theta500s, binCentres, compThetaGrid = _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins, Q_interp)
+	# 	compThetaInterpolator = scipy.interpolate.RectBivariateSpline(theta500s, binCentres, compThetaGrid, kx=3, ky=3)
 
 	return compThetaInterpolator
 
@@ -158,7 +162,10 @@ def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins, Q_inter
 	# We also derive survey-averaged Q here from the injection sim results [for y0 -> y0~ mapping]
 	# NOTE: This is a survey-wide average, doesn't respect footprints at the moment
 	# NOTE: This will need re-thinking for evolving, non-self-similar models?
+
+	#if qbins != None:
 	nq = qbins.shape[0] - 1
+
 	theta500s = np.unique(inputTab['theta500Arcmin'])
 	thetaQs = scipy.interpolate.splev(theta500s, Q_interp)
 	thetaQ_max = thetaQs.max()
@@ -171,10 +178,16 @@ def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins, Q_inter
 
 	binEdges = np.logspace(np.log10(outFlux_min), np.log10(outFlux_max), 101)
 	binCentres = 10**((np.log10(binEdges[1:])+np.log10(binEdges[:-1]))/2)
+
+	#if qbins != None:
 	compThetaGrid = np.zeros((nq, theta500s.shape[0], binCentres.shape[0]))
+	# else:
+	# 	compThetaGrid = np.zeros((theta500s.shape[0], binCentres.shape[0]))
 
 	for i in range(len(theta500s)):
 		t = theta500s[i]
+
+		#if qbins != None:
 		for ii in range(nq):
 			qmin = max(qbins[ii], SNRCut)
 			qmax = qbins[ii + 1]
@@ -188,6 +201,16 @@ def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins, Q_inter
 			inpN, _ = np.histogram(inputFlux, bins = binEdges/thetaQ_temp)
 			valid = inpN > 0
 			compThetaGrid[ii, i][valid] = recN[valid]/inpN[valid]
+		# else:
+		# 	injMask = (injTab['theta500Arcmin'] == t)*(injTab['SNR'] > SNRCut)
+		# 	inputMask = inputTab['theta500Arcmin'] == t
+		# 	injFlux = injTab['inFlux'][injMask]
+		# 	inputFlux = inputTab['inFlux'][inputMask]
+		# 	thetaQ_temp = scipy.interpolate.splev(t, Q_interp)
+		# 	recN, _ = np.histogram(injFlux, bins = binEdges/thetaQ_temp)
+		# 	inpN, _ = np.histogram(inputFlux, bins = binEdges/thetaQ_temp)
+		# 	valid = inpN > 0
+		# 	compThetaGrid[i][valid] = recN[valid]/inpN[valid]
 
 	return theta500s, binCentres, compThetaGrid
 

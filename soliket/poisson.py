@@ -79,7 +79,10 @@ def Prob_per_cluster(cat_index,
     z,tsz_signal,tsz_signal_err,tile_name = [self.catalog[c].values[cat_index] for c in self.columns]
     # self.log.info('computing prob per cluster for cluster: %.5e %.5e %.5e %s'%(z,tsz_signal,tsz_signal_err,tile_name))
     marr = np.exp(self.lnmarr)
+    #if self.tiles_dwnsmpld is not None:
     rms_bin_index = self.tiles_dwnsmpld[tile_name]
+    #else:
+    #    rms_bin_index = None
     Pfunc_ind = self.Pfunc_per(
         rms_bin_index,
         marr,

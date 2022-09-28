@@ -45,7 +45,7 @@ likelihood:
       # Qmode: full / downsample
       #   downsample: average rms map, Q into n dwnsmpl_bins
       #   full: consider full map, Q function, no downsampling
-      Qmode : 'downsample'
+      Qmode : 'downsample' #'full'
       dwnsmpl_bins : 10 # If Qmode=downsample, number of bins to use
       save_dwsmpld : True # Save downsampled Q and rms to npz file and once it exists read those
       average_Q : False # Use average Q function
