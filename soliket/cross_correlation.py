@@ -138,7 +138,16 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
                 if self.ia_mode is None:
                     ia_z = None
-                else:
+                elif self.ia_mode == 'nla':
+                    A_IA = params_values['A_IA']
+                    eta_IA = params_values['eta_IA']
+                    z0_IA = np.trapz(z_tracer1 * nz_tracer1)
+
+                    ia_z = (z_tracer1, A_IA * ((1 + z_tracer1) / (1 + z0_IA))**eta_IA)
+                elif self.ia_mode == 'nla-perbin':
+                    A_IA = params_values['{}_A_IA'.format(sheartracer_name)]
+                    ia_z = (z_tracer1, A_IA * np.ones_like(z_tracer1))
+                elif self.ia_mode == 'nla-noevo':
                     A_IA = params_values['A_IA']
                     ia_z = (z_tracer1, A_IA * np.ones_like(z_tracer1))
 
@@ -169,9 +178,18 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
                 if self.ia_mode is None:
                     ia_z = None
-                else:
+                elif self.ia_mode == 'nla':
                     A_IA = params_values['A_IA']
-                    ia_z = (z_tracer2, A_IA * np.ones_like(z_tracer1))
+                    eta_IA = params_values['eta_IA']
+                    z0_IA = np.trapz(z_tracer2 * nz_tracer2)
+
+                    ia_z = (z_tracer2, A_IA * ((1 + z_tracer2) / (1 + z0_IA))**eta_IA)
+                elif self.ia_mode == 'nla-perbin':
+                    A_IA = params_values['{}_A_IA'.format(sheartracer_name)]
+                    ia_z = (z_tracer2, A_IA * np.ones_like(z_tracer2))
+                elif self.ia_mode == 'nla-noevo':
+                    A_IA = params_values['A_IA']
+                    ia_z = (z_tracer2, A_IA * np.ones_like(z_tracer2))
 
                 tracer2 = ccl.WeakLensingTracer(cosmo,
                                                 dndz=(z_tracer2, nz_tracer2),
@@ -198,6 +216,9 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
 
             if self.m_nuisance_mode is not None:
+                # note this allows wrong calculation, as we can do
+                # shear x shear if the spectra are in the sacc
+                # but then we would want (1 + m1) * (1 + m2)
                 m_bias = params_values['{}_m'.format(sheartracer_name)]
                 cl_unbinned = (1 + m_bias) * cl_unbinned
 
