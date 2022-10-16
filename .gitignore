@@ -129,3 +129,9 @@ soliket/binned_clusters/data/so/MFMF_WebSkyHalos_A10tSZ_3freq_tiles/selFn/tileAr
 soliket/cosmopower/chains
 soliket/binned_clusters/chains/test.updated.yaml
 soliket/binned_clusters/chains/test_camb.updated.yaml
+
+soliket/binned_clusters/chains/*
+soliket/clusters/chains/*
+soliket/clusters/notebooks/*
+
+soliket/cosmopower/data

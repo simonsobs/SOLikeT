@@ -14,6 +14,9 @@ class cosmopower(classy):
     path_to_trained_models: Optional[str] = resource_filename(
         "cosmopower", "trained_models/CP_paper/CMB/"
     )
+    TT_emulator_name: Optional[str] = "TT"
+    TE_emulator_name: Optional[str] = "TE"
+    EE_emulator_name: Optional[str] = "EE"
     def initialize(self):
         """Importing CLASS from the correct path, if given, and if not, globally."""
         self.classy_module = self.is_installed()
@@ -32,16 +35,16 @@ class cosmopower(classy):
         # Derived parameters that may not have been requested, but will be necessary later
         self.derived_extra = []
         self.tt_emu = cp.cosmopower_NN(restore=True,
-                                  restore_filename=self.path_to_trained_models+'cmb_TT_NN')
+                                  restore_filename=self.path_to_trained_models+self.TT_emulator_name)
         self.te_emu = cp.cosmopower_PCAplusNN(restore=True,
-                                         restore_filename=self.path_to_trained_models+'cmb_TE_PCAplusNN')
+                                         restore_filename=self.path_to_trained_models+self.TE_emulator_name)
         self.ee_emu = cp.cosmopower_NN(restore=True,
-                                  restore_filename=self.path_to_trained_models+'cmb_EE_NN')
+                                  restore_filename=self.path_to_trained_models+self.EE_emulator_name)
         self.log.info("Initialized!")
 
     # # here modify if you want to bypass stuff in the class computation
     def calculate(self, state, want_derived=True, **params_values_dict):
-        print("[calculate] Bypassing class computation")
+        # print("[calculate] Bypassing class computation")
         # Set parameters
         params_values = params_values_dict.copy()
         params_values['ln10^{10}A_s'] = params_values.pop("logA")
@@ -49,24 +52,34 @@ class cosmopower(classy):
         params_dict = {}
         for k,v in zip(params_values.keys(),params_values.values()):
             params_dict[k]=[v]
+        # print('\n')
+        # print('new params:')
+        # print(params_dict)
+        # exit(0)
 
         self.tt_spectra = self.tt_emu.ten_to_predictions_np(params_dict)
         self.te_spectra = self.te_emu.predictions_np(params_dict)
         self.ee_spectra = self.ee_emu.ten_to_predictions_np(params_dict)
+        # print('new spectra:')
+        # print(self.tt_spectra)
+        # print('\n')
+        # print(self.te_spectra)
+        # print(self.ee_spectra)
+        # exit(0)
 
     # get the required new observable
     def get_Cl(self,ell_factor=True):
 
         cls = {}
-        cls['tt'] = np.zeros(10000)
-        cls['te'] = np.zeros(10000)
-        cls['ee'] = np.zeros(10000)
+        cls['tt'] = np.zeros(20000)
+        cls['te'] = np.zeros(20000)
+        cls['ee'] = np.zeros(20000)
 
         nl = len(self.tt_spectra[0])
-        cls['tt'][2:nl+2] = self.tt_spectra[0]
-        cls['te'][2:nl+2] = self.te_spectra[0]
-        cls['ee'][2:nl+2] = self.ee_spectra[0]
-        # print(cls)
+        cls['tt'][2:nl+2] = (2.7255e6)**2.*self.tt_spectra[0].copy()
+        cls['te'][2:nl+2] = (2.7255e6)**2.*self.te_spectra[0].copy()
+        cls['ee'][2:nl+2] = (2.7255e6)**2.*self.ee_spectra[0].copy()
+        # print('dls:',cls)
         return cls
 
 
