@@ -216,7 +216,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         scatter = params_values_dict["scatter_sz"]
 
-        y0 = _get_y0(self,mass, z, mass_500c, **params_values_dict)
+        y0 = _get_y0(self,mass, z, mass_500c, use_Q=False, **params_values_dict)
         theta = _theta(self,mass_500c, z)
 
         if scatter == 0:
@@ -386,7 +386,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         marr = np.exp(self.lnmarr)
         for Yt, frac in zip(self.noise, self.skyfracs):
             Pfunc = self.PfuncY(rms_index, Yt, marr, self.zz, kwargs) # dim (m,z)
-            Pfunc = Pfunc.T
+            Pfunc = Pfunc.T #####
 
             N_z = np.trapz(
                 dndlnm * Pfunc, dx=np.diff(self.lnmarr[:,None], axis=0), axis=0
@@ -436,7 +436,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         Y = 10 ** LgY
         Ytilde = np.repeat(y0_new[:, :, np.newaxis], LgY.shape[2], axis=2)
 
-        numer = -1.0 * (np.log(Y / Ytilde)) ** 2
+        numer = -1.0 * (np.log(Y/ Ytilde)) ** 2 #####
 
         ans = (
                 1.0 / (param_vals["scatter_sz"] * np.sqrt(2 * np.pi)) *
@@ -466,7 +466,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             # replace nan with 0's:
             P_Y = np.nan_to_num(self.P_Yo_vec(rms_index,LgYa2, marr, zz, param_vals))
-            ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10) # why log10?
+            ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10) # why log10? #####
 
         else:
             # Mass conversion
@@ -723,8 +723,8 @@ def initialize_common(self):
 
 
         if self.selfunc['average_Q']: # currently average_Q should be chosen with Qmode:downsample
-            self.Q = np.average(self.Q, axis=1, weights=self.skyfracs)
-            self.noise = np.average(self.noise)#, weights=self.skyfracs)
+            self.Q = np.average(self.Q, axis=1)
+            self.noise = np.average(self.noise)
             self.log.info("Number of Q functions = {}.".format(self.Q.ndim))
             self.log.info("Using one averaged Q function for optimisation")
         else:
@@ -732,9 +732,12 @@ def initialize_common(self):
 
 
         if self.selfunc['mode'] == 'injection':
-            Q_interp = scipy.interpolate.splrep(self.tt500, self.Q)
-            self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut,
-                                                                            self.qbins, Q_interp)
+
+            # if hasattr(UnbinnedClusterLikelihood,'qbin') is False:
+            #     self.qbins = None
+
+            self.compThetaInterpolator, thetaQ = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut, self.qbins)
+            self.Q = thetaQ
 
         if self.selfunc['Qmode'] == 'full':
             self.log.info('Reading in full RMS table.')

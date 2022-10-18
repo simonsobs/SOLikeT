@@ -32,7 +32,7 @@ likelihood:
 
     # Y-M relation
     YM:
-      Mpivot: 2.9e14 # Mpivot in Y-M relation
+      Mpivot: 4.25e14 # Mpivot in Y-M relation
 
     # Selection function
     selfunc:
@@ -45,9 +45,9 @@ likelihood:
       # Qmode: full / downsample
       #   downsample: average rms map, Q into n dwnsmpl_bins
       #   full: consider full map, Q function, no downsampling
-      Qmode: 'full' # for injection it doesn't matter
-      #dwnsmpl_bins: 50 # If Qmode=downsample, number of bins to use
-      #save_dwsmpld: False # Save downsampled Q and rms to npz file and once it exists read those
+      Qmode: 'downsample' # for injection it doesn't matter
+      dwnsmpl_bins: 50 # If Qmode=downsample, number of bins to use
+      save_dwsmpld: True # Save downsampled Q and rms to npz file and once it exists read those
       average_Q: True # Should use average_Q with injection method
 
     binning:
@@ -63,8 +63,8 @@ likelihood:
         dlog10q: 0.25
       # mass bins for number counts
       M:
-        Mmin: 3.4e13
-        Mmax: 0.68e16
+        Mmin: 5e13 #3.4e13
+        Mmax: 1e16 #0.68e16
         dlogM: 0.05
 
 params:
@@ -75,7 +75,7 @@ params:
   #sigma8: 0.81
   tenToA0: 1.9e-05
   B0: 0.08
-  scatter_sz: 0.2
+  scatter_sz: 0.
   bias_sz: 1.
   m_nu: 0.0
   C0: 2

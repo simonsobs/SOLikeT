@@ -5,7 +5,7 @@ from astropy.io import fits
 from astLib import *
 from nemo import completeness, plotSettings, catalogs, signals
 import scipy.interpolate
-
+import sys
 
 
 def make_truth_mock(mode, configdict):
@@ -122,7 +122,8 @@ def bin_catalog(catalog, zbins, qbins, SNR_tag='SNR'):
 
 	return delN2Dcat, zarr, qarr
 
-def get_completess_inj_theta_y(pathdata, SNRCut, qbins, Q_interp):
+
+def get_completess_inj_theta_y(pathdata, SNRCut, qbins):
 
 	selFnDir = os.path.join(pathdata, 'selFn')
 
@@ -133,19 +134,16 @@ def get_completess_inj_theta_y(pathdata, SNRCut, qbins, Q_interp):
 		raise Exception(
 			"%s not found - run a source injection test to generate (now required for completeness calculations)." % (
 				injDataPath))
-	#if qbins != None:
-	theta500s, binCentres, compThetaGrid = _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins, Q_interp)
+
+	theta500s, binCentres, compThetaGrid, thetaQ = _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins)
 	nq = qbins.shape[0]-1
 	compThetaInterpolator = [0 for i in range(nq)]
 	for i in range(nq):
 		compThetaInterpolator[i] = scipy.interpolate.RectBivariateSpline(theta500s, binCentres, compThetaGrid[i, :], kx=3, ky=3)
-	# else:
-	# 	theta500s, binCentres, compThetaGrid = _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins, Q_interp)
-	# 	compThetaInterpolator = scipy.interpolate.RectBivariateSpline(theta500s, binCentres, compThetaGrid, kx=3, ky=3)
 
-	return compThetaInterpolator
+	return compThetaInterpolator, thetaQ
 
-def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins, Q_interp):
+def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins):
 	"""Produce arrays for constructing interpolator objects from source injection test data.
 	Args:
 		injDataPath (:obj:`str`): Path to the output catalog produced by the source injection test.
@@ -158,120 +156,35 @@ def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins, Q_inter
 	injTab= table.Table().read(injDataPath)
 	inputTab= table.Table().read(inputDataPath)
 
-	# Completeness given y0~ and theta500 and the S/N cut as 2D spline
+	# Completeness given y0 (NOT y0~) and theta500 and the S/N cut as 2D spline
 	# We also derive survey-averaged Q here from the injection sim results [for y0 -> y0~ mapping]
 	# NOTE: This is a survey-wide average, doesn't respect footprints at the moment
 	# NOTE: This will need re-thinking for evolving, non-self-similar models?
 
-	#if qbins != None:
 	nq = qbins.shape[0] - 1
-
-	theta500s = np.unique(inputTab['theta500Arcmin'])
-	thetaQs = scipy.interpolate.splev(theta500s, Q_interp)
-	thetaQ_max = thetaQs.max()
-	thetaQ_min = thetaQs.min()
-	outFlux_min = inputTab['inFlux'].min()/thetaQ_max
-	if thetaQ_min < 1.:
-		outFlux_max = inputTab['inFlux'].max()/thetaQ_min
-	else:
-		outFlux_max = inputTab['inFlux'].max()*thetaQ_max
-
-	binEdges = np.logspace(np.log10(outFlux_min), np.log10(outFlux_max), 101)
-	binCentres = 10**((np.log10(binEdges[1:])+np.log10(binEdges[:-1]))/2)
-
-	#if qbins != None:
-	compThetaGrid = np.zeros((nq, theta500s.shape[0], binCentres.shape[0]))
-	# else:
-	# 	compThetaGrid = np.zeros((theta500s.shape[0], binCentres.shape[0]))
+	theta500s=np.unique(inputTab['theta500Arcmin'])
+	binEdges=np.linspace(inputTab['inFlux'].min(), inputTab['inFlux'].max(), 101)
+	binCentres=(binEdges[1:]+binEdges[:-1])/2
+	compThetaGrid=np.zeros((nq, theta500s.shape[0], binCentres.shape[0]))
+	thetaQ=np.zeros(len(theta500s))
 
 	for i in range(len(theta500s)):
 		t = theta500s[i]
-
-		#if qbins != None:
 		for ii in range(nq):
 			qmin = max(qbins[ii], SNRCut)
 			qmax = qbins[ii + 1]
 
 			injMask = (injTab['theta500Arcmin'] == t)*(injTab['SNR'] > qmin)*(injTab['SNR'] < qmax)
-			inputMask = inputTab['theta500Arcmin'] == t
-			injFlux = injTab['inFlux'][injMask]
-			inputFlux = inputTab['inFlux'][inputMask]
-			thetaQ_temp = scipy.interpolate.splev(t, Q_interp)
-			recN, _ = np.histogram(injFlux, bins = binEdges/thetaQ_temp)
-			inpN, _ = np.histogram(inputFlux, bins = binEdges/thetaQ_temp)
-			valid = inpN > 0
-			compThetaGrid[ii, i][valid] = recN[valid]/inpN[valid]
-		# else:
-		# 	injMask = (injTab['theta500Arcmin'] == t)*(injTab['SNR'] > SNRCut)
-		# 	inputMask = inputTab['theta500Arcmin'] == t
-		# 	injFlux = injTab['inFlux'][injMask]
-		# 	inputFlux = inputTab['inFlux'][inputMask]
-		# 	thetaQ_temp = scipy.interpolate.splev(t, Q_interp)
-		# 	recN, _ = np.histogram(injFlux, bins = binEdges/thetaQ_temp)
-		# 	inpN, _ = np.histogram(inputFlux, bins = binEdges/thetaQ_temp)
-		# 	valid = inpN > 0
-		# 	compThetaGrid[i][valid] = recN[valid]/inpN[valid]
+			inputMask=inputTab['theta500Arcmin'] == t
+			injFlux=injTab['inFlux'][injMask]
+			outFlux=injTab['outFlux'][injMask]
+			inputFlux=inputTab['inFlux'][inputMask]
+			recN, binEdges=np.histogram(injFlux, bins = binEdges)
+			inpN, binEdges=np.histogram(inputFlux, bins = binEdges)
+			valid=inpN > 0
 
-	return theta500s, binCentres, compThetaGrid
+			compThetaGrid[ii, i][valid]=recN[valid]/inpN[valid]
 
-# def get_completess_inj_theta_y(pathdata, SNRCut, qbins):
-#
-# 	selFnDir = os.path.join(pathdata, 'selFn')
-#
-# 	# Stuff from the source injection sims (now required for completeness calculation)
-# 	injDataPath = selFnDir + os.path.sep + "sourceInjectionData.fits"
-# 	inputDataPath = selFnDir + os.path.sep + "sourceInjectionInputCatalog.fits"
-# 	if os.path.exists(injDataPath) == False or os.path.exists(inputDataPath) == False:
-# 		raise Exception(
-# 			"%s not found - run a source injection test to generate (now required for completeness calculations)." % (
-# 				injDataPath))
-# 	theta500s, binCentres, compThetaGrid, thetaQ = _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins)
-# 	nq = qbins.shape[0]-1
-# 	compThetaInterpolator = [0 for i in range(nq)]
-# 	for i in range(nq):
-# 		compThetaInterpolator[i] = scipy.interpolate.RectBivariateSpline(theta500s, binCentres, compThetaGrid[i, :], kx=3, ky=3)
-#
-# 	return compThetaInterpolator
+		thetaQ[i]=np.median(outFlux/injFlux)
 
-# def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins):
-# 	"""Produce arrays for constructing interpolator objects from source injection test data.
-# 	Args:
-# 		injDataPath (:obj:`str`): Path to the output catalog produced by the source injection test.
-# 		inputDataPath (:obj:`str`): Path to the input catalog produced by the source injectio test.
-# 		SNRCut (:obj:`float`): Selection threshold in S/N to apply.
-# 	Returns:
-# 		theta500s, ycBinCentres, compThetaGrid, thetaQ
-# 	"""
-#
-# 	injTab= table.Table().read(injDataPath)
-# 	inputTab= table.Table().read(inputDataPath)
-#
-# 	# Completeness given y0 (NOT y0~) and theta500 and the S/N cut as 2D spline
-# 	# We also derive survey-averaged Q here from the injection sim results [for y0 -> y0~ mapping]
-# 	# NOTE: This is a survey-wide average, doesn't respect footprints at the moment
-# 	# NOTE: This will need re-thinking for evolving, non-self-similar models?
-# 	nq = qbins.shape[0] - 1
-# 	theta500s=np.unique(inputTab['theta500Arcmin'])
-# 	binEdges=np.linspace(inputTab['inFlux'].min(), inputTab['inFlux'].max(), 101)
-# 	binCentres=(binEdges[1:]+binEdges[:-1])/2
-# 	compThetaGrid=np.zeros((nq, theta500s.shape[0], binCentres.shape[0]))
-# 	thetaQ=np.zeros(len(theta500s))
-# 	for i in range(len(theta500s)):
-# 		t = theta500s[i]
-# 		for ii in range(nq):
-# 			qmin = max(qbins[ii], SNRCut)
-# 			qmax = qbins[ii + 1]
-#
-# 			injMask = (injTab['theta500Arcmin'] == t)*(injTab['SNR'] > qmin)*(injTab['SNR'] < qmax)
-# 			inputMask=inputTab['theta500Arcmin'] == t
-# 			injFlux=injTab['inFlux'][injMask]
-# 			outFlux=injTab['outFlux'][injMask]
-# 			inputFlux=inputTab['inFlux'][inputMask]
-# 			recN, binEdges=np.histogram(injFlux, bins = binEdges)
-# 			inpN, binEdges=np.histogram(inputFlux, bins = binEdges)
-# 			valid=inpN > 0
-# 			compThetaGrid[ii, i][valid]=recN[valid]/inpN[valid]
-#
-# 		thetaQ[i]=np.median(outFlux/injFlux)
-#
-# 	return theta500s, binCentres, compThetaGrid, thetaQ
+	return theta500s, binCentres, compThetaGrid, thetaQ
