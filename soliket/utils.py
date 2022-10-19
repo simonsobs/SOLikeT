@@ -2,7 +2,7 @@ from importlib import import_module
 
 from scipy.stats import binned_statistic as binnedstat
 import numpy as np
-from astLib import astWCS
+# from astLib import WCS
 
 from cobaya.likelihood import Likelihood
 from cobaya.likelihoods.one import one
