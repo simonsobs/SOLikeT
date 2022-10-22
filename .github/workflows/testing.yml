@@ -28,7 +28,7 @@ jobs:
     - name: install reqs
       run: |
         conda install pip compilers pytest pytest-cov pyccl cython
-        pip install cobaya
+        pip install cobaya nemo-sz
 
       env:  
         MATRIX_OS: ${{ matrix.os }}
