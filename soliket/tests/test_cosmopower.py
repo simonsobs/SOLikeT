@@ -29,9 +29,10 @@ info_dict = {
     },
     "theory": {
         "soliket.CosmoPower": {
-            "soliket_data_path": os.path.normpath(
-                os.path.join(os.getcwd(), "../data/CosmoPower")
-            ),
+            # "soliket_data_path": os.path.normpath(
+            #     os.path.join(os.getcwd(), "../data/CosmoPower")
+            # ),
+            "soliket_data_path": "soliket/data/CosmoPower",
             "stop_at_error": True,
         }
     },
