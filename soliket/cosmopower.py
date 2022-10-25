@@ -95,22 +95,3 @@ class CosmoPower(BoltzmannBase):
 
     def get_can_support_params(self):
         return ["omega_b", "omega_cdm", "h", "logA", "ns", "tau_reio"]
-
-    def _cmb_unit_factor(self, units, T_cmb):
-        units_factors = {
-            "1": 1,
-            "muK2": T_cmb * 1.0e6,
-            "K2": T_cmb,
-            "FIRASmuK2": 2.7255e6,
-            "FIRASK2": 2.7255,
-        }
-
-        try:
-            return units_factors[units]
-        except KeyError:
-            raise LoggedError(
-                self.log,
-                "Units '%s' not recognized. Use one of %s.",
-                units,
-                list(units_factors),
-            )
