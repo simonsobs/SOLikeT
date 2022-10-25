@@ -40,7 +40,7 @@ info_dict = {
 
 
 def test_cosmopower_theory():
-    model_fiducial = get_model(info_dict)
+    model_fiducial = get_model(info_dict)   # noqa F841
 
 
 def test_cosmopower_loglike():

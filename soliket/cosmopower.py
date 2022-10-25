@@ -4,6 +4,7 @@ import numpy as np
 
 from cobaya.theories.cosmo import BoltzmannBase
 from cobaya.typing import InfoDict
+from cobaya.log import LoggedError
 
 """
   Simple CosmoPower theory wrapper for Cobaya.
@@ -47,7 +48,7 @@ class CosmoPower(BoltzmannBase):
             restore_filename=os.path.join(base_path, self.cmb_ee_nn_filename),
         )
 
-        if not "lmax" in self.extra_args:
+        if "lmax" not in self.extra_args:
             self.extra_args["lmax"] = None
 
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")

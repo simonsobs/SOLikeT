@@ -29,8 +29,8 @@ setup(
         "mflike @ git+https://github.com/simonsobs/lat_mflike@master"
     ],
     extras_requires=[
-        "cosmopower" : ["cosmopower"]
-    ]
+        "cosmopower"
+    ],
     test_suite="soliket.tests",
     include_package_data=True,
 )
