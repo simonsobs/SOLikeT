@@ -61,17 +61,30 @@ def test_gaussian():
 
 def test_gaussian_hartlap():
 
+    np.random.seed(1234)
+
     name1 = "A"
     n1 = 10
     x1 = np.arange(n1)
+    y1th = x1**2.
     y1 = np.random.random(n1)
     nsims1 = 50
 
     cov1 = make_spd_matrix(n1, random_state=1234)
 
     data1 = GaussianData(name1, x1, y1, cov1)
-    data1_simcov = GaussianData(name1 + 'simcov', x1, y1, cov1, ncovsims=nsims1)
+    data1_simcov = GaussianData(name1 + 'simcov', x1, y1, cov1,
+                                ncovsims=nsims1)
+    data1_manysimcov = GaussianData(name1 + 'simcov', x1, y1, cov1,
+                                    ncovsims=(100 * nsims1))
 
     hartlap_factor = (nsims1 - n1 - 2) / (nsims1 - 1)
+    hartlap_manyfactor = (100 * nsims1 - n1 - 2) / (100 * nsims1 - 1)
 
-    assert np.allclose(data1.inv_cov, data1_simcov.inv_cov / hartlap_factor)
+    assert np.isclose(data1.loglike(y1th),
+                      data1_simcov.loglike(y1th) / hartlap_factor,
+                      rtol=1.e-3)
+
+    assert np.isclose(data1.loglike(y1th),
+                      data1_manysimcov.loglike(y1th) / hartlap_manyfactor,
+                      rtol=1.e-5)
