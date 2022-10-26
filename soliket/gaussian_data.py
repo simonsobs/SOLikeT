@@ -21,6 +21,7 @@ class GaussianData:
     def __init__(self, name, x, y, cov, ncovsims=None):
 
         self.name = str(name)
+        self.ncovsims = ncovsims
 
         if not (len(x) == len(y) and cov.shape == (len(x), len(x))):
             raise ValueError(f"Incompatible shapes! x={x.shape}, y={y.shape}, \
@@ -36,7 +37,7 @@ class GaussianData:
         if ncovsims is None:
             self.inv_cov = np.linalg.inv(self.cov)
         else:
-            hartlap_factor = (ncovsims - len(x) - 2) / (ncovsims - 1)
+            hartlap_factor = (self.ncovsims - len(x) - 2) / (self.ncovsims - 1)
             self.inv_cov = hartlap_factor * np.linalg.inv(self.cov)
         self.log_det = np.linalg.slogdet(self.cov)[1]
 

@@ -1,5 +1,6 @@
 from .lensing import LensingLiteLikelihood, LensingLikelihood  # noqa: F401
 from .gaussian import GaussianLikelihood, MultiGaussianLikelihood  # noqa: F401
+from .studentst import StudentstLikelihood  # noqa: F401
 from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401
 from .clusters import ClusterLikelihood  # noqa: F401
 from .mflike import MFLike  # noqa: F401

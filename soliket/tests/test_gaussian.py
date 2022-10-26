@@ -58,8 +58,9 @@ def test_gaussian():
     assert (multi.cross_covs[(name2, name2)] == data2.cov).all()
     assert (multi.cross_covs[(name3, name3)] == data3.cov).all()
 
+
 def test_gaussian_hartlap():
-    
+
     name1 = "A"
     n1 = 10
     x1 = np.arange(n1)
