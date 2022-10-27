@@ -28,6 +28,9 @@ setup(
         "fgspectra @ git+https://github.com/simonsobs/fgspectra@act_sz_x_cib#egg=fgspectra", # noqa E501
         "mflike @ git+https://github.com/simonsobs/lat_mflike@master"
     ],
+    extras_requires=[
+        "cosmopower"
+    ],
     test_suite="soliket.tests",
     include_package_data=True,
 )
