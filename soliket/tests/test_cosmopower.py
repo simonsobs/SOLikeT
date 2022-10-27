@@ -69,25 +69,10 @@ def test_cosmopower_against_camb():
     logL_cp = float(model_cp.loglikes({})[0])
     cp_cls = model_cp.theory['soliket.CosmoPower'].get_Cl()
 
-    # from matplotlib import pyplot as plt
-    # plt.figure(figsize=(2*4.5, 3.75))
-    # plt.subplot(121)
+    nanmask = ~np.isnan(cp_cls['tt'])
 
-    # ell_fac = cp_cls['ell'][2:] * (cp_cls['ell'][2:] + 1)
-    # plt.loglog(cp_cls['ell'][2:], ell_fac * camb_cls['tt'][2:], label='camb')
-    # plt.loglog(cp_cls['ell'][2:], ell_fac * cp_cls['tt'][2:], '--', label='CP')
-    # plt.legend()
-    # plt.xlabel('$\ell$')
-    # plt.ylabel('$D_\ell$')
-    # plt.subplot(122)
-    # plt.loglog(cp_cls['ell'], np.abs(cp_cls['tt']/camb_cls['tt'] - 1))
-    # plt.xlabel('$\ell$')
-    # plt.ylabel('$|C^{CP}_\ell/C^{camb}_\ell - 1|$')
-    # plt.subplots_adjust(wspace=0.25)
-    # plt.savefig('./camb_cosmopower_relative_cl.png', dpi=300, bbox_inches='tight')
-
-    assert np.allclose(cp_cls['tt'], camb_cls['tt'], rtol=1.e-4, equal_nan=True)
-    assert np.isclose(logL_camb, logL_cp)
+    assert np.allclose(cp_cls['tt'][nanmask], camb_cls['tt'][nanmask], rtol=1.e-2)
+    assert np.isclose(logL_camb, logL_cp, rtol=1.e-1)
 
 if __name__ == "__main__":
     test_cosmopower_theory()

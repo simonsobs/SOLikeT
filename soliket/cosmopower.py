@@ -4,7 +4,6 @@ import numpy as np
 
 from cobaya.theories.cosmo import BoltzmannBase
 from cobaya.typing import InfoDict
-from cobaya.log import LoggedError
 
 """
   Simple CosmoPower theory wrapper for Cobaya.
@@ -79,7 +78,9 @@ class CosmoPower(BoltzmannBase):
         ls = cls_old["ell"]
 
         for k in ["tt", "te", "ee"]:
-            cls[k] = np.zeros(cls["ell"].shape, dtype=float)
+            # cls[k] = np.zeros(cls["ell"].shape, dtype=float)
+            cls[k] = np.empty(cls["ell"].shape, dtype=float)
+            cls[k][:] = np.nan
 
         cmb_fac = self._cmb_unit_factor(units, 2.7255)
 
@@ -90,6 +91,9 @@ class CosmoPower(BoltzmannBase):
 
         for k in ["tt", "te", "ee"]:
             cls[k][ls] = cls_old[k] * ls_fac * cmb_fac ** 2.0
+            if np.any(np.isnan(cls[k])):
+                self.log.warning("CosmoPower used outside of trained "\
+                                 "{} ell range. Filled in with NaNs.".format(k))
 
         return cls
 
