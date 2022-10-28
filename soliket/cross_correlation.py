@@ -120,11 +120,15 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
         cl_binned_list = []
 
-        # import pdb
-        # pdb.set_trace()
-        # baryons! https://arxiv.org/pdf/2105.13544.pdf
-
         for tracer_comb in self.sacc_data.get_tracer_combinations():
+
+            if (self.sacc_data.tracers[tracer_comb[0]].quantity
+                    == self.sacc_data.tracers[tracer_comb[1]].quantity):
+                self.log.warning('You requested auto-correlation in '\
+                                 'ShearKappaLikelihood but it is only implemented for '\
+                                 'cross-correlations and resulting bias calculations '\
+                                 'will be incorrect. Please check your tracer '\
+                                 'combinations in the sacc file.')
 
             if self.sacc_data.tracers[tracer_comb[0]].quantity == "cmb_convergence":
                 tracer1 = ccl.CMBLensingTracer(cosmo, z_source=1060)
