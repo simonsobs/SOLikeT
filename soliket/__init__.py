@@ -7,6 +7,7 @@ from .mflike import TheoryForge_MFLike
 from .xcorr import XcorrLikelihood  # noqa: F401
 from .foreground import Foreground
 from .bandpass import BandPass
+from .cosmopower import CosmoPower
 
 try:
     import pyccl as ccl  # noqa: F401
