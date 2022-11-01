@@ -126,12 +126,40 @@ def test_shearkappa_m():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_ia():
+def test_shearkappa_ia_nla_noevo():
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
     info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "ia_mode": True}}
+                                                   "ia_mode": 'nla-noevo'}}
+
+    model = get_model(info) # noqa F841
+    loglikes, derived = model.loglikes()
+
+    assert np.isfinite(loglikes)
+
+
+def test_shearkappa_ia_nla():
+
+    from soliket.cross_correlation import ShearKappaLikelihood
+
+    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
+                                                   "ia_mode": 'nla'}}
+
+    info["params"]["eta_IA"] = 1.7
+
+    model = get_model(info) # noqa F841
+    loglikes, derived = model.loglikes()
+
+    assert np.isfinite(loglikes)
+
+
+def test_shearkappa_ia_perbin():
+
+    from soliket.cross_correlation import ShearKappaLikelihood
+
+    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
+                                                   "ia_mode": 'nla-perbin'}}
 
     model = get_model(info) # noqa F841
     loglikes, derived = model.loglikes()
