@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from cobaya.model import get_model
+from soliket.cosmopower import HAS_COSMOPOWER
 
 fiducial_params = {
     "ombh2": 0.0224,
@@ -39,10 +40,12 @@ info_dict = {
 }
 
 
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_theory():
     model_fiducial = get_model(info_dict)   # noqa F841
 
 
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_loglike():
     model_cp = get_model(info_dict)
 
@@ -51,6 +54,7 @@ def test_cosmopower_loglike():
     assert np.isclose(logL_cp, -295.139)
 
 
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_against_camb():
 
     info_dict['theory'] = {'camb': {'stop_at_error': True}}
@@ -73,7 +77,3 @@ def test_cosmopower_against_camb():
 
     assert np.allclose(cp_cls['tt'][nanmask], camb_cls['tt'][nanmask], rtol=1.e-2)
     assert np.isclose(logL_camb, logL_cp, rtol=1.e-1)
-
-if __name__ == "__main__":
-    test_cosmopower_theory()
-    test_cosmopower_loglike()
