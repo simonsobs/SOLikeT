@@ -135,3 +135,4 @@ soliket/clusters/chains/*
 soliket/clusters/notebooks/*
 
 soliket/cosmopower/data
+*.yaml
