@@ -40,12 +40,12 @@ info_dict = {
 }
 
 
-@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmpower')
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_theory():
     model_fiducial = get_model(info_dict)   # noqa F841
 
 
-@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmpower')
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_loglike():
     model_cp = get_model(info_dict)
 
@@ -54,7 +54,7 @@ def test_cosmopower_loglike():
     assert np.isclose(logL_cp, -295.139)
 
 
-@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmpower')
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_against_camb():
 
     info_dict['theory'] = {'camb': {'stop_at_error': True}}
