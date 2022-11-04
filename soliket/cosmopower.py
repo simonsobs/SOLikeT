@@ -76,6 +76,10 @@ class CosmoPower(BoltzmannBase):
         state["ee"] = self.cp_ee_nn.ten_to_predictions_np(cmb_params)[0, :]
         state["ell"] = self.cp_tt_nn.modes
 
+        state["Pk_grid"] = self.get_Pk_grid()
+        state["k"] = self.cp_pk_nn.modes
+        state["z"] = self.z
+
     def get_Cl(self, ell_factor=False, units="FIRASmuK2"):
         cls_old = self.current_state.copy()
 
@@ -103,6 +107,45 @@ class CosmoPower(BoltzmannBase):
                                  "{} ell range. Filled in with NaNs.".format(k))
 
         return cls
+
+    def must_provide(self, **requirements):
+
+        if 'Pk_interpolator' not in requirements and 'Pk_grid' not in requirements:
+            return {}
+
+        self.kmax = max(self.k_list)
+        self.z = np.unique(np.concatenate(
+                            (np.atleast_1d(options.get("z", self._default_z_sampling)),
+                            np.atleast_1d(self.z))))
+
+        self.nonlinear = self.nonlinear or options.get('nonlinear', False)
+
+        self._var_pairs.update(set((x, y) for x, y in
+                               options.get('vars_pairs', [('delta_tot', 'delta_tot')])))
+
+        needs['Pk_grid'] = {
+                'vars_pairs': self._var_pairs or [('delta_tot', 'delta_tot')],
+                'nonlinear': (True, False) if self.nonlinear else False,
+            }
+
+        return needs
+
+
+    def get_Pk_grid(self, var_pair=("delta_tot", "delta_tot"), nonlinear=True,
+                            extrap_kmin=None, extrap_kmax=None):
+        
+        if var_pair != ("delta_tot", "delta_tot") or nonlinear
+            raise LoggedError(self.log,
+                              'COSMOPOWER P(k, z) only trained for linear delta_tot pk')
+
+        if self.kmax > max(self.cp_pk_nn.modes):
+            raise LoggedError(self.log,
+                              'COSMOPOWER P(k, z) only trained up to {}'.format(max(self.cp_pk_nn.modes))
+                              'but you have requested kmax {}.'.format(self.kmax))
+
+        k = self.cp_pk_nn.modes
+        pk = self.cp_pk_nn.predictions_np(params)
+
 
     def get_can_support_params(self):
         return ["omega_b", "omega_cdm", "h", "logA", "ns", "tau_reio"]
