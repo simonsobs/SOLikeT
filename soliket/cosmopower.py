@@ -19,9 +19,11 @@ from cobaya.typing import InfoDict
 class CosmoPower(BoltzmannBase):
     soliket_data_path: str = "soliket/data/CosmoPower"
     network_path: str = "CP_paper/CMB"
+    network_path_pk: str = "CP_paper/PK"
     cmb_tt_nn_filename: str = "cmb_TT_NN"
     cmb_te_pcaplusnn_filename: str = "cmb_TE_PCAplusNN"
     cmb_ee_nn_filename: str = "cmb_EE_NN"
+    pk_lin_nn_filename: str = "PKLIN_NN"
 
     extra_args: InfoDict = {}
 
