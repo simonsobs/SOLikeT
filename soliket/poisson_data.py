@@ -62,13 +62,7 @@ class PoissonData:
                 rate_densities = rate_fn(**{c: self.catalog[c].values for
                                             c in self.columns})
             else:
-                rate_densities = np.array(
-                    [
-                        rate_fn(**{c: self.catalog[c].values[i] for c in self.columns})
-                        for i in range(len(self))
-                    ]
-                )
-
+                rate_densities = rate_fn
             return -n_expected + sum(np.log(rate_densities))
 
         else:
@@ -78,3 +72,7 @@ class PoissonData:
             l_k = 1 / self.N_k * summand.sum(axis=1)
             assert l_k.shape == (self._len,)
             return -n_expected + sum(np.log(l_k))
+
+
+
+# def rate_fn_parallel(cat_index,lkl):
