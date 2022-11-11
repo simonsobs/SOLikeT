@@ -1,36 +1,78 @@
-# example cobaya-compliant SO likelihood package;
-# adapted from github.com/cobayasampler/example_external_likelihood
+#!/usr/bin/env python
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+
+# NOTE: The configuration for the package, including the name, version, and
+# other information are set in the setup.cfg file.
+
+import os
+import sys
 
 from setuptools import setup
 
-setup(
-    name="soliket",
-    version="0.0",
-    description="SO Likelihoods & Theories",
-    zip_safe=False,
-    packages=["soliket", "soliket.tests", "soliket.clusters"],
-    package_data={
-        "soliket": [
-            "*.yaml",
-            "*.bibtex",
-            # "data/simulated*/*.txt",
-            "clusters/data/*",
-            "clusters/data/selFn_equD56/*",
-            "lensing/data/*.txt",
-        ]
-    },
-    install_requires=[
-        "astropy",
-        "scikit-learn",
-        "cobaya",
-        "sacc",
-        "pyccl",
-        "fgspectra @ git+https://github.com/simonsobs/fgspectra@act_sz_x_cib#egg=fgspectra", # noqa E501
-        "mflike @ git+https://github.com/simonsobs/lat_mflike@master"
-    ],
-    extras_requires=[
-        "cosmopower"
-    ],
-    test_suite="soliket.tests",
-    include_package_data=True,
-)
+
+# First provide helpful messages if contributors try and run legacy commands
+# for tests or docs.
+
+TEST_HELP = """
+Note: running tests is no longer done using 'python setup.py test'. Instead
+you will need to run:
+
+    tox -e test
+
+If you don't already have tox installed, you can install it with:
+
+    pip install tox
+
+If you only want to run part of the test suite, you can also use pytest
+directly with::
+
+    pip install -e .[test]
+    pytest
+
+For more information, see:
+
+  http://docs.astropy.org/en/latest/development/testguide.html#running-tests
+"""
+
+if 'test' in sys.argv:
+    print(TEST_HELP)
+    sys.exit(1)
+
+DOCS_HELP = """
+Note: building the documentation is no longer done using
+'python setup.py build_docs'. Instead you will need to run:
+
+    tox -e build_docs
+
+If you don't already have tox installed, you can install it with:
+
+    pip install tox
+
+You can also build the documentation with Sphinx directly using::
+
+    pip install -e .[docs]
+    cd docs
+    make html
+
+For more information, see:
+
+  http://docs.astropy.org/en/latest/install.html#builddocs
+"""
+
+if 'build_docs' in sys.argv or 'build_sphinx' in sys.argv:
+    print(DOCS_HELP)
+    sys.exit(1)
+
+VERSION_TEMPLATE = """
+# Note that we need to fall back to the hard-coded version if either
+# setuptools_scm can't be imported or setuptools_scm can't determine the
+# version, so we catch the generic 'Exception'.
+try:
+    from setuptools_scm import get_version
+    version = get_version(root='..', relative_to=__file__)
+except Exception:
+    version = '{version}'
+""".lstrip()
+
+setup(use_scm_version={'write_to': os.path.join('soliket', 'version.py'),
+                       'write_to_template': VERSION_TEMPLATE})
