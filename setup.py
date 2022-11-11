@@ -30,6 +30,9 @@ setup(
         "mflike @ git+https://github.com/simonsobs/lat_mflike@master",
         "velocileptors @ git+https://github.com/sfschen/velocileptors@master"
     ],
+    extras_requires=[
+        "cosmopower"
+    ],
     test_suite="soliket.tests",
     include_package_data=True,
 )

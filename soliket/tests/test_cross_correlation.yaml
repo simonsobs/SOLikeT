@@ -30,7 +30,8 @@ params:
   s1: 0.4 
   sigma8: 
 likelihood:
-  soliket.cross_correlation.GalaxyKappaLikelihood: 
+  soliket.cross_correlation.GalaxyKappaLikelihood:
+    datapath: null
 theory:
   camb: 
     extra_args:
