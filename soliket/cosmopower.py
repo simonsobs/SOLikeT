@@ -1,5 +1,10 @@
 import os
-import cosmopower as cp
+try:
+    import cosmopower as cp  # noqa F401
+except ImportError:
+    HAS_COSMOPOWER = False
+else:
+    HAS_COSMOPOWER = True
 import numpy as np
 
 from cobaya.theories.cosmo import BoltzmannBase
