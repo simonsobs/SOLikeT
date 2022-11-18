@@ -29,11 +29,6 @@ jobs:
       run: |
         conda install pip compilers pytest pytest-cov pyccl cython
         pip install cobaya
-
-    - name: install extra reqs
-      run: |
-        pip install cosmopower
-
       env:  
         MATRIX_OS: ${{ matrix.os }}
 
