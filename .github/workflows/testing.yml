@@ -39,6 +39,16 @@ jobs:
     - name: Install Dependencies
       run: |
         pip install tox
+    - name: Install Classy
+      run: |
+        if [[ ${MATRIX_OS} == "macos-latest" ]]; then
+          . ci_scripts/install_class_osx.sh
+        else
+          . ci_scripts/install_class_linux.sh
+        fi
+        python -c "import classy; print(classy)"
+      env:
+        MATRIX_OS: ${{ matrix.os }}
     - name: Run Tests
       run: |
         tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
