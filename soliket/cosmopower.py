@@ -17,13 +17,13 @@ from cobaya.typing import InfoDict
 
 
 class CosmoPower(BoltzmannBase):
+    stop_at_error: bool = False
+
     soliket_data_path: str = "soliket/data/CosmoPower"
     network_path: str = "CP_paper/CMB"
-    cmb_tt_nn_filename: str = "cmb_TT_NN"
-    cmb_te_pcaplusnn_filename: str = "cmb_TE_PCAplusNN"
-    cmb_ee_nn_filename: str = "cmb_EE_NN"
+    network_settings: InfoDict = { }
 
-    extra_args: InfoDict = {}
+    extra_args: InfoDict = { }
 
     renames: dict = {
         "omega_b": ["ombh2", "omegabh2"],
@@ -39,18 +39,33 @@ class CosmoPower(BoltzmannBase):
 
         base_path = os.path.join(self.soliket_data_path, self.network_path)
 
-        self.cp_tt_nn = cp.cosmopower_NN(
-            restore=True,
-            restore_filename=os.path.join(base_path, self.cmb_tt_nn_filename),
-        )
-        self.cp_te_nn = cp.cosmopower_PCAplusNN(
-            restore=True,
-            restore_filename=os.path.join(base_path, self.cmb_te_pcaplusnn_filename),
-        )
-        self.cp_ee_nn = cp.cosmopower_NN(
-            restore=True,
-            restore_filename=os.path.join(base_path, self.cmb_ee_nn_filename),
-        )
+        self.networks = { }
+        self.all_parameters = set([ ])
+
+        for spectype in self.network_settings:
+            netdata = { }
+            nettype = self.network_settings[spectype]
+            netpath = os.path.join( base_path, nettype["filename"] )
+
+            if nettype["type"] == "NN":
+                network = cp.cosmopower_NN( restore = True, restore_filename = netpath )
+            elif nettype["type"] == "PCAplusNN":
+                network = cp.cosmopower_PCAplusNN( restore = True, restore_filename = netpath )
+            elif self.stop_at_error:
+                raise ValueError(f"Unknown network type {nettype.type} for network {spectype}.")
+            else:
+                self.log.warn(f"Unknown network type {nettype.type} for network {spectype}: skipped!")
+
+            netdata["type"] = nettype["type"]
+            netdata["log"] = nettype.get("log", True)
+            netdata["network"] = network
+            netdata["parameters"] = list(network.parameters)
+            netdata["lmax"] = network.modes.max()
+
+            self.all_parameters = self.all_parameters | set(network.parameters)
+
+            if not network is None:
+                self.networks[ spectype.lower() ] = netdata
 
         if "lmax" not in self.extra_args:
             self.extra_args["lmax"] = None
@@ -58,7 +73,7 @@ class CosmoPower(BoltzmannBase):
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")
 
     def calculate(self, state, want_derived=True, **params):
-        cmb_params = {}
+        cmb_params = { }
 
         for par in self.renames:
             if par in params:
@@ -69,20 +84,33 @@ class CosmoPower(BoltzmannBase):
                         cmb_params[par] = [params[r]]
                         break
 
-        state["tt"] = self.cp_tt_nn.ten_to_predictions_np(cmb_params)[0, :]
-        state["te"] = self.cp_te_nn.predictions_np(cmb_params)[0, :]
-        state["ee"] = self.cp_ee_nn.ten_to_predictions_np(cmb_params)[0, :]
-        state["ell"] = self.cp_tt_nn.modes
+        ells = None
+
+        for spectype in self.networks:
+            network = self.networks[spectype]
+            used_params = { par : cmb_params[par] for par in cmb_params if par in network["parameters"] }
+
+            if network["log"]:
+                data = network["network"].ten_to_predictions_np(cmb_params)[0, :]
+            else:
+                data = network["network"].predictions_np(cmb_params)[0, :]
+
+            state[spectype] = data
+
+            if ells is None:
+                ells = network["network"].modes
+
+        state["ell"] = ells.astype(int)
 
     def get_Cl(self, ell_factor=False, units="FIRASmuK2"):
         cls_old = self.current_state.copy()
 
-        lmax = self.extra_args["lmax"] or (cls_old["tt"].shape[0] + 2)
+        lmax = self.extra_args["lmax"] or cls_old["ell"].max()
 
-        cls = {"ell": np.arange(lmax).astype(int)}
+        cls = {"ell": np.arange(lmax+1).astype(int)}
         ls = cls_old["ell"]
 
-        for k in ["tt", "te", "ee"]:
+        for k in self.networks:
             # cls[k] = np.zeros(cls["ell"].shape, dtype=float)
             cls[k] = np.empty(cls["ell"].shape, dtype=float)
             cls[k][:] = np.nan
@@ -92,9 +120,9 @@ class CosmoPower(BoltzmannBase):
         if ell_factor:
             ls_fac = ls * (ls + 1.0) / (2.0 * np.pi)
         else:
-            ls_fac = 1.0
+            ls_fac = np.ones_like(ls)
 
-        for k in ["tt", "te", "ee"]:
+        for k in self.networks:
             cls[k][ls] = cls_old[k] * ls_fac * cmb_fac ** 2.0
             if np.any(np.isnan(cls[k])):
                 self.log.warning("CosmoPower used outside of trained "\
@@ -103,4 +131,4 @@ class CosmoPower(BoltzmannBase):
         return cls
 
     def get_can_support_params(self):
-        return ["omega_b", "omega_cdm", "h", "logA", "ns", "tau_reio"]
+        return self.all_parameters

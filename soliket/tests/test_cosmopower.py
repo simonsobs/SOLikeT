@@ -35,6 +35,27 @@ info_dict = {
             # ),
             "soliket_data_path": "soliket/data/CosmoPower",
             "stop_at_error": True,
+            
+            "network_settings" : {
+                # TT has been trained on log(Cl)
+                "tt" : {
+                    "type" : "NN",
+                    "log" : True,
+                    "filename" : "cmb_TT_NN"
+                },
+                # EE has been trained on log(Cl)
+                "ee" : {
+                    "type" : "NN",
+                    "log" : True,
+                    "filename" : "cmb_EE_NN"
+                },
+                # TE has been trained on Cl (*NOT* log(Cl)!)
+                "te" : {
+                    "type" : "PCAplusNN",
+                    "log" : False,
+                    "filename" : "cmb_TE_PCAplusNN"
+                },
+            }
         }
     },
 }
@@ -63,11 +84,33 @@ def test_cosmopower_against_camb():
     camb_cls = model_camb.theory['camb'].get_Cl()
 
     info_dict['theory'] = {
-                           "soliket.CosmoPower": {
-                           "soliket_data_path": "soliket/data/CosmoPower",
-                           "stop_at_error": True,
-                           "extra_args": {'lmax': camb_cls['ell'].max() + 1}}
+        "soliket.CosmoPower": {
+            # "soliket_data_path": os.path.normpath(
+            #     os.path.join(os.getcwd(), "../data/CosmoPower")
+            # ),
+            "soliket_data_path": "soliket/data/CosmoPower",
+            "stop_at_error": True,
+            "extra_args": {'lmax': camb_cls['ell'].max()},
+            
+            "network_settings" : {
+                "tt" : {
+                    "type" : "NN",
+                    "log" : True,
+                    "filename" : "cmb_TT_NN"
+                },
+                "ee" : {
+                    "type" : "NN",
+                    "log" : True,
+                    "filename" : "cmb_EE_NN"
+                },
+                "te" : {
+                    "type" : "PCAplusNN",
+                    "log" : False,
+                    "filename" : "cmb_TE_PCAplusNN"
+                },
+            }
         }
+    }
 
     model_cp = get_model(info_dict)
     logL_cp = float(model_cp.loglikes({})[0])
