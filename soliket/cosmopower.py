@@ -52,9 +52,9 @@ class CosmoPower(BoltzmannBase):
             elif nettype["type"] == "PCAplusNN":
                 network = cp.cosmopower_PCAplusNN( restore = True, restore_filename = netpath )
             elif self.stop_at_error:
-                raise ValueError(f"Unknown network type {nettype.type} for network {spectype}.")
+                raise ValueError(f"Unknown network type {nettype['type']} for network {spectype}.")
             else:
-                self.log.warn(f"Unknown network type {nettype.type} for network {spectype}: skipped!")
+                self.log.warn(f"Unknown network type {nettype['type']} for network {spectype}: skipped!")
 
             netdata["type"] = nettype["type"]
             netdata["log"] = nettype.get("log", True)
