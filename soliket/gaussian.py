@@ -14,11 +14,12 @@ class GaussianLikelihood(Likelihood):
     name: str = "Gaussian"
     datapath: Optional[str] = None
     covpath: Optional[str] = None
+    ncovsims: Optional[int] = None
 
     def initialize(self):
         x, y = self._get_data()
         cov = self._get_cov()
-        self.data = GaussianData(self.name, x, y, cov)
+        self.data = GaussianData(self.name, x, y, cov, self.ncovsims)
 
     def _get_data(self):
         x, y = np.loadtxt(self.datapath, unpack=True)
