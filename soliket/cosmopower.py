@@ -61,6 +61,7 @@ class CosmoPower(BoltzmannBase):
             netdata["network"] = network
             netdata["parameters"] = list(network.parameters)
             netdata["lmax"] = network.modes.max()
+            netdata["has_ell_factor"] = nettype.get("has_ell_factor", False)
 
             self.all_parameters = self.all_parameters | set(network.parameters)
 
@@ -123,6 +124,10 @@ class CosmoPower(BoltzmannBase):
             ls_fac = np.ones_like(ls)
 
         for k in self.networks:
+            cl_fac = np.ones_like(ls_fac)
+            if self.networks[k]["has_ell_factor"]:
+                cl_fac = (2.0 * np.pi) / (ls * (ls + 1.0))
+
             cls[k][ls] = cls_old[k] * ls_fac * cmb_fac ** 2.0
             if np.any(np.isnan(cls[k])):
                 self.log.warning("CosmoPower used outside of trained "\

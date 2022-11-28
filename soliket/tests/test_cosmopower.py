@@ -37,23 +37,25 @@ info_dict = {
             "stop_at_error": True,
             
             "network_settings" : {
-                # TT has been trained on log(Cl)
                 "tt" : {
                     "type" : "NN",
                     "log" : True,
-                    "filename" : "cmb_TT_NN"
+                    "filename" : "cmb_TT_NN",
+                    # If your network has been trained on (l (l+1) / 2 pi) C_l, this flag needs to be set.
+                    "has_ell_factor" : False,
                 },
-                # EE has been trained on log(Cl)
                 "ee" : {
                     "type" : "NN",
                     "log" : True,
-                    "filename" : "cmb_EE_NN"
+                    "filename" : "cmb_EE_NN",
+                    "has_ell_factor" : False,
                 },
-                # TE has been trained on Cl (*NOT* log(Cl)!)
                 "te" : {
                     "type" : "PCAplusNN",
+                    # Trained on Cl, not log(Cl)
                     "log" : False,
-                    "filename" : "cmb_TE_PCAplusNN"
+                    "filename" : "cmb_TE_PCAplusNN",
+                    "has_ell_factor" : False,
                 },
             }
         }
