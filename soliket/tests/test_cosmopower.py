@@ -22,6 +22,30 @@ fiducial_params = {
     "H0": {"value": "lambda h: h * 100.0"},
 }
 
+des_params = {
+              'DES_DzL1': 0.001,
+              'DES_DzL2': 0.002,
+              'DES_DzL3': 0.001,
+              'DES_DzL4': 0.003,
+              'DES_DzL5': 0,
+              'DES_b1': 1.45,
+              'DES_b2': 1.55,
+              'DES_b3': 1.65,
+              'DES_b4': 1.8,
+              'DES_b5': 2.0,
+              'DES_DzS1': -0.001,
+              'DES_DzS2': -0.019,
+              'DES_DzS3': 0.009,
+              'DES_DzS4': -0.018,
+              'DES_m1': 0.012,
+              'DES_m2': 0.012,
+              'DES_m3': 0.012,
+              'DES_m4': 0.012,
+              'DES_AIA': 1,
+              'DES_alphaIA': 1,
+              'DES_z0IA': 0.62,
+}
+
 info_dict = {
     "params": fiducial_params,
     "likelihood": {
@@ -38,6 +62,27 @@ info_dict = {
         }
     },
 }
+
+def lss_part_likelihood(_self):
+    results = _self.provider.get_Pk_interpolator().P(0.1, 1.0)
+    # results = _self.provider.get_Pk_grid()
+    return 1
+
+
+info_dict_pk = {
+        "params": fiducial_params,
+        "likelihood":  {'lss': {'external': lss_part_likelihood, 'requires': {'Pk_interpolator': {'z' : np.linspace(0.0, 2, 128),
+                                                                              'k_max': 1.}}}
+        },
+        "theory": {
+        "soliket.CosmoPower": {
+            "soliket_data_path": "soliket/data/CosmoPower",
+            "stop_at_error": True,
+            "provides": 'Pk_grid',
+            }
+        # 'camb': {"stop_at_error": True,}
+        }
+    }
 
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
@@ -77,3 +122,14 @@ def test_cosmopower_against_camb():
 
     assert np.allclose(cp_cls['tt'][nanmask], camb_cls['tt'][nanmask], rtol=1.e-2)
     assert np.isclose(logL_camb, logL_cp, rtol=1.e-1)
+
+
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
+def test_cosmopower_pkgrid():
+
+    model_cp = get_model(info_dict_pk)
+
+    logL_cp = float(model_cp.loglikes({})[0])
+
+    assert np.isfinite(logL_cp)
+

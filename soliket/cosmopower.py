@@ -9,6 +9,7 @@ import numpy as np
 
 from cobaya.theories.cosmo import BoltzmannBase
 from cobaya.typing import InfoDict
+from cobaya.log import LoggedError
 
 """
   Simple CosmoPower theory wrapper for Cobaya.
@@ -24,6 +25,8 @@ class CosmoPower(BoltzmannBase):
     cmb_te_pcaplusnn_filename: str = "cmb_TE_PCAplusNN"
     cmb_ee_nn_filename: str = "cmb_EE_NN"
     pk_lin_nn_filename: str = "PKLIN_NN"
+    k_max: int = 1.
+    z: float = np.linspace(0.0, 2, 128)
 
     extra_args: InfoDict = {}
 
@@ -53,6 +56,10 @@ class CosmoPower(BoltzmannBase):
             restore=True,
             restore_filename=os.path.join(base_path, self.cmb_ee_nn_filename),
         )
+        self.cp_pk_nn = cp.cosmopower_NN(
+            restore=True,
+            restore_filename=os.path.join(self.soliket_data_path, self.network_path_pk, self.pk_lin_nn_filename),
+        )
 
         if "lmax" not in self.extra_args:
             self.extra_args["lmax"] = None
@@ -60,25 +67,34 @@ class CosmoPower(BoltzmannBase):
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")
 
     def calculate(self, state, want_derived=True, **params):
-        cmb_params = {}
+        network_params = {}
 
         for par in self.renames:
             if par in params:
-                cmb_params[par] = [params[par]]
+                network_params[par] = [params[par]]
             else:
                 for r in self.renames[par]:
                     if r in params:
-                        cmb_params[par] = [params[r]]
+                        network_params[par] = [params[r]]
                         break
 
-        state["tt"] = self.cp_tt_nn.ten_to_predictions_np(cmb_params)[0, :]
-        state["te"] = self.cp_te_nn.predictions_np(cmb_params)[0, :]
-        state["ee"] = self.cp_ee_nn.ten_to_predictions_np(cmb_params)[0, :]
+        state["tt"] = self.cp_tt_nn.ten_to_predictions_np(network_params)[0, :]
+        state["te"] = self.cp_te_nn.predictions_np(network_params)[0, :]
+        state["ee"] = self.cp_ee_nn.ten_to_predictions_np(network_params)[0, :]
         state["ell"] = self.cp_tt_nn.modes
 
-        state["Pk_grid"] = self.get_Pk_grid()
-        state["k"] = self.cp_pk_nn.modes
-        state["z"] = self.z
+        # if "Pk_grid" in self.requested() or "Pk_interpolator" in self.requested():
+        
+        network_params_z = {}
+
+        for k in network_params.keys():
+            network_params_z[k] = np.repeat(network_params[k], len(self.z))
+        network_params_z['z'] = self.z
+
+        var_pair=("delta_tot", "delta_tot")
+        nonlinear=True
+
+        state[("Pk_grid", bool(nonlinear)) + tuple(sorted(var_pair))] = self.cp_pk_nn.modes, self.z, self.cp_pk_nn.predictions_np(network_params_z)
 
     def get_Cl(self, ell_factor=False, units="FIRASmuK2"):
         cls_old = self.current_state.copy()
@@ -108,44 +124,48 @@ class CosmoPower(BoltzmannBase):
 
         return cls
 
-    def must_provide(self, **requirements):
+    # def must_provide(self, **requirements):
 
-        if 'Pk_interpolator' not in requirements and 'Pk_grid' not in requirements:
-            return {}
+    #     super().must_provide(**requirements)
 
-        self.kmax = max(self.k_list)
-        self.z = np.unique(np.concatenate(
-                            (np.atleast_1d(options.get("z", self._default_z_sampling)),
-                            np.atleast_1d(self.z))))
+    #     for k, v in self._must_provide.items():
+    #          if isinstance(k, tuple) and k[0] == "Pk_grid":
+    #             v = deepcopy(v)
+    #             self.add_P_k_max(v.pop("k_max"), units="1/Mpc")
+    #             # NB: Actually, only the max z is used, and the actual sampling in z
+    #             # for computing P(k,z) is controlled by `perturb_sampling_stepsize`
+    #             # (default: 0.1). But let's leave it like this in case this changes
+    #             # in the future.
+    #             self.add_z_for_matter_power(v.pop("z"))
+    #             if v["nonlinear"]:
+    #                 if "non_linear" not in self.extra_args:
+    #                     # this is redundant with initialisation, but just in case
+    #                     self.extra_args["non_linear"] = non_linear_default_code
+    #                 elif self.extra_args["non_linear"] == non_linear_null_value:
+    #                     raise LoggedError(
+    #                         self.log, ("Non-linear Pk requested, but `non_linear: "
+    #                                    f"{non_linear_null_value}` imposed in "
+    #                                    "`extra_args`"))
+    #             pair = k[2:]
+    #             if pair == ("delta_tot", "delta_tot"):
+    #                 self.collectors[k] = Collector(
+    #                     method="get_pk_and_k_and_z",
+    #                     kwargs=v,
+    #                     post=(lambda P, kk, z: (kk, z, np.array(P).T)))
+    #             else:
+    #                 raise LoggedError(self.log, "NotImplemented in cosmopower: %r", pair)
 
-        self.nonlinear = self.nonlinear or options.get('nonlinear', False)
-
-        self._var_pairs.update(set((x, y) for x, y in
-                               options.get('vars_pairs', [('delta_tot', 'delta_tot')])))
-
-        needs['Pk_grid'] = {
-                'vars_pairs': self._var_pairs or [('delta_tot', 'delta_tot')],
-                'nonlinear': (True, False) if self.nonlinear else False,
-            }
-
-        return needs
+    #     return needs
 
 
-    def get_Pk_grid(self, var_pair=("delta_tot", "delta_tot"), nonlinear=True,
-                            extrap_kmin=None, extrap_kmax=None):
+    # def get_Pk_grid(self, params, var_pair=("delta_tot", "delta_tot"), nonlinear=False,
+    #                         extrap_kmin=None, extrap_kmax=None):
         
-        if var_pair != ("delta_tot", "delta_tot") or nonlinear
-            raise LoggedError(self.log,
-                              'COSMOPOWER P(k, z) only trained for linear delta_tot pk')
-
-        if self.kmax > max(self.cp_pk_nn.modes):
-            raise LoggedError(self.log,
-                              'COSMOPOWER P(k, z) only trained up to {}'.format(max(self.cp_pk_nn.modes))
-                              'but you have requested kmax {}.'.format(self.kmax))
-
-        k = self.cp_pk_nn.modes
-        pk = self.cp_pk_nn.predictions_np(params)
+    #     return self.current_state['k'], self.current_state['pk_z'], self.current_state['pk']
 
 
     def get_can_support_params(self):
         return ["omega_b", "omega_cdm", "h", "logA", "ns", "tau_reio"]
+
+    def get_can_provide(self):
+        return ['Cl', 'Pk_grid', 'Pk_interpolator']
