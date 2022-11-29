@@ -89,12 +89,12 @@ class CosmoPower(BoltzmannBase):
 
         for spectype in self.networks:
             network = self.networks[spectype]
-            used_params = { par : cmb_params[par] for par in cmb_params if par in network["parameters"] }
+            used_params = { par : (cmb_params[par] if par in cmb_params else [params[par]]) for par in network["parameters"] }
 
             if network["log"]:
-                data = network["network"].ten_to_predictions_np(cmb_params)[0, :]
+                data = network["network"].ten_to_predictions_np(used_params)[0, :]
             else:
-                data = network["network"].predictions_np(cmb_params)[0, :]
+                data = network["network"].predictions_np(used_params)[0, :]
 
             state[spectype] = data
 
