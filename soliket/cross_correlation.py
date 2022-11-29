@@ -21,7 +21,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
             x, y, dy = self._get_data()
             cov = np.diag(dy**2)
-            self.data = GaussianData("CrossCorrelation", x, y, cov)
+            self.data = GaussianData("CrossCorrelation", x, y, cov, self.ncovsims)
         else:
             self._get_sacc_data()
 
@@ -53,7 +53,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
         self.y = self.sacc_data.mean
         self.cov = self.sacc_data.covariance.covmat
 
-        self.data = GaussianData(self.name, self.x, self.y, self.cov)
+        self.data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
 
     def _construct_ell_bins(self):
 
