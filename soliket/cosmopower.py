@@ -110,22 +110,26 @@ class CosmoPower(BoltzmannBase):
 
         cls = {"ell": np.arange(lmax+1).astype(int)}
         ls = cls_old["ell"]
+        ls_fac = np.ones_like(ls).astype(float)
 
         for k in self.networks:
             cls[k] = np.tile(np.nan, cls["ell"].shape)
 
-        if ell_factor:
-            ls_fac = ls * (ls + 1.0) / (2.0 * np.pi)
-        else:
-            ls_fac = np.ones_like(ls)
-
         for k in self.networks:
-            cmb_fac = self.cmb_unit_factor(k, units, 2.7255)
             cl_fac = np.ones_like(ls_fac)
             if self.networks[k]["has_ell_factor"]:
-                cl_fac = (2.0 * np.pi) / (ls * (ls + 1.0))
+                if k == "pp":
+                    cl_fac = (2.0 * np.pi) / (ls * (ls + 1.0)) ** 2.0
+                else:
+                    cl_fac = (2.0 * np.pi) / (ls * (ls + 1.0))
+            
+            if ell_factor:
+                if k == "pp":
+                    ls_fac = (ls * (ls + 1.0)) ** 2.0 / (2.0 * np.pi)
+                else:
+                    ls_fac = ls * (ls + 1.0) / (2.0 * np.pi)
 
-            cls[k][ls] = cls_old[k] * cl_fac * ls_fac * cmb_fac ** 2.0
+            cls[k][ls] = cls_old[k] * cl_fac * ls_fac * self.cmb_unit_factor(k, units, 2.7255)
             cls[k][:2] = 0.0
             if np.any(np.isnan(cls[k])):
                 self.log.warning("CosmoPower used outside of trained "\
@@ -134,10 +138,20 @@ class CosmoPower(BoltzmannBase):
         return cls
 
     def cmb_unit_factor(self, spectra, units="FIRASmuK2", Tcmb=2.7255):
-        if spectra == "pp":
-            return 1./np.sqrt(2.0*np.pi)
+        res = 1.0
+        x,y = spectra
 
-        return self._cmb_unit_factor(units, Tcmb)
+        if x == "t" or x == "e" or x == "b":
+            res *= self._cmb_unit_factor(units, Tcmb)
+        elif x == "p":
+            res *= 1./np.sqrt(2.0*np.pi)
+
+        if y == "t" or y == "e" or y == "b":
+            res *= self._cmb_unit_factor(units, Tcmb)
+        elif y == "p":
+            res *= 1./np.sqrt(2.0*np.pi)
+
+        return res
 
     def get_can_support_params(self):
         return self.all_parameters
