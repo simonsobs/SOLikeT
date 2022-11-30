@@ -112,11 +112,7 @@ class CosmoPower(BoltzmannBase):
         ls = cls_old["ell"]
 
         for k in self.networks:
-            # cls[k] = np.zeros(cls["ell"].shape, dtype=float)
-            cls[k] = np.empty(cls["ell"].shape, dtype=float)
-            cls[k][:] = np.nan
-
-        cmb_fac = self._cmb_unit_factor(units, 2.7255)
+            cls[k] = np.tile(np.nan, cls["ell"].shape)
 
         if ell_factor:
             ls_fac = ls * (ls + 1.0) / (2.0 * np.pi)
@@ -124,16 +120,24 @@ class CosmoPower(BoltzmannBase):
             ls_fac = np.ones_like(ls)
 
         for k in self.networks:
+            cmb_fac = self.cmb_unit_factor(k, units, 2.7255)
             cl_fac = np.ones_like(ls_fac)
             if self.networks[k]["has_ell_factor"]:
                 cl_fac = (2.0 * np.pi) / (ls * (ls + 1.0))
 
             cls[k][ls] = cls_old[k] * cl_fac * ls_fac * cmb_fac ** 2.0
+            cls[k][:2] = 0.0
             if np.any(np.isnan(cls[k])):
                 self.log.warning("CosmoPower used outside of trained "\
                                  "{} ell range. Filled in with NaNs.".format(k))
 
         return cls
+
+    def cmb_unit_factor(self, spectra, units="FIRASmuK2", Tcmb=2.7255):
+        if spectra == "pp":
+            return 1./np.sqrt(2.0*np.pi)
+
+        return self._cmb_unit_factor(units, Tcmb)
 
     def get_can_support_params(self):
         return self.all_parameters
