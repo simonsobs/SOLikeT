@@ -68,10 +68,15 @@ class CosmoPower(BoltzmannBase):
             if not network is None:
                 self.networks[ spectype.lower() ] = netdata
 
+        if "ln10^{10}A_s" in self.all_parameters:
+            self.all_parameters.remove("ln10^{10}A_s")
+            self.all_parameters.add("logA")
+
         if "lmax" not in self.extra_args:
             self.extra_args["lmax"] = None
 
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")
+        self.log.info(f"CosmoPower will expect the parameters {self.all_parameters}")
 
     def calculate(self, state, want_derived=True, **params):
         cmb_params = { }
@@ -153,5 +158,8 @@ class CosmoPower(BoltzmannBase):
 
         return res
 
-    def get_can_support_params(self):
+    def get_can_support_parameters(self):
+        return self.get_requirements()
+
+    def get_requirements(self):
         return self.all_parameters
