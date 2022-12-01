@@ -34,7 +34,7 @@ class CosmoPower(BoltzmannBase):
         "tau_reio": ["tau"],
     }
 
-    def initialize(self):
+    def initialize(self) -> None:
         super().initialize()
 
         base_path = os.path.join(self.soliket_data_path, self.network_path)
@@ -78,7 +78,7 @@ class CosmoPower(BoltzmannBase):
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")
         self.log.info(f"CosmoPower will expect the parameters {self.all_parameters}")
 
-    def calculate(self, state, want_derived=True, **params):
+    def calculate(self, state: dict, want_derived: bool=True, **params) -> dict:
         cmb_params = { }
 
         for par in self.renames:
@@ -108,7 +108,7 @@ class CosmoPower(BoltzmannBase):
 
         state["ell"] = ells.astype(int)
 
-    def get_Cl(self, ell_factor=False, units="FIRASmuK2"):
+    def get_Cl(self, ell_factor:bool =False, units:str ="FIRASmuK2") -> dict:
         cls_old = self.current_state.copy()
 
         lmax = self.extra_args["lmax"] or cls_old["ell"].max()
@@ -121,20 +121,14 @@ class CosmoPower(BoltzmannBase):
             cls[k] = np.tile(np.nan, cls["ell"].shape)
 
         for k in self.networks:
-            cl_fac = np.ones_like(ls_fac)
-            if self.networks[k]["has_ell_factor"]:
-                if k == "pp":
-                    cl_fac = (2.0 * np.pi) / (ls * (ls + 1.0)) ** 2.0
-                else:
-                    cl_fac = (2.0 * np.pi) / (ls * (ls + 1.0))
-            
-            if ell_factor:
-                if k == "pp":
-                    ls_fac = (ls * (ls + 1.0)) ** 2.0 / (2.0 * np.pi)
-                else:
-                    ls_fac = ls * (ls + 1.0) / (2.0 * np.pi)
+            prefac = np.ones_like(ls).astype(float)
 
-            cls[k][ls] = cls_old[k] * cl_fac * ls_fac * self.cmb_unit_factor(k, units, 2.7255)
+            if self.networks[k]["has_ell_factor"]:
+                prefac /= self.ell_factor(ls, k)
+            if ell_factor:
+                prefac *= self.ell_factor(ls, k)
+
+            cls[k][ls] = cls_old[k] * prefac * self.cmb_unit_factor(k, units, 2.7255)
             cls[k][:2] = 0.0
             if np.any(np.isnan(cls[k])):
                 self.log.warning("CosmoPower used outside of trained "\
@@ -142,7 +136,19 @@ class CosmoPower(BoltzmannBase):
 
         return cls
 
-    def cmb_unit_factor(self, spectra, units="FIRASmuK2", Tcmb=2.7255):
+    def ell_factor(self, ls: np.ndarray, spectra: str) -> np.ndarray:
+        ellfac = np.ones_like(ls).astype(float)
+
+        if spectra in [ "tt", "te", "tb", "ee", "et", "eb", "bb", "bt", "be" ]:
+            ellfac = ls * (ls + 1.0) / (2.0 * np.pi)
+        elif spectra in [ "pt", "pe", "pb", "tp", "ep", "bp" ]:
+            ellfac = (ls * (ls + 1.0)) ** (3./2.) / (2.0 * np.pi)
+        elif spectra in [ "pp" ]:
+            ellfac = (ls * (ls + 1.0)) ** 2.0 / (2.0 * np.pi)
+
+        return ellfac
+
+    def cmb_unit_factor(self, spectra: str, units: str="FIRASmuK2", Tcmb:float =2.7255) -> float:
         res = 1.0
         x,y = spectra
 
@@ -158,8 +164,8 @@ class CosmoPower(BoltzmannBase):
 
         return res
 
-    def get_can_support_parameters(self):
-        return self.get_requirements()
-
-    def get_requirements(self):
+    def get_can_support_parameters(self) -> list:
         return self.all_parameters
+
+    def get_requirements(self) -> list:
+        return list(self.all_parameters)
