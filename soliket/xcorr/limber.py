@@ -82,10 +82,14 @@ def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
 
         k_arr = (ell_arr + 0.5) / chi
 
-        p_mm_hf = pk(zatchi(chi), k_arr)
-        p_mm = p_mm_hf
-        p_gg = b1_HF * b1_HF * p_mm_hf # lets just stay at constant linear bias for now
-        p_gm = b1_HF * p_mm_hf
+        # p_mm_hf = pk(zatchi(chi), k_arr)
+        # p_mm = p_mm_hf
+        # p_gg = b1_HF * b1_HF * p_mm_hf # lets just stay at constant linear bias for now
+        # p_gm = b1_HF * p_mm_hf
+
+        p_mm = self.provider.get_Pk_mm_interpolator().P(zatchi(chi), k_arr)
+        p_gg = self.provider.get_Pk_gg_interpolator().P(zatchi(chi), k_arr)
+        p_gm = self.provider.get_Pk_gm_interpolator().P(zatchi(chi), k_arr)
 
         W_g1g1 = W_g1[i_chi] * W_g1[i_chi] / (chi**2) * p_gg
         c_ell_g1g1[:, :, i_chi] = W_g1g1.T

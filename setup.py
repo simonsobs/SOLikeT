@@ -25,8 +25,10 @@ setup(
         "cobaya",
         "sacc",
         "pyccl",
+        "pyfftw",
         "fgspectra @ git+https://github.com/simonsobs/fgspectra@act_sz_x_cib#egg=fgspectra", # noqa E501
-        "mflike @ git+https://github.com/simonsobs/lat_mflike@master"
+        "mflike @ git+https://github.com/simonsobs/lat_mflike@master",
+        "velocileptors @ git+https://github.com/sfschen/velocileptors@master"
     ],
     extras_requires=[
         "cosmopower"
