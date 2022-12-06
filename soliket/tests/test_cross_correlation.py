@@ -45,9 +45,12 @@ def test_galaxykappa_model(request):
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
                                   "datapath": None,
-                                  'cross_file': os.path.join(request.config.rootdir, cross_file),
-                                  'auto_file': os.path.join(request.config.rootdir, auto_file),
-                                  'dndz_file': os.path.join(request.config.rootdir, dndz_file)}
+                                  'cross_file': os.path.join(request.config.rootdir,
+                                                             cross_file),
+                                  'auto_file': os.path.join(request.config.rootdir,
+                                                            auto_file),
+                                  'dndz_file': os.path.join(request.config.rootdir,
+                                                            dndz_file)}
     }
 
     model = get_model(info) # noqa F841
@@ -58,8 +61,9 @@ def test_shearkappa_model(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "datapath": os.path.join(request.config.rootdir, sacc_file)}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file)}}
 
     model = get_model(info) # noqa F841
 
@@ -71,9 +75,12 @@ def test_galaxykappa_like(request):
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
                                   "datapath": None,
-                                  'cross_file': os.path.join(request.config.rootdir, cross_file),
-                                  'auto_file': os.path.join(request.config.rootdir, auto_file),
-                                  'dndz_file': os.path.join(request.config.rootdir, dndz_file)}
+                                  'cross_file': os.path.join(request.config.rootdir,
+                                                             cross_file),
+                                  'auto_file': os.path.join(request.config.rootdir,
+                                                            auto_file),
+                                  'dndz_file': os.path.join(request.config.rootdir,
+                                                            dndz_file)}
     }
 
     model = get_model(info)
@@ -120,9 +127,10 @@ def test_shearkappa_deltaz(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "datapath": os.path.join(request.config.rootdir, sacc_file),
-                                                   "z_nuisance_mode": "deltaz"}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "z_nuisance_mode": "deltaz"}}
 
     model = get_model(info) # noqa F841
     loglikes, derived = model.loglikes()
@@ -134,9 +142,10 @@ def test_shearkappa_m(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "datapath": os.path.join(request.config.rootdir, sacc_file),
-                                                   "m_nuisance_mode": True}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "m_nuisance_mode": True}}
 
     model = get_model(info) # noqa F841
     loglikes, derived = model.loglikes()
@@ -148,9 +157,10 @@ def test_shearkappa_ia_nla_noevo(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "datapath": os.path.join(request.config.rootdir, sacc_file),
-                                                   "ia_mode": 'nla-noevo'}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "ia_mode": 'nla-noevo'}}
 
     model = get_model(info) # noqa F841
     loglikes, derived = model.loglikes()
@@ -162,9 +172,10 @@ def test_shearkappa_ia_nla(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "datapath": os.path.join(request.config.rootdir, sacc_file),
-                                                   "ia_mode": 'nla'}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "ia_mode": 'nla'}}
 
     info["params"]["eta_IA"] = 1.7
 
@@ -178,9 +189,10 @@ def test_shearkappa_ia_perbin(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "datapath": os.path.join(request.config.rootdir, sacc_file),
-                                                   "ia_mode": 'nla-perbin'}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "ia_mode": 'nla-perbin'}}
 
     model = get_model(info) # noqa F841
     loglikes, derived = model.loglikes()
@@ -192,8 +204,9 @@ def test_shearkappa_hmcode(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "datapath": os.path.join(request.config.rootdir, sacc_file)}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file)}}
     info["theory"] = {"camb": {'extra_args': {'halofit_version': 'mead2020_feedback',
                                               'HMCode_logT_AGN': 7.8}},
                       "ccl": {"external": CCL, "nonlinear": False}}

@@ -56,7 +56,8 @@ def get_demo_lensing_model(theory):
     return model
 
 
-@pytest.mark.parametrize("theory", ["camb", "classy"])
+# @pytest.mark.parametrize("theory", ["camb", "classy"])
+@pytest.mark.parametrize("theory", ["camb"])
 def test_lensing(theory):
     model = get_demo_lensing_model(theory)
     ns_param = "ns" if theory == "camb" else "n_s"

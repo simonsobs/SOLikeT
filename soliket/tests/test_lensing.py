@@ -82,7 +82,8 @@ def get_demo_lensing_model(theory):
     return model, test_point
 
 
-@pytest.mark.parametrize("theory", ["camb", "classy"])
+# @pytest.mark.parametrize("theory", ["camb", "classy"])
+@pytest.mark.parametrize("theory", ["camb"])
 def test_lensing(theory):
     model, test_point = get_demo_lensing_model(theory)
     lnl = model.loglike(test_point)[0]
