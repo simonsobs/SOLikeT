@@ -5,7 +5,7 @@
 
 # run from SOLikeT/soliket/clusters
 # command:
-# $ cobaya-run input_files/test_unbinned_lkl_camb.yaml -f
+# $ cobaya-run input_files/test_unbinned_lkl_camb_dr5.yaml -f
 
 output: chains/test_unbinned_lkl_camb
 
