@@ -56,16 +56,16 @@ jobs:
           echo "SDKROOT=${SDKROOT}" >> $GITHUB_ENV
           echo "CONDA_BUILD_SYSROOT=${SDKROOT}" >> $GITHUB_ENV
         fi
-    - name: Install Classy
-      run: |
-        if [[ ${MATRIX_OS} == "macos-latest" ]]; then
-          export LDFLAGS="-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
-          export LDFLAGS="$LDFLAGS -L/Users/runner/miniconda3/envs/test/lib"
-          . ci_scripts/install_class_osx.sh
-        else
-          . ci_scripts/install_class_linux.sh
-        fi
-        python -c "import classy; print(classy)"
+    # - name: Install Classy
+    #   run: |
+    #     if [[ ${MATRIX_OS} == "macos-latest" ]]; then
+    #       export LDFLAGS="-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
+    #       export LDFLAGS="$LDFLAGS -L/Users/runner/miniconda3/envs/test/lib"
+    #       . ci_scripts/install_class_osx.sh
+    #     else
+    #       . ci_scripts/install_class_linux.sh
+    #     fi
+    #     python -c "import classy; print(classy)"
       env:
         MATRIX_OS: ${{ matrix.os }}
     - name: Run Tests
