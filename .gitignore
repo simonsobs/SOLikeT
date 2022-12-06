@@ -136,3 +136,4 @@ soliket/clusters/notebooks/*
 
 soliket/cosmopower/data
 *.yaml
+soliket/cosmopower/covmats/desy1_joint_cosmopower_301122.covmat

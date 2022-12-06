@@ -24,6 +24,7 @@ class cosmopower(classy):
     DAZ_emulator_name: Optional[str] = "Null_DAZ"
     HZ_emulator_name: Optional[str] = "Null_HZ"
     DER_emulator_name: Optional[str] = "Null_DERZ"
+    PKNL_emulator_name: Optional[str] = "Null_PKNL"
     tt_emu = None
     te_emu = None
     ee_emu = None
@@ -32,10 +33,14 @@ class cosmopower(classy):
     hz_emu = None
     pp_emu = None
     der_emu = None
+    pknl_emu = None
     tt_spectra = None
     te_spectra = None
     ee_spectra = None
     pp_spectra = None
+
+    pkslice = 10
+    # pp_spectra = None
 
     def initialize(self):
         """Importing CLASS from the correct path, if given, and if not, globally."""
@@ -83,6 +88,11 @@ class cosmopower(classy):
             # exit(0)
             self.der_emu = cp.cosmopower_NN(restore=True,
                                       restore_filename=self.path_to_trained_models+self.DER_emulator_name)
+        if 'Null' not in self.PKNL_emulator_name:
+            self.pknl_emu= cp.cosmopower_NN(restore=True,
+                                  restore_filename=self.path_to_trained_models+self.PKNL_emulator_name)
+
+
 
         self.log.info("Initialized!")
         # self.log.info("using " + self.PP_emulator_name )
@@ -121,186 +131,115 @@ class cosmopower(classy):
         if self.der_emu is not None:
             self.der_params = self.der_emu.ten_to_predictions_np(params_dict)
 
+        if self.hz_emu is not None:
+            self.hz  = self.hz_emu.ten_to_predictions_np(params_dict_pp)
 
-        # self.s8z  = self.s8z_emu.predictions_np(params_dict_pp)
-        # print(params_dict)
-        # print(self.pp_spectra)
-        # print(self.der_params)
-        # exit(0)
+            self.hz_interp = scipy.interpolate.interp1d(
+                                            np.linspace(0.,20.,5000),
+                                            self.hz[0],
+                                            kind='linear',
+                                            axis=-1,
+                                            copy=True,
+                                            bounds_error=None,
+                                            fill_value=np.nan,
+                                            assume_sorted=False)
+        if self.daz_emu is not None:
+            self.daz  = self.daz_emu.predictions_np(params_dict_pp)
 
-        # if np.sum(self.pp_spectra[0])<1e-10 or np.sum(self.pp_spectra[0])>1:
-        #     print(params_dict)
-        #     print('sum: %.5e'%np.sum(self.pp_spectra[0]))
-        #     print('h:',self.der_params[0][0])
-        #     print('sigma8:',self.der_params[0][1])
-        #     omega_m = (params_dict['omega_b'][0]+params_dict['omega_cdm'][0])/self.der_params[0][0]**2.
-        #     print('omega_m:',omega_m)
-        #     print('check!\n')
+            self.daz_interp = scipy.interpolate.interp1d(
+                                            np.linspace(0.,20.,5000),
+                                            self.daz[0],
+                                            kind='linear',
+                                            axis=-1,
+                                            copy=True,
+                                            bounds_error=None,
+                                            fill_value=np.nan,
+                                            assume_sorted=False)
 
-        # print('new spectra:')
-        # print(self.tt_spectra)
-        # print('\n')
-        # print(self.te_spectra)
-        # print(self.ee_spectra)
-        # exit(0)
-        # derived_requested=False
-        # requested = [self.translate_param(p) for p in (
-        #     self.output_params if derived_requested else [])]
-        # requested_and_extra = dict.fromkeys(set(requested).union(self.derived_extra))
-        # print('requested params: ',requested)
-        # print('requested_and_extra params: ',requested_and_extra)
+        if self.s8z_emu is not None:
+            self.s8z  = self.s8z_emu.predictions_np(params_dict_pp)
+            # print(self.s8z)
+            self.s8z_interp = scipy.interpolate.interp1d(
+                                            np.linspace(0.,20.,5000),
+                                            self.s8z[0],
+                                            kind='linear',
+                                            axis=-1,
+                                            copy=True,
+                                            bounds_error=None,
+                                            fill_value=np.nan,
+                                            assume_sorted=False)
+
         for product, collector in self.collectors.items():
-            # print(product,collector)
-            if "sigma8" in self.collectors:
-                self.collectors["sigma8"].args[0] = 8 / self.classy.h()
-        if product == 'fsigma8':
-            # print('dealing with fsigma8')
-
-            method = getattr(self, collector.method)
-            # print(method)
             arg_array = self.collectors[product].arg_array
-            # print(arg_array)
-            if isinstance(arg_array, int):
-                arg_array = np.atleast_1d(arg_array)
-            if arg_array is None:
-                print('dealing with arg_array none case... calling method')
-            elif isinstance(arg_array, Sequence) or isinstance(arg_array, np.ndarray):
-                arg_array = np.array(arg_array)
-                if len(arg_array.shape) == 1:
-                    # print('dealing with arg_array shape 1 case... calling method')
-                    # if more than one vectorised arg, assume all vectorised in parallel
-                    n_values = len(self.collectors[product].args[arg_array[0]])
-                    state[product] = np.zeros(n_values)
-                    args = deepcopy(list(self.collectors[product].args))
-                    # print('n_values ',n_values)
-                    # print('arg ',args)
-                    args.append(params_values_dict)
-                    # print('arg ',args)
-                    # exit()
 
-                    for i in range(n_values):
-                        for arg_arr_index in arg_array:
-                            args[arg_arr_index] = \
-                                self.collectors[product].args[arg_arr_index][i]
-                        state[product][i] = method(*args)
-                        # print('fs8: ',state[product][i])
-            else:
-                raise LoggedError(self.log, "Variable over which to do an array call "
-                                            f"not known: arg_array={arg_array}")
-        #
-        # if product == 'Hubble':
-        #     print('dealing with Hubble')
-        #
-        #     method = getattr(self, collector.method)
-        #     print(method)
-        #     arg_array = self.collectors[product].arg_array
-        #     print(arg_array)
-        #     if isinstance(arg_array, int):
-        #         arg_array = np.atleast_1d(arg_array)
-        #     if arg_array is None:
-        #         print('dealing with arg_array none case... calling method')
-        #     elif isinstance(arg_array, Sequence) or isinstance(arg_array, np.ndarray):
-        #         arg_array = np.array(arg_array)
-        #         if len(arg_array.shape) == 1:
-        #             print('dealing with arg_array shape 1 case... calling method')
-        #             # if more than one vectorised arg, assume all vectorised in parallel
-        #             n_values = len(self.collectors[product].args[arg_array[0]])
-        #             state[product] = np.zeros(n_values)
-        #             args = deepcopy(list(self.collectors[product].args))
-        #             print('n_values ',n_values)
-        #             print('arg ',args)
-        #             args.append(params_values_dict)
-        #             print('arg ',args)
-        #             # exit()
-        #
-        #             for i in range(n_values):
-        #                 for arg_arr_index in arg_array:
-        #                     args[arg_arr_index] = \
-        #                         self.collectors[product].args[arg_arr_index][i]
-        #                 state[product][i] = method(*args)
-        #                 print('hz: ',state[product][i])
-        #     else:
-        #         raise LoggedError(self.log, "Variable over which to do an array call "
-        #                                     f"not known: arg_array={arg_array}")
-        #
-        #     # print('\n -----')
-        # # exit(0)
-        # if product == 'angular_diameter_distance':
-        #     print('dealing with angular_diameter_distance')
-        #
-        #     method = getattr(self, collector.method)
-        #     print(method)
-        #     arg_array = self.collectors[product].arg_array
-        #     print(arg_array)
-        #     if isinstance(arg_array, int):
-        #         arg_array = np.atleast_1d(arg_array)
-        #     if arg_array is None:
-        #         print('dealing with arg_array none case... calling method')
-        #     elif isinstance(arg_array, Sequence) or isinstance(arg_array, np.ndarray):
-        #         arg_array = np.array(arg_array)
-        #         if len(arg_array.shape) == 1:
-        #             print('dealing with arg_array shape 1 case... calling method')
-        #             # if more than one vectorised arg, assume all vectorised in parallel
-        #             n_values = len(self.collectors[product].args[arg_array[0]])
-        #             state[product] = np.zeros(n_values)
-        #             args = deepcopy(list(self.collectors[product].args))
-        #             print('n_values ',n_values)
-        #             print('arg ',args)
-        #             args.append(params_values_dict)
-        #             print('arg ',args)
-        #             # exit()
-        #
-        #             for i in range(n_values):
-        #                 for arg_arr_index in arg_array:
-        #                     args[arg_arr_index] = \
-        #                         self.collectors[product].args[arg_arr_index][i]
-        #                 state[product][i] = method(*args)
-        #                 print('da: ',state[product][i])
-        #     else:
-        #         raise LoggedError(self.log, "Variable over which to do an array call "
-        #                                     f"not known: arg_array={arg_array}")
+            if product == 'fsigma8':
+                # print('dealing with fsigma8')
 
-            # print('\n -----')
-        # exit(0)
+                method = getattr(self, collector.method)
+                # print(method)
+                arg_array = self.collectors[product].arg_array
+                if isinstance(arg_array, int):
+                    arg_array = np.atleast_1d(arg_array)
+                if arg_array is None:
+                    print('dealing with arg_array none case... calling method')
+                elif isinstance(arg_array, Sequence) or isinstance(arg_array, np.ndarray):
+                    arg_array = np.array(arg_array)
+                    if len(arg_array.shape) == 1:
+                        # print('dealing with arg_array shape 1 case... calling method')
+                        # if more than one vectorised arg, assume all vectorised in parallel
+                        n_values = len(self.collectors[product].args[arg_array[0]])
+                        state[product] = np.zeros(n_values)
+                        args = deepcopy(list(self.collectors[product].args))
+                        args.append(params_values_dict)
+                        for i in range(n_values):
+                            for arg_arr_index in arg_array:
+                                args[arg_arr_index] = \
+                                    self.collectors[product].args[arg_arr_index][i]
+                            state[product][i] = method(*args)
+                            # print('fs8: ',state[product][i])
+                else:
+                    raise LoggedError(self.log, "Variable over which to do an array call "
+                                                f"not known: arg_array={arg_array}")
+            if ('Pk_grid' in product) or ('comoving_radial_distance') in product:
+                method = getattr(self, collector.method)
+                args = deepcopy(list(self.collectors[product].args))
+                args.append(params_values_dict)
+                state[product] = method(*args)
+                if collector.post:
+                    state[product] = collector.post(*state[product])
+
 
     # get the required new observable
     def get_Cl(self,ell_factor=True):
 
         cls = {}
+        cls['ell'] = np.arange(20000)
+        # print(cls['ell'])
         cls['tt'] = np.zeros(20000)
         cls['te'] = np.zeros(20000)
         cls['ee'] = np.zeros(20000)
         cls['pp'] = np.zeros(20000)
         if self.tt_spectra is not None:
             nl = len(self.tt_spectra[0])
+            # print('nl:',nl)
             cls['tt'][2:nl+2] = (2.7255e6)**2.*self.tt_spectra[0].copy()
         if self.te_spectra is not None:
             cls['te'][2:nl+2] = (2.7255e6)**2.*self.te_spectra[0].copy()
         if self.ee_spectra is not None:
             cls['ee'][2:nl+2] = (2.7255e6)**2.*self.ee_spectra[0].copy()
 
-        # cls['pp'][2:nl+2] = (2.7255e6)**2.*self.pp_spectra[0].copy()/2./np.pi
         if self.pp_spectra is not None:
             nl = len(self.pp_spectra[0])
             cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/4.
-        # print(cls)
-        # exit(0)
-        # print('dls:',cls)
         return cls
 
     def get_param(self, p):
         translated = self.translate_param(p)
-        # print('current_state',self.current_state)
-        # print('translated param vvv',translated)
-        # exit(0)
-        # for pool in ["params", "derived"]:
-        #     value = (self.current_state[pool] or {}).get(translated, None)
-        #     if value is not None:
-        #         print('value:',value)
-        #         return value
         if translated == 'rs_drag':
-            # print('v:',self.rs_drag())
             return self.rs_drag()
+
+        if p == 'omegam':
+            return self.Omega_m()
 
     @classmethod
     def is_installed(cls, **kwargs):
@@ -326,28 +265,8 @@ class cosmopower(classy):
         -------
         (d ln sigma8/d ln a)(z) (dimensionless)
         """
-        params_values = params_values_dict.copy()
-        params_values['ln10^{10}A_s'] = params_values.pop("logA")
 
-        params_dict = {}
-        for k,v in zip(params_values.keys(),params_values.values()):
-            params_dict[k]=[v]
-        params_dict_pp = params_dict.copy()
-        params_dict_pp.pop('tau_reio')
-        # print(params_dict_pp)
-
-        self.s8z  = self.s8z_emu.predictions_np(params_dict_pp)
-        # print(self.s8z)
-        s8z_interp = scipy.interpolate.interp1d(
-                                        np.linspace(0.,20.,5000),
-                                        self.s8z[0],
-                                        kind='linear',
-                                        axis=-1,
-                                        copy=True,
-                                        bounds_error=None,
-                                        fill_value=np.nan,
-                                        assume_sorted=False)
-
+        s8z_interp =  self.s8z_interp
         # we need d sigma8/d ln a = - (d sigma8/dz)*(1+z)
 
         # if possible, use two-sided derivative with default value of z_step
@@ -367,82 +286,68 @@ class cosmopower(classy):
                 # return (s8z_interp(z)-s8z_interp(z+z_step))/z_step*(1+z)
         # print('fsigma8 result : ',result)
         return result
-        # exit()
+
     def rs_drag(self):
-        # self.compute(["thermodynamics"])
-        # print('rsdrag:',self.der_params[0][13])
         return self.der_params[0][13]
 
-    def get_angular_diameter_distance(self, z):
-        """
-        angular_distance(z)
-
-        Return the angular diameter distance (exactly, the quantity defined by Class
-        as index_bg_ang_distance in the background module)
-
-        Parameters
-        ----------
-        z : float
-                Desired redshift
-        """
-        # print('computing angular diameter distance')
-        # print('self.current_state:',self.current_state)
+    def Omega_m(self):
         params_values = self.current_state['params'].copy()
-        params_values['ln10^{10}A_s'] = params_values.pop("logA")
-        # print(params_values)
-        # exit(0)
-        params_dict = {}
-        for k,v in zip(params_values.keys(),params_values.values()):
-            params_dict[k]=[v]
-        params_dict_pp = params_dict.copy()
-        params_dict_pp.pop('tau_reio')
-        # print(params_dict_pp)
-        self.daz  = self.daz_emu.predictions_np(params_dict_pp)
+        result = (params_values['omega_b']+params_values['omega_cdm'])*(100./params_values['H0'])**2.
+        return result
 
-        daz_interp = scipy.interpolate.interp1d(
-                                        np.linspace(0.,20.,5000),
-                                        self.daz[0],
-                                        kind='linear',
-                                        axis=-1,
-                                        copy=True,
-                                        bounds_error=None,
-                                        fill_value=np.nan,
-                                        assume_sorted=False)
-        # print('daz interp:',daz_interp(z))
-        # exit(0)
-        return np.array(daz_interp(z))
+    def get_angular_diameter_distance(self, z):
+        return np.array(self.daz_interp(z))
 
 
     def get_Hubble(self, z,units="km/s/Mpc"):
-        # print('computing Hubble distance')
-        # print('self.current_state:',self.current_state)
-        params_values = self.current_state['params'].copy()
+        return np.array(self.hz_interp(z)*H_units_conv_factor[units])
+
+
+    def get_pk_and_k_and_z(self,params_values_dict={}):
+        nz = 80 # number of z-points in redshift data [21oct22]
+        zmax = 4. # max redshift of redshift data [21oct22]
+        z_arr = np.linspace(0.,zmax,nz) # z-array of redshift data [21oct22] oct 26 22: nz = 1000, zmax = 20
+
+        nk = 5000
+        k_arr = np.geomspace(1e-4,50.,nk)  # oct 26 22 : (1e-4,50.,5000)
+
+        # scaling factor for the pk emulator:
+        ls = np.arange(2,5000+2)
+        dls = ls*(ls+1.)/2./np.pi
+        # params_values = self.current_state['params'].copy()
+        params_values = params_values_dict.copy()
         params_values['ln10^{10}A_s'] = params_values.pop("logA")
-        # print(params_values)
-        # exit(0)
+
         params_dict = {}
         for k,v in zip(params_values.keys(),params_values.values()):
             params_dict[k]=[v]
         params_dict_pp = params_dict.copy()
         params_dict_pp.pop('tau_reio')
-        # print(params_dict_pp)
-        self.hz  = self.hz_emu.ten_to_predictions_np(params_dict_pp)
-
-        hz_interp = scipy.interpolate.interp1d(
-                                        np.linspace(0.,20.,5000),
-                                        self.hz[0],
-                                        kind='linear',
-                                        axis=-1,
-                                        copy=True,
-                                        bounds_error=None,
-                                        fill_value=np.nan,
-                                        assume_sorted=False)
-        # print('hz interp:',hz_interp(z)*H_units_conv_factor[units])
-        # exit(0)
 
 
-        # units =
-        return np.array(hz_interp(z)*H_units_conv_factor[units])
+        pk_at_k_z = np.zeros((nk,nz))
+        params_dict = {}
+        for k,v in zip(params_values.keys(),params_values.values()):
+            params_dict[k]=np.repeat(v, nz)
+        params_dict_pp = params_dict.copy()
+        params_dict_pp.pop('tau_reio')
+
+        # for k,v in params_dict_pp.items():
+        #     print(k,v)
+        params_dict_pp['z_pk_save_nonclass'] = z_arr
+        # print('params_dict_pp ',params_dict_pp)
+        predicted_pknl_spectrum = self.pknl_emu.predictions_np(params_dict_pp)
+        pknl = 10.**predicted_pknl_spectrum
+        pknl_re =  ((dls)**-1*pknl)
+        pknl_re = np.transpose(pknl_re)
+
+
+        return pknl_re[0:k_arr.size:self.pkslice][:], k_arr[0:k_arr.size:self.pkslice], z_arr
+
+
+    def z_of_r (self,z_array,params_values_dict={}):
+        return np.array(self.daz_interp(z_array))*(1.+z_array), np.array(self.hz_interp(z_array))
+
 
 # this just need to be there as it's used to fill-in self.collectors in must_provide:
 class Collector(NamedTuple):

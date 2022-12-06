@@ -87,15 +87,15 @@ class binned_cc_likelihood(Likelihood):
             Nbins_y = int((logy_max - logy_min)/dlogy)+1
             if self.debug:
                 print('Nbins_y:',Nbins_y,self.bin_dlog10_snr)
-            logy = np.zeros(Nbins_y+1)
+            logy = np.zeros(Nbins_y)
             y_i = logy_min + dlogy/2.
-            for index_y in range(Nbins_y+1):
+            for index_y in range(Nbins_y):
                 logy[index_y] = y_i
                 y_i += dlogy
                 if self.debug:
-                    print("y_center:",index_y,Nbins_y+1,10**logy[index_y])
+                    print("y_center:",index_y,Nbins_y,10**logy[index_y])
 
-            self.dNdzdy_catalog = np.zeros([Nbins_z,Nbins_y+1])
+            self.dNdzdy_catalog = np.zeros([Nbins_z,Nbins_y])
 
             nrows = len(SZ_catalog[:,0])
             if self.debug:
@@ -106,25 +106,25 @@ class binned_cc_likelihood(Likelihood):
             zmax = zmin +dz
             # Count the number of clusters in each (z,y) bin
             for i in range (Nbins_z):
-                for j in range (Nbins_y+1):
+                for j in range (Nbins_y):
                     y_min = logy[j]-dlogy/2.
                     y_max = logy[j]+dlogy/2.
                     y_min = 10**y_min
                     y_max = 10**y_max
-                    if j == Nbins_y:
-                        y_max = 1e100
+                    # if j == Nbins_y:
+                    #     y_max = 1e100
 
                     for ii in range(0,nrows):
                         if (SZ_catalog[ii][0]>=zmin) and (SZ_catalog[ii][0]<zmax)\
                            and (SZ_catalog[ii][2]<y_max) and (SZ_catalog[ii][2]>=y_min):
                             self.dNdzdy_catalog[i][j] += 1.
                 # Count the number of clusters in the last y bin for each z bin
-                j = Nbins_y
-                y_min =y_max
-                for ii in range(0,nrows):
-                    if (SZ_catalog[ii][0]>=zmin) and (SZ_catalog[ii][0]<zmax)\
-                       and (SZ_catalog[ii][2]>=y_min):
-                        self.dNdzdy_catalog[i][j] += 1.
+                # j = Nbins_y
+                # y_min =y_max
+                # for ii in range(0,nrows):
+                #     if (SZ_catalog[ii][0]>=zmin) and (SZ_catalog[ii][0]<zmax)\
+                #        and (SZ_catalog[ii][2]>=y_min):
+                #         self.dNdzdy_catalog[i][j] += 1.
                 # Change edges of the redshift bin
                 zmin += dz
                 zmax += dz
@@ -143,17 +143,18 @@ class binned_cc_likelihood(Likelihood):
                             norm += self.dNdzdy_catalog[jj][j]
                         self.dNdzdy_catalog[:,j] *= (1.+norm)/norm
 
-            # Count the number of clusters in the last y bin with missing redshifts and apply normalization
-            j = Nbins_y
-            y_min =y_max
-            for ii in range(0,nrows):
-                if (SZ_catalog[ii][0]==-1) and (SZ_catalog[ii][2]>=y_min):
-                    norm = 0.
-                    for jj in range(0,Nbins_z):
-                        norm += self.dNdzdy_catalog[jj][j]
-                    self.dNdzdy_catalog[:,j] *= (1.+norm)/norm
+            # # Count the number of clusters in the last y bin with missing redshifts and apply normalization
+            # j = Nbins_y
+            # y_min =y_max
+            # for ii in range(0,nrows):
+            #     if (SZ_catalog[ii][0]==-1) and (SZ_catalog[ii][2]>=y_min):
+            #         norm = 0.
+            #         for jj in range(0,Nbins_z):
+            #             norm += self.dNdzdy_catalog[jj][j]
+            #         self.dNdzdy_catalog[:,j] *= (1.+norm)/norm
             if self.debug:
                 print("Ntot cat:",np.sum(self.dNdzdy_catalog[:,:]))
+            # exit(0)
 
 
         super().initialize()
@@ -189,6 +190,8 @@ class binned_cc_likelihood(Likelihood):
 
         SZCC_Cash = 0.
         N_z,N_y = np.shape(dNdzdy_theoretical)
+        if self.debug == True:
+            print('N_z,N_y',N_z,N_y)
         for index_z in range(N_z):
             for index_y in range(N_y):
                 if not dNdzdy_theoretical[index_z][index_y] == 0.:
