@@ -137,6 +137,24 @@ class CosmoPower(BoltzmannBase):
         return cls
 
     def ell_factor(self, ls: np.ndarray, spectra: str) -> np.ndarray:
+        """Calculate the ell factor for a specific spectrum.
+        These prefactors are used to convert from Cell to Dell and vice-versa.
+        
+        See also:
+          cobaya.BoltzmannBase.get_Cl
+          camb.CAMBresults.get_cmb_power_spectra
+        
+        Keyword arguments:
+          ls -- the range of ells.
+          spectra -- a two-character string with each character being one of [tebp].
+        
+        Return:
+          ellfac -- an array filled with ell factors for the given spectrum.
+        
+        Example:
+          ell_factor(l, "tt") -> l(l+1)/(2 pi).
+          ell_factor(l, "pp") -> l^2(l+1)^2/(2 pi).
+        """
         ellfac = np.ones_like(ls).astype(float)
 
         if spectra in [ "tt", "te", "tb", "ee", "et", "eb", "bb", "bt", "be" ]:
