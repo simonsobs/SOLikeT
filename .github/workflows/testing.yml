@@ -19,7 +19,7 @@ jobs:
 
           - name: oldest supported versions
             os: ubuntu-latest
-            python: 3.7
+            python: '3.7'
             toxenv: py37-test-oldest
 
           - name: macOS latest supported
@@ -35,7 +35,7 @@ jobs:
     - name: Install Python ${{ matrix.python }}
       uses: conda-incubator/setup-miniconda@v2
       with:
-        python-version: ${{ matrix.py }}
+        python-version: ${{ matrix.python }}
         channels: conda-forge,defaults
         channel-priority: strict
         show-channel-urls: true
