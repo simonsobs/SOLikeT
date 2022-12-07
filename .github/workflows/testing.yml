@@ -14,18 +14,18 @@ jobs:
           - name: latest supported versions
             os: ubuntu-latest
             python: '3.10'
-            toxenv: py310-test-all-latest-cov
+            toxenv: python3.10-test-all-latest-cov
             toxposargs: --cov-report=xml:${GITHUB_WORKSPACE}/coverage.xml
 
           - name: oldest supported versions
             os: ubuntu-latest
             python: '3.7'
-            toxenv: py37-test-oldest
+            toxenv: python3.7-test-oldest
 
           - name: macOS latest supported
             os: macos-latest
             python: '3.10'
-            toxenv: py310-test-latest
+            toxenv: python3.10-test-latest
 
     steps:
     - name: Checkout Repository
