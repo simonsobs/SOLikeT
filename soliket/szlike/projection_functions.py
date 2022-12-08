@@ -259,9 +259,8 @@ def project_tsz(tht, M, z, nu, beam_txt, model_params, beam_response, provider):
     #sig_all_p_beam *= sr2sqarcmin #units in muK*sqarcmin #test
     return sig_all_p_beam
 
-def project_obb(tht, M, z, theta, nu, fbeam):
+def project_obb(tht, M, z, theta, nu, fbeam, provider):
     disc_fac = np.sqrt(2)
-    l0 = 30000.0
     NNR = 100
     resolution_factor = 3.
     NNR2 = resolution_factor * NNR
@@ -371,7 +370,7 @@ def project_obb(tht, M, z, theta, nu, fbeam):
 
     sig = 2.0 * np.pi * dtht * np.sum(thta * rho2D_beam)
     sig2 = 2.0 * np.pi * dtht2 * np.sum(thta2 * rho2D2_beam)
-    ##check constants in this- I think this is right
+    
     sig_all_beam = (
         (2 * sig - sig2) * v_rms * ST_CGS * TCMB * 1e6 * ((1.0 + XH) / 2.0) / MP_CGS
     )

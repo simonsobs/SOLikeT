@@ -68,13 +68,18 @@ class TSZLikelihood(SZLikelihood): #this is for GNFW model
 class OBBLikelihood(SZLikelihood): #OBB model, tSZ and kSZ together
 
     def _get_data(self,**params_values):
-        thta_arc,ksz_data = np.loadtxt(self.sz_data_file,usecols=(0,1),unpack=True)
-        cov_ksz = np.loadtxt(self.cov_ksz_file) #units muK*sr
+        thta_arc,ksz_data,tsz_data = np.loadtxt(self.sz_data_file,usecols=(0,1,2),unpack=True)
+        ksz_data /= 3282.8 * 60.**2
+        tsz_data /= 3282.8 * 60.**2
+        cov_ksz = np.loadtxt(self.cov_ksz_file) #different cov file? combined?
+        cov_tsz = np.loadtxt(self.cov_tsz_file)
 
         self.thta_arc = thta_arc
         self.ksz_data = ksz_data
-        self.cov = cov_ksz
-        return self.thta_arc,self.ksz_data,self.cov
+        self.tsz_data = tsz_data
+        self.cov_ksz = cov_ksz
+        self.cov_tsz = cov_tsz
+        return self.thta_arc,self.ksz_data,self.tsz_data,self.cov_ksz,self.cov_tsz
 
     def _get_theory(self,**params_values):
         model_params = [params_values['obb_Gamma'],params_values['obb_alpha_Nth']
