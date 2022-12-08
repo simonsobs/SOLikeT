@@ -39,18 +39,17 @@ jobs:
           python-version: ${{ matrix.python-version }}
           use-mamba: true
           miniforge-variant: Mambaforge
-     - name: Install class
+      - if contains(matrix.os, 'ubuntu')
+        name: Install class
         shell: bash -el {0}
         run: |
-          if [[ ${MATRIX_OS} == "ubuntu-latest" ]]; then
-            pip install classy
-          fi
+          pip install classy
         env:
           MATRIX_OS: ${{ matrix.os }}
-    - name: Run Tests
-      shell: bash -el {0}
-      run: |
-        tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
-    - if: contains(matrix.toxenv, '-cov')
-      name: Report Coverage
-      uses: codecov/codecov-action@v1
+      - name: Run Tests
+        shell: bash -el {0}
+        run: |
+          tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
+      - if: contains(matrix.toxenv, '-cov')
+        name: Report Coverage
+        uses: codecov/codecov-action@v1
