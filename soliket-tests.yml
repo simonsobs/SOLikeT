@@ -1,0 +1,14 @@
+name: soliket-tests
+channels:
+
+dependencies:
+  - python<=3.10
+  - pip
+  - compilers
+  - cmake
+  - gsl
+  - fftw
+  - cython
+  - mpi4py
+  - pip:
+      - -r requirements.txt

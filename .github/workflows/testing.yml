@@ -13,63 +13,42 @@ jobs:
 
           - name: latest supported versions
             os: ubuntu-latest
-            python: '3.10'
+            python-version: '3.10'
             toxenv: python3.10-test-all-latest-cov
             toxposargs: --cov-report=xml:${GITHUB_WORKSPACE}/coverage.xml
 
           - name: oldest supported versions
             os: ubuntu-latest
-            python: '3.7'
+            python-version: '3.7'
             toxenv: python3.7-test-oldest
 
-          - name: macOS latest supported
-            os: macos-latest
-            python: '3.10'
+          - name: macOS 11
+            os: macos-11
+            python-version: '3.10'
             toxenv: python3.10-test-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Install Python ${{ matrix.python }}
-      uses: conda-incubator/setup-miniconda@v2
-      with:
-        python-version: ${{ matrix.python }}
-        channels: conda-forge,defaults
-        channel-priority: strict
-        show-channel-urls: true
-        miniforge-version: latest
-        miniforge-variant: Mambaforge
-    - name: Install Dependencies
-      run: |
-        mamba install \
-          pip \
-          numpy nose coveralls pyyaml gsl fftw cmake swig scipy \
-          compilers pkg-config setuptools_scm pytest pandas pytest-cov \
-          cython "camb>=1.3" isitgr traitlets fast-pt pyccl
-        pip install tox
-        if [[ ${MATRIX_OS} == "macos-11" ]]; then
-          mamba install llvm-openmp
-          echo "DYLD_FALLBACK_LIBRARY_PATH=${CONDA_PREFIX}/lib" >> $GITHUB_ENV
-          SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          echo "SDKROOT: ${SDKROOT}"
-          echo "SDKROOT=${SDKROOT}" >> $GITHUB_ENV
-          echo "CONDA_BUILD_SYSROOT=${SDKROOT}" >> $GITHUB_ENV
-        fi
-    # - name: Install Classy
-    #   run: |
-    #     if [[ ${MATRIX_OS} == "macos-latest" ]]; then
-    #       export LDFLAGS="-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
-    #       export LDFLAGS="$LDFLAGS -L/Users/runner/miniconda3/envs/test/lib"
-    #       . ci_scripts/install_class_osx.sh
-    #     else
-    #       . ci_scripts/install_class_linux.sh
-    #     fi
-    #     python -c "import classy; print(classy)"
-      env:
-        MATRIX_OS: ${{ matrix.os }}
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install Conda w/ Python ${{ matrix.python-version }}
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: soliket-tests
+          environment-file: soliket-tests.yml
+          auto-activate-base: false
+          python-version: ${{ matrix.python-version }}
+          use-mamba: true
+          miniforge-variant: Mambaforge
+     - name: Install class
+        shell: bash -el {0}
+        run: |
+          if [[ ${MATRIX_OS} == "ubuntu-latest" ]]; then
+            pip install classy
+          fi
+        env:
+          MATRIX_OS: ${{ matrix.os }}
     - name: Run Tests
+      shell: bash -el {0}
       run: |
         tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
     - if: contains(matrix.toxenv, '-cov')
