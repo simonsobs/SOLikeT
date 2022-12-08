@@ -10,5 +10,7 @@ dependencies:
   - fftw
   - cython
   - mpi4py
+  - pytest
+  - pytest-forked
   - pip:
       - -r requirements.txt
