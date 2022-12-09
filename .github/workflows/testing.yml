@@ -1,68 +1,54 @@
 name: Testing
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
 
 jobs:
-  build:
-
+  test:
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash -l {0}    
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: [3.8, 3.9]
+        include:
+
+          - name: latest supported versions
+            os: ubuntu-latest
+            python-version: '3.10'
+            toxenv: py310-test-all-latest-cov
+
+          - name: oldest supported versions
+            os: ubuntu-latest
+            python-version: '3.7'
+            toxenv: py37-test-oldest
+
+          - name: macOS 11
+            os: macos-11
+            python-version: '3.10'
+            toxenv: py310-test-latest
+
     steps:
-    - uses: actions/checkout@v2
-
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        python-version: ${{ matrix.py }}
-        auto-update-conda: true
-        channels: conda-forge,defaults
-        channel-priority: strict
-        show-channel-urls: true
-
-    - name: install reqs
-      run: |
-        conda install pip compilers pytest pytest-cov pyccl cython
-        pip install cobaya
-
-    - name: install extra reqs
-      run: |
-        pip install cosmopower
-
-      env:  
-        MATRIX_OS: ${{ matrix.os }}
-
-    - name: Install classy
-      run: |
-        if [[ ${MATRIX_OS} == "macos-latest" ]]; then
-          . ci_scripts/install_class_osx.sh
-        else
-          . ci_scripts/install_class_linux.sh
-        fi
-        python -c "import classy; print(classy)"
-      env:
-        MATRIX_OS: ${{ matrix.os }}
-
-    - name: install
-      run: |
-        pip install .
-
-    - name: install test data
-      run: |
-        export COBAYA_PACKAGES_PATH="../packages"
-        cobaya-install planck_2018_highl_plik.TTTEEE_lite_native
-
-    - name: Unit tests
-      run: |
-        pytest -vv soliket --cov=soliket --cov-report=xml:coverage.xml --cov-config=setup.cfg
-      env:
-        PYTEST_ADDOPTS: "--color=yes"
-
-    - name: Report Coverage (codecov)
-      if: matrix.os == 'ubuntu-latest'
-      uses: codecov/codecov-action@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install Conda w/ Python ${{ matrix.python-version }}
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-activate-base: false
+          python-version: ${{ matrix.python-version }}
+          channels: conda-forge
+      - name: Install Dependencies
+        shell: bash -el {0}
+        run: |
+          pip install tox-conda
+      - name: Run Tests
+        shell: bash -el {0}
+        run: |
+           tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
+      - if: contains(matrix.toxenv, '-cov')
+        name: Report Coverage
+        uses: codecov/codecov-action@v1
