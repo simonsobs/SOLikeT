@@ -15,7 +15,6 @@ jobs:
       with:
         python-version: 3.x
     - name: Install Dependencies
-      shell: bash -el {0}
       run: |
         pip install tox flake8
     - name: Check Code Style
