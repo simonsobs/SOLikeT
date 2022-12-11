@@ -10,11 +10,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Install Conda w/ Python ${{ matrix.python-version }}
+      - name: Install Conda w/ Python 3.x
         uses: conda-incubator/setup-miniconda@v2
         with:
           auto-activate-base: false
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.x
           channels: conda-forge
       - name: Install Dependencies
         shell: bash -el {0}
