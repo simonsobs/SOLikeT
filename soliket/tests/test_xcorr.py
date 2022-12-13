@@ -80,6 +80,7 @@ def get_demo_xcorr_model(theory):
     return model
 
 
+@pytest.mark.skip(reason="Under development")
 @pytest.mark.parametrize("theory", ["camb"])#, "classy"])
 def test_xcorr(theory):
 
