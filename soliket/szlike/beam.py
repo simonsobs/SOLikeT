@@ -49,4 +49,22 @@ def f_beam(tht,b):
 
     return np.interp(tht, tht_in, b, period=np.pi)
 
+def f_beam_fft(beam_txt,ell):
+    """Reads in beam from txt file in ell, interpolates
+    Specific to ACT/CMASS
+    """
+    beam_file = np.genfromtxt(beam_txt)
+    ell_data = beam_file[:,0] 
+    beam_data = beam_file[:,1]
 
+    return np.interp(ell,ell_data,beam_data)
+
+def f_response(beam_response_txt,ell):
+    """Reads in response from txt file in ell, interpolates
+    Specific to ACT/CMASS
+    """
+    response_file = np.genfromtxt(beam_response_txt)
+    ell_data = response_file[:,0]
+    resp_data = response_file[:,1]
+
+    return np.interp(ell,ell_data,resp_data)
