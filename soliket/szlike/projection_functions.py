@@ -185,7 +185,7 @@ def project_tsz(tht, M, z, nu, beam_txt, model_params, beam_response, provider):
     sig2_p = 2.0*np.pi*dtht2*np.sum(thta2*Pth2D2_beam)
     sig_all_p_beam = (2*sig_p - sig2_p) * ST_CGS/(ME_CGS*C_CGS**2) * ((2. + 2.*XH)/(3.+5.*XH)) * 1e6
 
-    #sig_all_p_beam *= sr2sqarcmin #units in muK*sqarcmin #test
+    #sig_all_p_beam *= sr2sqarcmin #units in muK*sqarcmin
     return sig_all_p_beam
 
 def project_obb(tht, M, z, theta, nu, fbeam, provider):

@@ -18,12 +18,11 @@ def r200(M, z, provider):
     return ans
 
 def rho_gnfw1h(x, M, z, theta, provider):
+    #Bins and weights specific to CMASS
     b_cen = np.array([[12.27689266, 12.67884686, 13.16053855, 13.69871423]]).T
     p = np.array([4.13431979e-03, 1.31666601e-01, 3.36540698e-01, 8.13760167e-02])
     rho = []
 
-    # hack
-    #theta = theta[:3]
     fb = provider.get_param('Omega_b') / provider.get_param('Omega_m')
     for i in range(0, len(b_cen)):
         m = 10 ** b_cen[i]
@@ -33,7 +32,6 @@ def rho_gnfw1h(x, M, z, theta, provider):
         al = 0.88 * (m / 1e14) ** (-0.03) * (1 + z) ** 0.19
         gm = -0.2
         rho0,bt = theta
-        #rho0, xc, bt = theta
         rho.append(
             10 ** rho0
             * (x / rvir / xc) ** gm
@@ -47,7 +45,8 @@ def rho_gnfw1h(x, M, z, theta, provider):
 
 
 def rho_gnfw2h(xx, theta2h):
-    rho_file = np.genfromtxt("/home/cemoser/Repositories/SOLikeT/soliket/szlike/twohalo_cmass_average.txt")
+    #Average 2h specific to CMASS
+    rho_file = np.genfromtxt("twohalo_cmass_average.txt")
     x1 = rho_file[:, 0]
     rho2h = rho_file[:, 1]
     ans = np.interp(xx, x1, rho2h)
@@ -62,8 +61,8 @@ def rho_gnfw(xx, M, z, theta, provider):
 
 
 def Pth_gnfw1h(x, M, z, theta, provider):
-    #theta = theta[:3]
-
+    #Bins and weights specific to CMASS
+    '''
     b_cen = np.array(
         [
             [
@@ -92,6 +91,10 @@ def Pth_gnfw1h(x, M, z, theta, provider):
             8.13760167e-02,
         ]
     )
+    '''
+    b_cen = np.array([[12.27689266, 12.67884686, 13.16053855, 13.69871423]]).T
+    p = np.array([4.13431979e-03, 1.31666601e-01, 3.36540698e-01, 8.13760167e-02])    
+
     pth = []
     fb = provider.get_param('Omega_b') / provider.get_param('Omega_m')
     for i in range(0, len(b_cen)):
@@ -111,7 +114,8 @@ def Pth_gnfw1h(x, M, z, theta, provider):
 
 
 def Pth_gnfw2h(xx, z, theta2h):
-    pth_file = np.genfromtxt("/home/cemoser/Repositories/SOLikeT/soliket/szlike/twohalo_cmass_average.txt")
+    #2h specific to CMASS
+    pth_file = np.genfromtxt("twohalo_cmass_average.txt")
     x1 = pth_file[:, 0]
     pth2h = pth_file[:, 2]
     ans = np.interp(xx, x1, pth2h)
