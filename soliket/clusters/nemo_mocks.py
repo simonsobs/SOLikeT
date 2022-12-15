@@ -141,7 +141,7 @@ def get_completess_inj_theta_y(pathdata, SNRCut, qbins):
 	for i in range(nq):
 		compThetaInterpolator[i] = scipy.interpolate.RectBivariateSpline(theta500s, binCentres, compThetaGrid[i, :], kx=3, ky=3)
 
-	return compThetaInterpolator, thetaQ
+	return compThetaInterpolator
 
 def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins):
 	"""Produce arrays for constructing interpolator objects from source injection test data.
@@ -185,6 +185,6 @@ def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins):
 
 			compThetaGrid[ii, i][valid]=recN[valid]/inpN[valid]
 
-		thetaQ[i]=np.median(outFlux/injFlux)
+		thetaQ[i]=np.nan_to_num(np.median(outFlux/injFlux))
 
 	return theta500s, binCentres, compThetaGrid, thetaQ

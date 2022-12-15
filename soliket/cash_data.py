@@ -1,49 +1,31 @@
 import numpy as np
 from scipy.special import factorial
-import math as m
 
 
-def cash_c_logpdf(theory, data, usestirling=True, name = "Unbinned"):
 
-    # ## This is how it needs to be!!!!
-    # data = np.asarray(data, dtype=int)
-    #
-    # ln_fac = np.zeros_like(data, dtype=float)
-    #
-    # if usestirling: # use Stirling's approximation for N > 10
-    #     ln_fac[data > 10] = 0.918939 + (data[data > 10] + 0.5) \
-    #                                 * np.log(data[data > 10]) - data[data > 10]
-    #     ln_fac[data <= 10] = np.log(factorial(data[data <= 10]))
-    # else:
-    #     ln_fac[data > 0] = np.log(factorial(data[data > 0]))
-    # ln_fac[data == 0] = 0.
-    #
-    # loglike = data * np.log(theory) - theory - ln_fac
+def cash_c_logpdf(theory, data, usestirling=True, name = "binned"):
 
-    ### Not well written, but for now ok:
-    delN2D = theory
-    zarr, qarr, delN2Dcat = data
+    __, __, delN2Dcat, zcut = data
 
-    szcc = 0
-    i = 0
-    j = 0
-    ii = 0
+    obs = np.asarray(delN2Dcat, dtype=int)
+    ln_fac = np.zeros_like(obs, dtype=float)
+    zcut_arr = np.arange(zcut)
 
-    for i in range(len(zarr)):
-        for j in range(len(qarr)):
-            if delN2D[i,j] != 0. :
-                ln_fac = 0.
-                if delN2Dcat[i,j] != 0. :
-                    if delN2Dcat[i,j] > 10. : # Stirling approximation only for more than 10 elements
-                        ln_fac = 0.918939 + (delN2Dcat[i,j] + 0.5) * np.log(delN2Dcat[i,j]) - delN2Dcat[i,j]
-                    else: # direct compuation of factorial
-                        ln_fac = np.log(m.factorial(int(delN2Dcat[i,j])))
+    if zcut > 0:
+        theory = np.delete(theory, zcut_arr, 0)
+        obs = np.delete(obs, zcut_arr, 0)
+        ln_fac = np.delete(ln_fac, zcut_arr, 0)
+        print("\r ::: Excluding first {} redshift bins in likelihood.".format(zcut))
 
-                szcc += delN2Dcat[i,j] * np.log(delN2D[i,j]) - delN2D[i,j] - ln_fac
+    if usestirling: # use Stirling's approximation for N > 10
+        ln_fac[obs > 10] = 0.918939 + (obs[obs > 10] + 0.5) * np.log(obs[obs > 10]) - obs[obs > 10]
+        ln_fac[obs <= 10] = np.log(factorial(obs[obs <= 10]))
+    else: # direct compuation of factorial
+        ln_fac[obs > 0] = np.log(factorial(obs[obs > 0]))
+    ln_fac[obs == 0] = 0.
 
-    print("\r ::: 2D ln likelihood = ", -szcc)
-
-    loglike = szcc
+    loglike = obs * np.log(theory) - theory - ln_fac
+    print("\r ::: 2D ln likelihood = ", -np.nansum(loglike[np.isfinite(loglike)]))
 
     return np.nansum(loglike[np.isfinite(loglike)])
 

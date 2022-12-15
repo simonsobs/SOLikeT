@@ -131,12 +131,11 @@ class CCL(Theory):
                               h=self.provider.get_param('h'),
                               n_s=self.provider.get_param('n_s'),
                               sigma8=self.provider.get_param('sigma8'),
-                              T_CMB=2.7255,
+                              #T_CMB=2.7255, # to agree with Nemo setting (default is 2.725)
                               m_nu=self.provider.get_param('m_nu'),
                               transfer_function=self.transfer_function,
                               matter_power_spectrum=self.matter_pk,
                               baryons_power_spectrum=self.baryons_pk)
-
 
         state['derived'] = {'H0': cosmo.cosmo.params.H0}
         for req_res, attrs in self._required_results.items():
@@ -259,6 +258,7 @@ class CCL(Theory):
         return self._get_z_dependent("angular_diameter_distance", z)
 
     def get_Pk_interpolator(self, var_pair=("delta_tot", "delta_tot"), nonlinear=True,
+    #def get_Pk_interpolator(self, var_pair=("delta_nonu", "delta_nonu"), nonlinear=True,
                             extrap_kmin=None, extrap_kmax=None):
 
         return None

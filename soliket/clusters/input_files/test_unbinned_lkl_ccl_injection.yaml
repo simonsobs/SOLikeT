@@ -7,7 +7,7 @@
 # command:
 # $ cobaya-run input_files/test_unbinned_lkl_camb.yaml -f
 
-output: chains/test_unbinned_lkl_camb
+output: chains/test_unbinned
 
 likelihood:
   soliket.UnbinnedClusterLikelihood:
@@ -31,16 +31,16 @@ likelihood:
     selfunc:
       SNRcut: 5. # S/N cutoff in number counts
       # Model for selection function, possibilities are
-      # mode: Qfit / injection
+      # method: Qfit / injection
       #   Qfit: using data output from nemo run
       #   injection: estimate completeness using source injection method from nemo (i.e. no Q)
-      mode: 'injection'
+      method: 'injection'
       # Qmode: full / downsample
       #   downsample: average rms map, Q into n dwnsmpl_bins
       #   full: consider full map, Q function, no downsampling
       Qmode : 'downsample'
       dwnsmpl_bins: 3
-      #save_dwsmpld : True
+      save_dwsmpld : False
       average_Q: True # Use average Q function
 
     # theorypred:
@@ -56,18 +56,18 @@ likelihood:
 
     binning:
       M:
-        Mmin: 1e13
-        Mmax: 5e15
-        dlogM: 0.03
+        Mmin: 5e13
+        Mmax: 1e16
+        dlogM: 0.05
 params:
   h : 0.68
   n_s : 0.965
   Omega_b : 0.049
-  Omega_c : 0.26
+  Omega_c : 0.261
   # sigma8 : 0.81
   tenToA0 : 4.35e-5
   B0 : 0.08
-  scatter_sz : 0.2
+  scatter_sz : 0.
   bias_sz : 1.
   m_nu : 0.0
   C0 : 0. # doesnt matter

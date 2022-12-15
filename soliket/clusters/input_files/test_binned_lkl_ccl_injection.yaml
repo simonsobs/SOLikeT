@@ -6,7 +6,7 @@
 # run from SOLikeT/soliket/clusters
 # command:
 # $ cobaya-run input_files/test_binned_lkl_ccl_injection.yaml -f
-output: chains/test
+output: chains/test_binned
 
 likelihood:
   soliket.BinnedClusterLikelihood:
@@ -22,7 +22,6 @@ likelihood:
 
     # Theory
     theorypred:
-      choose_dim: '2D' # Specify if likelihood in terms of N(q, z) (2D) or N(z) (1D)
       choose_theory: 'CCL' # Theory prediction mode, possibilities are camb, class, CCL (CCL is all CCL)
       rel_correction: False # Relativistic corrections for tSZ
       massfunc_mode: 'ccl' # Method to compute mass function, possibilities are ccl, internal (Eunseong's implementation)
@@ -38,23 +37,26 @@ likelihood:
     selfunc:
       SNRcut: 5. # S/N cutoff in number counts
       # Model for selection function, possibilities are
-      # mode: Qfit / injection
-      #   Qfit: using data output from nemo run
+      method: 'injection'
+      # method: SNRbased / injection
+      #   SNRbased: completeness based in SNR bins
       #   injection: estimate completeness using source injection method from nemo (i.e. no Q)
-      mode: 'injection'
-      # Qmode: full / downsample
+      whichQ: 'injection'
+      # whichQ: fit / injection
+      #   fit : using Q fit data
+      #   injection : using Q source injection data
+      resolution : 'downsample'
+      # resolution: full / downsample
       #   downsample: average rms map, Q into n dwnsmpl_bins
       #   full: consider full map, Q function, no downsampling
-      Qmode: 'downsample' # for injection it doesn't matter
-      dwnsmpl_bins: 50 # If Qmode=downsample, number of bins to use
-      save_dwsmpld: True # Save downsampled Q and rms to npz file and once it exists read those
-      average_Q: True # Should use average_Q with injection method
+      dwnsmpl_bins : 50 # If resolution=downsample, number of bins to use
+      save_dwsmpld : False # Save downsampled Q and rms to npz file and once it exists read those
 
     binning:
       # redshift bins for number counts
       z:
         zmin: 0.
-        zmax: 2.8
+        zmax: 2.
         dz: 0.1
       # SNR bins for number counts
       q:
@@ -65,19 +67,21 @@ likelihood:
       M:
         Mmin: 5e13 #3.4e13
         Mmax: 1e16 #0.68e16
-        dlogM: 0.05
-
+        dlogM: 0.01 #0.05
+      # when excluding low redshift bins for lkl, otherwise should be 0
+      exclude_zbin: 2
+      
 params:
   h: 0.68
   n_s: 0.965
   Omega_b: 0.049
-  Omega_c: 0.26
+  Omega_c: 0.261
   #sigma8: 0.81
   tenToA0: 1.9e-05
   B0: 0.08
-  scatter_sz: 0.
-  bias_sz: 1.
-  m_nu: 0.0
+  scatter_sz: 0
+  bias_sz: 1
+  m_nu: 0
   C0: 2
 
   sigma8:

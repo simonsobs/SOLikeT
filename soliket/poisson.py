@@ -7,7 +7,8 @@ import scipy.interpolate
 import numpy as np
 # import multiprocessing
 # from functools import partial
-
+import time
+import sys
 
 class PoissonLikelihood(Likelihood):
     name = "Poisson"
@@ -33,11 +34,13 @@ class PoissonLikelihood(Likelihood):
         raise NotImplementedError
 
     def logp(self, **params_values):
+
+        start = time.time()
+
         pk_intp = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False)
         dndlnm = self._get_dndlnm(self.zz, pk_intp, **params_values)
-        dn_dzdm_intp = scipy.interpolate.interp2d( self.zz, self.lnmarr, np.log(dndlnm), kind='linear',
-                                                   copy=True, bounds_error=False,
-                                                   fill_value=-np.inf)
+        dn_dzdm_intp = scipy.interpolate.interp2d(self.zz, self.lnmarr, np.log(dndlnm), kind='linear',
+                                                  copy=True, bounds_error=False, fill_value=-np.inf)
 
         # a_pool = multiprocessing.Pool()
         # rate_densities = a_pool.map(partial(Prob_per_cluster,
@@ -60,12 +63,14 @@ class PoissonLikelihood(Likelihood):
                              pk_intp,
                              dn_dzdm_intp,
                              params_values)
+
         rate_densities = np.asarray(rate_densities)
         # exit(0)
 
         n_expected = self._get_n_expected(pk_intp,**params_values)
 
-
+        elapsed = time.time() - start
+        self.log.info("poisson.py calculation took {:.3f} seconds.".format(elapsed))
 
         return self.data.loglike(rate_densities, n_expected)
 
@@ -76,26 +81,31 @@ def Prob_per_cluster(cat_index,
                      dn_dzdm_intp,
                      params_values):
 
-    z,tsz_signal,tsz_signal_err,tile_name = [self.catalog[c].values[cat_index] for c in self.columns]
+    tsz_signal, z, tsz_signal_err, tile_name = [self.catalog[c].values[cat_index] for c in self.columns]
     # self.log.info('computing prob per cluster for cluster: %.5e %.5e %.5e %s'%(z,tsz_signal,tsz_signal_err,tile_name))
-    marr = np.exp(self.lnmarr)
+
+
     #if self.tiles_dwnsmpld is not None:
     rms_bin_index = self.tiles_dwnsmpld[tile_name]
     #else:
     #    rms_bin_index = None
+
     Pfunc_ind = self.Pfunc_per(
         rms_bin_index,
-        marr,
+        np.exp(self.lnmarr),
         z,
         tsz_signal * 1e-4,
         tsz_signal_err * 1e-4,
         params_values,
     )
 
-    dn_dzdm = np.exp(dn_dzdm_intp(z,self.lnmarr))
+    dn_dzdm = np.exp(dn_dzdm_intp(z, self.lnmarr))
+
     dn_dzdm = np.squeeze(dn_dzdm)
 
-
     ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(self.lnmarr, axis=0), axis=0)
-    # ans = 0
+
+    #if ans == 0: print(cat_index)
+    if ans == 0: ans=0.00001
+
     return ans
