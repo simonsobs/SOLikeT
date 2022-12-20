@@ -230,7 +230,13 @@ class cosmopower(classy):
 
         if self.pp_spectra is not None:
             nl = len(self.pp_spectra[0])
-            cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/4.
+            # cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/4. ## this is clkk... works for so lensinglite lkl
+
+            # here for the planck lensing lkl, using lfactor option gives:
+            lcp = np.asarray(cls['ell'][2:nl+2])
+            cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/(lcp*(lcp+1.))**2.
+            cls['pp'][2:nl+2] *= (lcp*(lcp+1.))**2./2./np.pi
+
         return cls
 
     def get_param(self, p):
@@ -304,8 +310,8 @@ class cosmopower(classy):
 
 
     def get_pk_and_k_and_z(self,params_values_dict={}):
-        nz = 80 # number of z-points in redshift data [21oct22]
-        zmax = 4. # max redshift of redshift data [21oct22]
+        nz = 15 # number of z-points in redshift data [21oct22] --> set to 80
+        zmax = 4. # max redshift of redshift data [21oct22] --> set to 4 because boltzmannbase.py wants to extrapolate
         z_arr = np.linspace(0.,zmax,nz) # z-array of redshift data [21oct22] oct 26 22: nz = 1000, zmax = 20
 
         nk = 5000
@@ -318,25 +324,44 @@ class cosmopower(classy):
         params_values = params_values_dict.copy()
         params_values['ln10^{10}A_s'] = params_values.pop("logA")
 
+
+        # # naive implementation... this is way slower:
+        # params_dict = {}
+        # for k,v in zip(params_values.keys(),params_values.values()):
+        #     params_dict[k]=np.repeat(v, nz)
+        # params_dict_pp = params_dict.copy()
+        # params_dict_pp.pop('tau_reio')
+        # params_dict_pp['z_pk_save_nonclass'] = z_arr
+        # predicted_pknl_spectrum = self.pknl_emu.predictions_np(params_dict_pp)
+        # print(np.shape(predicted_pknl_spectrum))
+
         params_dict = {}
         for k,v in zip(params_values.keys(),params_values.values()):
             params_dict[k]=[v]
-        params_dict_pp = params_dict.copy()
-        params_dict_pp.pop('tau_reio')
+        predicted_pknl_spectrum_z = []
+        # def get_pk_cp(zz):
+        #     params_dict_pp = params_dict.copy()
+        #     params_dict_pp.pop('tau_reio')
+        #     params_dict_pp['z_pk_save_nonclass'] = [zz]
+        #     return  self.pknl_emu.predictions_np(params_dict_pp)[0]
+        for zp in z_arr:
+            params_dict_pp = params_dict.copy()
+            params_dict_pp.pop('tau_reio')
+            params_dict_pp['z_pk_save_nonclass'] = [zp]
+            predicted_pknl_spectrum_z.append(self.pknl_emu.predictions_np(params_dict_pp)[0])
+            # if zp>4.:
+            #     predicted_pknl_spectrum_z.append(0.*k_arr)
+            # predicted_pknl_spectrum_z.append(get_pk_cp(zp))
+        # get_pk_cp = np.vectorize(get_pk_cp)
+        # predicted_pknl_spectrum_z = get_pk_cp([0.1,0.3])
+        # print(np.shape(predicted_pknl_spectrum_z))
+        # exit(0)
+        predicted_pknl_spectrum = np.asarray(predicted_pknl_spectrum_z)
+
+        # print(np.shape(predicted_pknl_spectrum))
+        # exit(0)
 
 
-        pk_at_k_z = np.zeros((nk,nz))
-        params_dict = {}
-        for k,v in zip(params_values.keys(),params_values.values()):
-            params_dict[k]=np.repeat(v, nz)
-        params_dict_pp = params_dict.copy()
-        params_dict_pp.pop('tau_reio')
-
-        # for k,v in params_dict_pp.items():
-        #     print(k,v)
-        params_dict_pp['z_pk_save_nonclass'] = z_arr
-        # print('params_dict_pp ',params_dict_pp)
-        predicted_pknl_spectrum = self.pknl_emu.predictions_np(params_dict_pp)
         pknl = 10.**predicted_pknl_spectrum
         pknl_re =  ((dls)**-1*pknl)
         pknl_re = np.transpose(pknl_re)
