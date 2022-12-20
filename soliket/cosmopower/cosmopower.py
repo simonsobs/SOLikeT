@@ -230,12 +230,12 @@ class cosmopower(classy):
 
         if self.pp_spectra is not None:
             nl = len(self.pp_spectra[0])
-            # cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/4. ## this is clkk... works for so lensinglite lkl
+            cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/4. ## this is clkk... works for so lensinglite lkl
 
             # here for the planck lensing lkl, using lfactor option gives:
-            lcp = np.asarray(cls['ell'][2:nl+2])
-            cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/(lcp*(lcp+1.))**2.
-            cls['pp'][2:nl+2] *= (lcp*(lcp+1.))**2./2./np.pi
+            # lcp = np.asarray(cls['ell'][2:nl+2])
+            # cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/(lcp*(lcp+1.))**2.
+            # cls['pp'][2:nl+2] *= (lcp*(lcp+1.))**2./2./np.pi
 
         return cls
 
