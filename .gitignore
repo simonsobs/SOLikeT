@@ -112,9 +112,9 @@ soliket/clusters/chains
 soliket/clusters/notebooks/figures
 soliket/clusters/data/act/*
 soliket/clusters/data/advact/*
-soliket/binned_clusters
 .DS_Store
-soliket/sz_binned_cluster_counts
 soliket/ymap
 soliket/cosmopower
-soliket/clusters/temp/*
+soliket/clusters/checks/*
+soliket/clusters/notebooks/figs/*
+soliket/clusters/notebooks/ongoing/*

@@ -25,6 +25,7 @@ def cash_c_logpdf(theory, data, usestirling=True, name = "binned"):
     ln_fac[obs == 0] = 0.
 
     loglike = obs * np.log(theory) - theory - ln_fac
+
     print("\r ::: 2D ln likelihood = ", -np.nansum(loglike[np.isfinite(loglike)]))
 
     return np.nansum(loglike[np.isfinite(loglike)])
