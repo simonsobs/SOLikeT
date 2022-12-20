@@ -14,12 +14,8 @@ likelihood:
 
     # Data
     data:
-      #data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
-      #data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5-largeRef/NemoCCL_A10tSZ_DR5White_ACT-DR5-largeRef/'
-      data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5/NemoCCL_A10tSZ_DR5White_ACT-DR5/'
-      #cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
-      #cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5-largeRef_mass.fits'
-      cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_mass.fits'
+      data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
+      cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
       Q_file: 'selFn/QFit.fits' # Path to Q function file
       tile_file: 'selFn/tileAreas.txt' # Path to tile file
       rms_file: 'selFn/RMSTab.fits' # Path to RMS file
@@ -82,7 +78,7 @@ params:
   Omega_b : 0.049
   Omega_c : 0.261
   # sigma8 : 0.81
-  tenToA0 : 4.0e-5
+  tenToA0 : 1.9e-5
   B0 : 0.08
   scatter_sz : 0.
   bias_sz : 1

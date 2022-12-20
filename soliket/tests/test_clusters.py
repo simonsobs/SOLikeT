@@ -1,3 +1,5 @@
+# pytest -k clusters -v tests
+
 import numpy as np
 import pytest
 
@@ -7,20 +9,20 @@ from cobaya.model import get_model
 params = {
     'h': 0.68,
     'n_s': 0.965,
-    'Omega_b': 0.049,      
-    'Omega_c': 0.261, 
+    'Omega_b': 0.049,
+    'Omega_c': 0.261,
     'sigma8': 0.81,
-    'm_nu': 0.,    
+    'm_nu': 0.,
     'tenToA0': 1.9e-05,
     'B0': 0.08,
+    'C0': 2.,
     'scatter_sz': 0.,
-    'bias_sz': 1.,
-    'C0': 2.
+    'bias_sz': 1.
 }
 
 path = './clusters/data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/'
 
-lkl_common = { 
+lkl_common = {
     'verbose': True,
     'stop_at_error': True,
     'data': {
@@ -35,7 +37,7 @@ lkl_common = {
         'massfunc_mode': 'ccl',
         'compl_mode': 'erf_diff',
         'md_hmf': '200c',
-        'md_ym': '200c'      
+        'md_ym': '200c'
     },
     'YM': {
         'Mpivot': 4.25e14
@@ -73,7 +75,7 @@ ccl_baseline = {
     'matter_pk': 'halofit',
     'baryons_pk': 'nobaryons',
     'md_hmf': '200c'
-}        
+}
 
 
 
@@ -126,23 +128,23 @@ def test_clusters_prediction():
     binned_like = binned_model.likelihood['soliket.BinnedClusterLikelihood']
     unbinned_like = unbinned_model.likelihood['soliket.UnbinnedClusterLikelihood']
 
-    binned_pk_intp = binned_like.theory.get_Pk_interpolator() 
+    binned_pk_intp = binned_like.theory.get_Pk_interpolator()
     unbinned_pk_intp = unbinned_like.theory.get_Pk_interpolator()
     SZparams = {
         'tenToA0': 1.9e-05,
         'B0': 0.08,
         'C0': 2.,
         'scatter_sz': 0.,
-        'bias_sz': 1.  
+        'bias_sz': 1.
     }
 
     Nzq = binned_like._get_theory(binned_pk_intp, **SZparams)
     Ntot = unbinned_like._get_n_expected(unbinned_pk_intp, **SZparams)
-    
+
     assert np.isclose(Nzq.sum(), Ntot)
 
 
 # test_clusters_import()
 # test_clusters_model()
 # test_clusters_loglike()
-# test_clusters_prediction()  
+# test_clusters_prediction()
