@@ -10,6 +10,7 @@ output: chains/test_binned
 
 likelihood:
   soliket.BinnedClusterLikelihood:
+    stop_at_error: True
     verbose : True
 
     # Data
@@ -23,11 +24,11 @@ likelihood:
     # Theory
     theorypred:
       choose_theory: 'CCL' # Theory prediction mode, possibilities are camb, class, CCL (CCL is all CCL)
-      rel_correction: False # Relativistic corrections for tSZ
       massfunc_mode: 'ccl' # Method to compute mass function, possibilities are ccl, internal (Eunseong's implementation)
       md_hmf: '200c' # Mass definition used for HMF
       md_ym: '200c' # Mass definition used for Y-M relation
       compl_mode: 'erf_diff' # Method to compute selection function, possibilities are erf_diff (difference of erfs), erf_prod (product of erfs)
+      rel_correction: False # Relativistic corrections for tSZ
 
     # Y-M relation
     YM:
@@ -39,7 +40,7 @@ likelihood:
       # Model for selection function, possibilities are
       method: 'injection'
       # method: SNRbased / injection
-      #   SNRbased: completeness based in SNR bins
+      #   SNRbased: completeness based in SNR estimates
       #   injection: estimate completeness using source injection method from nemo (i.e. no Q)
       whichQ: 'injection'
       # whichQ: fit / injection
@@ -65,11 +66,11 @@ likelihood:
         dlog10q: 0.25
       # mass bins for number counts
       M:
-        Mmin: 5e13 #3.4e13
-        Mmax: 1e16 #0.68e16
-        dlogM: 0.01 #0.05
+        Mmin: 5e13
+        Mmax: 1e16
+        dlogM: 0.01
       # when excluding low redshift bins for lkl, otherwise should be 0
-      exclude_zbin: 2
+      exclude_zbin: 0
 
 params:
   h: 0.68

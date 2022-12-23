@@ -10,12 +10,15 @@ output: chains/test_binned
 
 likelihood:
   soliket.BinnedClusterLikelihood:
+    stop_at_error: True
     verbose: True
 
     # Data
     data:
       data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/' # Path to data directory
       cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits' # Path to cluster catalog file
+      # data_path: 'data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5/NemoCCL_A10tSZ_DR5White_ACT-DR5/'
+      # cat_file: 'NemoCCL_A10tSZ_DR5White_ACT-DR5_mass.fits'
       Q_file: 'selFn/QFit.fits' # Path to Q function file
       tile_file: 'selFn/tileAreas.txt' # Path to tile file
       rms_file: 'selFn/RMSTab.fits' # Path to RMS file
@@ -24,11 +27,10 @@ likelihood:
     theorypred:
       choose_theory: "CCL"
       massfunc_mode: 'ccl'
-      compl_mode: 'erf_diff'
       md_hmf: '200c'
       md_ym: '200c'
+      compl_mode: 'erf_diff'
       rel_correction: False # Relativistic corrections for tSZ
-      use_class_sz : False
 
     # Y-M relation
     YM:
@@ -40,9 +42,9 @@ likelihood:
       # Model for selection function, possibilities are
       method: 'SNRbased'
       # method: SNRbased / injection
-      #   SNRbased: completeness based in SNR bins
+      #   SNRbased: completeness based in SNR estimates
       #   injection: estimate completeness using source injection method from nemo (i.e. no Q)
-      whichQ: 'fit'
+      whichQ: 'injection'
       # whichQ: fit / injection
       #   fit : using Q fit data
       #   injection : using Q source injection data
@@ -50,14 +52,14 @@ likelihood:
       # resolution: full / downsample
       #   downsample: average rms map, Q into n dwnsmpl_bins
       #   full: consider full map, Q function, no downsampling
-      dwnsmpl_bins : 50 # If resolution=downsample, number of bins to use
-      save_dwsmpld : True # Save downsampled Q and rms to npz file and once it exists read those
+      dwnsmpl_bins : 2 # If resolution=downsample, number of bins to use
+      save_dwsmpld : False # Save downsampled Q and rms to npz file and once it exists read those
 
     binning:
       # redshift bins for number counts
       z:
         zmin: 0.
-        zmax: 2.
+        zmax: 2.0 #2.6 # for a new sim
         dz: 0.1
       # SNR bins for number counts
       q:
@@ -70,7 +72,7 @@ likelihood:
         Mmax: 1e16
         dlogM: 0.01
       # when excluding low redshift bins for lkl, otherwise should be 0
-      exclude_zbin: 2
+      exclude_zbin: 0
 
 params:
   h : 0.68
@@ -78,9 +80,9 @@ params:
   Omega_b : 0.049
   Omega_c : 0.261
   # sigma8 : 0.81
-  tenToA0 : 1.9e-5
+  tenToA0 : 1.9e-5 #4.0e-5
   B0 : 0.08
-  scatter_sz : 0.
+  scatter_sz : 0.2
   bias_sz : 1
   m_nu : 0.
   C0: 0.
@@ -95,7 +97,6 @@ params:
       scale: 0.001
     proposal: 0.001
     latex: \sigma_8
-
 
 sampler:
   evaluate:

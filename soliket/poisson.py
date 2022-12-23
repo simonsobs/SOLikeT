@@ -35,12 +35,15 @@ class PoissonLikelihood(Likelihood):
 
     def logp(self, **params_values):
 
-        start = time.time()
+        start0 = time.time()
 
         pk_intp = self.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"), nonlinear=False)
         dndlnm = self._get_dndlnm(self.zz, pk_intp, **params_values)
         dn_dzdm_intp = scipy.interpolate.interp2d(self.zz, self.lnmarr, np.log(dndlnm), kind='linear',
                                                   copy=True, bounds_error=False, fill_value=-np.inf)
+
+        n_expected = self._get_n_expected(pk_intp, **params_values)
+
 
         # a_pool = multiprocessing.Pool()
         # rate_densities = a_pool.map(partial(Prob_per_cluster,
@@ -57,6 +60,8 @@ class PoissonLikelihood(Likelihood):
         # vectorize implementation
         # apparently faster than parallel implementation
 
+        start = time.time()
+
         Prob_per_cluster_vec = np.vectorize(Prob_per_cluster)
         rate_densities = Prob_per_cluster_vec(np.arange(self.N_cat),
                              self,
@@ -67,10 +72,14 @@ class PoissonLikelihood(Likelihood):
         rate_densities = np.asarray(rate_densities)
         # exit(0)
 
-        n_expected = self._get_n_expected(pk_intp,**params_values)
-
         elapsed = time.time() - start
-        self.log.info("poisson.py calculation took {:.3f} seconds.".format(elapsed))
+        self.log.info("::: prob_per_cluster calculation took {:.3f} seconds.".format(elapsed))
+
+        # start = time.time()
+
+
+        elapsed = time.time() - start0
+        self.log.info("::: total unbinned took {:.3f} seconds.".format(elapsed))
 
         return self.data.loglike(rate_densities, n_expected)
 
@@ -86,12 +95,12 @@ def Prob_per_cluster(cat_index,
 
 
     #if self.tiles_dwnsmpld is not None:
-    rms_bin_index = self.tiles_dwnsmpld[tile_name]
+    tile_index = self.tiles_dwnsmpld[tile_name]
     #else:
-    #    rms_bin_index = None
+    #    tile_index = None
 
     Pfunc_ind = self.Pfunc_per(
-        rms_bin_index,
+        tile_index,
         np.exp(self.lnmarr),
         z,
         tsz_signal * 1e-4,
@@ -105,7 +114,8 @@ def Prob_per_cluster(cat_index,
 
     ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(self.lnmarr, axis=0), axis=0)
 
-    #if ans == 0: print(cat_index)
-    if ans == 0: ans=0.00001
+    if ans == 0:
+        print("Pfunc_per_cluster is zero at", cat_index)
+        ans = 0.00001
 
     return ans

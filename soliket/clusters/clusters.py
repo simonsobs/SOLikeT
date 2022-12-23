@@ -3,48 +3,24 @@ requires extra: astlib,fits,os,sys,nemo
 """
 import numpy as np
 import pandas as pd
-from scipy.interpolate import interp1d
-from pkg_resources import resource_filename
-import logging
-from astropy.io import fits
-import os, sys
 import nemo as nm # needed for reading Q-functions
-import scipy.stats # needed for binning rms
-import scipy.interpolate
-import scipy.integrate
-import scipy.special
+import logging
+import os, sys
 import time # for timing
-import multiprocessing
-from functools import partial
-from scipy import special
-import math as m
-
+from scipy import special, stats, interpolate, integrate
+from scipy.interpolate import interp1d
+from astropy.io import fits
 import pyccl as ccl
-#from classy_sz import Class # TBD: change this import as optional
+import soliket.clusters.nemo_mocks as selfunc
 
 from ..poisson import PoissonLikelihood
 from ..cash import CashCLikelihood
-from . import massfunc as mf
-
-
-import soliket.clusters.nemo_mocks as selfunc
-from ..constants import MPC2CM, MSUN_CGS, G_CGS, C_M_S, T_CMB
-from ..constants import h_Planck, k_Boltzmann, electron_mass_kg, elementary_charge
-
+from ..constants import MPC2CM, MSUN_CGS, G_CGS
+#from classy_sz import Class # TBD: change this import as optional
 
 C_KM_S = 2.99792e5
 MPIVOT_THETA = 3e14 # [Msun]
-rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
-                    / G_CGS * MPC2CM / MSUN_CGS
-
-
-def gaussian(xx, mu, sig, noNorm=False):
-    if noNorm:
-        return np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
-    else:
-        return 1.0 / (sig * np.sqrt(2 * np.pi)) \
-                            * np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
-
+rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) / G_CGS * MPC2CM / MSUN_CGS
 
 
 class BinnedClusterLikelihood(CashCLikelihood):
@@ -58,7 +34,6 @@ class BinnedClusterLikelihood(CashCLikelihood):
     verbose: bool = False
 
     params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
-
 
     def initialize(self):
 
@@ -132,19 +107,16 @@ class BinnedClusterLikelihood(CashCLikelihood):
     def _get_data(self):
         return self.delN2Dcat
 
-
     def _get_theory(self, pk_intp, **params_values_dict):
 
         start = time.time()
-        delN = self._get_integrated2D(pk_intp, **params_values_dict)
+        delN = self._get_integrated(pk_intp, **params_values_dict)
         elapsed = time.time() - start
         self.log.info("Theory N calculation took {:.3f} seconds.".format(elapsed))
 
         return delN
 
-
-
-    def _get_integrated2D(self, pk_intp, **params_values_dict):
+    def _get_integrated(self, pk_intp, **params_values_dict):
 
         zarr = self.zarr
         zz = self.zz
@@ -170,11 +142,11 @@ class BinnedClusterLikelihood(CashCLikelihood):
             marr_500c = marr_ymmd
 
         if self.selfunc['method'] == 'SNRbased':
-            y0 = _get_y0(self, marr_ymmd, zz, marr_500c, use_Q=True, **params_values_dict)
+            y0 = get_y0(self, marr_ymmd, zz, marr_500c, use_Q=True, Ez_interp=False, **params_values_dict)
         else:
             y0 = None
 
-        cc = np.array([self._get_completeness2D(marr, zz, y0, kk, marr_500c, **params_values_dict) for kk in range(Nq)])
+        cc = np.array([self._get_completeness(marr, zz, y0, kk, marr_500c, **params_values_dict) for kk in range(Nq)])
 
         nzarr = self.zbins
         delN2D = np.zeros((len(zarr), Nq))
@@ -203,12 +175,12 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         return delN2D
 
-    def get_completeness2D_inj(self, mass, z, mass_500c, qbin, **params_values_dict):
+    def _get_completeness_inj(self, mass, z, mass_500c, qbin, **params_values_dict):
 
         scatter = params_values_dict["scatter_sz"]
 
-        y0 = _get_y0(self, mass, z, mass_500c, use_Q=False, **params_values_dict)
-        theta = _theta(self, mass_500c, z)
+        y0 = get_y0(self, mass, z, mass_500c, use_Q=False, Ez_interp=False, **params_values_dict)
+        theta = get_theta(self, mass_500c, z)
 
         if scatter == 0:
             comp = np.zeros_like(theta)
@@ -232,7 +204,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
 
     # completeness 2D
-    def _get_completeness2D(self, marr, zarr, y0, qbin, marr_500c=None, **params_values_dict):
+    def _get_completeness(self, marr, zarr, y0, qbin, marr_500c=None, **params_values_dict):
         if self.selfunc['method'] == 'SNRbased':
             scatter = params_values_dict["scatter_sz"]
             noise = self.noise
@@ -269,7 +241,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
                         else:
                             arg.append(get_erf(y0[int(tile[i])-1,:,:], noise[i], qcut)*get_erf(y0[int(tile[i])-1,:,:], noise[i], qmin)*(1. - get_erf(y0[int(tile[i])-1,:,:], noise[i], qmax)))
                     elif compl_mode == 'erf_diff':
-                        arg.append(get_erf_compl(y0[int(tile[i])-1,:,:], qmin, qmax, noise[i], qcut))
+                        arg.append(get_erf_diff(y0[int(tile[i])-1,:,:], qmin, qmax, noise[i], qcut))
 
                 comp = np.einsum('ijk,i->jk', np.nan_to_num(arg), skyfracs)
 
@@ -291,7 +263,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
                         else:
                             arg = get_erf(yy0, noise[i], qcut)*get_erf(yy0, noise[i], qmin)*(1. - get_erf(yy0, noise[i], qmax))
                     elif compl_mode == 'erf_diff':
-                        arg = get_erf_compl(yy0, qmin, qmax, noise[i], qcut)
+                        arg = get_erf_diff(yy0, qmin, qmax, noise[i], qcut)
 
                     cc = arg * skyfracs[i]
                     arg0 = (lnyy[:,None,None] - mu[int(tile[i])-1,:,:])/(np.sqrt(2.)*scatter)
@@ -301,7 +273,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
             comp[comp < 0.] = 0.
             comp[comp > 1.] = 1.
         else:
-            comp = self.get_completeness2D_inj(marr, zarr, marr_500c, qbin, **params_values_dict)
+            comp = self._get_completeness_inj(marr, zarr, marr_500c, qbin, **params_values_dict)
         return comp
 
 
@@ -320,8 +292,12 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     def initialize(self):
 
         initialize_common(self)
+
+        zmax = self.binning['z']['zmax']
+
         self.LgY = np.arange(-6, -2.5, 0.01) # for integration over y when scatter != 0
-        self.zz = np.arange(0, 2., 0.01) # redshift bounds should correspond to catalogue
+        self.zz = np.arange(0, zmax, 0.01) # redshift bounds should correspond to catalogue
+        if self.zz[0] == 0: self.zz[0] = 1e-5
         super().initialize()
 
     def get_requirements(self):
@@ -334,47 +310,43 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         start = time.time()
 
-        dVdz = get_dVdz(self, self.zz)
-        dndlnm = get_dndlnm(self, self.zz, pk_intp, **kwargs)
+        zarr = self.zz
+        marr = np.exp(self.lnmarr)
+        Ynoise = self.noise
+
+        dVdz = get_dVdz(self, zarr)
+        dndlnm = get_dndlnm(self, zarr, pk_intp, **kwargs)
+        Pfunc = self.PfuncY(Ynoise, marr, zarr, kwargs)
 
         Ntot = 0
-        rms_index = 0
-        marr = np.exp(self.lnmarr)
-        for Yt, frac in zip(self.noise, self.skyfracs):
+        for count, frac in enumerate(self.skyfracs):
 
-            Pfunc = self.PfuncY(rms_index, Yt, marr, self.zz, kwargs) # dim (m,z)
-            N_z = np.trapz(dndlnm * Pfunc, dx=np.diff(self.lnmarr[:,None], axis=0), axis=0) # dim (z)
-            Np = np.trapz(N_z * dVdz, x=self.zz) * frac
-            Ntot += Np
-            rms_index += 1
+            Nz = np.trapz(dndlnm * Pfunc[:,:,count], dx=np.diff(self.lnmarr[:,None], axis=0), axis=0)
+            Ntot += np.trapz(Nz * dVdz, x=zarr) * frac
 
         self.log.info("Total predicted N = {}".format(Ntot))
 
         elapsed = time.time() - start
-        self.log.info("Theory N calculation took {:.3f} seconds.".format(elapsed))
+        self.log.info("::: theory N calculation took {:.3f} seconds.".format(elapsed))
 
         return Ntot
-
 
     def _get_n_expected_zbinned(self, pk_intp, **kwargs):
     # this is just for the comparison with binned Nz
 
-        dVdz = get_dVdz(self, self.zz)
-        dndlnm = get_dndlnm(self, self.zz, pk_intp, **kwargs)
-
-        rms_index = 0
-        marr = np.exp(self.lnmarr)
-        Nz = 0
-        for Yt, frac in zip(self.noise, self.skyfracs):
-
-            Pfunc = self.PfuncY(rms_index, Yt, marr, self.zz, kwargs) # dim (m,z)
-            Np = np.trapz(dndlnm * dVdz * Pfunc, dx=np.diff(self.lnmarr[:,None], axis=0), axis=0) * frac # dim (z)
-            Nz += Np
-            rms_index += 1
-
-        nzarr = self.zbins
-        zarr = self.zarr
         zz = self.zz
+        zarr = self.zarr
+        nzarr = self.zbins
+        marr = np.exp(self.lnmarr)
+        Ynoise = self.noise
+
+        dVdz = get_dVdz(self, zz)
+        dndlnm = get_dndlnm(self, zz, pk_intp, **kwargs)
+        Pfunc = self.PfuncY(Ynoise, marr, zz, kwargs)
+
+        for count, frac in enumerate(self.skyfracs):
+
+            Nz = np.trapz(dndlnm * dVdz * Pfunc[:,:,count], dx=np.diff(self.lnmarr[:,None], axis=0), axis=0) * frac
 
         Nzz = np.zeros(len(zarr))
         for i in range(len(zarr)):
@@ -386,7 +358,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             Nzz[i] = np.trapz(Nz[i1:i2+1], x=zz[i1:i2+1])
 
-        self.log.info("\r Total predicted 2D N = {}".format(Nzz.sum()))
+        self.log.info("\r Total predicted N = {}".format(Nzz.sum()))
 
         for i in range(len(zarr)):
             self.log.info('Number of clusters in redshift bin {}: {}.'.format(i, Nzz[i]))
@@ -395,7 +367,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         return Nzz
 
 
-    def P_Yo(self, rms_bin_index, LgY, marr, z, param_vals):
+    def P_Yo(self, tile_index, LgY, marr, z, param_vals):
 
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
             marr_ymmd = convert_masses(self, marr, z)
@@ -406,10 +378,9 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         else:
             marr_500c = marr_ymmd
 
-        y0_new = _get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, **param_vals)
-        y0_new = y0_new[rms_bin_index]
+        Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, **param_vals)
 
-        Ytilde = np.outer(y0_new, np.ones(len(LgY[0, :])))
+        Ytilde = np.outer(Ytilde[tile_index], np.ones(len(LgY[0, :])))
         Y = 10 ** LgY
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
@@ -419,7 +390,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         )
         return ans
 
-    def P_Yo_vec(self, rms_index, LgY, marr, z, param_vals):
+    def P_Yo_vec(self, LgY, marr, z, param_vals):
 
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
             marr_ymmd = convert_masses(self, marr, z)
@@ -430,11 +401,12 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         else:
             marr_500c = marr_ymmd
 
-        y0_new = _get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, **param_vals)
-        y0_new = y0_new[rms_index].T
+        Y = 10 ** LgY.T
 
-        Y = 10 ** LgY
-        Ytilde = np.repeat(y0_new[:, :, np.newaxis], LgY.shape[2], axis=2)
+        Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=False, **param_vals)
+
+        Y = np.repeat(Y[np.newaxis, :, :, :], Ytilde.shape[0], axis=0)
+        Ytilde = np.repeat(Ytilde[:, np.newaxis, :, :], Y.shape[1], axis=1)
 
         numer = -1.0 * (np.log(Y/ Ytilde)) ** 2
 
@@ -442,36 +414,41 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 1.0 / (param_vals["scatter_sz"] * np.sqrt(2 * np.pi)) *
                 np.exp(numer / (2.0 * param_vals["scatter_sz"] ** 2))
         )
+
         return ans
 
-    def Y_erf(self, Y, Ynoise):
-        ans = Y * 0.0
-        ans[Y - self.qcut * Ynoise > 0] = 1.0
-        return ans
+    # def Y_erf(self, Y, Ynoise):
+    #     ans = Y * 0.0
+    #     ans[Y - self.qcut * Ynoise > 0] = 1.0
+    #     return ans
 
-    def P_of_gt_SN(self, rms_index, LgY, marr, zz, Ynoise, param_vals):
+    def P_of_gt_SN(self, LgY, marr, zz, Ynoise, param_vals):
 
         if param_vals['scatter_sz'] != 0:
+
             Y = 10 ** LgY
 
-            #Yerf = self.Y_erf(Y, Ynoise) # array of size dim Y
-            Yerf = get_erf(Y, Ynoise, self.qcut)
+            Y_a = np.repeat(Y[:, np.newaxis], np.shape(Ynoise), axis=1)
+            Ynoise_a = np.repeat(Ynoise[np.newaxis, :], np.shape(Y), axis=0)
 
-            sig_tr = np.outer(np.ones([marr.shape[0], # (dim mass)
-                                        zz.shape[0]]), # (dim z)
-                                        Yerf)
+            qcut = np.outer(np.ones(np.shape(Y_a)), self.qcut)
+            qcut_a = np.reshape(qcut, (Y_a.shape[0], Y_a.shape[1]))
 
-            sig_thresh = np.reshape(sig_tr, (marr.shape[0], zz.shape[0], len(Yerf)))
+            Yerf = get_erf(Y_a, Ynoise_a, qcut_a)
+
+            sig_tr = np.outer(np.ones([marr.shape[0], zz.shape[0]]), Yerf)
+            sig_thresh = np.reshape(sig_tr, (marr.shape[0], zz.shape[0], Yerf.shape[0], Yerf.shape[1]))
 
             LgYa = np.outer(np.ones([marr.shape[0], zz.shape[0]]), LgY)
             LgYa2 = np.reshape(LgYa, (marr.shape[0], zz.shape[0], len(LgY)))
 
             # replace nan with 0's:
-            P_Y = np.nan_to_num(self.P_Yo_vec(rms_index, LgYa2, marr, zz, param_vals))
+            P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, marr, zz, param_vals).T)
 
             ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10) # why log10?
 
         else:
+
             if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
                 marr_ymmd = convert_masses(self, marr, zz)
             else:
@@ -481,35 +458,37 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             else:
                 marr_500c = marr_ymmd
 
-            y0_new = _get_y0(self, marr_ymmd, zz, marr_500c, use_Q=True, **param_vals)
-            y0_new = y0_new[rms_index]
-            noise = self.noise[rms_index]
+            Ytilde = get_y0(self, marr_ymmd, zz, marr_500c, use_Q=True, Ez_interp=False, **param_vals)
 
-            # ans = y0_new * 0.0
-            # ans[y0_new - self.qcut * self.noise[rms_index] > 0] = 1.0
-            ans = np.nan_to_num(get_erf(y0_new, noise, self.qcut))
+            qcut = np.outer(np.ones(np.shape(Ytilde)), self.qcut)
+            qcut_a = np.reshape(qcut, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
+
+            noise = np.outer(self.noise, np.ones(np.shape(Ytilde[0,:,:])))
+            noise_a = np.reshape(noise, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
+
+            ans = np.nan_to_num(get_erf(Ytilde, noise_a, qcut_a)).T
 
         return ans
 
-    def PfuncY(self, rms_index, YNoise, marr, z_arr, param_vals):
+    def PfuncY(self, Ynoise, marr, z_arr, param_vals):
         LgY = self.LgY
         P_func = np.outer(marr, np.zeros([len(z_arr)]))
-        P_func = self.P_of_gt_SN(rms_index, LgY, marr, z_arr, YNoise, param_vals)
-        if param_vals["scatter_sz"] == 0:
-            P_func = P_func.T
+        P_func = self.P_of_gt_SN(LgY, marr, z_arr, Ynoise, param_vals)
         return P_func
 
-    def Y_prob(self, Y_c, LgY, YNoise):
+    def Y_prob(self, Y_c, LgY, Ynoise):
         Y = 10 ** (LgY)
-        ans = gaussian(Y, Y_c, YNoise)
+        ans = gaussian(Y, Y_c, Ynoise)
         return ans
 
-    def Pfunc_per(self, rms_bin_index, marr, zz, Y_c, Y_err, param_vals):
+    def Pfunc_per(self, tile_index, marr, zz, Y_c, Y_err, param_vals):
+
         if param_vals["scatter_sz"] != 0:
+
             LgY = self.LgY
             LgYa = np.outer(np.ones(len(marr)), LgY)
             P_Y_sig = self.Y_prob(Y_c, LgY, Y_err)
-            P_Y = np.nan_to_num(self.P_Yo(rms_bin_index, LgYa, marr, zz, param_vals))
+            P_Y = np.nan_to_num(self.P_Yo(tile_index, LgYa, marr, zz, param_vals))
             ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
 
         else:
@@ -522,13 +501,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             else:
                 marr_500c = marr_ymmd
 
-            y0_new = _get_y0(self, marr_ymmd, zz, marr_500c, use_Q=True, **param_vals)
-            y0_new = y0_new[rms_bin_index]
+            Ytilde = get_y0(self, marr_ymmd, zz, marr_500c, use_Q=True, Ez_interp=True, **param_vals)
 
-            LgY = np.log10(y0_new)
-            P_Y_sig = np.nan_to_num(self.Y_prob(Y_c, LgY, Y_err))
+            LgYtilde = np.log10(Ytilde[tile_index])
+            P_Y_sig = np.nan_to_num(self.Y_prob(Y_c, LgYtilde, Y_err))
             ans = P_Y_sig
-
 
         return ans
 
@@ -609,6 +586,9 @@ def initialize_common(self):
         }
     )
 
+    if self.z_cat.max() > self.binning['z']['zmax']:
+        print('Maximum redshift from catalogue is out of given redshift range. Please widen the redshift range for prediction.')
+        exit(0)
 
     # redshift bins for N(z)
     self.zbins = np.arange(self.binning['z']['zmin'], self.binning['z']['zmax'] + self.binning['z']['dz'], self.binning['z']['dz'])
@@ -688,7 +668,7 @@ def initialize_common(self):
             self.skyfracs = file_rms['areaDeg2'] * np.deg2rad(1.) ** 2
             self.log.info("Number of RMS values = {}.".format(self.skyfracs.size))
             self.log.info('Down-sampling RMS and Q function using {} bins.'.format(self.selfunc['dwnsmpl_bins']))
-            binned_stat = scipy.stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
+            binned_stat = stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
                                                        bins=self.selfunc['dwnsmpl_bins'])
             binned_area = binned_stat[0]
             binned_rms_edges = binned_stat[1]
@@ -775,23 +755,44 @@ def initialize_common(self):
 
     self.log.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
 
-
-def get_dVdz(both, zarr):
-    """dV/dzdOmega"""
-    DA_z = both.theory.get_angular_diameter_distance(zarr)
-
-    dV_dz = (
-        DA_z**2
-        * (1.0 + zarr) ** 2
-        / (both.theory.get_Hubble(zarr) / C_KM_S)
-    )
-    h = both.theory.get_param("H0") / 100.0
-    return dV_dz*h**3
+def get_requirements(self):
+    if self.theorypred['choose_theory'] == "camb":
+        req = {"Hubble":  {"z": self.zz},
+               "angular_diameter_distance": {"z": self.zz},
+               "H0": None, #NB H0 is derived
+               "Pk_interpolator": {"z": np.linspace(0, 3., 140), # should be less than 150
+                                   "k_max": 4.0,
+                                   "nonlinear": False,
+                                   "hubble_units": False, # CLASS doesn't like this
+                                   "k_hunit": False, # CLASS doesn't like this
+                                   "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
+    elif self.theorypred['choose_theory'] == "class":
+        req = {"Hubble":  {"z": self.zz},
+               "angular_diameter_distance": {"z": self.zz},
+               "Pk_interpolator": {"z": np.linspace(0, 3., 100), # should be less than 110
+                                   "k_max": 4.0,
+                                   "nonlinear": False,
+                                   "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
+    elif self.theorypred['choose_theory'] == 'CCL':
+        req = {'CCL': {},
+                'nc_data': {},
+                'Hubble': {'z': self.zz},
+                'angular_diameter_distance': {'z': self.zz},
+                'Pk_interpolator': {},
+                'H0': None  #NB H0 is derived
+                }
+    else:
+        raise NotImplementedError('Only theory modules camb, class and CCL implemented so far.')
+    return req
 
 def get_Ez(both, zarr):
+    Ez = both.theory.get_Hubble(zarr) / both.theory.get_param("H0")
+    return Ez
+
+def get_interp_Ez(both, zarr):
+    # interpolation of Ez is needed for Pfunc_per in unbinned
     Ez_interp = interp1d(both.zz , both.theory.get_Hubble(both.zz) / both.theory.get_param("H0"))
     return Ez_interp(zarr)
-
 
 def get_om(both):
     if both.theorypred['choose_theory'] == "camb":
@@ -805,8 +806,17 @@ def get_om(both):
         exit(0)
     return om
 
+def get_dVdz(both, zarr):
+    """dV/dzdOmega"""
+    DA_z = both.theory.get_angular_diameter_distance(zarr)
 
-
+    dV_dz = (
+        DA_z**2
+        * (1.0 + zarr) ** 2
+        / (both.theory.get_Hubble(zarr) / C_KM_S)
+    )
+    h = both.theory.get_param("H0") / 100.0
+    return dV_dz*h**3
 
 def get_dndlnm(self, z, pk_intp, **params_values_dict):
 
@@ -832,8 +842,8 @@ def get_dndlnm(self, z, pk_intp, **params_values_dict):
         def pks_zbins(newz):
             newp = np.zeros((len(newz),len(k)))
             for i in range(k.size):
-                tck = scipy.interpolate.splrep(zpk, pks0[:,i])
-                newp[:,i] = scipy.interpolate.splev(newz, tck)
+                tck = interpolate.splrep(zpk, pks0[:,i])
+                newp[:,i] = interpolate.splev(newz, tck)
             return newp
 
         # rebin
@@ -855,7 +865,7 @@ def get_dndlnm(self, z, pk_intp, **params_values_dict):
             integral = np.zeros((len(k), len(marr), len(z)))
             for i in range(k.size):
                 integral[i,:,:] = np.array((k[i]**2.)*pks[:,i]*(win(k[i]*R)**2.))
-            return scipy.integrate.simps(integral, k, axis=0)/(2.*np.pi**2.)
+            return integrate.simps(integral, k, axis=0)/(2.*np.pi**2.)
 
         def sigma_sq_prime(R, k):
             # this is derivative of sigmaR squared
@@ -863,7 +873,7 @@ def get_dndlnm(self, z, pk_intp, **params_values_dict):
             integral = np.zeros((len(k), len(marr), len(z)))
             for i in range(k.size):
                 integral[i,:,:] = np.array((k[i]**2.)*pks[:,i]*2.*k[i]*win(k[i]*R)*win_prime(k[i]*R))
-            return scipy.integrate.simps(integral, k, axis=0)/(2.*np.pi**2.)
+            return integrate.simps(integral, k, axis=0)/(2.*np.pi**2.)
 
         def tinker(sgm, z):
 
@@ -934,15 +944,15 @@ def get_dndlnm(self, z, pk_intp, **params_values_dict):
             else:
                 raise NotImplementedError()
 
-            tck1 = scipy.interpolate.splrep(delta, par_aa)
-            tck2 = scipy.interpolate.splrep(delta, par_a)
-            tck3 = scipy.interpolate.splrep(delta, par_b)
-            tck4 = scipy.interpolate.splrep(delta, par_c)
+            tck1 = interpolate.splrep(delta, par_aa)
+            tck2 = interpolate.splrep(delta, par_a)
+            tck3 = interpolate.splrep(delta, par_b)
+            tck4 = interpolate.splrep(delta, par_c)
 
-            par1 = scipy.interpolate.splev(np.log10(dsoz), tck1)
-            par2 = scipy.interpolate.splev(np.log10(dsoz), tck2)
-            par3 = scipy.interpolate.splev(np.log10(dsoz), tck3)
-            par4 = scipy.interpolate.splev(np.log10(dsoz), tck4)
+            par1 = interpolate.splev(np.log10(dsoz), tck1)
+            par2 = interpolate.splev(np.log10(dsoz), tck2)
+            par3 = interpolate.splev(np.log10(dsoz), tck3)
+            par4 = interpolate.splev(np.log10(dsoz), tck4)
 
             alpha = 10.**(-((0.75/np.log10(dsoz/75.))**1.2))
             A     = par1*((1. + z)**(-0.14))
@@ -977,15 +987,15 @@ def get_dndlnm(self, z, pk_intp, **params_values_dict):
     # elif self.theorypred['massfunc_mode'] == 'class_sz':
         # return self.get_dndlnM_at_z_and_M(z,marr)
 
-def get_erf_compl(y, qmin, qmax, rms, qcut):
 
+def get_erf_diff(y, qmin, qmax, rms, qcut):
     arg1 = (y/rms - qmax)/np.sqrt(2.)
     if qmin > qcut:
         qlim = qmin
     else:
         qlim = qcut
     arg2 = (y/rms - qlim)/np.sqrt(2.)
-    erf_compl = (scipy.special.erf(arg2) - scipy.special.erf(arg1)) / 2.
+    erf_compl = (special.erf(arg2) - special.erf(arg1)) / 2.
     return erf_compl
 
 def get_erf(y, rms, cut):
@@ -993,36 +1003,12 @@ def get_erf(y, rms, cut):
     erfc = (special.erf(arg) + 1.)/2.
     return erfc
 
-
-def get_requirements(self):
-    if self.theorypred['choose_theory'] == "camb":
-        req = {"Hubble":  {"z": self.zz},
-               "angular_diameter_distance": {"z": self.zz},
-               "H0": None, #NB H0 is derived
-               "Pk_interpolator": {"z": np.linspace(0, 3., 140), # should be less than 150
-                                   "k_max": 4.0,
-                                   "nonlinear": False,
-                                   "hubble_units": False, # CLASS doesn't like this
-                                   "k_hunit": False, # CLASS doesn't like this
-                                   "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
-    elif self.theorypred['choose_theory'] == "class":
-        req = {"Hubble":  {"z": self.zz},
-               "angular_diameter_distance": {"z": self.zz},
-               "Pk_interpolator": {"z": np.linspace(0, 3., 100), # should be less than 110
-                                   "k_max": 4.0,
-                                   "nonlinear": False,
-                                   "vars_pairs": [["delta_nonu", "delta_nonu"]]}}
-    elif self.theorypred['choose_theory'] == 'CCL':
-        req = {'CCL': {},
-                'nc_data': {},
-                'Hubble': {'z': self.zz},
-                'angular_diameter_distance': {'z': self.zz},
-                'Pk_interpolator': {},
-                'H0': None  #NB H0 is derived
-                }
+def gaussian(xx, mu, sig, noNorm=False):
+    if noNorm:
+        return np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
     else:
-        raise NotImplementedError('Only theory modules camb, class and CCL implemented so far.')
-    return req
+        return 1.0 / (sig * np.sqrt(2 * np.pi)) \
+                            * np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
 
 
 def convert_masses(both, marr, zz):
@@ -1051,7 +1037,6 @@ def convert_masses(both, marr, zz):
             raise NotImplementedError()
     return marr_ymmd
 
-
 def get_m500c(both, marr, zz):
 
     h = both.theory.get_param("H0") / 100.0
@@ -1068,14 +1053,22 @@ def get_m500c(both, marr, zz):
 
     return marr_500c
 
-def _splQ(self, theta):
-    newQ = []
-    for i in range(len(self.Q[0])):
-        tck = scipy.interpolate.splrep(self.tt500, self.Q[:, i])
-        newQ.append(scipy.interpolate.splev(theta, tck))
+def get_splQ(self, theta):
+
+    if self.selfunc['whichQ'] == 'injection':
+        tck = interpolate.splrep(self.tt500, self.Q[:,0])
+        newQ0 = interpolate.splev(theta, tck)
+        newQ = np.repeat(newQ0[np.newaxis,:], self.Q.shape[1], axis=0)
+
+    else:
+        newQ = []
+        for i in range(len(self.Q[0])):
+            tck = interpolate.splrep(self.tt500, self.Q[:, i])
+            newQ.append(interpolate.splev(theta, tck))
+
     return np.asarray(np.abs(newQ))
 
-def _theta(self, mass_500c, z, Ez=None):
+def get_theta(self, mass_500c, z, Ez=None):
 
     thetastar = 6.997
     alpha_theta = 1. / 3.
@@ -1095,15 +1088,10 @@ def _theta(self, mass_500c, z, Ez=None):
         DAz = DAz
     ttstar = thetastar * (H0 / 70.) ** (-2. / 3.)
 
-    # if self.name == "Unbinned Clusters":
-    #     Ez = Ez.T
-    #     DAz = DAz.T
-
     return ttstar * (mass_500c / MPIVOT_THETA / h) ** alpha_theta * Ez ** (-2. / 3.) * (100. * DAz / 500 / H0) ** (-1.)
 
-
 # y-m scaling relation for completeness
-def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
+def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=False, **params_values_dict):
     # if mass_500c is None:
     #     mass_500c = mass
 
@@ -1112,7 +1100,11 @@ def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
     C0 = params_values_dict["C0"]
     bias = params_values_dict["bias_sz"]
 
-    Ez = get_Ez(self,z)
+    if Ez_interp is True:
+        Ez = get_interp_Ez(self, z)
+    else:
+        Ez = get_Ez(self, z)
+
     try:
         Ez = Ez[:,None]
     except:
@@ -1133,12 +1125,19 @@ def _get_y0(self, mass, z, mass_500c, use_Q=True, **params_values_dict):
             res = 1.
         return res
 
+    #start0 = time.time()
+
     if use_Q is True:
-        theta = _theta(self, mb_500c, z, Ez)
-        splQ = _splQ(self, theta)
+        theta = get_theta(self, mb_500c, z, Ez)
+        splQ = get_splQ(self, theta)
 
     else:
         splQ = 1.
+
+    #print(np.shape(splQ)) # (50, 530) and  (50, 200, 530)
+
+    # elapsed0 = time.time() - start0
+    # self.log.info("Q check took {:.3f} seconds.".format(elapsed0))
 
     y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ
     y0[y0 <= 0] = 1e-9
