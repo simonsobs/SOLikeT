@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import time
 
 
 class PoissonData:
@@ -62,7 +63,19 @@ class PoissonData:
                 rate_densities = rate_fn(**{c: self.catalog[c].values for
                                             c in self.columns})
             else:
-                rate_densities = rate_fn
+
+                start = time.time()
+
+                rate_densities = np.array(rate_fn(**{c: self.catalog[c].values for c in self.columns}))
+
+                elapsed = time.time() - start
+                print("::: rate density calculation took {:.3f} seconds.".format(elapsed))
+
+                # because of weird Qs
+                if rate_densities.min() == 0:
+                    print("rate density is zero, switching it to a small number")
+                    rate_densities[rate_densities == 0] = 0.00001
+
             return -n_expected + sum(np.log(rate_densities))
 
         else:
@@ -72,7 +85,3 @@ class PoissonData:
             l_k = 1 / self.N_k * summand.sum(axis=1)
             assert l_k.shape == (self._len,)
             return -n_expected + sum(np.log(l_k))
-
-
-
-# def rate_fn_parallel(cat_index,lkl):

@@ -73,7 +73,7 @@ params:
   # sigma8 : 0.81
   tenToA0 : 1.9e-5 #4.0e-5
   B0 : 0.08
-  scatter_sz : 0.
+  scatter_sz : 0.2
   bias_sz : 1.
   m_nu : 0.0
   C0 : 0. # doesnt matter

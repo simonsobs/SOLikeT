@@ -52,7 +52,7 @@ likelihood:
       # resolution: full / downsample
       #   downsample: average rms map, Q into n dwnsmpl_bins
       #   full: consider full map, Q function, no downsampling
-      dwnsmpl_bins : 2 # If resolution=downsample, number of bins to use
+      dwnsmpl_bins : 50 # If resolution=downsample, number of bins to use
       save_dwsmpld : False # Save downsampled Q and rms to npz file and once it exists read those
 
     binning:
