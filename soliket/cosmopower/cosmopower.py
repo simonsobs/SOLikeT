@@ -39,7 +39,9 @@ class cosmopower(classy):
     ee_spectra = None
     pp_spectra = None
 
-    pkslice = 10
+    lensing_lkl = "SOLikeT"
+
+    # pkslice = 10
     # pp_spectra = None
 
     def initialize(self):
@@ -210,7 +212,7 @@ class cosmopower(classy):
 
 
     # get the required new observable
-    def get_Cl(self,ell_factor=True):
+    def get_Cl(self,ell_factor=True,units="FIRASmuK2"):
 
         cls = {}
         cls['ell'] = np.arange(20000)
@@ -230,13 +232,14 @@ class cosmopower(classy):
 
         if self.pp_spectra is not None:
             nl = len(self.pp_spectra[0])
-            cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/4. ## this is clkk... works for so lensinglite lkl
-
-            # here for the planck lensing lkl, using lfactor option gives:
-            # lcp = np.asarray(cls['ell'][2:nl+2])
-            # cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/(lcp*(lcp+1.))**2.
-            # cls['pp'][2:nl+2] *= (lcp*(lcp+1.))**2./2./np.pi
-
+            if self.lensing_lkl ==  "SOLikeT":
+                cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/4. ## this is clkk... works for so lensinglite lkl
+            else:
+                # here for the planck lensing lkl, using lfactor option gives:
+                lcp = np.asarray(cls['ell'][2:nl+2])
+                cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/(lcp*(lcp+1.))**2.
+                cls['pp'][2:nl+2] *= (lcp*(lcp+1.))**2./2./np.pi
+                
         return cls
 
     def get_param(self, p):
@@ -315,10 +318,14 @@ class cosmopower(classy):
         z_arr = np.linspace(0.,zmax,nz) # z-array of redshift data [21oct22] oct 26 22: nz = 1000, zmax = 20
 
         nk = 5000
-        k_arr = np.geomspace(1e-4,50.,nk)  # oct 26 22 : (1e-4,50.,5000)
+        ndspl = 10
+        k_arr = np.geomspace(1e-4,50.,nk)[::ndspl]  # oct 26 22 : (1e-4,50.,5000), jan 10: ndspl
+        # k_arr = np.geomspace(1e-4,50.,nk) # test
 
         # scaling factor for the pk emulator:
-        ls = np.arange(2,5000+2)
+        ls = np.arange(2,5000+2)[::ndspl] # jan 10 ndspl
+        # ls = np.arange(2,5000+2) # test
+
         dls = ls*(ls+1.)/2./np.pi
         # params_values = self.current_state['params'].copy()
         params_values = params_values_dict.copy()
@@ -359,6 +366,7 @@ class cosmopower(classy):
         predicted_pknl_spectrum = np.asarray(predicted_pknl_spectrum_z)
 
         # print(np.shape(predicted_pknl_spectrum))
+        # print(predicted_pknl_spectrum[0][:10])
         # exit(0)
 
 
@@ -367,7 +375,8 @@ class cosmopower(classy):
         pknl_re = np.transpose(pknl_re)
 
 
-        return pknl_re[0:k_arr.size:self.pkslice][:], k_arr[0:k_arr.size:self.pkslice], z_arr
+        # return pknl_re[0:k_arr.size:self.pkslice][:], k_arr[0:k_arr.size:self.pkslice], z_arr
+        return pknl_re, k_arr, z_arr
 
 
     def z_of_r (self,z_array,params_values_dict={}):
