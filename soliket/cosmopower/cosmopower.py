@@ -40,6 +40,7 @@ class cosmopower(classy):
     pp_spectra = None
 
     lensing_lkl = "SOLikeT"
+    ell_factor = False # True for pyactlite and bplike, False for clik
 
     # pkslice = 10
     # pp_spectra = None
@@ -213,6 +214,7 @@ class cosmopower(classy):
 
     # get the required new observable
     def get_Cl(self,ell_factor=True,units="FIRASmuK2"):
+        ell_factor=self.ell_factor
 
         cls = {}
         cls['ell'] = np.arange(20000)
