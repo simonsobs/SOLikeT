@@ -225,11 +225,20 @@ class cosmopower(classy):
             nl = len(self.tt_spectra[0])
             # print('nl:',nl)
             cls['tt'][2:nl+2] = (2.7255e6)**2.*self.tt_spectra[0].copy()
+            if ell_factor==False:
+                lcp = np.asarray(cls['ell'][2:nl+2])
+                cls['tt'][2:nl+2] *= 1./(lcp*(lcp+1.)/2./np.pi)
+
         if self.te_spectra is not None:
             cls['te'][2:nl+2] = (2.7255e6)**2.*self.te_spectra[0].copy()
+            if ell_factor==False:
+                lcp = np.asarray(cls['ell'][2:nl+2])
+                cls['te'][2:nl+2] *= 1./(lcp*(lcp+1.)/2./np.pi)
         if self.ee_spectra is not None:
             cls['ee'][2:nl+2] = (2.7255e6)**2.*self.ee_spectra[0].copy()
-
+            if ell_factor==False:
+                lcp = np.asarray(cls['ell'][2:nl+2])
+                cls['ee'][2:nl+2] *= 1./(lcp*(lcp+1.)/2./np.pi)
         if self.pp_spectra is not None:
             nl = len(self.pp_spectra[0])
             if self.lensing_lkl ==  "SOLikeT":
@@ -239,7 +248,9 @@ class cosmopower(classy):
                 lcp = np.asarray(cls['ell'][2:nl+2])
                 cls['pp'][2:nl+2] = self.pp_spectra[0].copy()/(lcp*(lcp+1.))**2.
                 cls['pp'][2:nl+2] *= (lcp*(lcp+1.))**2./2./np.pi
-                
+
+
+
         return cls
 
     def get_param(self, p):
