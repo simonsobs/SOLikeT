@@ -23,7 +23,7 @@ class CosmoPower(BoltzmannBase):
     network_path: str = "CP_paper/CMB"
     network_settings: InfoDict = { }
 
-    extra_args: InfoDict = { }
+    extra_args: InfoDict = None
 
     renames: dict = {
         "omega_b": ["ombh2", "omegabh2"],
