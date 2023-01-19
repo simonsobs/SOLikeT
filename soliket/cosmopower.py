@@ -25,15 +25,6 @@ class CosmoPower(BoltzmannBase):
 
     extra_args: InfoDict = None
 
-    renames: dict = {
-        "omega_b": ["ombh2", "omegabh2"],
-        "omega_cdm": ["omch2", "omegach2"],
-        "ln10^{10}A_s": ["logA"],
-        "n_s": ["ns"],
-        "h": [],
-        "tau_reio": ["tau"],
-    }
-
     def initialize(self) -> None:
         super().initialize()
 
@@ -79,16 +70,11 @@ class CosmoPower(BoltzmannBase):
         self.log.info(f"CosmoPower will expect the parameters {self.all_parameters}")
 
     def calculate(self, state: dict, want_derived: bool=True, **params) -> dict:
-        cmb_params = { }
-
-        for par in self.renames:
-            if par in params:
-                cmb_params[par] = [params[par]]
-            else:
-                for r in self.renames[par]:
-                    if r in params:
-                        cmb_params[par] = [params[r]]
-                        break
+        cmb_params = {
+            p : [ params[p] ] for p in params
+        } | {
+            self.translate_param(p) : [ params[p] ] for p in params
+        }
 
         ells = None
 
@@ -184,6 +170,3 @@ class CosmoPower(BoltzmannBase):
 
     def get_can_support_parameters(self) -> list:
         return self.all_parameters
-
-    def get_requirements(self) -> list:
-        return list(self.all_parameters)
