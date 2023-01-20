@@ -7,16 +7,24 @@ else:
     HAS_COSMOPOWER = True
 import numpy as np
 
+from typing import Dict, Iterable, Tuple
+
+from cobaya.log import LoggedError
+from cobaya.theory import Theory
 from cobaya.theories.cosmo import BoltzmannBase
 from cobaya.typing import InfoDict
 
 """
-  Simple CosmoPower theory wrapper for Cobaya.
-  author: Hidde T. Jense
+Simple CosmoPower theory wrapper for Cobaya.
+
+author: Hidde T. Jense
 """
 
-
 class CosmoPower(BoltzmannBase):
+    """
+    A CosmoPower Network wrapper for Cobaya.
+    """
+
     stop_at_error: bool = False
 
     soliket_data_path: str = "soliket/data/CosmoPower"
@@ -59,17 +67,13 @@ class CosmoPower(BoltzmannBase):
             if not network is None:
                 self.networks[ spectype.lower() ] = netdata
 
-        if "ln10^{10}A_s" in self.all_parameters:
-            self.all_parameters.remove("ln10^{10}A_s")
-            self.all_parameters.add("logA")
-
         if "lmax" not in self.extra_args:
             self.extra_args["lmax"] = None
 
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")
         self.log.info(f"CosmoPower will expect the parameters {self.all_parameters}")
 
-    def calculate(self, state: dict, want_derived: bool=True, **params) -> dict:
+    def calculate(self, state: dict, want_derived: bool=True, **params) -> bool:
         cmb_params = {
             p : [ params[p] ] for p in params
         } | {
@@ -93,6 +97,8 @@ class CosmoPower(BoltzmannBase):
                 ells = network["network"].modes
 
         state["ell"] = ells.astype(int)
+
+        return True
 
     def get_Cl(self, ell_factor:bool =False, units:str ="FIRASmuK2") -> dict:
         cls_old = self.current_state.copy()
@@ -123,20 +129,21 @@ class CosmoPower(BoltzmannBase):
         return cls
 
     def ell_factor(self, ls: np.ndarray, spectra: str) -> np.ndarray:
-        """Calculate the ell factor for a specific spectrum.
+        """
+        Calculate the ell factor for a specific spectrum.
         These prefactors are used to convert from Cell to Dell and vice-versa.
-        
+
         See also:
           cobaya.BoltzmannBase.get_Cl
           camb.CAMBresults.get_cmb_power_spectra
-        
+
         Keyword arguments:
           ls -- the range of ells.
           spectra -- a two-character string with each character being one of [tebp].
-        
+
         Return:
           ellfac -- an array filled with ell factors for the given spectrum.
-        
+
         Example:
           ell_factor(l, "tt") -> l(l+1)/(2 pi).
           ell_factor(l, "pp") -> l^2(l+1)^2/(2 pi).
@@ -152,9 +159,20 @@ class CosmoPower(BoltzmannBase):
 
         return ellfac
 
-    def cmb_unit_factor(self, spectra: str, units: str="FIRASmuK2", Tcmb:float =2.7255) -> float:
+    def cmb_unit_factor(self, spectra: str, units: str="FIRASmuK2", Tcmb: float=2.7255) -> float:
+        """
+        Calculate the CMB prefactor for going from dimensionless power spectra to CMB units.
+
+        Keyword arguments:
+          spectra -- a length 2 string specifying the spectrum for which to calculate the units.
+          units -- a string specifying which units to use.
+          Tcmb -- the used CMB temperature [units of K].
+
+        Return:
+          The CMB unit factor.
+        """
         res = 1.0
-        x,y = spectra
+        x,y = spectra.lower()
 
         if x == "t" or x == "e" or x == "b":
             res *= self._cmb_unit_factor(units, Tcmb)
@@ -168,5 +186,102 @@ class CosmoPower(BoltzmannBase):
 
         return res
 
-    def get_can_support_parameters(self) -> list:
+    def get_can_support_parameters(self) -> Iterable[str]:
         return self.all_parameters
+
+    def get_requirements(self) -> Iterable[Tuple[str,str]]:
+        requirements = []
+        for k in self.all_parameters:
+            if k in self.renames.values():
+                for v in self.renames:
+                    if self.renames[v] == k:
+                        requirements.append((v, None))
+                        break
+            else:
+                  requirements.append((k, None))
+
+        return requirements
+
+class CosmoPowerDerived(Theory):
+    """
+    A theory class that can calculate derived parameters from CosmoPower networks.
+    """
+    stop_at_error: bool = False
+
+    soliket_data_path: str = "soliket/data/CosmoPower"
+    network_path: str = "CP_paper/CMB"
+    network_settings: InfoDict = { }
+
+    derived_parameters: Iterable[str]
+    derived_values: Dict
+
+    extra_args: InfoDict = None
+
+    renames: Dict = { }
+
+    def initialize(self) -> None:
+        super().initialize()
+
+        base_path = os.path.join(self.soliket_data_path, self.network_path)
+        netpath = os.path.join(base_path, self.network_settings["filename"])
+
+        if self.network_settings["type"] == "NN":
+            self.network = cp.cosmopower_NN(restore = True, restore_filename = netpath)
+        elif self.network_settings["type"] == "PCAplusNN":
+            self.network = cp.cosmopower_PCAplusNN(restore = True, restore_filename = netpath)
+        else:
+            raise LoggedError(f"Unknown network type {self.network_settings['type']}.")
+
+        self.input_parameters = set(self.network.parameters)
+
+        self.log_data = self.network_settings.get("log", False)
+
+        self.log.info(f"Loaded CosmoPowerDerived from directory {self.network_path}")
+        self.log.info(f"CosmoPowerDerived will expect the parameters {self.input_parameters}")
+        self.log.info(f"CosmoPowerDerived can provide the following parameters: {self.get_can_provide()}.")
+
+    def translate_param(self, p):
+        return self.renames.get(p, p)
+
+    def calculate(self, state: dict, want_derived: bool=True, **params) -> bool:
+       input_params = {
+           p : [ params[p] ] for p in params
+       } | {
+           self.translate_param(p) : [ params[p] ] for p in params
+       }
+       
+       if self.log_data:
+           data = self.network.ten_to_predictions_np(input_params)[0, :]
+       else:
+           data = self.network.predictions_np(input_params)[0, :]
+
+       for k, v in zip(self.derived_parameters, data):
+           if len(k) == 0 or k == "_":
+               continue
+
+           state["derived"][k] = v
+
+       return True
+
+    def get_param(self, p) -> float:
+        return self.current_state["derived"][ self.translate_param(p) ]
+
+    def get_can_support_parameters(self) -> Iterable[str]:
+        return self.input_parameters
+
+    def get_requirements(self) -> Iterable[Tuple[str,str]]:
+        requirements = []
+        for k in self.input_parameters:
+            if k in self.renames.values():
+                for v in self.renames:
+                    if self.renames[v] == k:
+                        requirements.append((v, None))
+                        break
+            else:
+                  requirements.append((k, None))
+
+        return requirements
+
+    def get_can_provide(self) -> Iterable[str]:
+        return set([ par for par in self.derived_parameters if (len(par) > 0 and not par == "_") ])
+
