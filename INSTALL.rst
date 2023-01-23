@@ -1,6 +1,13 @@
 INSTALL AND RUN COBAYA+SOLIKET
 ==============================
 
+Using conda
+-----------
+
+We have provided a conda environment defined in `soliket-tests.yml <https://github.com/simonsobs/SOLikeT/blob/master/soliket-tests.yml>`_ which provides easy set up of a virtual envrinoment with all the dependencies installed in order to run SOLikeT and its tests on multiple platforms (explicitly tested for ubuntu and MacOS-11).
+
+If you wish to install it using your own system tools some useful information is provided below.
+
 On your own laptop/virtual machine
 ----------------------------------
 
