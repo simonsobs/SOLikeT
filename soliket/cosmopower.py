@@ -22,7 +22,6 @@ Usage
 -----
 
 After installing SOLikeT, you can use the ``CosmoPower`` theory codes by adding the ``soliket.CosmoPower`` code as a block in your parameter files.
-
 """
 import os
 try:
@@ -46,16 +45,16 @@ class CosmoPower(BoltzmannBase):
 
     stop_at_error: bool = False
 
-    soliket_data_path: str = "soliket/data/CosmoPower"
-    network_path: str = "CP_paper/CMB"
-    network_settings: InfoDict = {}
+    network_path: str = "soliket/data/CosmoPower/CP_paper/CMB"
+    network_settings: InfoDict = None
 
     extra_args: InfoDict = None
 
     def initialize(self) -> None:
         super().initialize()
 
-        base_path = os.path.join(self.soliket_data_path, self.network_path)
+        if self.network_settings is None:
+            raise LoggedError("No network settings were provided.")
 
         self.networks = {}
         self.all_parameters = set([])
@@ -63,7 +62,7 @@ class CosmoPower(BoltzmannBase):
         for spectype in self.network_settings:
             netdata = {}
             nettype = self.network_settings[spectype]
-            netpath = os.path.join(base_path, nettype["filename"])
+            netpath = os.path.join(self.network_path, nettype["filename"])
 
             if nettype["type"] == "NN":
                 network = cp.cosmopower_NN(
@@ -228,9 +227,8 @@ class CosmoPowerDerived(Theory):
     """A theory class that can calculate derived parameters from CosmoPower networks."""
     stop_at_error: bool = False
 
-    soliket_data_path: str = "soliket/data/CosmoPower"
-    network_path: str = "CP_paper/CMB"
-    network_settings: InfoDict = {}
+    network_path: str = "soliket/data/CosmoPower/CP_paper/CMB"
+    network_settings: InfoDict = None
 
     derived_parameters: Iterable[str]
     derived_values: Dict
@@ -242,8 +240,10 @@ class CosmoPowerDerived(Theory):
     def initialize(self) -> None:
         super().initialize()
 
-        base_path = os.path.join(self.soliket_data_path, self.network_path)
-        netpath = os.path.join(base_path, self.network_settings["filename"])
+        if self.network_settings is None:
+            raise LoggedError("No network settings were provided.")
+
+        netpath = os.path.join(self.network_path, self.network_settings["filename"])
 
         if self.network_settings["type"] == "NN":
             self.network = cp.cosmopower_NN(

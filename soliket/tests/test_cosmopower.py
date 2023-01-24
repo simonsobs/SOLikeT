@@ -30,12 +30,7 @@ info_dict = {
     },
     "theory": {
         "soliket.CosmoPower": {
-            # "soliket_data_path": os.path.normpath(
-            #     os.path.join(os.getcwd(), "../data/CosmoPower")
-            # ),
-            "soliket_data_path": "soliket/data/CosmoPower",
             "stop_at_error": True,
-            
             "network_settings" : {
                 "tt" : {
                     "type" : "NN",
@@ -57,6 +52,13 @@ info_dict = {
                     "filename" : "cmb_TE_PCAplusNN",
                     "has_ell_factor" : False,
                 },
+            },
+            "renames" : {
+                "ombh2" : "omega_b",
+                "omch2" : "omega_cdm",
+                "ns" : "n_s",
+                "logA" : "ln10^{10}A_s",
+                "tau" : "tau_reio"
             }
         }
     },
@@ -87,10 +89,6 @@ def test_cosmopower_against_camb():
 
     info_dict['theory'] = {
         "soliket.CosmoPower": {
-            # "soliket_data_path": os.path.normpath(
-            #     os.path.join(os.getcwd(), "../data/CosmoPower")
-            # ),
-            "soliket_data_path": "soliket/data/CosmoPower",
             "stop_at_error": True,
             "extra_args": {'lmax': camb_cls['ell'].max()},
             
@@ -110,6 +108,13 @@ def test_cosmopower_against_camb():
                     "log" : False,
                     "filename" : "cmb_TE_PCAplusNN"
                 },
+            },
+            "renames" : {
+                "ombh2" : "omega_b",
+                "omch2" : "omega_cdm",
+                "ns" : "n_s",
+                "logA" : "ln10^{10}A_s",
+                "tau" : "tau_reio"
             }
         }
     }
