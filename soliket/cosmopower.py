@@ -1,3 +1,29 @@
+"""
+.. module:: soliket.cosmopower
+
+:Synopsis: Simple CosmoPower theory wrapper for Cobaya.
+:Author: Hidde T. Jense
+
+.. |br| raw:: html
+   
+   <br />
+
+.. note::
+   
+   **If you use this cosmological code, please cite:**
+   |br|
+   A. Spurio Mancini et al.
+   *CosmoPower: emulating cosmological power spectra for accelerated Bayesian inference from next-generation surveys*
+   (`arXiv:210603846 <https://arxiv.org/abs/2106.03846>`_)
+   
+   And remember to cite any sources for trained networks you use.
+
+Usage
+-----
+
+After installing SOLikeT, you can use the ``CosmoPower`` theory codes by adding the ``soliket.CosmoPower`` code as a block in your parameter files.
+
+"""
 import os
 try:
     import cosmopower as cp  # noqa F401
@@ -14,17 +40,9 @@ from cobaya.theory import Theory
 from cobaya.theories.cosmo import BoltzmannBase
 from cobaya.typing import InfoDict
 
-"""
-Simple CosmoPower theory wrapper for Cobaya.
-
-author: Hidde T. Jense
-"""
-
 
 class CosmoPower(BoltzmannBase):
-    """
-    A CosmoPower Network wrapper for Cobaya.
-    """
+    """A CosmoPower Network wrapper for Cobaya."""
 
     stop_at_error: bool = False
 
@@ -142,19 +160,17 @@ class CosmoPower(BoltzmannBase):
         These prefactors are used to convert from Cell to Dell and vice-versa.
 
         See also:
-          cobaya.BoltzmannBase.get_Cl
-          camb.CAMBresults.get_cmb_power_spectra
-
-        Keyword arguments:
-          ls -- the range of ells.
-          spectra -- a two-character string with each character being one of [tebp].
-
-        Return:
-          ellfac -- an array filled with ell factors for the given spectrum.
+        cobaya.BoltzmannBase.get_Cl
+        `camb.CAMBresults.get_cmb_power_spectra <https://camb.readthedocs.io/en/latest/results.html#camb.results.CAMBdata.get_cmb_power_spectra>`_
 
         Example:
-          ell_factor(l, "tt") -> l(l+1)/(2 pi).
-          ell_factor(l, "pp") -> l^2(l+1)^2/(2 pi).
+        ell_factor(l, "tt") -> l(l+1)/(2 pi).
+        ell_factor(l, "pp") -> l^2(l+1)^2/(2 pi).
+
+        :param ls: the range of ells.
+        :param spectra: a two-character string with each character being one of [tebp].
+
+        :return: an array filled with ell factors for the given spectrum.
         """
         ellfac = np.ones_like(ls).astype(float)
 
@@ -171,13 +187,10 @@ class CosmoPower(BoltzmannBase):
         """
         Calculate the CMB prefactor for going from dimensionless power spectra to CMB units.
 
-        Keyword arguments:
-          spectra -- a length 2 string specifying the spectrum for which to calculate the units.
-          units -- a string specifying which units to use.
-          Tcmb -- the used CMB temperature [units of K].
-
-        Return:
-          The CMB unit factor.
+        :param spectra: a length 2 string specifying the spectrum for which to calculate the units.
+        :param units: a string specifying which units to use.
+        :param Tcmb: the used CMB temperature [units of K].
+        :return: The CMB unit conversion factor.
         """
         res = 1.0
         x, y = spectra.lower()
@@ -212,9 +225,7 @@ class CosmoPower(BoltzmannBase):
 
 
 class CosmoPowerDerived(Theory):
-    """
-    A theory class that can calculate derived parameters from CosmoPower networks.
-    """
+    """A theory class that can calculate derived parameters from CosmoPower networks."""
     stop_at_error: bool = False
 
     soliket_data_path: str = "soliket/data/CosmoPower"
