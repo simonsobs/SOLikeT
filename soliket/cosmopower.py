@@ -5,23 +5,25 @@
 :Author: Hidde T. Jense
 
 .. |br| raw:: html
-   
+
    <br />
 
 .. note::
-   
+
    **If you use this cosmological code, please cite:**
    |br|
    A. Spurio Mancini et al.
-   *CosmoPower: emulating cosmological power spectra for accelerated Bayesian inference from next-generation surveys*
+   *CosmoPower: emulating cosmological power spectra for accelerated Bayesian
+   inference from next-generation surveys*
    (`arXiv:210603846 <https://arxiv.org/abs/2106.03846>`_)
-   
+
    And remember to cite any sources for trained networks you use.
 
 Usage
 -----
 
-After installing SOLikeT, you can use the ``CosmoPower`` theory codes by adding the ``soliket.CosmoPower`` code as a block in your parameter files.
+After installing SOLikeT, you can use the ``CosmoPower`` theory codes by adding
+the ``soliket.CosmoPower`` code as a block in your parameter files.
 """
 import os
 try:
@@ -130,7 +132,7 @@ class CosmoPower(BoltzmannBase):
 
         lmax = self.extra_args["lmax"] or cls_old["ell"].max()
 
-        cls = {"ell": np.arange(lmax+1).astype(int)}
+        cls = {"ell": np.arange(lmax + 1).astype(int)}
         ls = cls_old["ell"]
 
         for k in self.networks:
@@ -176,7 +178,7 @@ class CosmoPower(BoltzmannBase):
         if spectra in ["tt", "te", "tb", "ee", "et", "eb", "bb", "bt", "be"]:
             ellfac = ls * (ls + 1.0) / (2.0 * np.pi)
         elif spectra in ["pt", "pe", "pb", "tp", "ep", "bp"]:
-            ellfac = (ls * (ls + 1.0)) ** (3./2.) / (2.0 * np.pi)
+            ellfac = (ls * (ls + 1.0)) ** (3. / 2.) / (2.0 * np.pi)
         elif spectra in ["pp"]:
             ellfac = (ls * (ls + 1.0)) ** 2.0 / (2.0 * np.pi)
 
@@ -197,12 +199,12 @@ class CosmoPower(BoltzmannBase):
         if x == "t" or x == "e" or x == "b":
             res *= self._cmb_unit_factor(units, Tcmb)
         elif x == "p":
-            res *= 1./np.sqrt(2.0*np.pi)
+            res *= 1. / np.sqrt(2.0 * np.pi)
 
         if y == "t" or y == "e" or y == "b":
             res *= self._cmb_unit_factor(units, Tcmb)
         elif y == "p":
-            res *= 1./np.sqrt(2.0*np.pi)
+            res *= 1. / np.sqrt(2.0 * np.pi)
 
         return res
 
