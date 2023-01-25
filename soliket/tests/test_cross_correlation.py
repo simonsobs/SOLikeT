@@ -1,7 +1,13 @@
 import numpy as np
+import os
 import pytest
 from soliket.ccl import CCL
 from cobaya.model import get_model
+
+auto_file = 'soliket/data/xcorr_simulated/clgg_noiseless.txt'
+cross_file = 'soliket/data/xcorr_simulated/clkg_noiseless.txt'
+dndz_file = 'soliket/data/xcorr_simulated/dndz.txt'
+sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
 
 cosmo_params = {"Omega_c": 0.25, "Omega_b": 0.05, "h": 0.67, "n_s": 0.96}
 
@@ -22,45 +28,59 @@ info = {
 }
 
 
-def test_galaxykappa_import():
+def test_galaxykappa_import(request):
 
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
 
-def test_shearkappa_import():
+def test_shearkappa_import(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
 
-def test_galaxykappa_model():
+def test_galaxykappa_model(request):
 
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": None}
+                                  "datapath": None,
+                                  'cross_file': os.path.join(request.config.rootdir,
+                                                             cross_file),
+                                  'auto_file': os.path.join(request.config.rootdir,
+                                                            auto_file),
+                                  'dndz_file': os.path.join(request.config.rootdir,
+                                                            dndz_file)}
     }
 
     model = get_model(info) # noqa F841
 
 
 # @pytest.mark.xfail(reason="data file not in repo")
-def test_shearkappa_model():
+def test_shearkappa_model(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file)}}
 
     model = get_model(info) # noqa F841
 
 
-def test_galaxykappa_like():
+def test_galaxykappa_like(request):
 
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": None}
+                                  "datapath": None,
+                                  'cross_file': os.path.join(request.config.rootdir,
+                                                             cross_file),
+                                  'auto_file': os.path.join(request.config.rootdir,
+                                                            auto_file),
+                                  'dndz_file': os.path.join(request.config.rootdir,
+                                                            dndz_file)}
     }
 
     model = get_model(info)
@@ -69,11 +89,14 @@ def test_galaxykappa_like():
 
 
 # @pytest.mark.xfail(reason="data file not in repo")
-def test_shearkappa_like():
+def test_shearkappa_like(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    test_datapath = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
+    rootdir = request.config.rootdir
+
+    cs82_file = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
+    test_datapath = os.path.join(rootdir, cs82_file)
 
     info["likelihood"] = {
         "ShearKappaLikelihood": {"external": ShearKappaLikelihood,
@@ -100,12 +123,14 @@ def test_shearkappa_like():
     assert np.isclose(loglikes, 637.64473666)
 
 
-def test_shearkappa_deltaz():
+def test_shearkappa_deltaz(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "z_nuisance_mode": "deltaz"}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "z_nuisance_mode": "deltaz"}}
 
     model = get_model(info) # noqa F841
     loglikes, derived = model.loglikes()
@@ -113,12 +138,14 @@ def test_shearkappa_deltaz():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_m():
+def test_shearkappa_m(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "m_nuisance_mode": True}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "m_nuisance_mode": True}}
 
     model = get_model(info) # noqa F841
     loglikes, derived = model.loglikes()
@@ -126,12 +153,14 @@ def test_shearkappa_m():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_ia_nla_noevo():
+def test_shearkappa_ia_nla_noevo(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "ia_mode": 'nla-noevo'}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "ia_mode": 'nla-noevo'}}
 
     model = get_model(info) # noqa F841
     loglikes, derived = model.loglikes()
@@ -139,12 +168,14 @@ def test_shearkappa_ia_nla_noevo():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_ia_nla():
+def test_shearkappa_ia_nla(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "ia_mode": 'nla'}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "ia_mode": 'nla'}}
 
     info["params"]["eta_IA"] = 1.7
 
@@ -154,12 +185,14 @@ def test_shearkappa_ia_nla():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_ia_perbin():
+def test_shearkappa_ia_perbin(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": {"external": ShearKappaLikelihood,
-                                                   "ia_mode": 'nla-perbin'}}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file),
+                           "ia_mode": 'nla-perbin'}}
 
     model = get_model(info) # noqa F841
     loglikes, derived = model.loglikes()
@@ -167,11 +200,13 @@ def test_shearkappa_ia_perbin():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_hmcode():
+def test_shearkappa_hmcode(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood": ShearKappaLikelihood}
+    info["likelihood"] = {"ShearKappaLikelihood":
+                          {"external": ShearKappaLikelihood,
+                           "datapath": os.path.join(request.config.rootdir, sacc_file)}}
     info["theory"] = {"camb": {'extra_args': {'halofit_version': 'mead2020_feedback',
                                               'HMCode_logT_AGN': 7.8}},
                       "ccl": {"external": CCL, "nonlinear": False}}

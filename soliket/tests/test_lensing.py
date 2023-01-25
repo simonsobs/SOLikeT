@@ -7,6 +7,13 @@ import numpy as np
 from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
+try:
+    import classy  # noqa F401
+except ImportError:
+    boltzmann_codes = ["camb"]
+else:
+    boltzmann_codes = ["camb", "classy"]
+
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "lensing_packages"
 )
@@ -82,7 +89,7 @@ def get_demo_lensing_model(theory):
     return model, test_point
 
 
-@pytest.mark.parametrize("theory", ["camb", "classy"])
+@pytest.mark.parametrize("theory", boltzmann_codes)
 def test_lensing(theory):
     model, test_point = get_demo_lensing_model(theory)
     lnl = model.loglike(test_point)[0]
