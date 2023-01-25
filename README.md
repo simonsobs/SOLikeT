@@ -7,30 +7,65 @@ A centralized package for likelihood and theory implementations for SO.
 
 ## Installation
 
-For a set of detailed instructions, please see [here](INSTALL.rst).
+For a set of detailed instructions for different machines (e.g. NERSC), please see [here](INSTALL.rst).
+
+To install SOLikeT we expect that you have the following system-level tools:
+  - python>=3.7,<3.11
+  - pip
+  - compilers (c, cxx, fortran)
+  - cmake
+  - swig
+  - gsl
+  - fftw
+  - cython
+  - mpi4py
+
+A convenient way to obtain these things (along with the python dependencies listed in requirements.txt) is through using the conda environment in soliket-tests.yml. This conda environment is the one we use for running tests.
+
+You can then install SOLikeT in the usual way with pip:
 
 ```
 git clone https://github.com/simonsobs/soliket
 cd soliket
 pip install -e .
 ```
-You will also need to either run
+
+## Running Tests
+
+Running tests
+
+There are (at least) two reasons you might want to run tests:
+
+1. To see if tests you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
+
+If you are using conda, the easiest way to run tests (and the way we run them) is to use tox-conda
 ```
-pip install camb
+pip install tox-conda
+tox -e test
 ```
-or, for a fuller cobaya install:
+
+This will create a fresh virtual environment replicating the one which is used for CI then run the tests (i.e. without touching your current environment). Note that any args after a '--' string will be passed to pytest, so
+
 ```
-cobaya-install cosmo -p /your/path/to/cobaya/packages
+tox -e test -- -k my_new_module
 ```
-To run tests, you will also need the original LAT_MFlike package:
+
+will only run tests which have names containing the string 'my_new_model', and 
+
 ```
-pip install git+https://github.com/simonsobs/lat_mflike
+tox -e test -- -pdb
 ```
-Then, you can run tests with 
+
+will start a pdb debug instance when (sorry, _if_) a test fails.
+
+2. Check SOLikeT is working as intended in an environment of your own specification.
+
+For this you need to make sure all of the above system-level and python dependencies are working correctly, then run:
 ```
-pip install pytest
-pytest -v .
+pytest -v soliket
 ```
+
+Good luck!
 
 Please raise an issue if you have trouble installing or any of the tests fail.
 
