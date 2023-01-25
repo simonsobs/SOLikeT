@@ -4,6 +4,13 @@ import numpy as np
 from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
+try:
+    import classy  # noqa F401
+except ImportError:
+    boltzmann_codes = ["camb"]
+else:
+    boltzmann_codes = ["camb", "classy"]
+
 
 def get_demo_lensing_model(theory):
     if theory == "camb":
@@ -56,7 +63,7 @@ def get_demo_lensing_model(theory):
     return model
 
 
-@pytest.mark.parametrize("theory", ["camb", "classy"])
+@pytest.mark.parametrize("theory", boltzmann_codes)
 def test_lensing(theory):
     model = get_demo_lensing_model(theory)
     ns_param = "ns" if theory == "camb" else "n_s"
