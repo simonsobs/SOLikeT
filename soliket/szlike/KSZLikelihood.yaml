@@ -1,0 +1,53 @@
+sz_data_file: /home/cemoser/SOLikeT_emcee_test/example_gnfw_projections_updated.txt
+beam_file: beam_f150_daynight.txt 
+#optional beam response file
+beam_response: act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt #False, or give file
+cov_ksz_file: cov_diskring_ksz_varweight_bootstrap.txt
+
+redshift: 0.55 
+mass_halo_mean_Msol: 10**13.
+frequency_GHz: 150.
+#input_model: "gnfw"
+
+params:
+  Omega_m:
+    value: 0.25
+  Omega_b:
+    value: 0.044
+  hh:
+    value: 0.7
+  Omega_L:
+    value: 0.75
+  rhoc_0:
+    value: 2.77525e2
+  C_OVER_HUBBLE:
+    value: 2997.9
+  XH:
+    value: 0.76 #hydrogen fraction
+  v_rms:
+    value: 1.06e-3 #v_rms/c
+
+  gnfw_rho0:
+    prior:
+      min: 1.0
+      max: 6.0
+    ref: 3.186441
+    latex: \log_{10}\rho_0
+  gnfw_bt_ksz:
+    prior:
+      min: 1.0
+      max: 10.0
+    ref: 3.45493977635
+    latex: \beta_k
+  gnfw_A2h_ksz:
+    prior:
+      min: 0.01
+      max: 5.0
+    ref: 1.0
+    latex: A_{k2h}
+
+
+#prior: #al<bt for ksz
+#   ksz_al_less_than_bt: 'lambda gnfw_al_ksz,gnfw_bt_ksz:
+#                        stats.uniform.logpdf(gnfw_bt_ksz-gnfw_al_ksz,0,10.)'
+

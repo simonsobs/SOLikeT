@@ -47,7 +47,7 @@ class KSZLikelihood(SZLikelihood): #this is for GNFW model
 class TSZLikelihood(SZLikelihood): #this is for GNFW model
 
     def _get_data(self,**params_values):
-        thta_arc,tsz_data = np.loadtxt(self.sz_data_file,usecols=(0,2),unpack=True) #do we need two separate get data functions?
+        thta_arc,tsz_data = np.loadtxt(self.sz_data_file,usecols=(0,2),unpack=True)
         tsz_data /= 3282.8 * 60.**2 #units muK*sr 
         cov_tsz = np.loadtxt(self.cov_tsz_file) #units muK*sr
         

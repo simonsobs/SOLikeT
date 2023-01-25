@@ -1,0 +1,64 @@
+sz_data_file: /home/cemoser/SOLikeT_emcee_test/example_gnfw_projections_updated.txt
+beam_file: beam_f150_daynight.txt 
+#optional beam response file
+beam_response: act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt #False, or give file
+cov_ksz_file: cov_diskring_ksz_varweight_bootstrap.txt
+cov_tsz_file: cov_diskring_tsz_varweight_bootstrap.txt
+
+redshift: 0.55 
+mass_halo_mean_Msol: 10**13.
+frequency_GHz: 150.
+#input_model: "obb" #"gnfw" or "obb"
+
+params:
+  Omega_m:
+    value: 0.25
+  Omega_b:
+    value: 0.044
+  hh:
+    value: 0.7
+  Omega_L:
+    value: 0.75
+  rhoc_0:
+    value: 2.77525e2
+  C_OVER_HUBBLE:
+    value: 2997.9
+  XH:
+    value: 0.76 #hydrogen fraction
+  v_rms:
+    value: 1.06e-3 #v_rms/c
+
+  obb_Gamma: #how do we do gauss prior with min and max? it's truncated. maybe proposal for width?
+    prior:
+      min: 1.
+      max: 1.667 #5/3
+    ref:
+      dist: norm
+      loc: 1.2
+      scale: 0.2
+    latex: \Gamma
+  obb_alpha_Nth:
+    prior:
+      min: 0.01
+      max: 0.8
+    ref: 0.13
+    latex: \alpha_{Nth}
+  obb_logE:
+    prior:
+      min: -4.8
+      max: -4.0
+    latex: \log_{10}\epsilon
+  obb_Ak2h:
+    prior:
+      min: 0.01
+      max: 5.0
+    ref: 1.0
+    latex: A_{k2h}
+  obb_At2h:
+    prior:
+      min: 0.01
+      max: 5.0
+    ref: 1.0
+    latex: A_{t2h}
+
+
