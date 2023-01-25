@@ -38,7 +38,7 @@ def fnu(nu):
     return ans
 
 
-def project_ksz(tht, M, z, beam_txt, model_params, provider): #input_model
+def project_ksz(tht, M, z, beam_txt, model_params, twohalo_term, provider): #input_model
     disc_fac = np.sqrt(2)
     l0 = 30000.0
     NNR = 100
@@ -79,8 +79,8 @@ def project_ksz(tht, M, z, beam_txt, model_params, provider): #input_model
     #}
     #chosen_model = models.get(input_model)
 
-    rho2D = 2 * np.trapz(rho_gnfw(rint, M, z, model_params, provider), x=rad * kpc_cgs, axis=1) * 1e3
-    rho2D2 = 2 * np.trapz(rho_gnfw(rint2, M, z, model_params, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
+    rho2D = 2 * np.trapz(rho_gnfw(rint, M, z, model_params, twohalo_term, provider), x=rad * kpc_cgs, axis=1) * 1e3
+    rho2D2 = 2 * np.trapz(rho_gnfw(rint2, M, z, model_params, twohalo_term, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
 
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht / resolution_factor
     thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2 / resolution_factor
@@ -114,7 +114,7 @@ def project_ksz(tht, M, z, beam_txt, model_params, provider): #input_model
     #sig_all_beam *= sr2sqarcmin #units in muK*sqarcmin
     return sig_all_beam
 
-def project_tsz(tht, M, z, nu, beam_txt, model_params, beam_response, provider):
+def project_tsz(tht, M, z, nu, beam_txt, model_params, beam_response, twohalo_term, provider):
     disc_fac = np.sqrt(2)
     l0 = 30000.0
     NNR = 100
@@ -148,8 +148,8 @@ def project_tsz(tht, M, z, nu, beam_txt, model_params, beam_response, provider):
     rint = np.sqrt(rad ** 2 + thta_smooth ** 2 * AngDis ** 2)
     rint2 = np.sqrt(rad2 ** 2 + thta2_smooth ** 2 * AngDis ** 2)
 
-    Pth2D = 2 * np.trapz(Pth_gnfw(rint, M, z, model_params, provider), x=rad * kpc_cgs, axis=1) * 1e3
-    Pth2D2 = 2 * np.trapz(Pth_gnfw(rint2, M, z, model_params, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
+    Pth2D = 2 * np.trapz(Pth_gnfw(rint, M, z, model_params, twohalo_term, provider), x=rad * kpc_cgs, axis=1) * 1e3
+    Pth2D2 = 2 * np.trapz(Pth_gnfw(rint2, M, z, model_params, twohalo_term, provider), x=rad2 * kpc_cgs, axis=1) * 1e3
 
     thta_smooth = (np.arange(NNR2) + 1.)*dtht / resolution_factor
     thta2_smooth = (np.arange(NNR2) + 1.)*dtht2 / resolution_factor

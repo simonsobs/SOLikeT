@@ -44,19 +44,19 @@ def rho_gnfw1h(x, M, z, theta, provider):
     return rho_av
 
 
-def rho_gnfw2h(xx, theta2h):
-    #Average 2h specific to CMASS
-    rho_file = np.genfromtxt("twohalo_cmass_average.txt")
+def rho_gnfw2h(xx, theta2h, twohalo_term):
+    #Average 2h specific to CMASS, make option for importing file or using two_halo script to calculate
+    rho_file = np.genfromtxt(twohalo_term)
     x1 = rho_file[:, 0]
     rho2h = rho_file[:, 1]
     ans = np.interp(xx, x1, rho2h)
     return theta2h * ans
 
 
-def rho_gnfw(xx, M, z, theta, provider):
+def rho_gnfw(xx, M, z, theta, twohalo_term, provider):
     theta1h = theta[0], theta[1]
     theta2h = theta[2]
-    ans = rho_gnfw1h(xx, M, z, theta1h, provider) + rho_gnfw2h(xx, theta2h)
+    ans = rho_gnfw1h(xx, M, z, theta1h, provider) + rho_gnfw2h(xx, theta2h, twohalo_term)
     return ans
 
 
@@ -113,17 +113,17 @@ def Pth_gnfw1h(x, M, z, theta, provider):
     return pth_av
 
 
-def Pth_gnfw2h(xx, z, theta2h):
-    #2h specific to CMASS
-    pth_file = np.genfromtxt("twohalo_cmass_average.txt")
+def Pth_gnfw2h(xx, theta2h, twohalo_term):
+    #2h specific to CMASS, make option for importing file or using two_halo script to calculate
+    pth_file = np.genfromtxt(twohalo_term)
     x1 = pth_file[:, 0]
     pth2h = pth_file[:, 2]
     ans = np.interp(xx, x1, pth2h)
     return theta2h * ans
 
 
-def Pth_gnfw(xx, M, z, theta, provider):
+def Pth_gnfw(xx, M, z, theta, twohalo_term, provider):
     theta1h = theta[0], theta[1]
     theta2h = theta[2]
-    ans = Pth_gnfw1h(xx, M, z, theta1h, provider) + Pth_gnfw2h(xx, z, theta2h)
+    ans = Pth_gnfw1h(xx, M, z, theta1h, provider) + Pth_gnfw2h(xx, theta2h, twohalo_term)
     return ans

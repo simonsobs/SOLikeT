@@ -14,7 +14,8 @@ class SZLikelihood(GaussianLikelihood):
         self.M = self.mass_halo_mean_Msol 
         #self.input_model = self.input_model
         self.beam_response = self.beam_response
-
+        self.twohalo_term = self.twohalo_term
+        
         x,y,cov = self._get_data()
         self.data = GaussianData("SZModel",x,y,cov)
 
@@ -41,7 +42,7 @@ class KSZLikelihood(SZLikelihood): #this is for GNFW model
 
         rho = np.zeros(len(self.thta_arc))
         for ii in range(len(self.thta_arc)):
-            rho[ii] = project_ksz(self.thta_arc[ii], self.M, self.z, self.beam_txt, model_params, self.provider) #self.input_model
+            rho[ii] = project_ksz(self.thta_arc[ii], self.M, self.z, self.beam_txt, model_params, self.twohalo_term, self.provider) #self.input_model
         return rho
 
 class TSZLikelihood(SZLikelihood): #this is for GNFW model
@@ -62,7 +63,7 @@ class TSZLikelihood(SZLikelihood): #this is for GNFW model
 
         pth = np.zeros(len(self.thta_arc))
         for ii in range(len(self.thta_arc)):
-            pth[ii] = project_tsz(self.thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, model_params, self.beam_response, self.provider)
+            pth[ii] = project_tsz(self.thta_arc[ii], self.M, self.z, self.nu, self.beam_txt, model_params, self.beam_response, self.twohalo_term,self.provider)
         return pth
 
 class OBBLikelihood(SZLikelihood): #OBB model, tSZ and kSZ together
