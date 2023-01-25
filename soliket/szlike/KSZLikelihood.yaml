@@ -1,4 +1,4 @@
-sz_data_file: /home/cemoser/SOLikeT_emcee_test/example_gnfw_projections_updated.txt
+sz_data_file: gnfw_test_projections.txt
 beam_file: beam_f150_daynight.txt 
 #optional beam response file
 beam_response: act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt #False, or give file
