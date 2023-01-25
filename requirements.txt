@@ -1,0 +1,20 @@
+numpy
+scipy
+pandas
+scikit-learn
+pyyaml
+py-bobyqa
+packaging
+tqdm
+portalocker
+dill
+fuzzywuzzy
+astropy
+camb
+cosmopower
+getdist
+cobaya
+pyccl
+sacc
+fgspectra @ git+https://github.com/simonsobs/fgspectra@act_sz_x_cib#egg=fgspectra
+mflike @ git+https://github.com/simonsobs/lat_mflike@master

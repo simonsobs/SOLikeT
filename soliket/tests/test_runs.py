@@ -18,6 +18,12 @@ def test_evaluate(lhood):
     if lhood == "lensing" or lhood == "multi":
         pytest.xfail(reason="lensing lhood install failure")
 
+    if lhood == "mflike":
+        pytest.skip(reason="don't want to install 300Mb of data!")
+
+    if lhood == "cross_correlation":
+        pytest.skip(reason="cannot locate data files")
+
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
     info['sampler'] = {'evaluate': {}}
@@ -37,6 +43,12 @@ def test_mcmc(lhood):
 
     if lhood == "lensing" or lhood == "multi":
         pytest.xfail(reason="lensing lhood install failure")
+
+    if lhood == "mflike":
+        pytest.skip(reason="don't want to install 300Mb of data!")
+
+    if lhood == "cross_correlation":
+        pytest.skip(reason="cannot locate data files")
 
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
