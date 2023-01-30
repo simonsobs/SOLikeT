@@ -70,6 +70,7 @@ info_dict = {
 def test_cosmopower_theory(request):
     info_dict['theory']['soliket.CosmoPower']['network_path'] = \
         os.path.join(request.config.rootdir, 'soliket/data/CosmoPower/CP_paper/CMB')
+
     model_fiducial = get_model(info_dict)   # noqa F841
 
 
@@ -96,7 +97,8 @@ def test_cosmopower_against_camb(request):
         "soliket.CosmoPower": {
             "stop_at_error": True,
             "extra_args": {'lmax': camb_cls['ell'].max()},
-
+            'network_path': os.path.join(request.config.rootdir,
+                                         'soliket/data/CosmoPower/CP_paper/CMB'),
             "network_settings": {
                 "tt": {
                     "type": "NN",
