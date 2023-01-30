@@ -122,6 +122,13 @@ def test_shearkappa_like(request):
 
     assert np.isclose(loglikes, 637.64473666)
 
+    info["likelihood"]["ShearKappaLikelihood"]["ncovsims"] = 500
+
+    model = get_model(info)
+    loglikes, derived = model.loglikes()
+
+    import pdb; pdb.set_trace()
+
 
 def test_shearkappa_deltaz(request):
 
