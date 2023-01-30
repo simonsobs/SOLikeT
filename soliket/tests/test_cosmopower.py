@@ -68,15 +68,15 @@ info_dict = {
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_theory(request):
-    info_dict['theory']['soliket.CosmoPower']['soliket_data_path'] = \
-        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower')
+    info_dict['theory']['soliket.CosmoPower']['network_path'] = \
+        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower/CP_paper/CMB')
     model_fiducial = get_model(info_dict)   # noqa F841
 
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_loglike(request):
-    info_dict['theory']['soliket.CosmoPower']['soliket_data_path'] = \
-        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower')
+    info_dict['theory']['soliket.CosmoPower']['network_path'] = \
+        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower/CP_paper/CMB')
     model_cp = get_model(info_dict)
 
     logL_cp = float(model_cp.loglikes({})[0])
