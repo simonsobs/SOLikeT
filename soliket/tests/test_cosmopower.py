@@ -31,34 +31,35 @@ info_dict = {
     "theory": {
         "soliket.CosmoPower": {
             "stop_at_error": True,
-            "network_settings" : {
-                "tt" : {
-                    "type" : "NN",
-                    "log" : True,
-                    "filename" : "cmb_TT_NN",
-                    # If your network has been trained on (l (l+1) / 2 pi) C_l, this flag needs to be set.
-                    "has_ell_factor" : False,
+            "network_settings": {
+                "tt": {
+                    "type": "NN",
+                    "log": True,
+                    "filename": "cmb_TT_NN",
+                    # If your network has been trained on (l (l+1) / 2 pi) C_l,
+                    # this flag needs to be set.
+                    "has_ell_factor": False,
                 },
-                "ee" : {
-                    "type" : "NN",
-                    "log" : True,
-                    "filename" : "cmb_EE_NN",
-                    "has_ell_factor" : False,
+                "ee": {
+                    "type": "NN",
+                    "log": True,
+                    "filename": "cmb_EE_NN",
+                    "has_ell_factor": False,
                 },
-                "te" : {
-                    "type" : "PCAplusNN",
+                "te": {
+                    "type": "PCAplusNN",
                     # Trained on Cl, not log(Cl)
-                    "log" : False,
-                    "filename" : "cmb_TE_PCAplusNN",
-                    "has_ell_factor" : False,
+                    "log": False,
+                    "filename": "cmb_TE_PCAplusNN",
+                    "has_ell_factor": False,
                 },
             },
-            "renames" : {
-                "ombh2" : "omega_b",
-                "omch2" : "omega_cdm",
-                "ns" : "n_s",
-                "logA" : "ln10^{10}A_s",
-                "tau" : "tau_reio"
+            "renames": {
+                "ombh2": "omega_b",
+                "omch2": "omega_cdm",
+                "ns": "n_s",
+                "logA": "ln10^{10}A_s",
+                "tau": "tau_reio"
             }
         }
     },
@@ -95,30 +96,30 @@ def test_cosmopower_against_camb(request):
         "soliket.CosmoPower": {
             "stop_at_error": True,
             "extra_args": {'lmax': camb_cls['ell'].max()},
-            
-            "network_settings" : {
-                "tt" : {
-                    "type" : "NN",
-                    "log" : True,
-                    "filename" : "cmb_TT_NN"
+
+            "network_settings": {
+                "tt": {
+                    "type": "NN",
+                    "log": True,
+                    "filename": "cmb_TT_NN"
                 },
-                "ee" : {
-                    "type" : "NN",
-                    "log" : True,
-                    "filename" : "cmb_EE_NN"
+                "ee": {
+                    "type": "NN",
+                    "log": True,
+                    "filename": "cmb_EE_NN"
                 },
-                "te" : {
-                    "type" : "PCAplusNN",
-                    "log" : False,
-                    "filename" : "cmb_TE_PCAplusNN"
+                "te": {
+                    "type": "PCAplusNN",
+                    "log": False,
+                    "filename": "cmb_TE_PCAplusNN"
                 },
             },
-            "renames" : {
-                "ombh2" : "omega_b",
-                "omch2" : "omega_cdm",
-                "ns" : "n_s",
-                "logA" : "ln10^{10}A_s",
-                "tau" : "tau_reio"
+            "renames": {
+                "ombh2": "omega_b",
+                "omch2": "omega_cdm",
+                "ns": "n_s",
+                "logA": "ln10^{10}A_s",
+                "tau": "tau_reio"
             }
         }
     }

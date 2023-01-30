@@ -77,7 +77,8 @@ class CosmoPower(BoltzmannBase):
                     f"Unknown network type {nettype['type']} for network {spectype}.")
             else:
                 self.log.warn(
-                    f"Unknown network type {nettype['type']} for network {spectype}: skipped!")
+                    f"Unknown network type {nettype['type']}\
+                                                for network {spectype}: skipped!")
 
             netdata["type"] = nettype["type"]
             netdata["log"] = nettype.get("log", True)
@@ -162,7 +163,7 @@ class CosmoPower(BoltzmannBase):
 
         See also:
         cobaya.BoltzmannBase.get_Cl
-        `camb.CAMBresults.get_cmb_power_spectra <https://camb.readthedocs.io/en/latest/results.html#camb.results.CAMBdata.get_cmb_power_spectra>`_
+        `camb.CAMBresults.get_cmb_power_spectra <https://camb.readthedocs.io/en/latest/results.html#camb.results.CAMBdata.get_cmb_power_spectra>`_ # noqa E501
 
         Example:
         ell_factor(l, "tt") -> l(l+1)/(2 pi).
@@ -184,11 +185,15 @@ class CosmoPower(BoltzmannBase):
 
         return ellfac
 
-    def cmb_unit_factor(self, spectra: str, units: str = "FIRASmuK2", Tcmb: float = 2.7255) -> float:
+    def cmb_unit_factor(self, spectra: str,
+                        units: str = "FIRASmuK2",
+                        Tcmb: float = 2.7255) -> float:
         """
-        Calculate the CMB prefactor for going from dimensionless power spectra to CMB units.
+        Calculate the CMB prefactor for going from dimensionless power spectra to
+        CMB units.
 
-        :param spectra: a length 2 string specifying the spectrum for which to calculate the units.
+        :param spectra: a length 2 string specifying the spectrum for which to
+                        calculate the units.
         :param units: a string specifying which units to use.
         :param Tcmb: the used CMB temperature [units of K].
         :return: The CMB unit conversion factor.
@@ -266,7 +271,8 @@ class CosmoPowerDerived(Theory):
         self.log.info(
             f"CosmoPowerDerived will expect the parameters {self.input_parameters}")
         self.log.info(
-            f"CosmoPowerDerived can provide the following parameters: {self.get_can_provide()}.")
+            f"CosmoPowerDerived can provide the following parameters: \
+                                                            {self.get_can_provide()}.")
 
     def translate_param(self, p):
         return self.renames.get(p, p)
@@ -311,4 +317,5 @@ class CosmoPowerDerived(Theory):
         return requirements
 
     def get_can_provide(self) -> Iterable[str]:
-        return set([par for par in self.derived_parameters if (len(par) > 0 and not par == "_")])
+        return set([par for par in self.derived_parameters
+                                    if (len(par) > 0 and not par == "_")])
