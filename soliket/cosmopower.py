@@ -100,11 +100,17 @@ class CosmoPower(BoltzmannBase):
             f"CosmoPower will expect the parameters {self.all_parameters}")
 
     def calculate(self, state: dict, want_derived: bool = True, **params) -> bool:
-        cmb_params = {
+        ## sadly, this syntax not valid until python 3.9
+        # cmb_params = {
+        #     p: [params[p]] for p in params
+        # } | {
+        #     self.translate_param(p): [params[p]] for p in params
+        # }
+        cmb_params = {**{
             p: [params[p]] for p in params
-        } | {
+        }, **{
             self.translate_param(p): [params[p]] for p in params
-        }
+        }}
 
         ells = None
 
@@ -278,11 +284,17 @@ class CosmoPowerDerived(Theory):
         return self.renames.get(p, p)
 
     def calculate(self, state: dict, want_derived: bool = True, **params) -> bool:
-        input_params = {
+        ## sadly, this syntax not valid until python 3.9
+        # input_params = {
+        #     p: [params[p]] for p in params
+        # } | {
+        #     self.translate_param(p): [params[p]] for p in params
+        # }
+        input_params = {**{
             p: [params[p]] for p in params
-        } | {
+        }, **{
             self.translate_param(p): [params[p]] for p in params
-        }
+        }}
 
         if self.log_data:
             data = self.network.ten_to_predictions_np(input_params)[0, :]
