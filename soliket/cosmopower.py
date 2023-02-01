@@ -22,8 +22,8 @@
 Usage
 -----
 
-After installing SOLikeT, you can use the ``CosmoPower`` theory codes by adding
-the ``soliket.CosmoPower`` code as a block in your parameter files.
+After installing SOLikeT and cosmopower, you can use the ``CosmoPower`` theory codes
+by adding the ``soliket.CosmoPower`` code as a block in your parameter files.
 """
 import os
 try:
