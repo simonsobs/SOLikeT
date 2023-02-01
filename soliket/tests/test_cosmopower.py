@@ -30,11 +30,37 @@ info_dict = {
     },
     "theory": {
         "soliket.CosmoPower": {
-            # "soliket_data_path": os.path.normpath(
-            #     os.path.join(os.getcwd(), "../data/CosmoPower")
-            # ),
-            "soliket_data_path": "soliket/data/CosmoPower",
             "stop_at_error": True,
+            "network_settings": {
+                "tt": {
+                    "type": "NN",
+                    "log": True,
+                    "filename": "cmb_TT_NN",
+                    # If your network has been trained on (l (l+1) / 2 pi) C_l,
+                    # this flag needs to be set.
+                    "has_ell_factor": False,
+                },
+                "ee": {
+                    "type": "NN",
+                    "log": True,
+                    "filename": "cmb_EE_NN",
+                    "has_ell_factor": False,
+                },
+                "te": {
+                    "type": "PCAplusNN",
+                    # Trained on Cl, not log(Cl)
+                    "log": False,
+                    "filename": "cmb_TE_PCAplusNN",
+                    "has_ell_factor": False,
+                },
+            },
+            "renames": {
+                "ombh2": "omega_b",
+                "omch2": "omega_cdm",
+                "ns": "n_s",
+                "logA": "ln10^{10}A_s",
+                "tau": "tau_reio"
+            }
         }
     },
 }
@@ -42,15 +68,16 @@ info_dict = {
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_theory(request):
-    info_dict['theory']['soliket.CosmoPower']['soliket_data_path'] = \
-        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower')
+    info_dict['theory']['soliket.CosmoPower']['network_path'] = \
+        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower/CP_paper/CMB')
+
     model_fiducial = get_model(info_dict)   # noqa F841
 
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_loglike(request):
-    info_dict['theory']['soliket.CosmoPower']['soliket_data_path'] = \
-        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower')
+    info_dict['theory']['soliket.CosmoPower']['network_path'] = \
+        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower/CP_paper/CMB')
     model_cp = get_model(info_dict)
 
     logL_cp = float(model_cp.loglikes({})[0])
@@ -67,12 +94,37 @@ def test_cosmopower_against_camb(request):
     camb_cls = model_camb.theory['camb'].get_Cl()
 
     info_dict['theory'] = {
-                           "soliket.CosmoPower": {
-                           "soliket_data_path": os.path.join(request.config.rootdir,
-                                                             'soliket/data/CosmoPower'),
-                           "stop_at_error": True,
-                           "extra_args": {'lmax': camb_cls['ell'].max() + 1}}
+        "soliket.CosmoPower": {
+            "stop_at_error": True,
+            "extra_args": {'lmax': camb_cls['ell'].max()},
+            'network_path': os.path.join(request.config.rootdir,
+                                         'soliket/data/CosmoPower/CP_paper/CMB'),
+            "network_settings": {
+                "tt": {
+                    "type": "NN",
+                    "log": True,
+                    "filename": "cmb_TT_NN"
+                },
+                "ee": {
+                    "type": "NN",
+                    "log": True,
+                    "filename": "cmb_EE_NN"
+                },
+                "te": {
+                    "type": "PCAplusNN",
+                    "log": False,
+                    "filename": "cmb_TE_PCAplusNN"
+                },
+            },
+            "renames": {
+                "ombh2": "omega_b",
+                "omch2": "omega_cdm",
+                "ns": "n_s",
+                "logA": "ln10^{10}A_s",
+                "tau": "tau_reio"
+            }
         }
+    }
 
     model_cp = get_model(info_dict)
     logL_cp = float(model_cp.loglikes({})[0])

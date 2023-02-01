@@ -7,7 +7,7 @@ from .mflike import TheoryForge_MFLike
 from .xcorr import XcorrLikelihood  # noqa: F401
 from .foreground import Foreground
 from .bandpass import BandPass
-from .cosmopower import CosmoPower
+from .cosmopower import CosmoPower, CosmoPowerDerived
 
 try:
     from .clusters import ClusterLikelihood  # noqa: F401
