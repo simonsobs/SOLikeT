@@ -1,3 +1,30 @@
+"""
+.. module:: soliket.cosmopower
+
+:Synopsis: Simple CosmoPower theory wrapper for Cobaya.
+:Author: Hidde T. Jense
+
+.. |br| raw:: html
+
+   <br />
+
+.. note::
+
+   **If you use this cosmological code, please cite:**
+   |br|
+   A. Spurio Mancini et al.
+   *CosmoPower: emulating cosmological power spectra for accelerated Bayesian
+   inference from next-generation surveys*
+   (`arXiv:210603846 <https://arxiv.org/abs/2106.03846>`_)
+
+   And remember to cite any sources for trained networks you use.
+
+Usage
+-----
+
+After installing SOLikeT and cosmopower, you can use the ``CosmoPower`` theory codes
+by adding the ``soliket.CosmoPower`` code as a block in your parameter files.
+"""
 import os
 try:
     import cosmopower as cp  # noqa F401
@@ -7,100 +34,300 @@ else:
     HAS_COSMOPOWER = True
 import numpy as np
 
+from typing import Dict, Iterable, Tuple
+
+from cobaya.log import LoggedError
+from cobaya.theory import Theory
 from cobaya.theories.cosmo import BoltzmannBase
 from cobaya.typing import InfoDict
 
-"""
-  Simple CosmoPower theory wrapper for Cobaya.
-  author: Hidde T. Jense
-"""
-
 
 class CosmoPower(BoltzmannBase):
-    soliket_data_path: str = "soliket/data/CosmoPower"
-    network_path: str = "CP_paper/CMB"
-    cmb_tt_nn_filename: str = "cmb_TT_NN"
-    cmb_te_pcaplusnn_filename: str = "cmb_TE_PCAplusNN"
-    cmb_ee_nn_filename: str = "cmb_EE_NN"
+    """A CosmoPower Network wrapper for Cobaya."""
 
-    extra_args: InfoDict = {}
+    stop_at_error: bool = False
 
-    renames: dict = {
-        "omega_b": ["ombh2", "omegabh2"],
-        "omega_cdm": ["omch2", "omegach2"],
-        "ln10^{10}A_s": ["logA"],
-        "n_s": ["ns"],
-        "h": [],
-        "tau_reio": ["tau"],
-    }
+    network_path: str = "soliket/data/CosmoPower/CP_paper/CMB"
+    network_settings: InfoDict = None
 
-    def initialize(self):
+    extra_args: InfoDict = None
+
+    def initialize(self) -> None:
         super().initialize()
 
-        base_path = os.path.join(self.soliket_data_path, self.network_path)
+        if self.network_settings is None:
+            raise LoggedError("No network settings were provided.")
 
-        self.cp_tt_nn = cp.cosmopower_NN(
-            restore=True,
-            restore_filename=os.path.join(base_path, self.cmb_tt_nn_filename),
-        )
-        self.cp_te_nn = cp.cosmopower_PCAplusNN(
-            restore=True,
-            restore_filename=os.path.join(base_path, self.cmb_te_pcaplusnn_filename),
-        )
-        self.cp_ee_nn = cp.cosmopower_NN(
-            restore=True,
-            restore_filename=os.path.join(base_path, self.cmb_ee_nn_filename),
-        )
+        self.networks = {}
+        self.all_parameters = set([])
+
+        for spectype in self.network_settings:
+            netdata = {}
+            nettype = self.network_settings[spectype]
+            netpath = os.path.join(self.network_path, nettype["filename"])
+
+            if nettype["type"] == "NN":
+                network = cp.cosmopower_NN(
+                    restore=True, restore_filename=netpath)
+            elif nettype["type"] == "PCAplusNN":
+                network = cp.cosmopower_PCAplusNN(
+                    restore=True, restore_filename=netpath)
+            elif self.stop_at_error:
+                raise ValueError(
+                    f"Unknown network type {nettype['type']} for network {spectype}.")
+            else:
+                self.log.warn(
+                    f"Unknown network type {nettype['type']}\
+                                                for network {spectype}: skipped!")
+
+            netdata["type"] = nettype["type"]
+            netdata["log"] = nettype.get("log", True)
+            netdata["network"] = network
+            netdata["parameters"] = list(network.parameters)
+            netdata["lmax"] = network.modes.max()
+            netdata["has_ell_factor"] = nettype.get("has_ell_factor", False)
+
+            self.all_parameters = self.all_parameters | set(network.parameters)
+
+            if network is not None:
+                self.networks[spectype.lower()] = netdata
 
         if "lmax" not in self.extra_args:
             self.extra_args["lmax"] = None
 
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")
+        self.log.info(
+            f"CosmoPower will expect the parameters {self.all_parameters}")
 
-    def calculate(self, state, want_derived=True, **params):
-        cmb_params = {}
+    def calculate(self, state: dict, want_derived: bool = True, **params) -> bool:
+        ## sadly, this syntax not valid until python 3.9
+        # cmb_params = {
+        #     p: [params[p]] for p in params
+        # } | {
+        #     self.translate_param(p): [params[p]] for p in params
+        # }
+        cmb_params = {**{
+            p: [params[p]] for p in params
+        }, **{
+            self.translate_param(p): [params[p]] for p in params
+        }}
 
-        for par in self.renames:
-            if par in params:
-                cmb_params[par] = [params[par]]
+        ells = None
+
+        for spectype in self.networks:
+            network = self.networks[spectype]
+            used_params = {par: (cmb_params[par] if par in cmb_params else [
+                                 params[par]]) for par in network["parameters"]}
+
+            if network["log"]:
+                data = network["network"].ten_to_predictions_np(used_params)[
+                    0, :]
             else:
-                for r in self.renames[par]:
-                    if r in params:
-                        cmb_params[par] = [params[r]]
-                        break
+                data = network["network"].predictions_np(used_params)[0, :]
 
-        state["tt"] = self.cp_tt_nn.ten_to_predictions_np(cmb_params)[0, :]
-        state["te"] = self.cp_te_nn.predictions_np(cmb_params)[0, :]
-        state["ee"] = self.cp_ee_nn.ten_to_predictions_np(cmb_params)[0, :]
-        state["ell"] = self.cp_tt_nn.modes
+            state[spectype] = data
 
-    def get_Cl(self, ell_factor=False, units="FIRASmuK2"):
+            if ells is None:
+                ells = network["network"].modes
+
+        state["ell"] = ells.astype(int)
+
+        return True
+
+    def get_Cl(self, ell_factor: bool = False, units: str = "FIRASmuK2") -> dict:
         cls_old = self.current_state.copy()
 
-        lmax = self.extra_args["lmax"] or (cls_old["tt"].shape[0] + 2)
+        lmax = self.extra_args["lmax"] or cls_old["ell"].max()
 
-        cls = {"ell": np.arange(lmax).astype(int)}
+        cls = {"ell": np.arange(lmax + 1).astype(int)}
         ls = cls_old["ell"]
 
-        for k in ["tt", "te", "ee"]:
-            # cls[k] = np.zeros(cls["ell"].shape, dtype=float)
-            cls[k] = np.empty(cls["ell"].shape, dtype=float)
-            cls[k][:] = np.nan
+        for k in self.networks:
+            cls[k] = np.tile(np.nan, cls["ell"].shape)
 
-        cmb_fac = self._cmb_unit_factor(units, 2.7255)
+        for k in self.networks:
+            prefac = np.ones_like(ls).astype(float)
 
-        if ell_factor:
-            ls_fac = ls * (ls + 1.0) / (2.0 * np.pi)
-        else:
-            ls_fac = 1.0
+            if self.networks[k]["has_ell_factor"]:
+                prefac /= self.ell_factor(ls, k)
+            if ell_factor:
+                prefac *= self.ell_factor(ls, k)
 
-        for k in ["tt", "te", "ee"]:
-            cls[k][ls] = cls_old[k] * ls_fac * cmb_fac ** 2.0
+            cls[k][ls] = cls_old[k] * prefac * \
+                self.cmb_unit_factor(k, units, 2.7255)
+            cls[k][:2] = 0.0
             if np.any(np.isnan(cls[k])):
-                self.log.warning("CosmoPower used outside of trained "\
+                self.log.warning("CosmoPower used outside of trained "
                                  "{} ell range. Filled in with NaNs.".format(k))
 
         return cls
 
-    def get_can_support_params(self):
-        return ["omega_b", "omega_cdm", "h", "logA", "ns", "tau_reio"]
+    def ell_factor(self, ls: np.ndarray, spectra: str) -> np.ndarray:
+        """
+        Calculate the ell factor for a specific spectrum.
+        These prefactors are used to convert from Cell to Dell and vice-versa.
+
+        See also:
+        cobaya.BoltzmannBase.get_Cl
+        `camb.CAMBresults.get_cmb_power_spectra <https://camb.readthedocs.io/en/latest/results.html#camb.results.CAMBdata.get_cmb_power_spectra>`_ # noqa E501
+
+        Example:
+        ell_factor(l, "tt") -> l(l+1)/(2 pi).
+        ell_factor(l, "pp") -> l^2(l+1)^2/(2 pi).
+
+        :param ls: the range of ells.
+        :param spectra: a two-character string with each character being one of [tebp].
+
+        :return: an array filled with ell factors for the given spectrum.
+        """
+        ellfac = np.ones_like(ls).astype(float)
+
+        if spectra in ["tt", "te", "tb", "ee", "et", "eb", "bb", "bt", "be"]:
+            ellfac = ls * (ls + 1.0) / (2.0 * np.pi)
+        elif spectra in ["pt", "pe", "pb", "tp", "ep", "bp"]:
+            ellfac = (ls * (ls + 1.0)) ** (3. / 2.) / (2.0 * np.pi)
+        elif spectra in ["pp"]:
+            ellfac = (ls * (ls + 1.0)) ** 2.0 / (2.0 * np.pi)
+
+        return ellfac
+
+    def cmb_unit_factor(self, spectra: str,
+                        units: str = "FIRASmuK2",
+                        Tcmb: float = 2.7255) -> float:
+        """
+        Calculate the CMB prefactor for going from dimensionless power spectra to
+        CMB units.
+
+        :param spectra: a length 2 string specifying the spectrum for which to
+                        calculate the units.
+        :param units: a string specifying which units to use.
+        :param Tcmb: the used CMB temperature [units of K].
+        :return: The CMB unit conversion factor.
+        """
+        res = 1.0
+        x, y = spectra.lower()
+
+        if x == "t" or x == "e" or x == "b":
+            res *= self._cmb_unit_factor(units, Tcmb)
+        elif x == "p":
+            res *= 1. / np.sqrt(2.0 * np.pi)
+
+        if y == "t" or y == "e" or y == "b":
+            res *= self._cmb_unit_factor(units, Tcmb)
+        elif y == "p":
+            res *= 1. / np.sqrt(2.0 * np.pi)
+
+        return res
+
+    def get_can_support_parameters(self) -> Iterable[str]:
+        return self.all_parameters
+
+    def get_requirements(self) -> Iterable[Tuple[str, str]]:
+        requirements = []
+        for k in self.all_parameters:
+            if k in self.renames.values():
+                for v in self.renames:
+                    if self.renames[v] == k:
+                        requirements.append((v, None))
+                        break
+            else:
+                requirements.append((k, None))
+
+        return requirements
+
+
+class CosmoPowerDerived(Theory):
+    """A theory class that can calculate derived parameters from CosmoPower networks."""
+    stop_at_error: bool = False
+
+    network_path: str = "soliket/data/CosmoPower/CP_paper/CMB"
+    network_settings: InfoDict = None
+
+    derived_parameters: Iterable[str]
+    derived_values: Dict
+
+    extra_args: InfoDict = None
+
+    renames: Dict = {}
+
+    def initialize(self) -> None:
+        super().initialize()
+
+        if self.network_settings is None:
+            raise LoggedError("No network settings were provided.")
+
+        netpath = os.path.join(self.network_path, self.network_settings["filename"])
+
+        if self.network_settings["type"] == "NN":
+            self.network = cp.cosmopower_NN(
+                restore=True, restore_filename=netpath)
+        elif self.network_settings["type"] == "PCAplusNN":
+            self.network = cp.cosmopower_PCAplusNN(
+                restore=True, restore_filename=netpath)
+        else:
+            raise LoggedError(
+                f"Unknown network type {self.network_settings['type']}.")
+
+        self.input_parameters = set(self.network.parameters)
+
+        self.log_data = self.network_settings.get("log", False)
+
+        self.log.info(
+            f"Loaded CosmoPowerDerived from directory {self.network_path}")
+        self.log.info(
+            f"CosmoPowerDerived will expect the parameters {self.input_parameters}")
+        self.log.info(
+            f"CosmoPowerDerived can provide the following parameters: \
+                                                            {self.get_can_provide()}.")
+
+    def translate_param(self, p):
+        return self.renames.get(p, p)
+
+    def calculate(self, state: dict, want_derived: bool = True, **params) -> bool:
+        ## sadly, this syntax not valid until python 3.9
+        # input_params = {
+        #     p: [params[p]] for p in params
+        # } | {
+        #     self.translate_param(p): [params[p]] for p in params
+        # }
+        input_params = {**{
+            p: [params[p]] for p in params
+        }, **{
+            self.translate_param(p): [params[p]] for p in params
+        }}
+
+        if self.log_data:
+            data = self.network.ten_to_predictions_np(input_params)[0, :]
+        else:
+            data = self.network.predictions_np(input_params)[0, :]
+
+        for k, v in zip(self.derived_parameters, data):
+            if len(k) == 0 or k == "_":
+                continue
+
+            state["derived"][k] = v
+
+        return True
+
+    def get_param(self, p) -> float:
+        return self.current_state["derived"][self.translate_param(p)]
+
+    def get_can_support_parameters(self) -> Iterable[str]:
+        return self.input_parameters
+
+    def get_requirements(self) -> Iterable[Tuple[str, str]]:
+        requirements = []
+        for k in self.input_parameters:
+            if k in self.renames.values():
+                for v in self.renames:
+                    if self.renames[v] == k:
+                        requirements.append((v, None))
+                        break
+            else:
+                requirements.append((k, None))
+
+        return requirements
+
+    def get_can_provide(self) -> Iterable[str]:
+        return set([par for par in self.derived_parameters
+                                    if (len(par) > 0 and not par == "_")])
