@@ -1,1 +1,1 @@
-from .szlike import KSZLikelihood,TSZLikelihood
+from .szlike import KSZLikelihood, TSZLikelihood, OBBLikelihood
