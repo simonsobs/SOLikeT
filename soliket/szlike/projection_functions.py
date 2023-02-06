@@ -60,12 +60,10 @@ def project_ksz(
     tht, M, z, beam_txt, model_params, twohalo_term, provider
 ):  # input_model
     disc_fac = np.sqrt(2)
-    l0 = 30000.0
     NNR = 100
     resolution_factor = 2.0
     NNR2 = resolution_factor * NNR
 
-    drint = 1e-3 * (kpc_cgs * 1e3)
     AngDis = AngDist(z, provider)
 
     r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
@@ -151,7 +149,6 @@ def project_ksz(
         bounds_error=False,
         fill_value=0.0,
     )(thta2)
-    area_fac = 2.0 * np.pi * dtht * np.sum(thta)
 
     sig = 2.0 * np.pi * dtht * np.sum(thta * rho2D_beam)
     sig2 = 2.0 * np.pi * dtht2 * np.sum(thta2 * rho2D2_beam)
@@ -173,12 +170,10 @@ def project_tsz(
     tht, M, z, nu, beam_txt, model_params, beam_response, twohalo_term, provider
 ):
     disc_fac = np.sqrt(2)
-    l0 = 30000.0
     NNR = 100
     resolution_factor = 3.5
     NNR2 = resolution_factor * NNR
 
-    drint = 1e-3 * (kpc_cgs * 1e3)
     AngDis = AngDist(z, provider)
 
     r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
@@ -265,7 +260,6 @@ def project_tsz(
         fill_value=0.0,
     )(thta2)
 
-    area_fac = 2.0 * np.pi * dtht * np.sum(thta)
     sig_p = 2.0 * np.pi * dtht * np.sum(thta * Pth2D_beam)
     sig2_p = 2.0 * np.pi * dtht2 * np.sum(thta2 * Pth2D2_beam)
     sig_all_p_beam = (
@@ -280,7 +274,7 @@ def project_tsz(
     return sig_all_p_beam
 
 
-def project_obb(tht, M, z, theta, nu, fbeam, provider):
+def project_obb(tht, M, z, beam_txt, theta, nu, fbeam, provider):
     # NOTE: this is convolving through analytical integral, not FFT like GNFW functions
     disc_fac = np.sqrt(2)
     NNR = 100
@@ -293,14 +287,11 @@ def project_obb(tht, M, z, theta, nu, fbeam, provider):
     AngDis = AngDist(z)
 
     rvir = r200(M, z) / kpc_cgs / 1e3
-    c = con(M, z)
 
     r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
     r_ext2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
 
     rvir_arcmin = 180.0 * 60.0 / np.pi * np.tan(rvir / AngDis)
-    rvir_ext = AngDis * np.arctan(np.radians(rvir_arcmin / 60.0))
-    rvir_ext2 = AngDis * np.arctan(np.radians(rvir_arcmin * disc_fac / 60.0))
 
     rad = np.logspace(-3, 1, 200)
     rad2 = np.logspace(-3, 1, 200)
@@ -408,13 +399,17 @@ def project_obb(tht, M, z, theta, nu, fbeam, provider):
     thta = (np.arange(NNR) + 1.0) * dtht
     thta2 = (np.arange(NNR) + 1.0) * dtht2
 
-    area_fac = 2.0 * np.pi * dtht * np.sum(thta)
-
     sig = 2.0 * np.pi * dtht * np.sum(thta * rho2D_beam)
     sig2 = 2.0 * np.pi * dtht2 * np.sum(thta2 * rho2D2_beam)
 
     sig_all_beam = (
-        (2 * sig - sig2) * v_rms * ST_CGS * TCMB * 1e6 * ((1.0 + XH) / 2.0) / MP_CGS
+        (2 * sig - sig2)
+        * provider.get_param("v_rms")
+        * ST_CGS
+        * T_CMB
+        * 1e6
+        * ((1.0 + XH) / 2.0)
+        / MP_CGS
     )
 
     sig_p = 2.0 * np.pi * dtht * np.sum(thta * Pth2D_beam)
@@ -425,7 +420,7 @@ def project_obb(tht, M, z, theta, nu, fbeam, provider):
         * (2 * sig_p - sig2_p)
         * ST_CGS
         / (ME_CGS * C_CGS**2)
-        * TCMB
+        * T_CMB
         * 1e6
         * ((2.0 + 2.0 * XH) / (3.0 + 5.0 * XH))
     )

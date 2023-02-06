@@ -364,7 +364,7 @@ def Pth2h(xx, theta2h):
     return theta2h * ans
 
 
-def Pth(x, M, z, theta):
+def Pth(x, M, z, theta, provider):
     theta1h = theta[0], theta[1], theta[2]
     theta2h = theta[3]
     ans = Pth1h(x, M, z, theta1h, provider) + Pth2h(x, theta2h)
@@ -406,8 +406,9 @@ def Pnth(x, M, z, theta, theta2, provider):
     c = con(M, z)
     nn = n_exp(gamma)
     rvir = r200(M, z, provider)
-    M_cgs = M * MSUN_CGS
-    beta = rho_0 / P_0 * G_CGS * Mvir / rvir * c / gx(c)
+    beta = (
+        rho_0 / P_0 * G_CGS * M / rvir * c / gx(c)
+    )  # Mvir in original code, but undefined
     theta2_use = beta, x_f
     ans = (
         alpha
@@ -429,7 +430,6 @@ def Pnth_use(x, M, z, theta, theta2):
 def I2_int(M, z, theta, theta2):
     gamma, alpha, Ef = theta
     beta, x_f = theta2
-    nn = n_exp(gamma)
     c = con(M, z)
     xx = np.arange(delx / 2.0, x_f, delx)
     ans = np.sum(fx(xx, c) * rho_use(xx, M, z, theta, theta2) * xx**2) * delx
@@ -439,7 +439,6 @@ def I2_int(M, z, theta, theta2):
 def I3_int(M, z, theta, theta2):
     gamma, alpha, Ef = theta
     beta, x_f = theta2
-    nn = n_exp(gamma)
     xx = np.arange(delx / 2.0, x_f, delx)
     ans = np.sum(Pth_use(xx, M, z, theta, theta2) * xx**2) * delx
     return ans
@@ -448,7 +447,6 @@ def I3_int(M, z, theta, theta2):
 def I4_int(M, z, theta, theta2):
     gamma, alpha, Ef = theta
     beta, x_f = theta2
-    nn = n_exp(gamma)
     xx = np.arange(delx / 2.0, x_f, delx)
     ans = np.sum(Pnth_use(xx, M, z, theta, theta2) * xx**2) * delx
     return ans
@@ -457,7 +455,6 @@ def I4_int(M, z, theta, theta2):
 def L_int(M, z, theta, theta2):
     gamma, alpha, Ef = theta
     beta, x_f = theta2
-    nn = n_exp(gamma)
     xx = np.arange(delx / 2.0, x_f, delx)
     ans = np.sum(rho_use(xx, M, z, theta, theta2) * xx**2) * delx
     return ans
