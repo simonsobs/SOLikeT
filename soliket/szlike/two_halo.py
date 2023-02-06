@@ -18,7 +18,14 @@ params = {
 }
 
 """parameters used in Illustris TNG https://arxiv.org/pdf/1703.02970.pdf"""
-# params = {'flat': True, 'H0': 67.7, 'Om0': 0.31, 'Ob0': 0.0486, 'sigma8': 0.8159, 'ns': 0.97}
+# params = {
+#    'flat': True,
+#    'H0': 67.7,
+#    'Om0': 0.31,
+#    'Ob0': 0.0486,
+#    'sigma8': 0.8159,
+#    'ns': 0.97,
+# }
 
 cosmology.setCosmology("myCosmo", params)
 

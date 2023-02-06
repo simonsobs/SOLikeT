@@ -286,12 +286,8 @@ def project_obb(tht, M, z, beam_txt, theta, nu, fbeam, provider):
 
     AngDis = AngDist(z)
 
-    rvir = r200(M, z) / kpc_cgs / 1e3
-
     r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
     r_ext2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
-
-    rvir_arcmin = 180.0 * 60.0 / np.pi * np.tan(rvir / AngDis)
 
     rad = np.logspace(-3, 1, 200)
     rad2 = np.logspace(-3, 1, 200)

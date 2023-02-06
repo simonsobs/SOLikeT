@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy
-from scipy import stats
+from scipy import stats, special, integrate
 import sys
 import os
+from astropy.io import fits
+from scipy.interpolate import interp1d, UnivariateSpline, RectBivariateSpline
 
 ###################################################################
 
@@ -176,7 +178,7 @@ class FlatMap(object):
     def plot(self, data=None, save=False, path=None, cmap="viridis"):
         if data is None:
             data = self.data.copy()
-        sigma = np.std(data.flatten())
+        # sigma = np.std(data.flatten())
         vmin = np.min(data.flatten())
         vmax = np.max(data.flatten())
 
@@ -219,7 +221,7 @@ class FlatMap(object):
         if dataFourier is None:
             dataFourier = self.dataFourier.copy()
         dataFourier = np.real(dataFourier)
-        sigma = np.std(dataFourier.flatten())
+        # sigma = np.std(dataFourier.flatten())
         vmin = np.min(dataFourier.flatten())
         vmax = np.max(dataFourier.flatten())
 
@@ -258,8 +260,8 @@ class FlatMap(object):
         plt.axis("scaled")
         ax.set_xlim(np.min(lxLeft), np.max(lxRight))
         ax.set_ylim(np.min(ly), np.max(ly))
-        ax.set_xlabel("$\ell_x$")
-        ax.set_ylabel("$\ell_y$")
+        ax.set_xlabel(r"$\ell_x$")
+        ax.set_ylabel(r"$\ell_y$")
         #
         if save == True:
             if name is None:
@@ -280,8 +282,8 @@ class FlatMap(object):
         # data mean, var, skewness, kurtosis
         mean = np.mean(data)
         sigma = np.std(data)
-        skewness = np.mean((data - mean) ** 3) / sigma**3
-        kurtosis = np.mean((data - mean) ** 4) / sigma**4
+        # skewness = np.mean((data - mean) ** 3) / sigma**3
+        # kurtosis = np.mean((data - mean) ** 4) / sigma**4
 
         # print("mean =", mean)
         # print("std. dev =", sigma)
@@ -403,7 +405,7 @@ class FlatMap(object):
         plt.show()
 
     def plotDeflectionArrows(self, dx, dy, save=False, name=None):
-        d = np.sqrt(dx**2 + dy**2)
+        # d = np.sqrt(dx**2 + dy**2)
 
         # Keep only some of the points
         skip = (slice(None, None, self.nX / 25), slice(None, None, self.nX / 25))
@@ -418,7 +420,7 @@ class FlatMap(object):
         y = self.dY * (np.arange(self.nY + 1) - 0.5)
         x, y = np.meshgrid(x, y, indexing="ij")
         #
-        sigma = self.data.std()
+        # sigma = self.data.std()
         cp = ax.pcolormesh(
             x * 180.0 / np.pi,
             y * 180.0 / np.pi,
@@ -428,11 +430,9 @@ class FlatMap(object):
             alpha=1,
             cmap=plt.cm.jet,
         )
-        #      cp=ax.pcolormesh(x*180./np.pi, y*180./np.pi, self.data, linewidth=0, rasterized=True, alpha=1, vmin=-2.5*sigma, vmax=2.5*sigma, cmap=cmaps.viridis)
         fig.colorbar(cp)
         #
         #
-        #      ax.quiver(self.x[skip]*180./np.pi, self.y[skip]*180./np.pi, dx[skip]*180./np.pi, dy[skip]*180./np.pi, d[skip]*180./np.pi, units='xy', edgecolor='', width=0.007*self.sizeX*180./np.pi)
         ax.quiver(
             self.x[skip] * 180.0 / np.pi,
             self.y[skip] * 180.0 / np.pi,
@@ -629,7 +629,8 @@ class FlatMap(object):
         )
 
     def binTheoryPowerSpectrum(self, fCl, nBins=17, lRange=None):
-        """Bin a theory power spectrum to allow to compare it with the measured power spectrum of a map."""
+        """Bin a theory power spectrum to allow to compare it
+        with the measured power spectrum of a map."""
         # define ell bins
         ell = self.l.flatten()
         if lRange is None:
@@ -740,54 +741,6 @@ class FlatMap(object):
 
     ###############################################################################
     # generate Gaussian random field with any power spectrum
-
-    """
-   #!!!!!!! Wrong on the axis ly=0: does not satisfy f(-l)=f(l)* there,
-   # which means that the real-space map will be complex.
-   #!!!!!!! Also, the modulus should not be Gaussian, but Rayleigh, and with mean non-zero!!!
-   def genGRF(self, fCl, test=False):
-      
-      # flatten the Fourier data,
-      # and put in it the value of Cl
-      dataFourier = np.array(map(fCl, self.l.flatten()))
-      dataFourier = np.nan_to_num(dataFourier)
-      # rescale by finite volume
-      dataFourier *= self.sizeX*self.sizeY
-      # reshape it
-      dataFourier = dataFourier.reshape(np.shape(self.l))
-      
-      if test:
-         #print dataFourier[0,0]
-         # plot Fourier power map
-         self.plotFourier(dataFourier=self.l**2 * np.abs(dataFourier))
-         # plot Fourier power
-         plt.plot(self.l.flatten(), self.l.flatten()**2 * np.abs(dataFourier.flatten()), 'k.')
-         plt.show()
-
-      # for each ell vector,
-      # generate a Gaussian random number with variance = cl
-      f = lambda var: np.random.normal(0., scale=np.sqrt(var)+1.e-16) * np.exp(1j*np.random.uniform(0., 2.*np.pi))
-      dataFourier = np.array(map(f, dataFourier.flatten()))
-      # reshape it
-      dataFourier = dataFourier.reshape(np.shape(self.l))
-      
-      if test:
-         #print dataFourier[0,0]
-         # plot Fourier map
-         self.plotFourier(dataFourier=dataFourier)
-         self.plotFourier(dataFourier=self.l**2 * np.abs(dataFourier)**2)
-         # plot Fourier power
-         plt.plot(self.l.flatten(), self.l.flatten()**2 * np.abs(dataFourier.flatten())**2, 'k.', alpha=0.1)
-         plt.show()
-
-      if test:
-         #print dataFourier[0,0]
-         data = self.inverseFourier()
-         self.plot(data=data)
-         self.plotFourier(dataFourier=dataFourier)
-
-      return dataFourier
-   """
 
     def genGRF(self, fCl, test=False):
 
@@ -967,13 +920,6 @@ class FlatMap(object):
     # Matched filter and point source mask
 
     def matchedFilterIsotropic(self, fCl, fprof=None, dataFourier=None, test=False):
-        """Match-filter a surface brightness map into a flux map
-        T_filt = (T_l * prof_l / C_l) / (\int d^2l/(2pi)^2 prof_l^2/C_l)
-        If T(x) in Jy/sr, T_l in Jy,
-        then T_filt(x) in Jy, T_filt_l in Jy*sr.
-        fW = C_l is the total debeamed noise power.
-        prof_l is the profile before beam convolution (i.e. 1 for point source).
-        """
         if dataFourier is None:
             dataFourier = self.dataFourier.copy()
         if fprof is None:
@@ -1050,7 +996,8 @@ class FlatMap(object):
             )
 
             # smooth the mask
-            # Fourier transform 1-mask, to have zero everywhere except on the point sources
+            # Fourier transform 1-mask, to have
+            # zero everywhere except on the point sources
             maskFourier = self.fourier(1.0 - mask)
             mask = self.inverseFourier(maskFourier * gaussFourier)
 
@@ -1114,48 +1061,7 @@ class FlatMap(object):
 
     ###############################################################################
 
-    #   def trispectrum(self, lmean=1000., dataFourier=None, theory=None, name="test", save=False, nBins=51, lRange=None):
-    #      """Collapsed 4pt function of map, from power spectrum of squared map.
-    #      Returns 4ptfunc = T + 2CC,
-    #      evaluated at (l, -l+L, l', -l'-L),
-    #      for various L and with l,l' \simeq lmean fixed
-    #      """
-    #      if dataFourier is None:
-    #         dataFourier = self.dataFourier.copy()
-    #
-    ##      # define filter function
-    ##      lMean = 1.e3
-    ##      sl = 2.e2
-    ##      # defined so that int d^2l W^2 = 1?
-    ##      # !!! normalization is wrong here, but doesn't matter for ratios
-    ##      fW2 = lambda l: np.exp(-0.5*(l-lMean)**2/sl**2) / (2.*np.pi*sl**2)
-    ##      fW = lambda l: np.sqrt(fW2(l))
-    #
-    #      # Window function normalized such that \int d^2l/(2\pi)^2 W(l)^2 very very close to 1
-    #      # to match Simone's
-    #      def fW(l):
-    #         lsigma = 50.
-    #         result = np.exp(-(l-lmean)**2 / (4. * lsigma**2)) )
-    #         result *= (2.*np.pi / lsigma**2)**0.25 / np.sqrt(lmean)
-    #         return result
-    #
-    #      # filter in Fourier space
-    #      dataFourier = self.filterFourierIsotropic(fW, dataFourier)
-    #      # update real space map
-    #      data = self.inverseFourier(dataFourier=dataFourier)
-    #      # square map in real space
-    #      data = data**2
-    #      # update Fourier map
-    #      dataFourier = self.fourier(data=data)
-    #
-    #      # compute power spectrum of squared map
-    #      lCen, Cl, sCl = self.powerSpectrum(dataFourier=dataFourier, theory=theory, name=name, save=save, nBins=nBins, lRange=lRange)
-    #      return lCen, Cl, sCl
-
     def filterCollapsed4PtFunc(self, l, lMean):
-        """Window function from Simone
-        normalized such that \int d^2l/(2\pi)^2 W(l)^2 very very close to 1 (but not exactly!)
-        """
         #      lsigma = 50.
         #      lsigma = 100.
         #      lsigma = 200.
@@ -1164,7 +1070,6 @@ class FlatMap(object):
         result = np.exp(-((l - lMean) ** 2) / (4.0 * lsigma**2))
         result *= (2.0 * np.pi / lsigma**2) ** 0.25 / np.sqrt(lMean)
         #      result *= (l>=lMean - 4.*lsigma) * (l<=lMean + 4.*lsigma)
-        #      result *= (l<0.5*self.lx.max())   # make sure there is no aliasing after map is squared
         return result
 
     def collapsed4PtFunc(
@@ -1177,12 +1082,6 @@ class FlatMap(object):
         nBins=51,
         lRange=None,
     ):
-        """Almost-collapsed 4pt function of map, from power spectrum of squared map.
-        Returns 4ptfunc = T + 2CC/Nmodes,
-        evaluated at (l, -l+L, l', -l'-L),
-        for various L and with l,l' \simeq lmean fixed.
-        Nmodes is defined by the shape of the filter
-        """
         if dataFourier is None:
             dataFourier = self.dataFourier.copy()
 
@@ -1385,20 +1284,20 @@ class FlatMap(object):
             self.plot(dy)
         return dx, dy
 
-    def deflectionFromPhi(self, phiFourier):
-        """gives the two components of the lensing deflection
-        should be called from a phi map
-        d = grad phi
-        """
-        dxFourier = 1j * phiMap.lx * phiFourier
-        dyFourier = 1j * phiMap.ly * phiFourier
-        #
-        dxFourier = np.nan_to_num(dxFourier)
-        dyFourier = np.nan_to_num(dyFourier)
-        #
-        dx = self.inverseFourier(dxFourier)
-        dy = self.inverseFourier(dyFourier)
-        return dx, dy
+    # def deflectionFromPhi(self, phiFourier):
+    #    """gives the two components of the lensing deflection
+    #    should be called from a phi map
+    #    d = grad phi
+    #    """
+    #    dxFourier = 1j * phiMap.lx * phiFourier
+    #    dyFourier = 1j * phiMap.ly * phiFourier
+    #    #
+    #    dxFourier = np.nan_to_num(dxFourier)
+    #    dyFourier = np.nan_to_num(dyFourier)
+    #    #
+    #    dx = self.inverseFourier(dxFourier)
+    #    dy = self.inverseFourier(dyFourier)
+    #    return dx, dy
 
     ###############################################################################
 
@@ -1583,8 +1482,6 @@ class FlatMap(object):
         )
         y0 = fy(y0)
 
-        # interpolate the unlensed map
-        # fInterp = RectBivariateSpline(self.x[:,0], self.y[0,:], unlensed, kx=1, ky=1, s=0)
         fInterp = RectBivariateSpline(
             self.x[:, 0], self.y[0, :], unlensed, kx=3, ky=3, s=0
         )
@@ -1596,54 +1493,6 @@ class FlatMap(object):
                 lensed[iX, iY] = fInterp(x0[iX, iY], y0[iX, iY])
 
         return lensed
-
-    #   # lenses the sky map by displacement and interpolation
-    #   # should be called from the unlensed sky map
-    #   # kappaMap should be a kappa map, or a phi map, or [dx, dy],
-    #   # depending on the input string
-    #   # correctly uses T(n+d(n)) = T0(n)
-    #   # and NOT the incorrect T(n) = T0(n-d(n))
-    #   def doLensing(self, kappaMap, input="kappa", name="test"):
-    #
-    #
-    #      # get the deflection field
-    #      if input=="kappa":
-    #         dxMap, dyMap = self.deflectionFromKappa(kappaMap)
-    #      elif input=="phi":
-    #         dxMap, dyMap = self.deflectionFromPhi(kappaMap)
-    #      elif input=="dxdy":
-    #         dxMap, dyMap = kappaMap
-    #
-    #      # displaced positions
-    #      # CMB lensing convention: T(n+d(n)) = T0(n)
-    #      xNew = self.x + dxMap.data
-    #      yNew = self.y + dyMap.data
-    #      # enforce periodic boundary conditions
-    #      fx = lambda x: x - (self.sizeX+self.dX)*( (x+0.5*self.dX)//(self.sizeX+self.dX) )
-    #      xNew = fx(xNew)
-    #      fy = lambda y: y - (self.sizeY+self.dY)*( (y+0.5*self.dY)//(self.sizeY+self.dY) )
-    #      yNew = fy(yNew)
-    #
-    #
-    #      # get (xOld, yOld) from (xNew, yNew)
-    #      fxOldFromNew = RectBivariateSpline(xNew[:,0], yNew[0,:], self.x, kx=1, ky=1, s=0)
-    #      fyOldFromNew = RectBivariateSpline(xNew[:,0], yNew[0,:], self.y, kx=1, ky=1, s=0)
-    #
-    #
-    #      # interpolate the unlensed map
-    #      fInterp = RectBivariateSpline(self.x[:,0], self.y[0,:], self.data, kx=1, ky=1, s=0)
-    #
-    #      # create lensed the map
-    #      lensedCmbMap = self.copy()
-    #      lensedCmbMap.name = name
-    #      for iX in range(self.nX):
-    #         for iY in range(self.nY):
-    #            xOld = fxOldFromNew(self.x[iX, iY], self.y[iX, iY])
-    #            yOld = fyOldFromNew(self.x[iX, iY], self.y[iX, iY])
-    #            lensedCmbMap.data[iX, iY] = fInterp(xOld, yOld)
-    #
-    #      lensedCmbMap.dataFourier = lensedCmbMap.fourier()
-    #      return lensedCmbMap
 
     ###############################################################################
     ###############################################################################
@@ -2474,12 +2323,6 @@ class FlatMap(object):
     def computeConversionTrispecToNoiseKappa(
         self, fC0, fCtot, lMin=1.0, lMax=1.0e5, test=False
     ):
-        """Computes conversion factor, such that:
-        N_L^kappa = Gaussian + (conversion factor) * (white trispectrum of temperature map)
-        The conversion factor has units of 1/C_l^2 (omitting radians)
-        The integral to compute is very similar to that for the
-        Gaussian N_L^kappa.
-        """
         # print "computing the conversion factor"
         convPhi = self.computeConversionTrispecToNoisePhi(
             fC0, fCtot, lMin=lMin, lMax=lMax, test=test
@@ -2700,12 +2543,6 @@ class FlatMap(object):
         test=False,
         cache=None,
     ):
-        """This is the magic map m_L, such that when binned in L-annuli,
-        it gives the correction to the kappa auto-spectrum,
-        i.e. it subtracts the auto-only terms that cause the N0
-        and the secondary foreground biases.
-        To use: take the auto-spectrum, then subtract m_L to the auto-spectrum of the kappa QE.
-        """
         # non-normalized phi inverse normalization map
         resultFourier = self.computeQuadEstPhiInverseDataNormalizationFFT(
             fC0, fCtot, lMin=lMin, lMax=lMax, dataFourier=dataFourier, test=test
@@ -2810,11 +2647,6 @@ class FlatMap(object):
             # print "checking the power spectrum of phi map"
             self.powerSpectrum(dataFourier=productFourier, plot=True)
 
-        #      # keep only L < lMin,
-        #      # to always be in the regime L << l
-        #      f = lambda l: (l<=lMin)
-        #      productFourier = self.filterFourierIsotropic(f, dataFourier=productFourier, test=test)
-
         if test:
             "Show real space map"
             product = self.inverseFourier(productFourier)
@@ -2862,7 +2694,6 @@ class FlatMap(object):
         integral = np.sum(dataFourier)
         integral /= self.sizeX * self.sizeY
         if test:
-            # check that my integral is properly normalized, by comparing to the (slower) FFT
             integralFFT = self.inverseFourier(dataFourier)
             integralFFT = (
                 integralFFT[0, 0] / 2.0
@@ -2889,7 +2720,6 @@ class FlatMap(object):
             fC0wg = fC0
 
         def doCalculation():
-            # print "doing full calculation: computeQuadEstPhiDilationNormalizationCorrectedFFT"
             def fdLnl2C0dLnl(l):
                 e = 0.01
                 lup = l * (1.0 + e)
@@ -3045,10 +2875,6 @@ class FlatMap(object):
         test=False,
         cache=None,
     ):
-        """Returns the dilation-only normalized quadratic estimator for kappa in Fourier space,
-        and saves it to file if needed.
-        The normalization includes or not the correction for the multiplicative bias.
-        """
         # non-normalized QE for phi
         resultFourier = self.quadEstPhiDilationNonNorm(
             fC0,
@@ -3225,7 +3051,6 @@ class FlatMap(object):
         lnfln = interp1d(
             np.log(L), np.log(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        #      lnfln = interp1d(np.log(self.l.flatten()), np.log(n0Kappa.flatten()), kind='linear', bounds_error=False, fill_value=0.)
         f = lambda l: np.exp(lnfln(np.log(l)))
         return f
 
@@ -3566,7 +3391,6 @@ class FlatMap(object):
         integral = np.sum(0.5 * WFDataFourier)
         integral /= self.sizeX * self.sizeY
         if test:
-            # check that my integral is properly normalized, by comparing to the (slower) FFT
             integralFFT = self.inverseFourier(WFDataFourier)
             integralFFT = (
                 integralFFT[0, 0] / 2.0
@@ -3590,7 +3414,6 @@ class FlatMap(object):
         """
 
         def doCalculation():
-            # print "doing full calculation: computeQuadEstPhiShearNormalizationCorrectedFFT"
             # weight function for shear
             def fdLnC0dLnl(l):
                 e = 0.01
@@ -3777,10 +3600,6 @@ class FlatMap(object):
         test=False,
         cache=None,
     ):
-        """Returns the shear-only normalized quadratic estimator for kappa in Fourier space,
-        and saves it to file if needed.
-        The normalization includes or not the correction for the multiplicative bias.
-        """
         # non-normalized QE for phi
         resultFourier = self.quadEstPhiShearNonNorm(
             fC0,
@@ -3983,7 +3802,6 @@ class FlatMap(object):
         lnfln = interp1d(
             np.log(L), np.log(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        #      lnfln = interp1d(np.log(self.l.flatten()), np.log(n0Kappa.flatten()), kind='linear', bounds_error=False, fill_value=0.)
         f = lambda l: np.exp(lnfln(np.log(l)))
         return f
 
@@ -4575,10 +4393,6 @@ class FlatMap(object):
         test=False,
         cache=None,
     ):
-        """Returns the shear B-mode-only normalized quadratic estimator for kappa in Fourier space,
-        and saves it to file if needed.
-        The normalization includes or not the correction for the multiplicative bias.
-        """
         # non-normalized QE for phi
         resultFourier = self.quadEstPhiShearBNonNorm(
             fC0,
@@ -4793,7 +4607,6 @@ class FlatMap(object):
         lnfln = interp1d(
             np.log(L), np.log(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        #      lnfln = interp1d(np.log(self.l.flatten()), np.log(n0Kappa.flatten()), kind='linear', bounds_error=False, fill_value=0.)
         f = lambda l: np.exp(lnfln(np.log(l)))
         return f
 
@@ -4814,11 +4627,7 @@ class FlatMap(object):
         test=False,
         cache=None,
     ):
-        """Computes the lensing noise power spectrum N_L^kappa
-        for the shear B-mode estimator.
-        !!! Not working: gives weird results, that are not independent of the direction of L. Also, the result goes down as the numerical precision improves.
-        !!! This probably suggests that there is a fundamental reason why shear E and shear B should be uncorrelated.
-        """
+        """Computes the lensing noise power spectrum N_L^kappa"""
         if fCfg is None:
             fCfg = fCtot
 
@@ -5011,6 +4820,5 @@ class FlatMap(object):
         lnfln = interp1d(
             np.log(L), np.log(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        #      lnfln = interp1d(np.log(self.l.flatten()), np.log(n0Kappa.flatten()), kind='linear', bounds_error=False, fill_value=0.)
         f = lambda l: np.exp(lnfln(np.log(l)))
         return f

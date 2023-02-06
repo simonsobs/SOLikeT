@@ -47,7 +47,8 @@ def rho_gnfw1h(x, M, z, theta, provider):
 
 
 def rho_gnfw2h(xx, theta2h, twohalo_term):
-    # Average 2h specific to CMASS, make option for importing file or using two_halo script to calculate
+    # Average 2h specific to CMASS, make option for importing file
+    # or using two_halo script to calculate
     rho_file = np.genfromtxt(twohalo_term)
     x1 = rho_file[:, 0]
     rho2h = rho_file[:, 1]
@@ -120,7 +121,8 @@ def Pth_gnfw1h(x, M, z, theta, provider):
 
 
 def Pth_gnfw2h(xx, theta2h, twohalo_term):
-    # 2h specific to CMASS, make option for importing file or using two_halo script to calculate
+    # 2h specific to CMASS, make option for importing file
+    # or using two_halo script to calculate
     pth_file = np.genfromtxt(twohalo_term)
     x1 = pth_file[:, 0]
     pth2h = pth_file[:, 2]

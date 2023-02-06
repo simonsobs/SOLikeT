@@ -46,7 +46,6 @@ def test_ksz(request):
     ksz_theory *= 3282.8 * 60.0**2
     print("ksz_theory", ksz_theory)
     print("ksz_gnfw", ksz_gnfw)
-
     assert np.allclose(ksz_gnfw, ksz_theory, atol=1.0e-1, rtol=0.1)
 
 
@@ -72,6 +71,5 @@ def test_tsz(request):
     tsz_theory *= 3282.8 * 60.**2
     print("tsz_theory",tsz_theory)
     print("tsz_gnfw",tsz_gnfw)
-    
     assert np.allclose(tsz_gnfw,tsz_theory,atol=1.e-1,rtol=0.01)
 """
