@@ -116,12 +116,14 @@ def project_ksz(
         * 1e3
     )
 
+    # print("rho2d",rho2D)
+
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht / resolution_factor
     thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2 / resolution_factor
 
     profMap = np.interp(r, thta_smooth, rho2D)
     profMap2 = np.interp(r, thta2_smooth, rho2D2)
-    beamMapF = f_beam_fft(beam_txt, baseMap.l)
+    beamMapF = f_beam_fft(beam_txt, baseMap.l)  # check stuff here
     # Fourier transform the profile
     profMapF = baseMap.fourier(profMap)
     profMapF2 = baseMap.fourier(profMap2)

@@ -46,30 +46,41 @@ def test_ksz(request):
     ksz_theory *= 3282.8 * 60.0**2
     print("ksz_theory", ksz_theory)
     print("ksz_gnfw", ksz_gnfw)
-    assert np.allclose(ksz_gnfw, ksz_theory, atol=1.0e-1, rtol=0.1)
+    assert np.allclose(ksz_gnfw, ksz_theory, atol=1.0e-1, rtol=0.01)
 
 
-"""
 def test_tsz(request):
-    info = {"params": {"gnfw_P0":9.10766709141,
-                       "gnfw_bt_tsz":4.76625102519,
-                       "gnfw_A2h_tsz":1.0},
-            "likelihood": {"TSZLikelihood":
-                            {"external": TSZLikelihood,
-                             "cov_tsz_file":os.path.join(request.config.rootdir, cov_tsz_file),
-                             "beam_file":os.path.join(request.config.rootdir, beam_file),
-                             "beam_response":os.path.join(request.config.rootdir, beam_response)
-                             }
-                          }}
+    info = {
+        "params": {
+            "gnfw_P0": 9.10766709141,
+            "gnfw_bt_tsz": 4.76625102519,
+            "gnfw_A2h_tsz": 1.0,
+        },
+        "likelihood": {
+            "TSZLikelihood": {
+                "external": TSZLikelihood,
+                "sz_data_file": os.path.join(request.config.rootdir, sz_data_file),
+                "cov_tsz_file": os.path.join(request.config.rootdir, cov_tsz_file),
+                "twohalo_term": os.path.join(request.config.rootdir, twohalo_term),
+                "beam_file": os.path.join(request.config.rootdir, beam_file),
+                "beam_response": os.path.join(request.config.rootdir, beam_response),
+            }
+        },
+    }
+
+    thta_arc, ksz_gnfw, tsz_gnfw = np.loadtxt(
+        os.path.join(request.config.rootdir, sz_data_file),
+        usecols=(0, 1, 2),
+        unpack=True,
+    )
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
 
-    lhood = model.likelihood['TSZLikelihood']
+    lhood = model.likelihood["TSZLikelihood"]
 
     tsz_theory = lhood._get_theory(**info["params"])
-    tsz_theory *= 3282.8 * 60.**2
-    print("tsz_theory",tsz_theory)
-    print("tsz_gnfw",tsz_gnfw)
-    assert np.allclose(tsz_gnfw,tsz_theory,atol=1.e-1,rtol=0.01)
-"""
+    tsz_theory *= 3282.8 * 60.0**2
+    print("tsz_theory", tsz_theory)
+    print("tsz_gnfw", tsz_gnfw)
+    assert np.allclose(tsz_gnfw, tsz_theory, atol=1.0e-1, rtol=0.01)

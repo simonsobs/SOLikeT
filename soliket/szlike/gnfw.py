@@ -31,7 +31,7 @@ def rho_gnfw1h(x, M, z, theta, provider):
         r200c = r200(m, z, provider)
         rvir = r200c / kpc_cgs / 1e3  # Mpc
         xc = 0.5
-        al = 0.88 * (m / 1e14) ** (-0.03) * (1 + z) ** 0.19
+        al = 0.88  # * (m / 1e14) ** (-0.03) * (1 + z) ** 0.19 # take out mz
         gm = -0.2
         rho0, bt = theta
         rho.append(
@@ -110,7 +110,7 @@ def Pth_gnfw1h(x, M, z, theta, provider):
         P200c = G_CGS * M_cgs * 200.0 * rho_cz(z, provider) * fb / (2.0 * r200c)
         P0, bt = theta
         al = 1.0
-        xc = 0.497 * (m / 1e14) ** (-0.00865) * (1 + z) ** 0.731
+        xc = 0.497  # * (m / 1e14) ** (-0.00865) * (1 + z) ** 0.731
         gm = -0.3
         pth.append(
             P0 * (x / rvir / xc) ** gm * (1 + (x / rvir / xc) ** al) ** (-bt) * P200c
