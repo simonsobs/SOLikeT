@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import time
-
+from scipy.special import factorial
 
 class PoissonData:
     """Poisson-process-generated data.
@@ -70,11 +70,7 @@ class PoissonData:
 
                 elapsed = time.time() - start
                 print("::: rate density calculation took {:.3f} seconds.".format(elapsed))
-
-                # because of weird Qs
-                if rate_densities.min() == 0:
-                    print("rate density is zero, switching it to a small number")
-                    rate_densities[rate_densities == 0] = 0.00001
+                print("::: 2D ln likelihood = ", -n_expected + sum(np.log(rate_densities)))
 
             return -n_expected + sum(np.log(rate_densities))
 

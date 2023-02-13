@@ -148,6 +148,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         # integrate over mass
         dndzz = np.trapz(intgr[None, :,:]*cc, dx=self.dlnm, axis=2)
+        #dndzz = np.trapz(intgr[None, :,:]*cc, x=self.lnmarr, axis=2)
 
         # integrate over fine z bins and sum over in larger z bins
         for i in range(len(zarr)):
@@ -157,7 +158,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
             test = np.abs(zz - nzarr[i+1])
             i2 = np.argmin(test)
 
-            delN2D[i,:] = np.trapz(dndzz[:,i1:i2+1], x=zz[i1:i2+1]).T
+            delN2D[i,:] = np.trapz(dndzz[:, i1:i2+1], x=zz[i1:i2+1]).T
 
         self.log.info("\r Total predicted 2D N = {}".format(delN2D.sum()))
 
@@ -208,12 +209,6 @@ class BinnedClusterLikelihood(CashCLikelihood):
             Npatches = len(skyfracs)
             compl_mode = self.theorypred['compl_mode']
 
-            # if self.selfunc['resolution'] == 'downsample':
-            #     tile_list = np.arange(noise.shape[0])+1
-            # elif self.selfunc['resolution'] == 'full':
-            #     tile_list = self.tile_list
-            # tile = tile_list
-
             Nq = self.Nq
             qbins = self.qbins
             kk = qbin
@@ -223,13 +218,13 @@ class BinnedClusterLikelihood(CashCLikelihood):
             if scatter == 0.:
 
                 arg = []
-                for i in range(len(skyfracs)):
+                for i in range(Npatches):
                     if compl_mode == 'erf_prod':
-                        #arg.append(get_erf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
-                        arg.append(get_stf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
+                        arg.append(get_erf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
+                        #arg.append(get_stf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
                     elif compl_mode == 'erf_diff':
-                        #arg.append(get_erf_diff(y0[i], noise[i], qmin, qmax,  qcut))
-                        arg.append(get_stf_diff(y0[i], noise[i], qmin, qmax, qcut))
+                        arg.append(get_erf_diff(y0[i], noise[i], qmin, qmax,  qcut))
+                        #arg.append(get_stf_diff(y0[i], noise[i], qmin, qmax, qcut))
 
                 comp = np.einsum('ijk,i->jk', np.nan_to_num(arg), skyfracs)
 
@@ -241,13 +236,13 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 fac = 1./np.sqrt(2.*np.pi*scatter**2)
 
                 comp = 0.
-                for i in range(len(skyfracs)):
+                for i in range(Npatches):
                     if compl_mode == 'erf_prod':
-                        #arg = get_erf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq)
-                        arg = get_stf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq)
+                        arg = get_erf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq)
+                        #arg = get_stf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq)
                     elif compl_mode == 'erf_diff':
-                        #arg = get_erf_diff(yy0, noise[i], qmin, qmax, qcut)
-                        arg = get_stf_diff(yy0, noise[i], qmin, qmax, qcut)
+                        arg = get_erf_diff(yy0, noise[i], qmin, qmax, qcut)
+                        #arg = get_stf_diff(yy0, noise[i], qmin, qmax, qcut)
 
                     cc = arg * skyfracs[i]
                     arg0 = (lnyy[:, None,None] - mu[i])/(np.sqrt(2.)*scatter)
@@ -297,6 +292,13 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     def get_requirements(self):
         return get_requirements(self)
+
+    # checking rate_densities
+    def get_dndlnm(self, z, pk_intp, **kwargs):
+        return get_dndlnm(self, z, pk_intp, **kwargs)
+    def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs):
+        return get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs)
+
 
     def _get_n_expected(self, pk_intp, **kwargs):
 
@@ -381,8 +383,6 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             c_z, c_y, c_yerr, tile_index = zip(*sorted(zip(c_z, c_y, c_yerr, tile_index)))
             c_z, c_y, c_yerr, tile_index = np.array(c_z), np.array(c_y), np.array(c_yerr), np.array(tile_index)
 
-            marr = np.exp(self.lnmarr)
-
             Pfunc_ind = self.Pfunc_per(tile_index, marr, c_z, c_y, c_yerr, kwargs)
             dn_dzdm = np.exp(np.squeeze(dn_dzdm_intp(c_z, self.lnmarr)))
             ans = np.trapz(dn_dzdm * Pfunc_ind.T, dx=np.diff(marr[:,None], axis=0), axis=0)
@@ -463,8 +463,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             Ynoise = np.outer(Ynoise, np.ones(np.shape(Ytilde[0,:,:])))
             Ynoise_a = np.reshape(Ynoise, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
 
-            #ans = np.nan_to_num(get_erf(Ytilde, Ynoise_a, qcut_a)).T
-            ans = np.nan_to_num(get_stf(Ytilde, Ynoise_a, qcut_a)).T
+            ans = np.nan_to_num(get_erf(Ytilde, Ynoise_a, qcut_a)).T
+            #ans = np.nan_to_num(get_stf(Ytilde, Ynoise_a, qcut_a)).T
 
         else:
             Y = np.exp(LgY)
@@ -475,8 +475,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             qcut = np.outer(np.ones(np.shape(Y_a)), self.qcut)
             qcut_a = np.reshape(qcut, (Y_a.shape[0], Y_a.shape[1]))
 
-            #Yerf = get_erf(Y_a, Ynoise_a, qcut_a)
-            Yerf = get_stf(Y_a, Ynoise_a, qcut_a)
+            Yerf = get_erf(Y_a, Ynoise_a, qcut_a)
+            #Yerf = get_stf(Y_a, Ynoise_a, qcut_a)
 
             sig_tr = np.outer(np.ones([marr.shape[0], z.shape[0]]), Yerf)
             sig_thresh = np.reshape(sig_tr, (marr.shape[0], z.shape[0], Yerf.shape[0], Yerf.shape[1]))
@@ -659,10 +659,10 @@ def initialize_common(self):
             zero_index = np.where(tile_area0 == '0.000000')[0]
             tile_area = np.delete(tile_info, zero_index, 0)
 
-            tilename = tile_area[:, 0]
+            tile_name = tile_area[:, 0]
             QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-                                   tileNames=tilename, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
-            Nt = len(tilename)
+                                   tileNames=tile_name, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
+            Nt = len(tile_name)
             self.log.info("Number of tiles = {}.".format(Nt))
             self.tname = file_rms['tileName']
 
@@ -673,10 +673,34 @@ def initialize_common(self):
             # reading in all Q functions
             allQ = np.zeros((len(tt500), Nt))
             for i in range(Nt):
-                allQ[:, i] = QFit.getQ(tt500, tileName=tile_area[:, 0][i])
+                allQ[:, i] = QFit.getQ(tt500, tileName=tile_name[i])
             assert len(tt500) == len(allQ[:, 0])
             self.tt500 = tt500
             self.Q = allQ
+
+
+
+            # # fiddling Q fit using injection Q ---------------------------------
+            #
+            # if self.selfunc['Qtest'] == True:
+            #
+            #     injQFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
+            #                             tileNames=tile_name, QSource='injection', selFnDir=self.data_directory+'/selFn')
+            #
+            #     injQ = np.zeros(len(tt500))
+            #     injQ = injQFit.getQ(tt500, tileName=tile_area[:, 0][0])
+            #
+            #     meanQ = np.average(allQ, axis=1)
+            #     fac = injQ / meanQ
+            #     fac_arr = np.repeat(fac[:, np.newaxis], allQ.shape[1], axis=1)
+            #
+            #     self.Q = allQ * fac_arr
+            #
+            # #-------------------------------------------------------------------
+
+
+
+
 
         filename_rms, ext = os.path.splitext(self.datafile_rms)
         filename_tile, ext = os.path.splitext(self.datafile_tile)
@@ -707,7 +731,7 @@ def initialize_common(self):
             binned_rms_edges = binned_stat[1]
 
             bin_ind = np.digitize(self.noise, binned_rms_edges)
-            tiledict = dict(zip(tilename, np.arange(tile_area[:, 0].shape[0])))
+            tiledict = dict(zip(tile_name, np.arange(tile_area[:, 0].shape[0])))
 
             Qdwnsmpld = np.zeros((self.Q.shape[0], self.selfunc['dwnsmpl_bins']))
             tiles_dwnsmpld = {}
@@ -755,10 +779,10 @@ def initialize_common(self):
         zero_index = np.where(tile_area0 == '0.000000')[0]
         tile_area = np.delete(tile_info, zero_index, 0)
 
-        tilename = tile_area[:, 0]
+        tile_name = tile_area[:, 0]
         QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-                                   tileNames=tilename, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
-        Nt = len(tilename)
+                                   tileNames=tile_name, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
+        Nt = len(tile_name)
         self.log.info("Number of tiles = {}.".format(Nt))
 
         hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
@@ -768,7 +792,7 @@ def initialize_common(self):
         # reading in all Q functions
         allQ = np.zeros((len(tt500), Nt))
         for i in range(Nt):
-            allQ[:, i] = QFit.getQ(tt500, tileName=tile_area[:, 0][i])
+            allQ[:, i] = QFit.getQ(tt500, tileName=tile_name[i])
         assert len(tt500) == len(allQ[:, 0])
         self.tt500 = tt500
         self.Q = allQ
@@ -776,7 +800,7 @@ def initialize_common(self):
 
         # when using full Q functions, noise values should be downsampled
         # in a current setting, the number of noise values has to be same as the number of Q funcs
-        # hense the number of tiles - they are averaged by each tile
+        # hence the number of tiles - they are averaged by each tile
 
         self.log.info("Reading in full RMS table.")
         self.log.info("Number of RMS values = {}.".format(len(file_rms['y0RMS'])))
@@ -786,14 +810,14 @@ def initialize_common(self):
 
         noisebyTile = {}
         areabyTile = {}
-        for t in tilename:
+        for t in tile_name:
             tileTab = file_rms[self.tname == t]
-            areaWeights = tileTab['areaDeg2'].data / np.sum(tileTab['areaDeg2'].data)
-            noisebyTile[t] = np.average(tileTab['y0RMS'].data, weights=areaWeights)
-            areabyTile[t] = np.sum(tileTab['areaDeg2'].data)
+            areaWeights = tileTab['areaDeg2'] / tileTab['areaDeg2'].sum()
+            noisebyTile[t] = np.average(tileTab['y0RMS'], weights=areaWeights)
+            areabyTile[t] = tileTab['areaDeg2'].sum()
 
-        self.noise = np.array([noisebyTile[t] for t in tilename])
-        self.skyfracs = np.array([areabyTile[t] for t in tilename]) * np.deg2rad(1.) ** 2
+        self.noise = np.array([noisebyTile[t] for t in tile_name])
+        self.skyfracs = np.array([areabyTile[t] for t in tile_name]) * np.deg2rad(1.)**2
 
         self.log.info("Number of down-sampled RMS = {}.".format(self.skyfracs.size))
         self.log.info("Number of Q funcs = {}.".format(len(self.Q[0])))
@@ -801,18 +825,44 @@ def initialize_common(self):
         assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.Q.shape[1]
 
 
-        # choosing tile
+        # choosing tile ----------------------------------------------------
 
-        tile_index = 198
-        #tile_index = slice(120, 123, None)
-        print('Name of tile : ', tilename[tile_index])
+        if self.selfunc['tiletest'] == True:
 
-        self.Q = self.Q[:, tile_index]
-        self.Q = self.Q[:, None]
-        self.noise = np.array([self.noise[tile_index]])
-        self.skyfracs = np.array([self.skyfracs[tile_index]])
-        # self.noise = self.noise[tile_index]
-        # self.skyfracs = self.skyfracs[tile_index]
+            tile_index = 0
+            # tile_index = slice(120, 123, None)
+            print('Name of tile : ', tile_name[tile_index])
+
+            self.Q = self.Q[:, tile_index]
+            self.Q = self.Q[:, None]
+            self.noise = np.array([self.noise[tile_index]])
+            self.skyfracs = np.array([self.skyfracs[tile_index]])
+            # self.noise = self.noise[tile_index]
+            # self.skyfracs = self.skyfracs[tile_index]
+
+        #-------------------------------------------------------------------
+
+
+
+        # # fiddling Q fit using injection Q ---------------------------------
+        #
+        # if self.selfunc['Qtest'] == True:
+        #
+        #     injQFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
+        #                             tileNames=tile_name, QSource='injection', selFnDir=self.data_directory+'/selFn')
+        #
+        #     injQ = np.zeros(len(tt500))
+        #     injQ = injQFit.getQ(tt500, tileName=tile_area[:, 0][0])
+        #
+        #     meanQ = np.average(allQ, axis=1)
+        #     fac = injQ / meanQ
+        #     fac_arr = np.repeat(fac[:, np.newaxis], allQ.shape[1], axis=1)
+        #
+        #     self.Q = allQ * fac_arr
+        #
+        # #-------------------------------------------------------------------
+
+
 
     if self.selfunc['method'] == 'injection':
 
