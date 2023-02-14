@@ -41,11 +41,11 @@ class FlatMap(object):
 
         lx = np.zeros(nX)
         lx[: int(nX / 2 + 1)] = 2.0 * np.pi / sizeX * np.arange(nX // 2 + 1)
-        lx[int(nX / 2 + 1) :] = 2.0 * np.pi / sizeX * np.arange(-nX // 2 + 1, 0, 1)
+        lx[int(nX / 2 + 1):] = 2.0 * np.pi / sizeX * np.arange(-nX // 2 + 1, 0, 1)
         ly = 2.0 * np.pi / sizeY * np.arange(nY // 2 + 1)
         self.lx, self.ly = np.meshgrid(lx, ly, indexing="ij")
 
-        self.l = np.sqrt(self.lx**2 + self.ly**2)
+        self.ell = np.sqrt(self.lx**2 + self.ly**2)
         self.dataFourier = np.zeros((nX, nY // 2 + 1))
 
     def copy(self):
@@ -236,7 +236,7 @@ class FlatMap(object):
         ly = 2.0 * np.pi / self.sizeY * (np.arange(self.nY // 2 + 1 + 1) - 0.5)
         lx, ly = np.meshgrid(lxLeft, ly, indexing="ij")
         cp1 = ax.pcolormesh(
-            lx, ly, dataFourier[int(self.nX / 2 + 1) :, :], linewidth=0, rasterized=True
+            lx, ly, dataFourier[int(self.nX / 2 + 1):, :], linewidth=0, rasterized=True
         )
         #
         # right part of plot
@@ -482,11 +482,12 @@ class FlatMap(object):
         """
         if data is None:
             data = self.data.copy()
-        # use numpy's fft
         result = np.fft.rfftn(data)
         #      # use pyfftw's fft. Make sure the real-space data has type np.float128
         #      result = pyfftw.interfaces.numpy_fft.rfftn((np.float128)(data))
-        result *= self.dX * self.dY
+        result *= self.dX * self.dY # NOTE for precision: this leads to ~1e-3 %
+        #                      # differences in outer radial bins of projection
+        # print(self.dX,self.dY)
         return result
 
     def inverseFourier(self, dataFourier=None):
@@ -520,7 +521,7 @@ class FlatMap(object):
     ):
 
         # define ell bins
-        ell = self.l.flatten()
+        ell = self.ell.flatten()
         if lRange is None:
             lEdges = np.logspace(np.log10(1.0), np.log10(np.max(ell)), nBins, 10.0)
         else:
@@ -632,7 +633,7 @@ class FlatMap(object):
         """Bin a theory power spectrum to allow to compare it
         with the measured power spectrum of a map."""
         # define ell bins
-        ell = self.l.flatten()
+        ell = self.ell.flatten()
         if lRange is None:
             lEdges = np.logspace(np.log10(1.0), np.log10(np.max(ell)), nBins, 10.0)
         else:
@@ -648,7 +649,7 @@ class FlatMap(object):
 
         # generate map with theory power spectrum
         clmapFourier = self.filterFourierIsotropic(
-            fCl, dataFourier=np.ones_like(self.l), test=False
+            fCl, dataFourier=np.ones_like(self.ell), test=False
         )
         clmapFourier = np.real(clmapFourier.flatten())
         Cl, lEdges, binIndices = stats.binned_statistic(
@@ -755,13 +756,13 @@ class FlatMap(object):
         dataFourier = self.fourier(data)
         if test:
             # check that the power spectrum is Cl = 1
-            self.powerSpectrum(dataFourier, theory=[lambda l: 1.0], plot=True)
+            self.powerSpectrum(dataFourier, theory=[lambda ell: 1.0], plot=True)
 
         # multiply by desired power spectrum
-        f = lambda l: np.sqrt(fCl(l))
-        clFourier = np.array(map(f, self.l.flatten()))
+        f = lambda ell: np.sqrt(fCl(ell))
+        clFourier = np.array(map(f, self.ell.flatten()))
         clFourier = np.nan_to_num(clFourier)
-        clFourier = clFourier.reshape(np.shape(self.l))
+        clFourier = clFourier.reshape(np.shape(self.ell))
         dataFourier *= clFourier
         if test:
             # check 0 mode
@@ -809,12 +810,12 @@ class FlatMap(object):
         data1Fourier = self.genGRF(fC11, test=False)
 
         # map 2: start with part correlated with map 1
-        f = lambda l: fC12(l) / fC11(l)
+        f = lambda ell: fC12(ell) / fC11(ell)
         data2Fourier = self.filterFourierIsotropic(
             f, dataFourier=data1Fourier, test=False
         )
         # map 2: add uncorrelated part
-        f = lambda l: fC22(l) - (fC12(l) * fC12(l)) / (fC11(l))
+        f = lambda ell: fC22(ell) - (fC12(ell) * fC12(ell)) / (fC11(ell))
         data2Fourier += self.genGRF(f, test=False)
         # avoid nan and inf
         data1Fourier[np.where(np.isfinite(data1Fourier) == False)] = 0.0
@@ -836,7 +837,7 @@ class FlatMap(object):
 
     def genMockIsotropicNoSampleVar(self, fCl, test=False, path=None):
         # generate map with correct modulus
-        f = lambda l: np.sqrt(fCl(l))
+        f = lambda ell: np.sqrt(fCl(ell))
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=np.ones_like(self.dataFourier), test=test
         )
@@ -887,12 +888,12 @@ class FlatMap(object):
         """the filter fW is assumed to be function of |ell|"""
         if dataFourier is None:
             dataFourier = self.dataFourier.copy()
-        W = np.array(map(fW, self.l.flatten()))
-        W = W.reshape(self.l.shape)
+        W = np.array(map(fW, self.ell.flatten()))
+        W = W.reshape(self.ell.shape)
         if test:
             self.plotFourier(dataFourier=W)
             #
-            plt.plot(self.l.flatten(), W.flatten(), "b.")
+            plt.plot(self.ell.flatten(), W.flatten(), "b.")
             plt.show()
 
         result = dataFourier * W
@@ -909,7 +910,7 @@ class FlatMap(object):
         if test:
             self.plotFourier(dataFourier=W)
             #
-            plt.plot(self.l.flatten(), W.flatten(), "b.")
+            plt.plot(self.ell.flatten(), W.flatten(), "b.")
             plt.show()
 
         result = dataFourier * W
@@ -923,11 +924,11 @@ class FlatMap(object):
         if dataFourier is None:
             dataFourier = self.dataFourier.copy()
         if fprof is None:
-            fprof = lambda l: 1.0
+            fprof = lambda ell: 1.0
 
         # filter function
-        def fW(l):
-            result = fprof(l) / fCl(l)
+        def fW(ell):
+            result = fprof(ell) / fCl(ell)
             if not np.isfinite(result):
                 result = 0.0
             return result
@@ -938,15 +939,15 @@ class FlatMap(object):
         )
 
         # normalization function
-        def fNorm(l):
-            result = l / (2.0 * np.pi) * fprof(l) ** 2 / fCl(l)
+        def fNorm(ell):
+            result = ell / (2.0 * np.pi) * fprof(ell) ** 2 / fCl(ell)
             if not np.isfinite(result):
                 result = 0.0
             return result
 
         # compute normalization
         normalization = integrate.quad(
-            fNorm, self.l.min(), self.l.max(), epsabs=0.0, epsrel=1.0e-3
+            fNorm, self.ell.min(), self.ell.max(), epsabs=0.0, epsrel=1.0e-3
         )[0]
 
         # normalize the filtered map
@@ -985,7 +986,7 @@ class FlatMap(object):
             # make a Gaussian such that the fwhm is twice the maskPatchRadius
             fwhm = 2.0 * maskPatchRadius  # 5. * np.pi/(180.*60.)
             s = fwhm / np.sqrt(8.0 * np.log(2.0))
-            f = lambda l: np.exp(-0.5 * l**2 * s**2)
+            f = lambda ell: np.exp(-0.5 * ell**2 * s**2)
             gaussFourier = self.filterFourierIsotropic(
                 f, dataFourier=np.ones_like(self.dataFourier)
             )
@@ -1007,42 +1008,6 @@ class FlatMap(object):
         return mask
 
     ###############################################################################
-    # pixel window function, Gaussian beam
-
-    def pixelWindow(self, lx, ly, dX=None, dY=None):
-        if dX is None:
-            dX = self.dX
-        if dY is None:
-            dY = self.dY
-        result = sinc(0.5 * lx * dX)
-        result *= sinc(0.5 * ly * dY)
-        return result
-
-    def inversePixelWindow(self, lx, ly):
-        result = 1.0 / self.pixelWindow(lx, ly)
-        if not np.isfinite(result):
-            result = 0.0
-        return result
-
-    def gaussianBeam(self, l, fwhm):
-        """fwhm is in radians"""
-        sigma_beam = fwhm / np.sqrt(8.0 * np.log(2.0))
-        return np.exp(-0.5 * l**2 * sigma_beam**2)
-
-    def inverseBeam(self, l, fwhm):
-        result = self.gaussianBeam(l, fwhm)
-        result = 1.0 / result
-        if not np.isfinite(result):
-            result = 0.0
-        return result
-
-    def inverseBeamPixelWindow(self, lx, ly, fwhm):
-        l = np.sqrt(lx**2 + ly**2)
-        result = self.pixelWindow(lx, ly) * self.gaussianBeam(l, fwhm)
-        result = 1.0 / result
-        if not np.isfinite(result):
-            result = 0.0
-        return result
 
     ###############################################################################
 
@@ -1061,13 +1026,13 @@ class FlatMap(object):
 
     ###############################################################################
 
-    def filterCollapsed4PtFunc(self, l, lMean):
+    def filterCollapsed4PtFunc(self, ell, lMean):
         #      lsigma = 50.
         #      lsigma = 100.
         #      lsigma = 200.
         #      lsigma = 300.
         lsigma = 500.0
-        result = np.exp(-((l - lMean) ** 2) / (4.0 * lsigma**2))
+        result = np.exp(-((ell - lMean) ** 2) / (4.0 * lsigma**2))
         result *= (2.0 * np.pi / lsigma**2) ** 0.25 / np.sqrt(lMean)
         #      result *= (l>=lMean - 4.*lsigma) * (l<=lMean + 4.*lsigma)
         return result
@@ -1094,7 +1059,7 @@ class FlatMap(object):
         #      fW = lambda l: np.sqrt(fW2(l))
 
         # filter in Fourier space, to keep only l,l' \simeq lmean
-        f = lambda l: self.filterCollapsed4PtFunc(l, lMean)
+        f = lambda ell: self.filterCollapsed4PtFunc(ell, lMean)
         dataFourier = self.filterFourierIsotropic(f, dataFourier)
         # update real space map
         data = self.inverseFourier(dataFourier=dataFourier)
@@ -1222,7 +1187,7 @@ class FlatMap(object):
         # read everything
         # print "loading trispectrum from "+path
         L = np.genfromtxt(path + "_Llow.txt")
-        l = np.genfromtxt(path + "_lhigh.txt")
+        ell = np.genfromtxt(path + "_lhigh.txt")
         C2Nmodes = np.genfromtxt(path + "_C2Nmodes.txt")
         sC2Nmodes = np.genfromtxt(path + "_sC2Nmodes.txt")
         C2 = np.genfromtxt(path + "_C2.txt")
@@ -1230,7 +1195,7 @@ class FlatMap(object):
         Trispec = np.genfromtxt(path + "_Trispec.txt")
         sTrispec = np.genfromtxt(path + "_sTrispec.txt")
 
-        return L, l, C2Nmodes, sC2Nmodes, C2, sC2, Trispec, sTrispec
+        return L, ell, C2Nmodes, sC2Nmodes, C2, sC2, Trispec, sTrispec
 
     ###############################################################################
 
@@ -1249,11 +1214,11 @@ class FlatMap(object):
     def computeLaplacian(self, dataFourier=None):
         if dataFourier is None:
             dataFourier = self.dataFourier.copy()
-        laplacianFourier = -self.l**2 * dataFourier
+        laplacianFourier = -self.ell**2 * dataFourier
         return laplacianFourier
 
     def phiFromKappa(self, kappaFourier):
-        phiFourier = -2.0 * kappaFourier / self.l**2
+        phiFourier = -2.0 * kappaFourier / self.ell**2
         phiFourier[np.where(np.isfinite(phiFourier) == False)] = 0.0
         return phiFourier
 
@@ -1261,7 +1226,7 @@ class FlatMap(object):
         """get kappa from phi, with:
         Delta phi = 2 kappa
         """
-        kappaFourier = -0.5 * self.l**2 * phiFourier
+        kappaFourier = -0.5 * self.ell**2 * phiFourier
         return kappaFourier
 
     def deflectionFromKappa(self, kappaFourier, test=False):
@@ -1270,8 +1235,8 @@ class FlatMap(object):
         Delta phi = 2 kappa
         d = grad phi
         """
-        dxFourier = -2.0j * self.lx / self.l**2 * kappaFourier
-        dyFourier = -2.0j * self.ly / self.l**2 * kappaFourier
+        dxFourier = -2.0j * self.lx / self.ell**2 * kappaFourier
+        dyFourier = -2.0j * self.ly / self.ell**2 * kappaFourier
         #
         dxFourier[np.where(np.isfinite(dxFourier) == False)] = 0.0
         dyFourier[np.where(np.isfinite(dyFourier) == False)] = 0.0
@@ -1301,202 +1266,11 @@ class FlatMap(object):
 
     ###############################################################################
 
-    def doLensingTaylor(
-        self, unlensed=None, kappaFourier=None, phiFourier=None, dxdy=None, order=3
-    ):
-        """lenses the sky map by Taylor expansion
-        should be called from the unlensed sky map
-        input should be a kappa map, or a phi map, or [dx, dy],
-        Convention: T(n) = T0(n-d(n)),
-        which is only wrong if d is large compared to its coherence length,
-        ie if d is large compared to the coherence length of the lens field
-        ie if post-Born approximation is wrong
-        the truth would be T(n+d(n)) = T0(n) instead of T(n) = T0(n-d(n)),
-        but in practice, d~arcmin and coherence of lens field~degree, so ok!
-        not OK for strong lensing, or with caustics...
-        """
-        if unlensed is None:
-            unlensed = self.data
-        unlensedFourier = self.fourier(unlensed)
-
-        # get the deflection field
-        if kappaFourier is not None:
-            dx, dy = self.deflectionFromKappa(kappaFourier)
-        elif phiFourier is not None:
-            dx, dy = self.deflectionFromPhi(phiFourier)
-        elif dxdyFourier is not None:
-            dx, dy = dxdy
-        else:
-            # print "error: no lensing map specified"
-            return
-
-        # CMB lensing convention: T(n) = T0(n-d),
-        # so we get -d first
-        dx = -dx
-        dy = -dy
-
-        # unlensed map
-        lensed = unlensed.copy()
-        # first order
-        if order >= 1:
-            lensed += self.inverseFourier(unlensedFourier * 1j * self.lx) * dx
-            lensed += self.inverseFourier(unlensedFourier * 1j * self.ly) * dy
-        # second order
-        if order >= 2:
-            lensed += (
-                0.5
-                * self.inverseFourier(unlensedFourier * (1j * self.lx) ** 2)
-                * dx**2
-            )
-            lensed += (
-                0.5
-                * self.inverseFourier(unlensedFourier * (1j * self.ly) ** 2)
-                * dy**2
-            )
-            lensed += (
-                self.inverseFourier(unlensedFourier * (1j * self.lx) * (1j * self.ly))
-                * dx
-                * dy
-            )
-        # third order
-        if order >= 3:
-            lensed += (
-                1.0
-                / 6.0
-                * self.inverseFourier(unlensedFourier * (1j * self.lx) ** 3)
-                * dx**3
-            )
-            lensed += (
-                1.0
-                / 6.0
-                * 3.0
-                * self.inverseFourier(
-                    unlensedFourier * (1j * self.lx) ** 2 * (1j * self.ly)
-                )
-                * dx**2
-                * dy
-            )
-            lensed += (
-                1.0
-                / 6.0
-                * 3.0
-                * self.inverseFourier(
-                    unlensedFourier * (1j * self.lx) * (1j * self.ly) ** 2
-                )
-                * dx
-                * dy**2
-            )
-            lensed += (
-                1.0
-                / 6.0
-                * self.inverseFourier(unlensedFourier * (1j * self.ly) ** 3)
-                * dy**3
-            )
-        # fourth order
-        if order >= 4:
-            lensed += (
-                1.0
-                / 24.0
-                * self.inverseFourier(unlensedFourier * (1j * self.lx) ** 4)
-                * dx**4
-            )
-            lensed += (
-                1.0
-                / 24.0
-                * 4.0
-                * self.inverseFourier(
-                    unlensedFourier * (1j * self.lx) ** 3 * (1j * self.ly)
-                )
-                * dx**3
-                * dy
-            )
-            lensed += (
-                1.0
-                / 24.0
-                * 6.0
-                * self.inverseFourier(
-                    unlensedFourier * (1j * self.lx) ** 2 * (1j * self.ly) ** 2
-                )
-                * dx**2
-                * dy**2
-            )
-            lensed += (
-                1.0
-                / 24.0
-                * 4.0
-                * self.inverseFourier(
-                    unlensedFourier * (1j * self.lx) * (1j * self.ly) ** 3
-                )
-                * dx
-                * dy**3
-            )
-            lensed += (
-                1.0
-                / 24.0
-                * self.inverseFourier(unlensedFourier * (1j * self.ly) ** 4)
-                * dy**4
-            )
-        return lensed
-
-    def doLensing(
-        self, unlensed=None, kappaFourier=None, phiFourier=None, dxdyFourier=None
-    ):
-        """lenses the sky map by displacement and interpolation
-        should be called from the unlensed sky map
-        kappaMap should be a kappa map, or a phi map, or [dx, dy],
-        depending on the input string
-        Convention: T(n) = T0(n-d(n)),
-        which is only wrong if d is large compared to its coherence length,
-        ie if d is large compared to the coherence length of the lens field
-        ie if post-Born approximation is wrong
-        the truth would be T(n+d(n)) = T0(n) instead of T(n) = T0(n-d(n)),
-        but in practice, d~arcmin and coherence of lens field~degree, so ok!
-        not OK for strong lensing, or with caustics...
-        """
-        if unlensed is None:
-            unlensed = self.data
-
-        # get the deflection field
-        if kappaFourier is not None:
-            dx, dy = self.deflectionFromKappa(kappaFourier)
-        elif phiFourier is not None:
-            dx, dy = self.deflectionFromPhi(phiFourier)
-        elif dxdyFourier is not None:
-            dx, dy = dxdy
-        else:
-            # print "error: no lensing map specified"
-            return
-
-        # displaced positions
-        # CMB lensing convention: T(n) = T0(n-d),
-        # ie we get the lensed map T at n by evaluating the unlensed map T0 at n0 = n-d
-        x0 = self.x - dx
-        y0 = self.y - dy
-        # enforce periodic boundary conditions
-        fx = lambda x: x - (self.sizeX + self.dX) * (
-            (x + 0.5 * self.dX) // (self.sizeX + self.dX)
-        )
-        x0 = fx(x0)
-        fy = lambda y: y - (self.sizeY + self.dY) * (
-            (y + 0.5 * self.dY) // (self.sizeY + self.dY)
-        )
-        y0 = fy(y0)
-
-        fInterp = RectBivariateSpline(
-            self.x[:, 0], self.y[0, :], unlensed, kx=3, ky=3, s=0
-        )
-
-        # create lensed the map
-        lensed = 0.0 * unlensed
-        for iX in range(self.nX):
-            for iY in range(self.nY):
-                lensed[iX, iY] = fInterp(x0[iX, iY], y0[iX, iY])
-
-        return lensed
 
     ###############################################################################
     ###############################################################################
     # Non-normalized quadratic estimator
+
 
     def quadEstPhiNonNorm(
         self,
@@ -1518,11 +1292,11 @@ class FlatMap(object):
             dataFourier2 = dataFourier.copy()
 
         # inverse-var weighted map
-        def f(l):
+        def f(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = 1.0 / fCtot(l)
+            result = 1.0 / fCtot(ell)
             if not np.isfinite(result):
                 result = 0.0
             return result
@@ -1538,11 +1312,11 @@ class FlatMap(object):
             self.powerSpectrum(theory=f, dataFourier=iVarDataFourier, plot=True)
 
         # Wiener-filter the map
-        def f(l):
+        def f(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l)
+            result = fC0(ell) / fCtot(ell)
             if not np.isfinite(result):
                 result = 0.0
             return result
@@ -1555,7 +1329,7 @@ class FlatMap(object):
             WFData = self.inverseFourier(WFDataFourier)
             self.plot(data=WFData)
             # print "checking the power spectrum of this map"
-            theory = lambda l: f(l) * fC0(l)
+            theory = lambda ell: f(ell) * fC0(ell)
             self.powerSpectrum(theory=theory, dataFourier=WFDataFourier, plot=True)
 
         # get Wiener-filtered gradient map
@@ -1567,14 +1341,14 @@ class FlatMap(object):
             self.plot(data=WFDataX)
             # print "checking power spectrum of this map"
             theory = (
-                lambda l: 0.5 * l**2 * f(l) * fC0(l)
+                lambda ell: 0.5 * ell**2 * f(ell) * fC0(ell)
             )  # 0.5 is from average of cos^2
             self.powerSpectrum(theory=theory, dataFourier=WFDataXFourier, plot=True)
             # print "showing y gradient of WF map"
             self.plot(data=WFDataY)
             # print "checking power spectrum of this map"
             theory = (
-                lambda l: 0.5 * l**2 * f(l) * fC0(l)
+                lambda ell: 0.5 * ell**2 * f(ell) * fC0(ell)
             )  # 0.5 is from average of sin^2
             self.powerSpectrum(theory=theory, dataFourier=WFDataYFourier, plot=True)
 
@@ -1596,7 +1370,7 @@ class FlatMap(object):
             self.powerSpectrum(dataFourier=divergenceDataFourier, plot=True)
 
         # cut off the high ells from phi map
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         divergenceDataFourier = self.filterFourierIsotropic(
             f, dataFourier=divergenceDataFourier, test=test
         )
@@ -1610,13 +1384,13 @@ class FlatMap(object):
         """the normalization is N_l^phiphi,
         obtained by evaluating the analytical calculation for the reconstruction noise
         """
-        W = np.array(map(fN_phi_TT, self.l.flatten()))
+        W = np.array(map(fN_phi_TT, self.ell.flatten()))
         W = np.nan_to_num(W)
-        W = W.reshape(self.l.shape)
+        W = W.reshape(self.ell.shape)
         if test:
             self.plotFourier(dataFourier=W)
             #
-            plt.plot(self.l.flatten(), W.flatten(), "b.")
+            plt.plot(self.ell.flatten(), W.flatten(), "b.")
             plt.show()
         return W
 
@@ -1671,9 +1445,9 @@ class FlatMap(object):
                 plt.show()
 
             # make it the normalization map
-            W = np.array(map(f, self.l.flatten()))
+            W = np.array(map(f, self.ell.flatten()))
             W = np.nan_to_num(1.0 / W)
-            W = W.reshape(self.l.shape)
+            W = W.reshape(self.ell.shape)
             result += W
         result /= nRand
 
@@ -1696,29 +1470,29 @@ class FlatMap(object):
         def doCalculation():
             # print "Doing full calculation: computeQuadEstPhiNormalizationFFT"
             # inverse-var weighted map
-            def f(l):
-                if (l < lMin) or (l > lMax):
+            def f(ell):
+                if (ell < lMin) or (ell > lMax):
                     return 0.0
-                result = 1.0 / fCtot(l)
+                result = 1.0 / fCtot(ell)
                 if not np.isfinite(result):
                     result = 0.0
                 return result
 
-            iVarFourier = np.array(map(f, self.l.flatten()))
-            iVarFourier = iVarFourier.reshape(self.l.shape)
+            iVarFourier = np.array(map(f, self.ell.flatten()))
+            iVarFourier = iVarFourier.reshape(self.ell.shape)
             iVar = self.inverseFourier(dataFourier=iVarFourier)
 
             # C map
-            def f(l):
-                if (l < lMin) or (l > lMax):
+            def f(ell):
+                if (ell < lMin) or (ell > lMax):
                     return 0.0
-                result = fC0(l) ** 2 / fCtot(l)
+                result = fC0(ell) ** 2 / fCtot(ell)
                 if not np.isfinite(result):
                     result = 0.0
                 return result
 
-            CFourier = np.array(map(f, self.l.flatten()))
-            CFourier = CFourier.reshape(self.l.shape)
+            CFourier = np.array(map(f, self.ell.flatten()))
+            CFourier = CFourier.reshape(self.ell.shape)
 
             # term 1x
             term1x = self.inverseFourier(dataFourier=self.lx**2 * CFourier)
@@ -1747,10 +1521,10 @@ class FlatMap(object):
                 self.plotFourier(term1xFourier + term1yFourier + term1xyFourier)
 
             # WF map
-            def f(l):
-                if (l < lMin) or (l > lMax):
+            def f(ell):
+                if (ell < lMin) or (ell > lMax):
                     return 0.0
-                result = fC0(l) / fCtot(l)
+                result = fC0(ell) / fCtot(ell)
                 # artificial factor of i such that f(-l) = f(l)*,
                 # such that f(x) is real
                 result *= 1.0j
@@ -1758,8 +1532,8 @@ class FlatMap(object):
                     result = 0.0
                 return result
 
-            WFFourier = np.array(map(f, self.l.flatten()))
-            WFFourier = WFFourier.reshape(self.l.shape)
+            WFFourier = np.array(map(f, self.ell.flatten()))
+            WFFourier = WFFourier.reshape(self.ell.shape)
 
             # term 2
             term2_x = self.inverseFourier(dataFourier=self.lx * WFFourier)
@@ -1797,7 +1571,7 @@ class FlatMap(object):
             resultFourier += term2xFourier + term2yFourier + term2xyFourier
 
             # cut off the high ells from phi normalization map
-            f = lambda l: (l <= 2.0 * lMax)
+            f = lambda ell: (ell <= 2.0 * lMax)
             resultFourier = self.filterFourierIsotropic(
                 f, dataFourier=resultFourier, test=False
             )
@@ -1807,7 +1581,7 @@ class FlatMap(object):
             resultFourier[np.where(np.isfinite(resultFourier) == False)] = 0.0
 
             if test:
-                plt.loglog(self.l.flatten(), resultFourier.flatten(), "b.")
+                plt.loglog(self.ell.flatten(), resultFourier.flatten(), "b.")
                 plt.show()
 
             return resultFourier
@@ -1860,20 +1634,20 @@ class FlatMap(object):
         n0Phi = np.abs(n0Phi)
 
         # convert from phi to kappa
-        n0Kappa = 0.25 * self.l**4 * n0Phi
+        n0Kappa = 0.25 * self.ell**4 * n0Phi
 
         # fix the issue of the wrong ell=0 value
         # replace it by the value lx=0, ly=fundamental
         n0Kappa[0, 0] = n0Kappa[0, 1]
 
         # interpolate
-        where = (self.l.flatten() > 0.0) * (self.l.flatten() < 2.0 * lMax)
-        L = self.l.flatten()[where]
+        where = (self.ell.flatten() > 0.0) * (self.ell.flatten() < 2.0 * lMax)
+        L = self.ell.flatten()[where]
         N = n0Kappa.flatten()[where]
         lnfln = interp1d(
             np.log(L), np.log(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        f = lambda l: np.exp(lnfln(np.log(l)))
+        f = lambda ell: np.exp(lnfln(np.log(ell)))
         return f
 
     def computeQuadEstKappaNorm(
@@ -1924,31 +1698,31 @@ class FlatMap(object):
         N^{0 fg phiphi}_L = N^{0 phiphi}_L^2 * integral.
         """
         # inverse-var weighted map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = 1.0 / fCtot(l)
-            result *= fCfg(l) / fCtot(l)
+            result = 1.0 / fCtot(ell)
+            result *= fCfg(ell) / fCtot(ell)
             if not np.isfinite(result):
                 result = 0.0
             return result
 
-        iVarFourier = np.array(map(f, self.l.flatten()))
-        iVarFourier = iVarFourier.reshape(self.l.shape)
+        iVarFourier = np.array(map(f, self.ell.flatten()))
+        iVarFourier = iVarFourier.reshape(self.ell.shape)
         iVar = self.inverseFourier(dataFourier=iVarFourier)
 
         # C map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) ** 2 / fCtot(l)
-            result *= fCfg(l) / fCtot(l)
+            result = fC0(ell) ** 2 / fCtot(ell)
+            result *= fCfg(ell) / fCtot(ell)
             if not np.isfinite(result):
                 result = 0.0
             return result
 
-        CFourier = np.array(map(f, self.l.flatten()))
-        CFourier = CFourier.reshape(self.l.shape)
+        CFourier = np.array(map(f, self.ell.flatten()))
+        CFourier = CFourier.reshape(self.ell.shape)
 
         # term 1x
         term1x = self.inverseFourier(dataFourier=self.lx**2 * CFourier)
@@ -1975,11 +1749,11 @@ class FlatMap(object):
             self.plotFourier(term1xFourier + term1yFourier + term1xyFourier)
 
         # WF map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l)
-            result *= fCfg(l) / fCtot(l)
+            result = fC0(ell) / fCtot(ell)
+            result *= fCfg(ell) / fCtot(ell)
             # artificial factor of i such that f(-l) = f(l)*,
             # such that f(x) is real
             result *= 1.0j
@@ -1987,8 +1761,8 @@ class FlatMap(object):
                 result = 0.0
             return result
 
-        WFFourier = np.array(map(f, self.l.flatten()))
-        WFFourier = WFFourier.reshape(self.l.shape)
+        WFFourier = np.array(map(f, self.ell.flatten()))
+        WFFourier = WFFourier.reshape(self.ell.shape)
 
         # term 2
         term2_x = self.inverseFourier(dataFourier=self.lx * WFFourier)
@@ -2026,7 +1800,7 @@ class FlatMap(object):
         result += term2xFourier + term2yFourier + term2xyFourier
 
         # cut off the high ells from phi normalization map
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         result = self.filterFourierIsotropic(f, dataFourier=result, test=False)
 
         # normalize by the standard N0 squared
@@ -2041,7 +1815,7 @@ class FlatMap(object):
         result[np.where(np.isfinite(result) == False)] = 0.0
 
         if test:
-            plt.loglog(self.l.flatten(), result.flatten(), "b.")
+            plt.loglog(self.ell.flatten(), result.flatten(), "b.")
             plt.show()
 
         return result
@@ -2059,29 +1833,29 @@ class FlatMap(object):
         <QE> = kappa_CMB + (multiplicative bias) * kappa_foreground + noise.
         """
         # inverse-var weighted map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = 1.0 / fCtot(l)
+            result = 1.0 / fCtot(ell)
             if not np.isfinite(result):
                 result = 0.0
             return result
 
-        iVarFourier = np.array(map(f, self.l.flatten()))
-        iVarFourier = iVarFourier.reshape(self.l.shape)
+        iVarFourier = np.array(map(f, self.ell.flatten()))
+        iVarFourier = iVarFourier.reshape(self.ell.shape)
         iVar = self.inverseFourier(dataFourier=iVarFourier)
 
         # C map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) * fCfgBias(l) / fCtot(l)
+            result = fC0(ell) * fCfgBias(ell) / fCtot(ell)
             if not np.isfinite(result):
                 result = 0.0
             return result
 
-        CFourier = np.array(map(f, self.l.flatten()))
-        CFourier = CFourier.reshape(self.l.shape)
+        CFourier = np.array(map(f, self.ell.flatten()))
+        CFourier = CFourier.reshape(self.ell.shape)
 
         # term 1x
         term1x = self.inverseFourier(dataFourier=self.lx**2 * CFourier)
@@ -2108,10 +1882,10 @@ class FlatMap(object):
             self.plotFourier(term1xFourier + term1yFourier + term1xyFourier)
 
         # WF map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l)
+            result = fC0(ell) / fCtot(ell)
             # artificial factor of i such that f(-l) = f(l)*,
             # such that f(x) is real
             result *= 1.0j
@@ -2119,17 +1893,17 @@ class FlatMap(object):
                 result = 0.0
             return result
 
-        WFFourier = np.array(map(f, self.l.flatten()))
-        WFFourier = WFFourier.reshape(self.l.shape)
+        WFFourier = np.array(map(f, self.ell.flatten()))
+        WFFourier = WFFourier.reshape(self.ell.shape)
         # term 2
         term2_x = self.inverseFourier(dataFourier=self.lx * WFFourier)
         term2_y = self.inverseFourier(dataFourier=self.ly * WFFourier)
 
         # WF map, for foreground
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fCfgBias(l) / fCtot(l)
+            result = fCfgBias(ell) / fCtot(ell)
             # artificial factor of i such that f(-l) = f(l)*,
             # such that f(x) is real
             result *= 1.0j
@@ -2137,8 +1911,8 @@ class FlatMap(object):
                 result = 0.0
             return result
 
-        fgWFFourier = np.array(map(f, self.l.flatten()))
-        fgWFFourier = fgWFFourier.reshape(self.l.shape)
+        fgWFFourier = np.array(map(f, self.ell.flatten()))
+        fgWFFourier = fgWFFourier.reshape(self.ell.shape)
         # term 2
         term2_x_fg = self.inverseFourier(dataFourier=self.lx * fgWFFourier)
         term2_y_fg = self.inverseFourier(dataFourier=self.ly * fgWFFourier)
@@ -2176,7 +1950,7 @@ class FlatMap(object):
         result += term2xFourier + term2yFourier + term2xyFourier
 
         # cut off the high ells from phi normalization map
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         result = self.filterFourierIsotropic(f, dataFourier=result, test=False)
 
         # normalize by the standard N0
@@ -2186,9 +1960,9 @@ class FlatMap(object):
         result[np.where(np.isfinite(result) == False)] = 0.0
 
         if test:
-            plt.loglog(self.l.flatten(), np.abs(result.flatten()), "k.")
-            plt.loglog(self.l.flatten(), np.abs(np.real(result.flatten())), "b.")
-            plt.loglog(self.l.flatten(), np.imag(result.flatten()), "g.")
+            plt.loglog(self.ell.flatten(), np.abs(result.flatten()), "k.")
+            plt.loglog(self.ell.flatten(), np.abs(np.real(result.flatten())), "b.")
+            plt.loglog(self.ell.flatten(), np.imag(result.flatten()), "g.")
             plt.show()
 
         return result
@@ -2214,20 +1988,20 @@ class FlatMap(object):
 
         # interpolate, preserving the sign
         lnfln = interp1d(
-            np.log(self.l.flatten()),
+            np.log(self.ell.flatten()),
             np.log(np.abs(result).flatten()),
             kind="linear",
             bounds_error=False,
             fill_value=0.0,
         )
         signln = interp1d(
-            np.log(self.l.flatten()),
+            np.log(self.ell.flatten()),
             np.sign(result.flatten()),
             kind="linear",
             bounds_error=False,
             fill_value=0.0,
         )
-        f = lambda l: np.exp(lnfln(np.log(l))) * signln(np.log(l))
+        f = lambda ell: np.exp(lnfln(np.log(ell))) * signln(np.log(ell))
         return f
 
     ###############################################################################
@@ -2243,23 +2017,23 @@ class FlatMap(object):
         Gaussian N_L^phi.
         """
         # inverse-var weighted map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = 1.0 / fCtot(l)
+            result = 1.0 / fCtot(ell)
             if not np.isfinite(result):
                 result = 0.0
             return result
 
-        iVarFourier = np.array(map(f, self.l.flatten()))
-        iVarFourier = iVarFourier.reshape(self.l.shape)
+        iVarFourier = np.array(map(f, self.ell.flatten()))
+        iVarFourier = iVarFourier.reshape(self.ell.shape)
         iVar = self.inverseFourier(dataFourier=iVarFourier)
 
         # C map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l)
+            result = fC0(ell) / fCtot(ell)
             # artificial factor of i such that f(-l) = f(l)*,
             # such that f(x) is real
             result *= 1.0j
@@ -2267,8 +2041,8 @@ class FlatMap(object):
                 result = 0.0
             return result
 
-        CFourier = np.array(map(f, self.l.flatten()))
-        CFourier = CFourier.reshape(self.l.shape)
+        CFourier = np.array(map(f, self.ell.flatten()))
+        CFourier = CFourier.reshape(self.ell.shape)
 
         # term x
         termx = self.inverseFourier(dataFourier=self.lx * CFourier)
@@ -2295,13 +2069,13 @@ class FlatMap(object):
         resultFourier = termxFourier + termyFourier
 
         # cut off the high ells from phi normalization map
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=resultFourier, test=False
         )
 
         if test:
-            plt.loglog(self.l.flatten(), resultFourier.flatten(), "b.")
+            plt.loglog(self.ell.flatten(), resultFourier.flatten(), "b.")
             plt.show()
 
         # take modulus squared
@@ -2315,7 +2089,7 @@ class FlatMap(object):
         resultFourier *= n0GFourier
 
         if test:
-            plt.loglog(self.l.flatten(), resultFourier.flatten(), "b.")
+            plt.loglog(self.ell.flatten(), resultFourier.flatten(), "b.")
             plt.show()
 
         return resultFourier
@@ -2335,7 +2109,7 @@ class FlatMap(object):
         convPhi = np.abs(convPhi)
 
         # convert from phi to kappa
-        convKappa = 0.25 * self.l**4 * convPhi
+        convKappa = 0.25 * self.ell**4 * convPhi
 
         # fix the issue of the wrong ell=0 value
         # replace it by the value lx=0, ly=fundamental
@@ -2343,7 +2117,7 @@ class FlatMap(object):
 
         # interpolate
         f = interp1d(
-            self.l.flatten(),
+            self.ell.flatten(),
             convKappa.flatten(),
             kind="linear",
             bounds_error=False,
@@ -2412,31 +2186,31 @@ class FlatMap(object):
             dataFourier = self.dataFourier.copy()
 
         # inverse-var weighted map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = 1.0 / fCtot(l) ** 2
+            result = 1.0 / fCtot(ell) ** 2
             if not np.isfinite(result):
                 result = 0.0
             return result
 
-        iVarFourier = np.array(map(f, self.l.flatten()))
-        iVarFourier = iVarFourier.reshape(self.l.shape)
+        iVarFourier = np.array(map(f, self.ell.flatten()))
+        iVarFourier = iVarFourier.reshape(self.ell.shape)
         # multiply by data squared modulus
         iVarFourier *= np.abs(dataFourier) ** 2
         iVar = self.inverseFourier(dataFourier=iVarFourier)
 
         # C map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) ** 2 / fCtot(l) ** 2
+            result = fC0(ell) ** 2 / fCtot(ell) ** 2
             if not np.isfinite(result):
                 result = 0.0
             return result
 
-        CFourier = np.array(map(f, self.l.flatten()))
-        CFourier = CFourier.reshape(self.l.shape)
+        CFourier = np.array(map(f, self.ell.flatten()))
+        CFourier = CFourier.reshape(self.ell.shape)
         # multiply by data squared modulus
         CFourier *= np.abs(dataFourier) ** 2
 
@@ -2465,10 +2239,10 @@ class FlatMap(object):
             self.plotFourier(term1xFourier + term1yFourier + term1xyFourier)
 
         # WF map
-        def f(l):
-            if (l < lMin) or (l > lMax):
+        def f(ell):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
+            result = fC0(ell) / fCtot(ell) ** 2
             # artificial factor of i such that f(-l) = f(l)*,
             # such that f(x) is real
             result *= 1.0j
@@ -2476,8 +2250,8 @@ class FlatMap(object):
                 result = 0.0
             return result
 
-        WFFourier = np.array(map(f, self.l.flatten()))
-        WFFourier = WFFourier.reshape(self.l.shape)
+        WFFourier = np.array(map(f, self.ell.flatten()))
+        WFFourier = WFFourier.reshape(self.ell.shape)
         # multiply by data squared modulus
         WFFourier *= np.abs(dataFourier) ** 2
 
@@ -2517,7 +2291,7 @@ class FlatMap(object):
         resultFourier += term2xFourier + term2yFourier + term2xyFourier
 
         # cut off the high ells from phi normalization map
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=resultFourier, test=False
         )
@@ -2527,7 +2301,7 @@ class FlatMap(object):
         resultFourier[np.where(np.isfinite(resultFourier) == False)] = 0.0
 
         if test:
-            plt.loglog(self.l.flatten(), resultFourier.flatten(), "b.")
+            plt.loglog(self.ell.flatten(), resultFourier.flatten(), "b.")
             plt.show()
 
         return resultFourier
@@ -2591,17 +2365,17 @@ class FlatMap(object):
             dataFourier2 = dataFourier.copy()
 
         # cut off high ells
-        f = lambda l: 1.0 * (l >= lMin) * (l <= lMax)
+        f = lambda ell: 1.0 * (ell >= lMin) * (ell <= lMax)
         FDataFourier = self.filterFourierIsotropic(
             f, dataFourier=dataFourier, test=test
         )
         FData = self.inverseFourier(FDataFourier)
 
         # weight function for dilation
-        def fdLnl2C0dLnl(l):
+        def fdLnl2C0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = lup**2 * fC0(lup)
             result /= ldown**2 * fC0(ldown)
             result = np.log(result) / (2.0 * e)
@@ -2609,17 +2383,17 @@ class FlatMap(object):
 
         if test:
             # print "testing derivative"
-            F = np.array(map(fdLnl2C0dLnl, self.l.flatten()))
-            plt.semilogx(self.l.flatten(), F, "b.")
+            F = np.array(map(fdLnl2C0dLnl, self.ell.flatten()))
+            plt.semilogx(self.ell.flatten(), F, "b.")
             plt.show()
 
         # sort of Dilation Wiener-filter
-        def f(l):
+        def f(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnl2C0dLnl(l)  # for isotropic dilation
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnl2C0dLnl(ell)  # for isotropic dilation
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
@@ -2633,7 +2407,7 @@ class FlatMap(object):
             # print "showing the WF map"
             self.plot(data=WFData)
             # print "checking the power spectrum of this map"
-            theory = lambda l: f(l) ** 2 * fC0(l)
+            theory = lambda ell: f(ell) ** 2 * fC0(ell)
             self.powerSpectrum(dataFourier=WFDataFourier, theory=[theory], plot=True)
 
         # product in real space
@@ -2641,7 +2415,7 @@ class FlatMap(object):
         productFourier = self.fourier(product)
 
         # get phi from kappa
-        productFourier *= -2.0 / self.l**2
+        productFourier *= -2.0 / self.ell**2
         productFourier[np.where(np.isfinite(productFourier) == False)] = 0.0
         if test:
             # print "checking the power spectrum of phi map"
@@ -2665,21 +2439,21 @@ class FlatMap(object):
         if fC0wg is None:
             fC0wg = fC0
 
-        def fdLnl2C0dLnl(l):
+        def fdLnl2C0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = lup**2 * fC0wg(lup)
             result /= ldown**2 * fC0wg(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
-        def f(l):
+        def f(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0wg(l) / fCtot(l)
-            result *= fdLnl2C0dLnl(l)  # for isotropic dilation
+            result = fC0wg(ell) / fCtot(ell)
+            result *= fdLnl2C0dLnl(ell)  # for isotropic dilation
             result = result**2
             result /= 0.5
             if not np.isfinite(result):
@@ -2687,7 +2461,7 @@ class FlatMap(object):
             return result
 
         dataFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
 
         # compute the integral
@@ -2720,21 +2494,21 @@ class FlatMap(object):
             fC0wg = fC0
 
         def doCalculation():
-            def fdLnl2C0dLnl(l):
+            def fdLnl2C0dLnl(ell):
                 e = 0.01
-                lup = l * (1.0 + e)
-                ldown = l * (1.0 - e)
+                lup = ell * (1.0 + e)
+                ldown = ell * (1.0 - e)
                 result = lup**2 * fC0wg(lup)
                 result /= ldown**2 * fC0wg(ldown)
                 result = np.log(result) / (2.0 * e)
                 return result
 
-            def fDilation(l):
+            def fDilation(ell):
                 # cut off the high ells from input map
-                if (l < lMin) or (l > lMax):
+                if (ell < lMin) or (ell > lMax):
                     return 0.0
-                result = fC0wg(l) / fCtot(l) ** 2
-                result *= fdLnl2C0dLnl(l)  # for isotropic dilation
+                result = fC0wg(ell) / fCtot(ell) ** 2
+                result *= fdLnl2C0dLnl(ell)  # for isotropic dilation
                 result /= 0.5
                 if not np.isfinite(result):
                     result = 0.0
@@ -2742,14 +2516,14 @@ class FlatMap(object):
 
             # generate dilation map
             dilationFourier = self.filterFourierIsotropic(
-                fDilation, dataFourier=np.ones_like(self.l), test=test
+                fDilation, dataFourier=np.ones_like(self.ell), test=test
             )
             dilation = self.inverseFourier(dilationFourier)
 
             # generate gradient C0 map
-            f = lambda l: fC0(l) * (l >= lMin) * (l <= lMax)
+            f = lambda ell: fC0(ell) * (ell >= lMin) * (ell <= lMax)
             c0Fourier = self.filterFourierIsotropic(
-                f, dataFourier=np.ones_like(self.l), test=test
+                f, dataFourier=np.ones_like(self.ell), test=test
             )
             # the factor i in the gradient makes the Fourier function Hermitian
             gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
@@ -2761,9 +2535,9 @@ class FlatMap(object):
             )  # extra factor of i will be cancelled later
 
             # generate ell limit map
-            f = lambda l: (l >= lMin) * (l <= lMax)
+            f = lambda ell: (ell >= lMin) * (ell <= lMax)
             ellLimitsFourier = self.filterFourierIsotropic(
-                f, dataFourier=np.ones_like(self.l), test=test
+                f, dataFourier=np.ones_like(self.ell), test=test
             )
             ellLimits = self.inverseFourier(ellLimitsFourier)
 
@@ -2771,13 +2545,13 @@ class FlatMap(object):
             # term1x
             term1XFourier = self.fourier(gradX * dilation)
             term1XFourier *= (
-                2.0 * self.lx / self.l**2 / 1.0j
+                2.0 * self.lx / self.ell**2 / 1.0j
             )  # factor of i to cancel the one in the gradient
             term1XFourier[np.where(np.isfinite(term1XFourier) == False)] = 0.0
             # term1y
             term1YFourier = self.fourier(gradY * dilation)
             term1YFourier *= (
-                2.0 * self.ly / self.l**2 / 1.0j
+                2.0 * self.ly / self.ell**2 / 1.0j
             )  # factor of i to cancel the one in the gradient
             term1YFourier[np.where(np.isfinite(term1YFourier) == False)] = 0.0
             # sum
@@ -2795,14 +2569,14 @@ class FlatMap(object):
             term2X = self.inverseFourier(gradXFourier * dilationFourier)
             term2XFourier = self.fourier(term2X * ellLimits)
             term2XFourier *= (
-                2.0 * self.lx / self.l**2 / 1.0j
+                2.0 * self.lx / self.ell**2 / 1.0j
             )  # factor of i to cancel the one in the gradient
             term2XFourier[np.where(np.isfinite(term2XFourier) == False)] = 0.0
             # term2y
             term2Y = self.inverseFourier(gradYFourier * dilationFourier)
             term2YFourier = self.fourier(term2Y * ellLimits)
             term2YFourier *= (
-                2.0 * self.ly / self.l**2 / 1.0j
+                2.0 * self.ly / self.ell**2 / 1.0j
             )  # factor of i to cancel the one in the gradient
             term2YFourier[np.where(np.isfinite(term2XFourier) == False)] = 0.0
             # sum
@@ -2819,7 +2593,7 @@ class FlatMap(object):
             resultFourier = 1.0 / (term1Fourier + term2Fourier)
             resultFourier[np.where(np.isfinite(resultFourier) == False)] = 0.0
             # remove L > 2 lMax
-            f = lambda l: (l <= 2.0 * lMax)
+            f = lambda ell: (ell <= 2.0 * lMax)
             resultFourier = self.filterFourierIsotropic(
                 f, dataFourier=resultFourier, test=test
             )
@@ -2923,30 +2697,30 @@ class FlatMap(object):
         if fC0wg is None:
             fC0wg = fC0
 
-        def fdLnl2C0dLnl(l):
+        def fdLnl2C0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = lup**2 * fC0wg(lup)
             result /= ldown**2 * fC0wg(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
-        def g(l):
+        def g(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0wg(l) / fCtot(l) ** 2
-            result *= fdLnl2C0dLnl(l)  # for isotropic dilation
+            result = fC0wg(ell) / fCtot(ell) ** 2
+            result *= fdLnl2C0dLnl(ell)  # for isotropic dilation
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
             return result
 
         # First, the symmetric term
-        f = lambda l: g(l) * fCfg(l)
+        f = lambda ell: g(ell) * fCfg(ell)
         term1Fourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         term1 = self.inverseFourier(term1Fourier)
         term1Fourier = self.fourier(term1**2)
@@ -2954,15 +2728,15 @@ class FlatMap(object):
             self.plotFourier(term1Fourier)
 
         # Second, the asymmetric term
-        f = lambda l: g(l) ** 2 * fCfg(l)
+        f = lambda ell: g(ell) ** 2 * fCfg(ell)
         term2aFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         term2a = self.inverseFourier(term2aFourier)
         #
-        f = lambda l: fCfg(l) * (l >= lMin) * (l <= lMax)
+        f = lambda ell: fCfg(ell) * (ell >= lMin) * (ell <= lMax)
         term2bFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         term2b = self.inverseFourier(term2bFourier)
         #
@@ -2997,7 +2771,7 @@ class FlatMap(object):
         resultFourier *= normalizationFourier**2
 
         # remove L > 2 lMax
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=resultFourier, test=test
         )
@@ -3045,13 +2819,13 @@ class FlatMap(object):
         n0Kappa[0, 0] = n0Kappa[0, 1]
 
         # interpolate
-        where = (self.l.flatten() > 0.0) * (self.l.flatten() < 2.0 * lMax)
-        L = self.l.flatten()[where]
+        where = (self.ell.flatten() > 0.0) * (self.ell.flatten() < 2.0 * lMax)
+        L = self.ell.flatten()[where]
         N = n0Kappa.flatten()[where]
         lnfln = interp1d(
             np.log(L), np.log(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        f = lambda l: np.exp(lnfln(np.log(l)))
+        f = lambda ell: np.exp(lnfln(np.log(ell)))
         return f
 
     ###############################################################################
@@ -3067,21 +2841,21 @@ class FlatMap(object):
         <dilation> = kappa_CMB + (multiplicative bias) * kappa_foreground + noise.
         """
 
-        def fdLnl2C0dLnl(l):
+        def fdLnl2C0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = lup**2 * fC0(lup)
             result /= ldown**2 * fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
-        def fDilation(l):
+        def fDilation(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnl2C0dLnl(l)  # for isotropic dilation
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnl2C0dLnl(ell)  # for isotropic dilation
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
@@ -3089,14 +2863,14 @@ class FlatMap(object):
 
         # generate dilation map
         dilationFourier = self.filterFourierIsotropic(
-            fDilation, dataFourier=np.ones_like(self.l), test=test
+            fDilation, dataFourier=np.ones_like(self.ell), test=test
         )
         dilation = self.inverseFourier(dilationFourier)
 
         # generate gradient C0 map
-        f = lambda l: fCfgBias(l) * (l >= lMin) * (l <= lMax)
+        f = lambda ell: fCfgBias(ell) * (ell >= lMin) * (ell <= lMax)
         c0Fourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         # the factor i in the gradient makes the Fourier function Hermitian
         gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
@@ -3108,9 +2882,9 @@ class FlatMap(object):
         )  # extra factor of i will be cancelled later
 
         # generate ell limit map
-        f = lambda l: (l >= lMin) * (l <= lMax)
+        f = lambda ell: (ell >= lMin) * (ell <= lMax)
         ellLimitsFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         ellLimits = self.inverseFourier(ellLimitsFourier)
 
@@ -3118,13 +2892,13 @@ class FlatMap(object):
         # term1x
         term1XFourier = self.fourier(gradX * dilation)
         term1XFourier *= (
-            2.0 * self.lx / self.l**2 / 1.0j
+            2.0 * self.lx / self.ell**2 / 1.0j
         )  # factor of i to cancel the one in the gradient
         term1XFourier[np.where(np.isfinite(term1XFourier) == False)] = 0.0
         # term1y
         term1YFourier = self.fourier(gradY * dilation)
         term1YFourier *= (
-            2.0 * self.ly / self.l**2 / 1.0j
+            2.0 * self.ly / self.ell**2 / 1.0j
         )  # factor of i to cancel the one in the gradient
         term1YFourier[np.where(np.isfinite(term1YFourier) == False)] = 0.0
         # sum
@@ -3142,14 +2916,14 @@ class FlatMap(object):
         term2X = self.inverseFourier(gradXFourier * dilationFourier)
         term2XFourier = self.fourier(term2X * ellLimits)
         term2XFourier *= (
-            2.0 * self.lx / self.l**2 / 1.0j
+            2.0 * self.lx / self.ell**2 / 1.0j
         )  # factor of i to cancel the one in the gradient
         term2XFourier[np.where(np.isfinite(term2XFourier) == False)] = 0.0
         # term2y
         term2Y = self.inverseFourier(gradYFourier * dilationFourier)
         term2YFourier = self.fourier(term2Y * ellLimits)
         term2YFourier *= (
-            2.0 * self.ly / self.l**2 / 1.0j
+            2.0 * self.ly / self.ell**2 / 1.0j
         )  # factor of i to cancel the one in the gradient
         term2YFourier[np.where(np.isfinite(term2XFourier) == False)] = 0.0
         # sum
@@ -3166,7 +2940,7 @@ class FlatMap(object):
         resultFourier = term1Fourier + term2Fourier
         resultFourier[np.where(np.isfinite(resultFourier) == False)] = 0.0
         # remove L > 2 lMax
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=resultFourier, test=test
         )
@@ -3204,20 +2978,20 @@ class FlatMap(object):
 
         # interpolate, preserving the sign
         lnfln = interp1d(
-            np.log(self.l.flatten()),
+            np.log(self.ell.flatten()),
             np.log(np.abs(result).flatten()),
             kind="linear",
             bounds_error=False,
             fill_value=0.0,
         )
         signln = interp1d(
-            np.log(self.l.flatten()),
+            np.log(self.ell.flatten()),
             np.sign(result.flatten()),
             kind="linear",
             bounds_error=False,
             fill_value=0.0,
         )
-        f = lambda l: np.exp(lnfln(np.log(l))) * signln(np.log(l))
+        f = lambda ell: np.exp(lnfln(np.log(ell))) * signln(np.log(ell))
         return f
 
     ###############################################################################
@@ -3244,7 +3018,7 @@ class FlatMap(object):
             dataFourier2 = dataFourier.copy()
 
         # cut off high ells
-        f = lambda l: 1.0 * (l >= lMin) * (l <= lMax)
+        f = lambda ell: 1.0 * (ell >= lMin) * (ell <= lMax)
         FDataFourier = self.filterFourierIsotropic(
             f, dataFourier=dataFourier, test=test
         )
@@ -3254,26 +3028,26 @@ class FlatMap(object):
             self.plotFourier(dataFourier=FDataFourier)
 
         # weight function for shear
-        def fdLnC0dLnl(l):
+        def fdLnC0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = fC0(lup) / fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
         if test:
-            F = np.array(map(fdLnC0dLnl, self.l.flatten()))
-            plt.semilogx(self.l.flatten(), F, "b.")
+            F = np.array(map(fdLnC0dLnl, self.ell.flatten()))
+            plt.semilogx(self.ell.flatten(), F, "b.")
             plt.show()
 
         # sort of shear Wiener-filter
-        def f(l):
+        def f(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnC0dLnl(l)  # for shear
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnC0dLnl(ell)  # for shear
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
@@ -3286,7 +3060,7 @@ class FlatMap(object):
             # print "showing the WF map"
             self.plotFourier(dataFourier=WFDataFourier)
             # print "checking the power spectrum of this map"
-            theory = lambda l: f(l) ** 2 * fC0(l)
+            theory = lambda ell: f(ell) ** 2 * fC0(ell)
             self.powerSpectrum(theory=[theory], dataFourier=WFDataFourier, plot=True)
 
         # multiplication by cos 2 theta_{L,l}
@@ -3305,6 +3079,7 @@ class FlatMap(object):
         term1Fourier = self.fourier(data=term1)
         term1Fourier = self.filterFourier(f, dataFourier=term1Fourier, test=test)
         #
+
         # term 2
         def f(lx, ly):
             l2 = lx**2 + ly**2
@@ -3332,7 +3107,7 @@ class FlatMap(object):
             self.plotFourier(term1Fourier + term2Fourier)
 
         # get phi from kappa
-        resultFourier *= -2.0 / self.l**2
+        resultFourier *= -2.0 / self.ell**2
         resultFourier[np.where(np.isfinite(resultFourier) == False)] = 0.0
         if test:
             # print "checking the power spectrum of phi map"
@@ -3354,26 +3129,26 @@ class FlatMap(object):
         """
 
         # weight function for shear
-        def fdLnC0dLnl(l):
+        def fdLnC0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = fC0(lup) / fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
         if test:
-            F = np.array(map(fdLnC0dLnl, self.l.flatten()))
-            plt.semilogx(self.l.flatten(), F, "b.")
+            F = np.array(map(fdLnC0dLnl, self.ell.flatten()))
+            plt.semilogx(self.ell.flatten(), F, "b.")
             plt.show()
 
         # sort of shear Wiener-filter
-        def f(l):
+        def f(ell):
             # cut off the high ells from input map
-            if l < lMin or l > lMax:
+            if ell < lMin or ell > lMax:
                 return 0.0
-            result = fC0(l) / fCtot(l)
-            result *= fdLnC0dLnl(l)  # for shear
+            result = fC0(ell) / fCtot(ell)
+            result *= fdLnC0dLnl(ell)  # for shear
             result **= 2.0
             result /= 0.5
             if not np.isfinite(result):
@@ -3381,7 +3156,7 @@ class FlatMap(object):
             return result
 
         WFDataFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         if test:
             # print "showing the WF map"
@@ -3415,20 +3190,20 @@ class FlatMap(object):
 
         def doCalculation():
             # weight function for shear
-            def fdLnC0dLnl(l):
+            def fdLnC0dLnl(ell):
                 e = 0.01
-                lup = l * (1.0 + e)
-                ldown = l * (1.0 - e)
+                lup = ell * (1.0 + e)
+                ldown = ell * (1.0 - e)
                 result = fC0(lup) / fC0(ldown)
                 result = np.log(result) / (2.0 * e)
                 return result
 
-            def f(l):
+            def f(ell):
                 # cut off the high ells from input map
-                if (l < lMin) or (l > lMax):
+                if (ell < lMin) or (ell > lMax):
                     return 0.0
-                result = fC0(l) / fCtot(l) ** 2
-                result *= fdLnC0dLnl(l)  # for shear
+                result = fC0(ell) / fCtot(ell) ** 2
+                result *= fdLnC0dLnl(ell)  # for shear
                 result /= 0.5
                 if not np.isfinite(result):
                     result = 0.0
@@ -3436,21 +3211,21 @@ class FlatMap(object):
 
             # generate shear maps
             shearFourier = self.filterFourierIsotropic(
-                f, dataFourier=np.ones_like(self.l), test=test
+                f, dataFourier=np.ones_like(self.ell), test=test
             )
             #
-            cosXFourier = shearFourier * (self.lx**2 - self.ly**2) / self.l**2
+            cosXFourier = shearFourier * (self.lx**2 - self.ly**2) / self.ell**2
             cosXFourier[np.where(np.isfinite(cosXFourier) == False)] = 0.0
             cosX = self.inverseFourier(cosXFourier)
             #
-            cosYFourier = shearFourier * self.lx * self.ly / self.l**2
+            cosYFourier = shearFourier * self.lx * self.ly / self.ell**2
             cosYFourier[np.where(np.isfinite(cosYFourier) == False)] = 0.0
             cosY = self.inverseFourier(cosYFourier)
 
             # generate gradient C0 map
-            f = lambda l: fC0(l) * (l >= lMin) * (l <= lMax)
+            f = lambda ell: fC0(ell) * (ell >= lMin) * (ell <= lMax)
             c0Fourier = self.filterFourierIsotropic(
-                f, dataFourier=np.ones_like(self.l), test=test
+                f, dataFourier=np.ones_like(self.ell), test=test
             )
             # the factor i in the gradient makes the Fourier function Hermitian
             gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
@@ -3462,31 +3237,31 @@ class FlatMap(object):
             )  # extra factor of i will be cancelled later
 
             # generate ell limit map
-            f = lambda l: (l >= lMin) * (l <= lMax)
+            f = lambda ell: (ell >= lMin) * (ell <= lMax)
             ellLimitsFourier = self.filterFourierIsotropic(
-                f, dataFourier=np.ones_like(self.l), test=test
+                f, dataFourier=np.ones_like(self.ell), test=test
             )
             ellLimits = self.inverseFourier(ellLimitsFourier)
 
             # Term 1
             grad1XcosXFourier = self.fourier(gradX * cosX)
             grad1XcosXFourier *= self.lx**2 - self.ly**2  # for cos
-            grad1XcosXFourier *= 2.0 * self.lx / 1.0j / self.l**4  # for grad
+            grad1XcosXFourier *= 2.0 * self.lx / 1.0j / self.ell**4  # for grad
             grad1XcosXFourier[np.where(np.isfinite(grad1XcosXFourier) == False)] = 0.0
             #
             grad1YcosXFourier = self.fourier(gradY * cosX)
             grad1YcosXFourier *= self.lx**2 - self.ly**2  # for cos
-            grad1YcosXFourier *= 2.0 * self.ly / 1.0j / self.l**4  # for grad
+            grad1YcosXFourier *= 2.0 * self.ly / 1.0j / self.ell**4  # for grad
             grad1YcosXFourier[np.where(np.isfinite(grad1YcosXFourier) == False)] = 0.0
             #
             grad1XcosYFourier = self.fourier(gradX * cosY)
             grad1XcosYFourier *= 4.0 * self.lx * self.ly  # for cos
-            grad1XcosYFourier *= 2.0 * self.lx / 1.0j / self.l**4  # for grad
+            grad1XcosYFourier *= 2.0 * self.lx / 1.0j / self.ell**4  # for grad
             grad1XcosYFourier[np.where(np.isfinite(grad1XcosYFourier) == False)] = 0.0
             #
             grad1YcosYFourier = self.fourier(gradY * cosY)
             grad1YcosYFourier *= 4.0 * self.lx * self.ly  # for cos
-            grad1YcosYFourier *= 2.0 * self.ly / 1.0j / self.l**4  # for grad
+            grad1YcosYFourier *= 2.0 * self.ly / 1.0j / self.ell**4  # for grad
             grad1YcosYFourier[np.where(np.isfinite(grad1YcosYFourier) == False)] = 0.0
             #
             # sum
@@ -3508,25 +3283,25 @@ class FlatMap(object):
             grad2XcosX = self.inverseFourier(gradXFourier * cosXFourier)
             grad2XcosXFourier = self.fourier(grad2XcosX * ellLimits)
             grad2XcosXFourier *= self.lx**2 - self.ly**2  # for cos
-            grad2XcosXFourier *= 2.0 * self.lx / 1.0j / self.l**4  # for grad
+            grad2XcosXFourier *= 2.0 * self.lx / 1.0j / self.ell**4  # for grad
             grad2XcosXFourier[np.where(np.isfinite(grad2XcosXFourier) == False)] = 0.0
             #
             grad2YcosX = self.inverseFourier(gradYFourier * cosXFourier)
             grad2YcosXFourier = self.fourier(grad2YcosX * ellLimits)
             grad2YcosXFourier *= self.lx**2 - self.ly**2  # for cos
-            grad2YcosXFourier *= 2.0 * self.ly / 1.0j / self.l**4  # for grad
+            grad2YcosXFourier *= 2.0 * self.ly / 1.0j / self.ell**4  # for grad
             grad2YcosXFourier[np.where(np.isfinite(grad2YcosXFourier) == False)] = 0.0
             #
             grad2XcosY = self.inverseFourier(gradXFourier * cosYFourier)
             grad2XcosYFourier = self.fourier(grad2XcosY * ellLimits)
             grad2XcosYFourier *= 4.0 * self.lx * self.ly  # for cos
-            grad2XcosYFourier *= 2.0 * self.lx / 1.0j / self.l**4  # for grad
+            grad2XcosYFourier *= 2.0 * self.lx / 1.0j / self.ell**4  # for grad
             grad2XcosYFourier[np.where(np.isfinite(grad2XcosYFourier) == False)] = 0.0
             #
             grad2YcosY = self.inverseFourier(gradYFourier * cosYFourier)
             grad2YcosYFourier = self.fourier(grad2YcosY * ellLimits)
             grad2YcosYFourier *= 4.0 * self.lx * self.ly  # for cos
-            grad2YcosYFourier *= 2.0 * self.ly / 1.0j / self.l**4  # for grad
+            grad2YcosYFourier *= 2.0 * self.ly / 1.0j / self.ell**4  # for grad
             grad2YcosYFourier[np.where(np.isfinite(grad2YcosXFourier) == False)] = 0.0
             #
             # sum
@@ -3549,7 +3324,7 @@ class FlatMap(object):
             resultFourier[np.where(np.isfinite(resultFourier) == False)] = 0.0
 
             # remove L > 2 lMax
-            f = lambda l: (l <= 2.0 * lMax)
+            f = lambda ell: (ell <= 2.0 * lMax)
             resultFourier = self.filterFourierIsotropic(
                 f, dataFourier=resultFourier, test=test
             )
@@ -3645,36 +3420,36 @@ class FlatMap(object):
         if fCfg is None:
             fCfg = fCtot
 
-        def fdLnC0dLnl(l):
+        def fdLnC0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = fC0(lup) / fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
-        def g(l):
+        def g(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnC0dLnl(l)  # for isotropic dilation
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnC0dLnl(ell)  # for isotropic dilation
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
             return result
 
         # useful terms
-        fx = (self.lx**2 - self.ly**2) / self.l**2
+        fx = (self.lx**2 - self.ly**2) / self.ell**2
         fx[np.where(np.isfinite(fx) == False)] = 0.0
         #
-        fy = self.lx * self.ly / self.l**2
+        fy = self.lx * self.ly / self.ell**2
         fy[np.where(np.isfinite(fy) == False)] = 0.0
 
         # First, the symmetric term
-        f = lambda l: g(l) * fCfg(l)
+        f = lambda ell: g(ell) * fCfg(ell)
         term1Fourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         #
         term1xFourier = term1Fourier * fx
@@ -3701,15 +3476,15 @@ class FlatMap(object):
             self.plotFourier(term1Fourier)
 
         # Second, the asymmetric term
-        f = lambda l: fCfg(l) * (l >= lMin) * (l <= lMax)
+        f = lambda ell: fCfg(ell) * (ell >= lMin) * (ell <= lMax)
         term2bFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         term2b = self.inverseFourier(term2bFourier)
         #
-        f = lambda l: g(l) ** 2 * fCfg(l)
+        f = lambda ell: g(ell) ** 2 * fCfg(ell)
         term2aFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
 
         term2xxFourier = term2aFourier * fx**2
@@ -3752,7 +3527,7 @@ class FlatMap(object):
         resultFourier *= normalizationFourier**2
 
         # remove L > 2 lMax
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=resultFourier, test=test
         )
@@ -3796,13 +3571,13 @@ class FlatMap(object):
         n0Kappa[0, 0] = n0Kappa[0, 1]
 
         # interpolate
-        where = (self.l.flatten() > 0.0) * (self.l.flatten() < 2.0 * lMax)
-        L = self.l.flatten()[where]
+        where = (self.ell.flatten() > 0.0) * (self.ell.flatten() < 2.0 * lMax)
+        L = self.ell.flatten()[where]
         N = n0Kappa.flatten()[where]
         lnfln = interp1d(
             np.log(L), np.log(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        f = lambda l: np.exp(lnfln(np.log(l)))
+        f = lambda ell: np.exp(lnfln(np.log(ell)))
         return f
 
     ###############################################################################
@@ -3819,20 +3594,20 @@ class FlatMap(object):
         """
 
         # weight function for shear
-        def fdLnC0dLnl(l):
+        def fdLnC0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = fC0(lup) / fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
-        def f(l):
+        def f(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnC0dLnl(l)  # for shear
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnC0dLnl(ell)  # for shear
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
@@ -3840,21 +3615,21 @@ class FlatMap(object):
 
         # generate shear maps
         shearFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         #
-        cosXFourier = shearFourier * (self.lx**2 - self.ly**2) / self.l**2
+        cosXFourier = shearFourier * (self.lx**2 - self.ly**2) / self.ell**2
         cosXFourier[np.where(np.isfinite(cosXFourier) == False)] = 0.0
         cosX = self.inverseFourier(cosXFourier)
         #
-        cosYFourier = shearFourier * self.lx * self.ly / self.l**2
+        cosYFourier = shearFourier * self.lx * self.ly / self.ell**2
         cosYFourier[np.where(np.isfinite(cosYFourier) == False)] = 0.0
         cosY = self.inverseFourier(cosYFourier)
 
         # generate gradient C0 map
-        f = lambda l: fCfgBias(l) * (l >= lMin) * (l <= lMax)
+        f = lambda ell: fCfgBias(ell) * (ell >= lMin) * (ell <= lMax)
         c0Fourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         # the factor i in the gradient makes the Fourier function Hermitian
         gradXFourier, gradYFourier = self.computeGradient(dataFourier=c0Fourier)
@@ -3866,31 +3641,31 @@ class FlatMap(object):
         )  # extra factor of i will be cancelled later
 
         # generate ell limit map
-        f = lambda l: (l >= lMin) * (l <= lMax)
+        f = lambda ell: (ell >= lMin) * (ell <= lMax)
         ellLimitsFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         ellLimits = self.inverseFourier(ellLimitsFourier)
 
         # Term 1
         grad1XcosXFourier = self.fourier(gradX * cosX)
         grad1XcosXFourier *= self.lx**2 - self.ly**2  # for cos
-        grad1XcosXFourier *= 2.0 * self.lx / 1.0j / self.l**4  # for grad
+        grad1XcosXFourier *= 2.0 * self.lx / 1.0j / self.ell**4  # for grad
         grad1XcosXFourier[np.where(np.isfinite(grad1XcosXFourier) == False)] = 0.0
         #
         grad1YcosXFourier = self.fourier(gradY * cosX)
         grad1YcosXFourier *= self.lx**2 - self.ly**2  # for cos
-        grad1YcosXFourier *= 2.0 * self.ly / 1.0j / self.l**4  # for grad
+        grad1YcosXFourier *= 2.0 * self.ly / 1.0j / self.ell**4  # for grad
         grad1YcosXFourier[np.where(np.isfinite(grad1YcosXFourier) == False)] = 0.0
         #
         grad1XcosYFourier = self.fourier(gradX * cosY)
         grad1XcosYFourier *= 4.0 * self.lx * self.ly  # for cos
-        grad1XcosYFourier *= 2.0 * self.lx / 1.0j / self.l**4  # for grad
+        grad1XcosYFourier *= 2.0 * self.lx / 1.0j / self.ell**4  # for grad
         grad1XcosYFourier[np.where(np.isfinite(grad1XcosYFourier) == False)] = 0.0
         #
         grad1YcosYFourier = self.fourier(gradY * cosY)
         grad1YcosYFourier *= 4.0 * self.lx * self.ly  # for cos
-        grad1YcosYFourier *= 2.0 * self.ly / 1.0j / self.l**4  # for grad
+        grad1YcosYFourier *= 2.0 * self.ly / 1.0j / self.ell**4  # for grad
         grad1YcosYFourier[np.where(np.isfinite(grad1YcosYFourier) == False)] = 0.0
         #
         # sum
@@ -3912,25 +3687,25 @@ class FlatMap(object):
         grad2XcosX = self.inverseFourier(gradXFourier * cosXFourier)
         grad2XcosXFourier = self.fourier(grad2XcosX * ellLimits)
         grad2XcosXFourier *= self.lx**2 - self.ly**2  # for cos
-        grad2XcosXFourier *= 2.0 * self.lx / 1.0j / self.l**4  # for grad
+        grad2XcosXFourier *= 2.0 * self.lx / 1.0j / self.ell**4  # for grad
         grad2XcosXFourier[np.where(np.isfinite(grad2XcosXFourier) == False)] = 0.0
         #
         grad2YcosX = self.inverseFourier(gradYFourier * cosXFourier)
         grad2YcosXFourier = self.fourier(grad2YcosX * ellLimits)
         grad2YcosXFourier *= self.lx**2 - self.ly**2  # for cos
-        grad2YcosXFourier *= 2.0 * self.ly / 1.0j / self.l**4  # for grad
+        grad2YcosXFourier *= 2.0 * self.ly / 1.0j / self.ell**4  # for grad
         grad2YcosXFourier[np.where(np.isfinite(grad2YcosXFourier) == False)] = 0.0
         #
         grad2XcosY = self.inverseFourier(gradXFourier * cosYFourier)
         grad2XcosYFourier = self.fourier(grad2XcosY * ellLimits)
         grad2XcosYFourier *= 4.0 * self.lx * self.ly  # for cos
-        grad2XcosYFourier *= 2.0 * self.lx / 1.0j / self.l**4  # for grad
+        grad2XcosYFourier *= 2.0 * self.lx / 1.0j / self.ell**4  # for grad
         grad2XcosYFourier[np.where(np.isfinite(grad2XcosYFourier) == False)] = 0.0
         #
         grad2YcosY = self.inverseFourier(gradYFourier * cosYFourier)
         grad2YcosYFourier = self.fourier(grad2YcosY * ellLimits)
         grad2YcosYFourier *= 4.0 * self.lx * self.ly  # for cos
-        grad2YcosYFourier *= 2.0 * self.ly / 1.0j / self.l**4  # for grad
+        grad2YcosYFourier *= 2.0 * self.ly / 1.0j / self.ell**4  # for grad
         grad2YcosYFourier[np.where(np.isfinite(grad2YcosXFourier) == False)] = 0.0
         #
         # sum
@@ -3953,7 +3728,7 @@ class FlatMap(object):
         resultFourier[np.where(np.isfinite(resultFourier) == False)] = 0.0
 
         # remove L > 2 lMax
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=resultFourier, test=test
         )
@@ -3989,20 +3764,20 @@ class FlatMap(object):
 
         # interpolate, preserving the sign
         lnfln = interp1d(
-            np.log(self.l.flatten()),
+            np.log(self.ell.flatten()),
             np.log(np.abs(result).flatten()),
             kind="linear",
             bounds_error=False,
             fill_value=0.0,
         )
         signln = interp1d(
-            np.log(self.l.flatten()),
+            np.log(self.ell.flatten()),
             np.sign(result.flatten()),
             kind="linear",
             bounds_error=False,
             fill_value=0.0,
         )
-        f = lambda l: np.exp(lnfln(np.log(l))) * signln(np.log(l))
+        f = lambda ell: np.exp(lnfln(np.log(ell))) * signln(np.log(ell))
         return f
 
     ###############################################################################
@@ -4032,62 +3807,62 @@ class FlatMap(object):
         # Numerator: keep the minimum lMax
         lMax = min(lMaxS, lMaxD)
 
-        def fdLnC0dLnl(l):
+        def fdLnC0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = fC0(lup) / fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
-        def fdLnl2C0dLnl(l):
+        def fdLnl2C0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = lup**2 * fC0(lup)
             result /= ldown**2 * fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
-        def gShear(l):
+        def gShear(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnC0dLnl(l)  # for isotropic dilation
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnC0dLnl(ell)  # for isotropic dilation
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
             return result
 
-        def gDilation(l):
+        def gDilation(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnl2C0dLnl(l)  # for isotropic dilation
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnl2C0dLnl(ell)  # for isotropic dilation
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
             return result
 
         # useful terms
-        fx = (self.lx**2 - self.ly**2) / self.l**2
+        fx = (self.lx**2 - self.ly**2) / self.ell**2
         fx[np.where(np.isfinite(fx) == False)] = 0.0
         #
-        fy = self.lx * self.ly / self.l**2
+        fy = self.lx * self.ly / self.ell**2
         fy[np.where(np.isfinite(fy) == False)] = 0.0
 
         # First, the symmetric term
-        f = lambda l: gDilation(l) * fCfg(l)
+        f = lambda ell: gDilation(ell) * fCfg(ell)
         term1DFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         term1D = self.inverseFourier(term1DFourier)
         #
-        f = lambda l: gShear(l) * fCfg(l)
+        f = lambda ell: gShear(ell) * fCfg(ell)
         term1SFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
 
         term1xFourier = term1SFourier * fx
@@ -4107,15 +3882,15 @@ class FlatMap(object):
             self.plotFourier(term1Fourier)
 
         # Second, the asymmetric term
-        f = lambda l: fCfg(l) * (l >= lMin) * (l <= lMax)
+        f = lambda ell: fCfg(ell) * (ell >= lMin) * (ell <= lMax)
         term2CFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         term2C = self.inverseFourier(term2CFourier)
         #
-        f = lambda l: gShear(l) * gDilation(l) * fCfg(l)
+        f = lambda ell: gShear(ell) * gDilation(ell) * fCfg(ell)
         term2SDFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
 
         term2xFourier = term2SDFourier * fx
@@ -4160,7 +3935,7 @@ class FlatMap(object):
         resultFourier *= normalizationFourier
 
         # remove L > 2 lMax
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=resultFourier, test=test
         )
@@ -4210,8 +3985,8 @@ class FlatMap(object):
         n0Kappa[0, 0] = n0Kappa[0, 1]
 
         # interpolate
-        where = (self.l.flatten() > 0.0) * (self.l.flatten() < 2.0 * lMax)
-        L = self.l.flatten()[where]
+        where = (self.ell.flatten() > 0.0) * (self.ell.flatten() < 2.0 * lMax)
+        L = self.ell.flatten()[where]
         N = n0Kappa.flatten()[where]
         lnfln = interp1d(
             np.log(L),
@@ -4223,7 +3998,7 @@ class FlatMap(object):
         sgnfln = interp1d(
             np.log(L), np.sign(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        f = lambda l: np.exp(lnfln(np.log(l))) * sgnfln(np.log(l))
+        f = lambda ell: np.exp(lnfln(np.log(ell))) * sgnfln(np.log(ell))
         return f
 
     ###############################################################################
@@ -4250,7 +4025,7 @@ class FlatMap(object):
             dataFourier2 = dataFourier.copy()
 
         # cut off high ells
-        f = lambda l: 1.0 * (l >= lMin) * (l <= lMax)
+        f = lambda ell: 1.0 * (ell >= lMin) * (ell <= lMax)
         FDataFourier = self.filterFourierIsotropic(
             f, dataFourier=dataFourier, test=test
         )
@@ -4260,26 +4035,26 @@ class FlatMap(object):
             self.plotFourier(dataFourier=FDataFourier)
 
         # weight function for shear
-        def fdLnC0dLnl(l):
+        def fdLnC0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = fC0(lup) / fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
         if test:
-            F = np.array(map(fdLnC0dLnl, self.l.flatten()))
-            plt.semilogx(self.l.flatten(), F, "b.")
+            F = np.array(map(fdLnC0dLnl, self.ell.flatten()))
+            plt.semilogx(self.ell.flatten(), F, "b.")
             plt.show()
 
         # sort of shear Wiener-filter
-        def f(l):
+        def f(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnC0dLnl(l)  # for shear
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnC0dLnl(ell)  # for shear
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
@@ -4292,7 +4067,7 @@ class FlatMap(object):
             # print "showing the WF map"
             self.plotFourier(dataFourier=WFDataFourier)
             # print "checking the power spectrum of this map"
-            theory = lambda l: f(l) ** 2 * fC0(l)
+            theory = lambda ell: f(ell) ** 2 * fC0(ell)
             self.powerSpectrum(theory=[theory], dataFourier=WFDataFourier, plot=True)
 
         # multiplication by sin 2 theta_{L,l}
@@ -4340,7 +4115,7 @@ class FlatMap(object):
             self.plotFourier(term1Fourier + term2Fourier)
 
         # get phi from kappa
-        resultFourier *= -2.0 / self.l**2
+        resultFourier *= -2.0 / self.ell**2
         resultFourier[np.where(np.isfinite(resultFourier) == False)] = 0.0
         if test:
             # print "checking the power spectrum of phi map"
@@ -4440,36 +4215,36 @@ class FlatMap(object):
         if fCfg is None:
             fCfg = fCtot
 
-        def fdLnC0dLnl(l):
+        def fdLnC0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = fC0(lup) / fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
-        def g(l):
+        def g(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnC0dLnl(l)  # for isotropic dilation
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnC0dLnl(ell)  # for isotropic dilation
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
             return result
 
         # useful terms
-        fDiff = (self.lx**2 - self.ly**2) / self.l**2
+        fDiff = (self.lx**2 - self.ly**2) / self.ell**2
         fDiff[np.where(np.isfinite(fDiff) == False)] = 0.0
         #
-        fProd = self.lx * self.ly / self.l**2
+        fProd = self.lx * self.ly / self.ell**2
         fProd[np.where(np.isfinite(fProd) == False)] = 0.0
 
         # First, the symmetric term
-        f = lambda l: g(l) * fCfg(l)
+        f = lambda ell: g(ell) * fCfg(ell)
         term1Fourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         #
         term1xFourier = term1Fourier * fDiff
@@ -4499,15 +4274,15 @@ class FlatMap(object):
             self.plotFourier(term1Fourier)
 
         # Second, the asymmetric term
-        f = lambda l: fCfg(l) * (l >= lMin) * (l <= lMax)
+        f = lambda ell: fCfg(ell) * (ell >= lMin) * (ell <= lMax)
         term2bFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         term2b = self.inverseFourier(term2bFourier)
         #
-        f = lambda l: g(l) ** 2 * fCfg(l)
+        f = lambda ell: g(ell) ** 2 * fCfg(ell)
         term2aFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
 
         term2xxFourier = term2aFourier * fProd**2
@@ -4557,7 +4332,7 @@ class FlatMap(object):
         resultFourier *= normalizationFourier**2
 
         # remove L > 2 lMax
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=resultFourier, test=test
         )
@@ -4601,13 +4376,13 @@ class FlatMap(object):
         n0Kappa[0, 0] = n0Kappa[0, 1]
 
         # interpolate
-        where = (self.l.flatten() > 0.0) * (self.l.flatten() < 2.0 * lMax)
-        L = self.l.flatten()[where]
+        where = (self.ell.flatten() > 0.0) * (self.ell.flatten() < 2.0 * lMax)
+        L = self.ell.flatten()[where]
         N = n0Kappa.flatten()[where]
         lnfln = interp1d(
             np.log(L), np.log(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        f = lambda l: np.exp(lnfln(np.log(l)))
+        f = lambda ell: np.exp(lnfln(np.log(ell)))
         return f
 
     ###############################################################################
@@ -4634,36 +4409,36 @@ class FlatMap(object):
         # Numerator: keep the minimum lMax
         lMax = min(lMaxS, lMaxSB)
 
-        def fdLnC0dLnl(l):
+        def fdLnC0dLnl(ell):
             e = 0.01
-            lup = l * (1.0 + e)
-            ldown = l * (1.0 - e)
+            lup = ell * (1.0 + e)
+            ldown = ell * (1.0 - e)
             result = fC0(lup) / fC0(ldown)
             result = np.log(result) / (2.0 * e)
             return result
 
-        def g(l):
+        def g(ell):
             # cut off the high ells from input map
-            if (l < lMin) or (l > lMax):
+            if (ell < lMin) or (ell > lMax):
                 return 0.0
-            result = fC0(l) / fCtot(l) ** 2
-            result *= fdLnC0dLnl(l)  # for isotropic dilation
+            result = fC0(ell) / fCtot(ell) ** 2
+            result *= fdLnC0dLnl(ell)  # for isotropic dilation
             result /= 0.5
             if not np.isfinite(result):
                 result = 0.0
             return result
 
         # useful terms
-        fDiff = (self.lx**2 - self.ly**2) / self.l**2
+        fDiff = (self.lx**2 - self.ly**2) / self.ell**2
         fDiff[np.where(np.isfinite(fDiff) == False)] = 0.0
         #
-        fProd = self.lx * self.ly / self.l**2
+        fProd = self.lx * self.ly / self.ell**2
         fProd[np.where(np.isfinite(fProd) == False)] = 0.0
 
         # First, the symmetric term
-        f = lambda l: g(l) * fCfg(l)
+        f = lambda ell: g(ell) * fCfg(ell)
         termSFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
 
         termEx = self.inverseFourier(termSFourier * fDiff)
@@ -4693,14 +4468,14 @@ class FlatMap(object):
             self.plotFourier(term1Fourier)
 
         # Second, the asymmetric term
-        f = lambda l: g(l) ** 2 * fCfg(l)
+        f = lambda ell: g(ell) ** 2 * fCfg(ell)
         term2aFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         #
-        f = lambda l: fCfg(l) * (l >= lMin) * (l <= lMax)
+        f = lambda ell: fCfg(ell) * (ell >= lMin) * (ell <= lMax)
         term2bFourier = self.filterFourierIsotropic(
-            f, dataFourier=np.ones_like(self.l), test=test
+            f, dataFourier=np.ones_like(self.ell), test=test
         )
         term2b = self.inverseFourier(term2bFourier)
 
@@ -4733,7 +4508,7 @@ class FlatMap(object):
 
         if test:
             self.plotFourier(resultFourier)
-            plt.loglog(self.l.flatten(), resultFourier.flatten(), ".")
+            plt.loglog(self.ell.flatten(), resultFourier.flatten(), ".")
             plt.show()
 
         # compute normalization: same for shear and shear B
@@ -4765,7 +4540,7 @@ class FlatMap(object):
         resultFourier *= normalizationFourier
 
         # remove L > 2 lMax
-        f = lambda l: (l <= 2.0 * lMax)
+        f = lambda ell: (ell <= 2.0 * lMax)
         resultFourier = self.filterFourierIsotropic(
             f, dataFourier=resultFourier, test=test
         )
@@ -4814,11 +4589,11 @@ class FlatMap(object):
         n0Kappa[0, 0] = n0Kappa[0, 1]
 
         # interpolate
-        where = (self.l.flatten() > 0.0) * (self.l.flatten() < 2.0 * lMax)
-        L = self.l.flatten()[where]
+        where = (self.ell.flatten() > 0.0) * (self.ell.flatten() < 2.0 * lMax)
+        L = self.ell.flatten()[where]
         N = n0Kappa.flatten()[where]
         lnfln = interp1d(
             np.log(L), np.log(N), kind="linear", bounds_error=False, fill_value=np.inf
         )
-        f = lambda l: np.exp(lnfln(np.log(l)))
+        f = lambda ell: np.exp(lnfln(np.log(ell)))
         return f

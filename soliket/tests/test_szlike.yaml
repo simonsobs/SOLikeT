@@ -29,7 +29,7 @@ params:
     value: 1.06e-3
 
   gnfw_rho0:
-    value: 3.186441
+    value: 3.1864410705359125
   gnfw_bt_ksz:
     value: 3.45493977635
   gnfw_A2h_ksz:

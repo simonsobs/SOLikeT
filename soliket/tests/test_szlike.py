@@ -10,13 +10,12 @@ cov_ksz_file = "soliket/szlike/cov_diskring_ksz_varweight_bootstrap.txt"
 twohalo_term = "soliket/szlike/twohalo_cmass_average.txt"
 beam_file = "soliket/szlike/beam_f150_daynight.txt"
 beam_response = "soliket/szlike/act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt"
-# thta_arc,ksz_gnfw,tsz_gnfw = np.loadtxt(sz_data_file,usecols=(0,1,2),unpack=True) #muK*sqarcmin
 
 
 def test_ksz(request):
     info = {
         "params": {
-            "gnfw_rho0": 3.186441,
+            "gnfw_rho0": 3.1864410705359125,
             "gnfw_bt_ksz": 3.45493977635,
             "gnfw_A2h_ksz": 1.0,
         },

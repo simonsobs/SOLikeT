@@ -7,7 +7,7 @@ cov_ksz_file: cov_diskring_ksz_varweight_bootstrap.txt
 twohalo_term: twohalo_cmass_average.txt #False, or give file. Need to flesh out this option more, but the idea is that if False it will use two_halo.py to calculate a 2h term
 
 redshift: 0.55 
-mass_halo_mean_Msol: 10**13.
+mass_halo_mean_Msol: 1.e13
 frequency_GHz: 150.
 #input_model: "gnfw"
 
@@ -33,7 +33,7 @@ params:
     prior:
       min: 1.0
       max: 6.0
-    ref: 3.186441
+    ref: 3.1864410705359125
     latex: \log_{10}\rho_0
   gnfw_bt_ksz:
     prior:

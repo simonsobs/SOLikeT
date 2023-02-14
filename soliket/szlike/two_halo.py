@@ -40,6 +40,7 @@ kpc_cgs = 3.086e21
 # Computing the 2-halo component of density and preassure profiles in cgs units #
 #################################################################################
 
+
 # From Battaglia 2016, Appendix A
 def rho_gnfw(x, m, z):
     rho0 = 4e3 * (m / 1e14) ** 0.29 * (1 + z) ** (-0.66)

@@ -14,9 +14,9 @@ def beam_transform_to_profile(bl, theta, normalize=False):
     angular profile
     at the given radii theta."""
     bl = np.asarray(bl)
-    l = np.arange(bl.size)
+    ell = np.arange(bl.size)
     x = np.cos(theta)
-    a = bl * (2 * l + 1) / (4 * np.pi)
+    a = bl * (2 * ell + 1) / (4 * np.pi)
     profile = np.polynomial.legendre.legval(x, a)
     if normalize:
         profile /= np.sum(a)

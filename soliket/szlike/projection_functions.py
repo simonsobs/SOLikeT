@@ -116,16 +116,14 @@ def project_ksz(
         * 1e3
     )
 
-    # print("rho2d",rho2D)
-
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht / resolution_factor
     thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2 / resolution_factor
 
     profMap = np.interp(r, thta_smooth, rho2D)
     profMap2 = np.interp(r, thta2_smooth, rho2D2)
-    beamMapF = f_beam_fft(beam_txt, baseMap.l)  # check stuff here
+    beamMapF = f_beam_fft(beam_txt, baseMap.ell)
     # Fourier transform the profile
-    profMapF = baseMap.fourier(profMap)
+    profMapF = baseMap.fourier(profMap) # see note in flat_map.py about precision
     profMapF2 = baseMap.fourier(profMap2)
     # multiply by the beam transfer function
     convolvedProfMapF = profMapF * beamMapF
@@ -229,13 +227,13 @@ def project_tsz(
     # Fourier transform the profile
     profMapF = baseMap.fourier(profMap)
     profMapF2 = baseMap.fourier(profMap2)
-    beamMapF = f_beam_fft(beam_txt, baseMap.l)
+    beamMapF = f_beam_fft(beam_txt, baseMap.ell)
     # multiply by beam
     convolvedProfMapF = profMapF * beamMapF
     convolvedProfMapF2 = profMapF2 * beamMapF
 
     if beam_response is not False:
-        respTF = f_response(beam_response, baseMap.l)
+        respTF = f_response(beam_response, baseMap.ell)
         # multiply by the response
         convolvedProfMapF *= respTF
         convolvedProfMapF2 *= respTF
