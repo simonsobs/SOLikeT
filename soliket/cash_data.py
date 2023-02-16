@@ -2,8 +2,7 @@ import numpy as np
 from scipy.special import factorial
 
 
-
-def cash_c_logpdf(theory, data, usestirling=True, name = "binned"):
+def cash_c_logpdf(theory, data, usestirling=True, name="binned"):
 
     __, __, delN2Dcat, zcut = data
 
@@ -26,9 +25,10 @@ def cash_c_logpdf(theory, data, usestirling=True, name = "binned"):
 
     loglike = obs * np.log(theory) - theory - ln_fac
 
-    print("\r ::: 2D ln likelihood = ", -np.nansum(loglike[np.isfinite(loglike)]))
+    print("\r ::: 2D ln likelihood = ", np.nansum(loglike[np.isfinite(loglike)]))
 
     return np.nansum(loglike[np.isfinite(loglike)])
+
 
 
 class CashCData:
@@ -36,13 +36,12 @@ class CashCData:
     """
 
     def __init__(self, name, N, usestirling=True):
-
         self.name = str(name)
         self.data = N
         self.usestirling = usestirling
 
-    def __len__(self):
-        return len(self.data)
+    # def __len__(self):
+    #     return len(self.data)
 
     def loglike(self, theory):
-        return cash_c_logpdf(theory, self.data, name = self.name)
+        return cash_c_logpdf(theory, self.data, name=self.name)

@@ -3,16 +3,14 @@ from .poisson_data import PoissonData
 
 
 class PoissonLikelihood(Likelihood):
-    name = "Poisson"
-    data_path = None
-    columns = None
+    name: str = "Poisson"
 
     def initialize(self):
-        self.data = PoissonData(self.name, self.catalog, self.columns)
-        return {}
+        catalog, columns = self._get_catalog()
+        self.data = PoissonData(self.name, catalog, columns)
 
-    def get_requirements(self):
-        return {}
+    def _get_catalog(self):
+        raise NotImplementedError
 
     def _get_rate_fn(self, **kwargs):
         """Returns a callable rate function that takes each of 'columns' as kwargs.
@@ -25,9 +23,7 @@ class PoissonLikelihood(Likelihood):
         raise NotImplementedError
 
     def logp(self, **kwargs):
-
         pk_intp = self.theory.get_Pk_interpolator()
         rate_densities = self._get_rate_fn(pk_intp, **kwargs)
         n_expected = self._get_n_expected(pk_intp, **kwargs)
-
         return self.data.loglike(rate_densities, n_expected)

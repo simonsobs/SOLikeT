@@ -102,16 +102,16 @@ class BinnedClusterLikelihood(CashCLikelihood):
     def _get_data(self):
         return self.delN2Dcat
 
-    def _get_theory(self, pk_intp, **params_values_dict):
+    def _get_theory(self, pk_intp, **kwargs):
 
         start = time.time()
-        delN = self._get_integrated(pk_intp, **params_values_dict)
+        delN = self._get_integrated(pk_intp, **kwargs)
         elapsed = time.time() - start
         self.log.info("Theory N calculation took {:.3f} seconds.".format(elapsed))
 
         return delN
 
-    def _get_integrated(self, pk_intp, **params_values_dict):
+    def _get_integrated(self, pk_intp, **kwargs):
 
         zarr = self.zarr
         zz = self.zz
@@ -120,7 +120,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         h = self.theory.get_param("H0") / 100.0
 
-        dndlnm = get_dndlnm(self, zz, pk_intp, **params_values_dict)
+        dndlnm = get_dndlnm(self, zz, pk_intp) #, **kwargs)
         dVdzdO = get_dVdz(self, zz)
         surveydeg2 = self.skyfracs.sum()
         intgr = dndlnm * dVdzdO * surveydeg2
@@ -137,11 +137,11 @@ class BinnedClusterLikelihood(CashCLikelihood):
             marr_500c = marr_ymmd
 
         if self.selfunc['method'] == 'SNRbased':
-            y0 = get_y0(self, marr_ymmd, zz, marr_500c, use_Q=True, Ez_interp=False, **params_values_dict)
+            y0 = get_y0(self, marr_ymmd, zz, marr_500c, use_Q=True, Ez_interp=False, **kwargs)
         else:
             y0 = None
 
-        cc = np.array([self._get_completeness(marr, zz, y0, kk, marr_500c, **params_values_dict) for kk in range(Nq)])
+        cc = np.array([self._get_completeness(marr, zz, y0, kk, marr_500c, **kwargs) for kk in range(Nq)])
 
         nzarr = self.zbins
         delN2D = np.zeros((len(zarr), Nq))
@@ -171,11 +171,11 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         return delN2D
 
-    def _get_completeness_inj(self, mass, z, mass_500c, qbin, **params_values_dict):
+    def _get_completeness_inj(self, mass, z, mass_500c, qbin, **params):
 
-        scatter = params_values_dict["scatter_sz"]
+        scatter = params["scatter_sz"]
 
-        y0 = get_y0(self, mass, z, mass_500c, use_Q=False, Ez_interp=False, **params_values_dict)
+        y0 = get_y0(self, mass, z, mass_500c, use_Q=False, Ez_interp=False, **params)
         theta = get_theta(self, mass_500c, z)
 
         if scatter == 0:
@@ -200,9 +200,9 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
 
     # completeness 2D
-    def _get_completeness(self, marr, zarr, y0, qbin, marr_500c=None, **params_values_dict):
+    def _get_completeness(self, marr, zarr, y0, qbin, marr_500c=None, **params):
         if self.selfunc['method'] == 'SNRbased':
-            scatter = params_values_dict["scatter_sz"]
+            scatter = params["scatter_sz"]
             noise = self.noise
             qcut = self.qcut
             skyfracs = self.skyfracs/self.skyfracs.sum()
@@ -253,7 +253,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
             comp[comp > 1.] = 1.
 
         else:
-            comp = self._get_completeness_inj(marr, zarr, marr_500c, qbin, **params_values_dict)
+            comp = self._get_completeness_inj(marr, zarr, marr_500c, qbin, **params)
         return comp
 
 
@@ -288,17 +288,28 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         self.log.info('Number of mass points for theory calculation = {}.'.format(len(self.lnmarr)))
         self.log.info('Number of y0 points for theory calculation = {}.'.format(len(self.lny)))
 
+        self.catalog = pd.DataFrame(
+            {
+                "z": self.z_cat.byteswap().newbyteorder(),
+                "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(),
+                "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),
+                "tile_name": self.cat_tile_name.byteswap().newbyteorder()
+            }
+        )
+
         super().initialize()
 
     def get_requirements(self):
         return get_requirements(self)
 
-    # checking rate_densities
-    def get_dndlnm(self, z, pk_intp, **kwargs):
-        return get_dndlnm(self, z, pk_intp, **kwargs)
-    def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs):
-        return get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs)
+    def _get_catalog(self):
+        return self.catalog, self.columns
 
+    # # checking rate_densities
+    # def get_dndlnm(self, z, pk_intp):
+    #     return get_dndlnm(self, z, pk_intp)
+    # def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs):
+    #     return get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs)
 
     def _get_n_expected(self, pk_intp, **kwargs):
 
@@ -309,7 +320,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         Ynoise = self.noise
 
         dVdz = get_dVdz(self, zarr)
-        dndlnm = get_dndlnm(self, zarr, pk_intp, **kwargs)
+        dndlnm = get_dndlnm(self, zarr, pk_intp)
         Pfunc = self.PfuncY(Ynoise, marr, zarr, kwargs)
 
         Ntot = 0
@@ -366,7 +377,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         zarr = self.zz
         marr = np.exp(self.lnmarr)
 
-        dn_dzdlnm = get_dndlnm(self, zarr, pk_intp, **kwargs)
+        dn_dzdlnm = get_dndlnm(self, zarr, pk_intp)
         dn_dzdm = dn_dzdlnm / marr[:,None]
 
         dn_dzdm_intp = interp2d(zarr, self.lnmarr, np.log(dn_dzdm), kind='cubic', fill_value=0)
@@ -391,7 +402,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         return Prob_per_cluster
 
-    def P_Yo(self, tile_index, LgY, marr, z, param_vals):
+    def P_Yo(self, tile_index, LgY, marr, z, params):
 
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
             marr_ymmd = convert_masses(self, marr, z)
@@ -402,7 +413,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         else:
             marr_500c = marr_ymmd
 
-        Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **param_vals)
+        Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **params)
 
         Ytilde = np.repeat(Ytilde[:,:, np.newaxis], LgY.shape[-1], axis=2)
         LgY = np.repeat(LgY[np.newaxis, :,:], Ytilde.shape[0], axis=0)
@@ -412,12 +423,12 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
 
         ans = (
-                1.0 / (param_vals["scatter_sz"] * np.sqrt(2 * np.pi)) *
-                np.exp(numer / (2.0 * param_vals["scatter_sz"] ** 2))
+                1.0 / (params["scatter_sz"] * np.sqrt(2 * np.pi)) *
+                np.exp(numer / (2.0 * params["scatter_sz"] ** 2))
         )
         return ans
 
-    def P_Yo_vec(self, LgY, marr, z, param_vals):
+    def P_Yo_vec(self, LgY, marr, z, params):
 
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
             marr_ymmd = convert_masses(self, marr, z)
@@ -429,7 +440,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             marr_500c = marr_ymmd
 
         Y = np.exp(LgY).T
-        Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=False, **param_vals)
+        Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=False, **params)
 
         Y = np.repeat(Y[np.newaxis, :,:,:], Ytilde.shape[0], axis=0)
         Ytilde = np.repeat(Ytilde[:, np.newaxis, :,:], Y.shape[1], axis=1)
@@ -437,14 +448,14 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
 
         ans = (
-                1.0 / (param_vals["scatter_sz"] * np.sqrt(2 * np.pi)) *
-                np.exp(numer / (2.0 * param_vals["scatter_sz"] ** 2))
+                1.0 / (params["scatter_sz"] * np.sqrt(2 * np.pi)) *
+                np.exp(numer / (2.0 * params["scatter_sz"] ** 2))
         )
         return ans
 
-    def P_of_gt_SN(self, LgY, marr, z, Ynoise, param_vals):
+    def P_of_gt_SN(self, LgY, marr, z, Ynoise, params):
 
-        if param_vals['scatter_sz'] == 0:
+        if params['scatter_sz'] == 0:
 
             if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
                 marr_ymmd = convert_masses(self, marr, z)
@@ -455,7 +466,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             else:
                 marr_500c = marr_ymmd
 
-            Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=False, **param_vals)
+            Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=False, **params)
 
             qcut = np.outer(np.ones(np.shape(Ytilde)), self.qcut)
             qcut_a = np.reshape(qcut, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
@@ -485,16 +496,16 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             LgYa2 = np.reshape(LgYa, (marr.shape[0], z.shape[0], len(LgY)))
 
             # replace nan with 0's:
-            P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, marr, z, param_vals).T)
+            P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, marr, z, params).T)
 
             ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) #* np.log(10) # why log10?
 
         return ans
 
-    def PfuncY(self, Ynoise, marr, z, param_vals):
+    def PfuncY(self, Ynoise, marr, z, params):
         LgY = self.lny
         P_func = np.outer(marr, np.zeros([len(z)]))
-        P_func = self.P_of_gt_SN(LgY, marr, z, Ynoise, param_vals)
+        P_func = self.P_of_gt_SN(LgY, marr, z, Ynoise, params)
         return P_func
 
     def Y_prob(self, Y_c, LgY, Ynoise):
@@ -502,9 +513,9 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         ans = gaussian(Y, Y_c, Ynoise)
         return ans
 
-    def Pfunc_per(self, tile_index, marr, z, Y_c, Y_err, param_vals):
+    def Pfunc_per(self, tile_index, marr, z, Y_c, Y_err, params):
 
-        if param_vals["scatter_sz"] == 0:
+        if params["scatter_sz"] == 0:
             if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
                 marr_ymmd = convert_masses(self, marr, z)
             else:
@@ -514,7 +525,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             else:
                 marr_500c = marr_ymmd
 
-            Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **param_vals)
+            Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **params)
             LgYtilde = np.log(Ytilde)
             P_Y_sig = np.nan_to_num(self.Y_prob(Y_c[:, None], LgYtilde, Y_err[:, None]))
             ans = P_Y_sig
@@ -523,7 +534,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             LgY = self.lny
             LgYa = np.outer(np.ones(len(marr)), LgY)
             P_Y_sig = self.Y_prob(Y_c[:, None], LgY, Y_err[:, None])
-            P_Y = np.nan_to_num(self.P_Yo(tile_index, LgYa, marr, z, param_vals))
+            P_Y = np.nan_to_num(self.P_Yo(tile_index, LgYa, marr, z, params))
             P_Y_sig = np.repeat(P_Y_sig[:, np.newaxis, :], P_Y.shape[1], axis=1)
             LgY = LgY[None, None, :]
             ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=2)
@@ -598,15 +609,6 @@ def initialize_common(self):
     self.log.info('The highest redshift = {:.2f}'.format(self.z_cat.max()))
     self.log.info('The lowest SNR = {:.2f}.'.format(self.q_cat.min()))
     self.log.info('The highest SNR = {:.2f}.'.format(self.q_cat.max()))
-
-    self.catalog = pd.DataFrame(
-        {
-            "z": self.z_cat.byteswap().newbyteorder(),
-            "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(),
-            "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),
-            "tile_name": self.cat_tile_name.byteswap().newbyteorder()
-        }
-    )
 
     if self.z_cat.max() > self.binning['z']['zmax']:
         print("Maximum redshift from catalogue is out of given redshift range. Please widen the redshift range for prediction.")
@@ -931,7 +933,7 @@ def get_dVdz(both, zarr):
     h = both.theory.get_param("H0") / 100.0
     return dV_dz*h**3
 
-def get_dndlnm(self, z, pk_intp, **params_values_dict):
+def get_dndlnm(self, z, pk_intp):
 
     marr = self.lnmarr  # Mass in units of Msun/h
 
@@ -1256,12 +1258,12 @@ def get_theta(self, mass_500c, z, Ez=None, Ez_interp=False):
     return ttstar * (mass_500c / MPIVOT_THETA / h) ** alpha_theta * Ez ** (-2. / 3.) * (100. * DAz / 500 / H0) ** (-1.)
 
 # y-m scaling relation for completeness
-def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=False, tile_index=None, **params_values_dict):
+def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=False, tile_index=None, **params):
 
-    A0 = params_values_dict["tenToA0"]
-    B0 = params_values_dict["B0"]
-    C0 = params_values_dict["C0"]
-    bias = params_values_dict["bias_sz"]
+    A0 = params["tenToA0"]
+    B0 = params["B0"]
+    C0 = params["C0"]
+    bias = params["bias_sz"]
 
     Ez = get_Ez(self, z, Ez_interp)
     try:

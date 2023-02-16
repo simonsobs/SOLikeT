@@ -13,21 +13,21 @@ params = {
     'Omega_c': 0.261,
     'sigma8': 0.81,
     'm_nu': 0.,
-    'tenToA0': 1.9e-05,
+    'tenToA0': 4.0e-05,
     'B0': 0.08,
     'C0': 2.,
     'scatter_sz': 0.,
     'bias_sz': 1.
 }
 
-path = './clusters/data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned/'
+path = './clusters/data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5/NemoCCL_A10tSZ_DR5White_ACT-DR5/'
 
 lkl_common = {
     'verbose': True,
     'stop_at_error': True,
     'data': {
         'data_path': path,
-        'cat_file': 'NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned_mass.fits',
+        'cat_file': 'NemoCCL_A10tSZ_DR5White_ACT-DR5_mass.fits',
         'Q_file': 'selFn/QFit.fits',
         'tile_file': 'selFn/tileAreas.txt',
         'rms_file': 'selFn/RMSTab.fits'
@@ -47,13 +47,13 @@ lkl_common = {
         'method': 'SNRbased',
         'whichQ': 'injection',
         'resolution': 'downsample',
-        'dwnsmpl_bins': 2,
+        'dwnsmpl_bins': 50,
         'save_dwsmpld': False,
     },
     'binning': {
         'z': {
             'zmin': 0.,
-            'zmax': 2.,
+            'zmax': 2.6,
             'dz': 0.1
         },
         'q': {
@@ -64,9 +64,9 @@ lkl_common = {
         'M': {
             'Mmin': 5e13,
             'Mmax': 1e16,
-            'dlogM': 0.01
+            'dlogM': 0.05
         },
-        'exclude_zbin': 2,
+        'exclude_zbin': 0,
     }
 }
 
@@ -131,7 +131,7 @@ def test_clusters_prediction():
     binned_pk_intp = binned_like.theory.get_Pk_interpolator()
     unbinned_pk_intp = unbinned_like.theory.get_Pk_interpolator()
     SZparams = {
-        'tenToA0': 1.9e-05,
+        'tenToA0': 4.0e-05,
         'B0': 0.08,
         'C0': 2.,
         'scatter_sz': 0.,
