@@ -1,0 +1,13 @@
+name: Documentation
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make docs
+        run: |
+          tox -e docs

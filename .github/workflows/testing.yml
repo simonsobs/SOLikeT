@@ -43,9 +43,6 @@ jobs:
         shell: bash -el {0}
         run: |
            tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
-      - name: Make docs
-        run: |
-          tox -e docs
       - if: contains(matrix.toxenv, '-cov')
         name: Report Coverage
         uses: codecov/codecov-action@v3
