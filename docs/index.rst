@@ -14,7 +14,7 @@ Main modules:
    :maxdepth: 2
    :caption: Contents:
    
-   
+   cosmopower
 
 * :ref:`genindex`
 * :ref:`search`
