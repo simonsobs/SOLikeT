@@ -93,5 +93,5 @@ def get_demo_lensing_model(theory):
 def test_lensing(theory):
     model, test_point = get_demo_lensing_model(theory)
     lnl = model.loglike(test_point)[0]
+    assert np.isclose(lnl,263.464, rtol=1e-3)
 
-    assert np.isfinite(lnl)
