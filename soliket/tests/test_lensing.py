@@ -43,10 +43,7 @@ def test_lensing_like(request):
 
     info["likelihood"] = {
         "LensLikelihood": {"external": lensing.LensingLikelihood},
-        "soliket.utils.OneWithCls": {"lmax": 10000},
-
-    }
-    info['params']=fiducial_params
+        "soliket.utils.OneWithCls": {"lmax": 10000}}
     model = get_model(info)
     loglikes, derived = model.loglikes()
     assert np.isclose(loglikes[0], 335.85600978, atol=0.2, rtol=0.0)  
