@@ -8,6 +8,9 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
+      - name: Install Dependencies
+        run: |
+          pip install tox-conda
       - name: Make docs
         run: |
           tox -e docs
