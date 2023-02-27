@@ -15,4 +15,6 @@ jobs:
           pip install tox-conda
       - name: Make docs
         run: |
+          mkdir -p docs/_static
+          mkdir -p docs/_templates
           tox -e docs
