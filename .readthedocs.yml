@@ -14,4 +14,8 @@ python:
     - method: pip
       path: .
 
+build:
+  apt_packages:
+    - cmake
+
 formats: all
