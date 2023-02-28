@@ -4,6 +4,7 @@ debug: True
 
 likelihood:
   soliket.mflike.MFLike:
+    data_folder: MFLike/v0.6
     input_file: data_sacc_00044.fits
     cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
     defaults:

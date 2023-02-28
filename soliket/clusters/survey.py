@@ -169,7 +169,7 @@ class SurveyData:
                 self.filetile, dtype=np.str, usecols=0, unpack=True
             )
             self.tilearea = np.loadtxt(
-                self.filetile, dtype=float, usecols=1, unpack=True
+                self.filetile, dtype=np.float, usecols=1, unpack=True
             )
 
             self.fsky = []

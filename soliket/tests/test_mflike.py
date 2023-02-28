@@ -69,7 +69,13 @@ else:
              "ee": 716.4015196388742,
              "tt-te-et-ee": 2459.7250}
 
-pre = "data_sacc_"
+pre = "data_sacc+cov_"
+
+class TestMFLike(MFLike):
+
+    _url = "https://drive.google.com/file/d/1H203bWjIuiPSQMfttBObFSysKvASuib9/view?usp=sharing"
+    filename = "mflike_test_data"
+    install_options = {"download_url": f"{_url}/{filename}.tar.gz"}
 
 
 class MFLikeTest(unittest.TestCase):
@@ -77,11 +83,11 @@ class MFLikeTest(unittest.TestCase):
     def setUp(self):
         from cobaya.install import install
 
-        install({"likelihood": {"soliket.MFLike": None}},
+        install({"likelihood": {"TestMFLike": {"external": TestMFLike}}},
                 path=packages_path, skip_global=False, force=True, debug=True)
 
 
-    @pytest.mark.skip(reason="don't want to install 300Mb of data!")
+    #@pytest.mark.skip(reason="don't want to install 300Mb of data!")
     def test_mflike(self):
         # As of now, there is not a mechanism
         # in soliket to ensure there is .loglike that can be called like this
@@ -118,12 +124,13 @@ class MFLikeTest(unittest.TestCase):
 
         for select, chi2 in chi2s.items():
 
-            my_mflike = MFLike(
+            my_mflike = TestMFLike(
                 {
+                    "esternal": TestMFLike,
                     "packages_path": packages_path,
                     "data_folder": "MFLike/v0.6",
                     "input_file": pre + "00000.fits",
-                    "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
+                   # "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
                     "defaults": {
                         "polarizations": select.upper().split("-"),
                         "scales": {
@@ -141,13 +148,13 @@ class MFLikeTest(unittest.TestCase):
 
             self.assertAlmostEqual(-2 * (loglike - my_mflike.logp_const), chi2, 2)
 
-    @pytest.mark.skip(reason="don't want to install 300Mb of data!")
+    #@pytest.mark.skip(reason="don't want to install 300Mb of data!")
     def test_cobaya(self):
 
         info = {
             "likelihood": {
-                "soliket.mflike": {
-                    "external": MFLike,
+                "TestMFLike": {
+                    "external": TestMFLike,
                     "datapath": os.path.join(packages_path, "data/MFLike/v0.6/"),
                     "input_file": pre + "00000.fits",
                     "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
