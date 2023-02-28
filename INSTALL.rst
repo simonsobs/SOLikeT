@@ -1,4 +1,6 @@
-INSTALL AND RUN COBAYA+SOLIKET
+.. _INSTALL:
+
+Install and run Cobaya+SOLikeT
 ==============================
 
 Using conda
