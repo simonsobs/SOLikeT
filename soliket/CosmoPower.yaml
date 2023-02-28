@@ -1,8 +1,19 @@
 stop_at_error: False
-network_path: soliket/data/CosmoPower/CP_paper/CMB
-network_settings:
-extra_args:
 
+# A path to the directory where cosmopower networks are stored (can be either relative or absolute).
+network_path: soliket/data/CosmoPower/CP_paper/CMB
+
+# A dictionary of all networks and their settings.
+network_settings:
+
+# Optional extra arguments for the theory code.
+extra_args:
+  # An lmax cut for all networks.
+  lmax: null
+
+# A dictionary to rename parameters.
+# (e.g. if you are sampling on "ombh2" but your network takes "omega_b" as an input,
+#       the line "ombh2: omega_b" will translate that parameter for you.)
 renames:
   ombh2: omega_b
   omch2: omega_cdm
