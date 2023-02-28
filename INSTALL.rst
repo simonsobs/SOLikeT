@@ -10,11 +10,9 @@ We have provided a conda environment defined in `soliket-tests.yml <https://gith
 
 In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation).
 
-This should be easily achievable with:
+This should be easily achievable with::
 
-```
-pip install cosmopower
-```
+  pip install cosmopower
 
 If you wish to install it using your own system tools some useful information is provided below.
 

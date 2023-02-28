@@ -16,8 +16,5 @@ conda:
 
 build:
   image: latest
-  apt_packages:
-    - cmake
-    - make
 
 formats: all
