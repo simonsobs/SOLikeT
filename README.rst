@@ -16,6 +16,7 @@ Installation
 For a set of detailed instructions for different machines (e.g. NERSC), please see [here](INSTALL.rst).
 
 To install SOLikeT we expect that you have the following system-level tools:
+
 * python>=3.7,<3.11
 * pip
 * compilers (c, cxx, fortran)
