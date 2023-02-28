@@ -22,7 +22,7 @@ packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
 def test_evaluate(lhood):
 
     if lhood == "multi":
-         pytest.xfail(reason="multi lhood install failure")
+        pytest.xfail(reason="multi lhood install failure")
 
     if lhood == "mflike":
         pytest.skip(reason="don't want to install 300Mb of data!")
@@ -51,7 +51,7 @@ def test_evaluate(lhood):
 def test_mcmc(lhood):
 
     if lhood == "multi":
-         pytest.xfail(reason="multi lhood install failure")
+        pytest.xfail(reason="multi lhood install failure")
 
     if lhood == "mflike":
         pytest.skip(reason="don't want to install 300Mb of data!")
