@@ -1,6 +1,6 @@
 import pkgutil
 import pytest
-
+import tempfile
 from cobaya.yaml import yaml_load
 from cobaya.run import run
 
