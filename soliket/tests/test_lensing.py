@@ -37,8 +37,9 @@ def test_lensing_like(request):
 
     from soliket.lensing import LensingLikelihood
 
-    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood}}
-                          # "soliket.utils.OneWithCls": {"lmax": 10000}}
+    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood},
+                            # "soliket.utils.OneWithCls": {"lmax": 10000}
+                          }
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
@@ -70,5 +71,6 @@ def test_lensing_like(request):
     plt.ylabel('C_l')
 
     # plt.savefig('./lensing_like_testdata.png')
+    import pdb; pdb.set_trace()
 
     assert np.isclose(loglikes[0], 44.2959257, atol=0.2, rtol=0.0)
