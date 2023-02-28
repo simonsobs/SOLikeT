@@ -5,13 +5,6 @@ import numpy as np
 from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
-try:
-    import classy  # noqa F401
-except ImportError:
-    boltzmann_codes = ["camb"]
-else:
-    boltzmann_codes = ["camb", "classy"]
-
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "lensing_packages"
 )
@@ -22,7 +15,7 @@ fiducial_params = {
     "H0": 67.02393,
     "tau": 0.6574325e-01,
     "nnu": 3.046,
-    "num_massive_neutrinos": 1,
+    "mnu": 1.0,
     "As": 2.15086031154146e-9,
     "ns": 0.9625356e00,
 }
@@ -32,19 +25,52 @@ info['params'] = fiducial_params
 
 
 def test_lensing_import(request):
-    from soliket.lensing import lensing
+
+    from soliket.lensing import LensingLikelihood
 
 
 def test_lensing_like(request):
-    from soliket.lensing import lensing
-
-    info["likelihood"] = {
-        "LensLikelihood": {"external": lensing.LensingLikelihood},
-        "soliket.utils.OneWithCls": {"lmax": 10000}}
 
     from cobaya.install import install
-    install(info, path=packages_path, skip_global=True)
+    install({"likelihood": {"soliket.lensing.LensingLikelihood": None}},
+            path=packages_path, skip_global=False, force=False, debug=True)
+
+    from soliket.lensing import LensingLikelihood
+
+    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood},
+                            # "soliket.utils.OneWithCls": {"lmax": 10000}
+                          }
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
-    assert np.isclose(loglikes[0], 335.85600978, atol=0.2, rtol=0.0)
+
+    lhood = model.likelihood['LensingLikelihood']
+
+    import copy
+    info_owc = copy.copy(info)
+
+    info_owc["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood},
+                          "soliket.utils.OneWithCls": {"lmax": 10000}}
+
+    model_owc = get_model(info_owc)
+    loglikes_owc, derived_owc = model_owc.loglikes()
+
+    lhood_owc = model_owc.likelihood['LensingLikelihood']
+
+    x_data, y_data = lhood._get_data()
+    y_th = lhood._get_theory()
+    y_th_owc = lhood_owc._get_theory()
+
+    from matplotlib import pyplot as plt
+    plt.plot(x_data, y_data, 'o')
+    plt.plot(x_data, y_th, '-.')
+    plt.plot(x_data, y_th_owc, '.')
+    plt.legend(['test data', 'computed theory', 'computed theory (inc. OneWithCls)'])
+    plt.xscale('log')
+    plt.xlabel('l')
+    plt.ylabel('C_l')
+
+    # plt.savefig('./lensing_like_testdata.png')
+    import pdb; pdb.set_trace()
+
+    assert np.isclose(loglikes[0], 44.2959257, atol=0.2, rtol=0.0)
