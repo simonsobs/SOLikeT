@@ -4,6 +4,11 @@ import pytest
 from cobaya.yaml import yaml_load
 from cobaya.run import run
 
+import os
+
+packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
+    tempfile.gettempdir(), "lensing_packages"
+)
 
 @pytest.mark.parametrize("lhood",
                          ["mflike",
