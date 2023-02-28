@@ -42,6 +42,9 @@ def test_lensing_like(request):
         "LensLikelihood": {"external": lensing.LensingLikelihood},
         "soliket.utils.OneWithCls": {"lmax": 10000}}
 
+    from cobaya.install import install
+    install(info, path=packages_path, skip_global=True)
+
     model = get_model(info)
     loglikes, derived = model.loglikes()
     assert np.isclose(loglikes[0], 335.85600978, atol=0.2, rtol=0.0)
