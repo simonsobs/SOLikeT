@@ -42,7 +42,7 @@ general.
 
 .. note::
 
-   If you use this cosmological code, please cite it as:
+   **If you use this cosmological code, please cite it as:**
    |br|
    N. Chiasari et al.
    *Core Cosmology Library: Precision Cosmological Predictions for LSST*
@@ -123,7 +123,8 @@ class CCL(Theory):
         # return any nuisance parameters that CCL can support
         return []
 
-    def calculate(self, state: dict, want_derived: bool = True, **params_values_dict) -> bool:
+    def calculate(self, state: dict, want_derived: bool = True,
+                  **params_values_dict) -> bool:
         # calculate the general CCL cosmo object which likelihoods can then use to get
         # what they need (likelihoods should cache results appropriately)
         # get our requirements from self.provider
