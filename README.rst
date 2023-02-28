@@ -13,7 +13,7 @@ A centralized package for likelihood and theory implementations for SO.
 Installation
 ============
 
-For a set of detailed instructions for different machines (e.g. NERSC), please see [here](INSTALL.rst).
+For a set of detailed instructions for different machines (e.g. NERSC), please see `here<INSTALL.rst>`_.
 
 To install SOLikeT we expect that you have the following system-level tools:
 
