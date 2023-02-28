@@ -45,13 +45,6 @@ from cobaya.typing import InfoDict
 class CosmoPower(BoltzmannBase):
     """A CosmoPower Network wrapper for Cobaya."""
 
-    stop_at_error: bool = False
-
-    network_path: str = "soliket/data/CosmoPower/CP_paper/CMB"
-    network_settings: InfoDict = None
-
-    extra_args: InfoDict = None
-
     def initialize(self) -> None:
         super().initialize()
 
@@ -238,17 +231,6 @@ class CosmoPower(BoltzmannBase):
 
 class CosmoPowerDerived(Theory):
     """A theory class that can calculate derived parameters from CosmoPower networks."""
-    stop_at_error: bool = False
-
-    network_path: str = "soliket/data/CosmoPower/CP_paper/CMB"
-    network_settings: InfoDict = None
-
-    derived_parameters: Iterable[str]
-    derived_values: Dict
-
-    extra_args: InfoDict = None
-
-    renames: Dict = {}
 
     def initialize(self) -> None:
         super().initialize()
