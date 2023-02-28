@@ -71,9 +71,11 @@ else:
 
 pre = "data_sacc+cov_"
 
+
 class TestMFLike(MFLike):
 
-    _url = "https://drive.google.com/file/d/1H203bWjIuiPSQMfttBObFSysKvASuib9/view?usp=sharing"
+    _url = "https://drive.google.com/file/d/ \
+            1H203bWjIuiPSQMfttBObFSysKvASuib9/view?usp=sharing"
     filename = "mflike_test_data"
     install_options = {"download_url": f"{_url}/{filename}.tar.gz"}
 
@@ -87,8 +89,8 @@ class MFLikeTest(unittest.TestCase):
                 path=packages_path, skip_global=False, force=True, debug=True)
 
 
-    #@pytest.mark.skip(reason="don't want to install 300Mb of data!")
     def test_mflike(self):
+
         # As of now, there is not a mechanism
         # in soliket to ensure there is .loglike that can be called like this
         # w/out cobaya
@@ -126,9 +128,9 @@ class MFLikeTest(unittest.TestCase):
 
             my_mflike = TestMFLike(
                 {
-                    "esternal": TestMFLike,
+                    "external": TestMFLike,
                     "packages_path": packages_path,
-                    "data_folder": "MFLike/v0.6",
+                    "data_folder": "TestMFLike", #"MFLike/v0.6",
                     "input_file": pre + "00000.fits",
                    # "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
                     "defaults": {
@@ -155,9 +157,10 @@ class MFLikeTest(unittest.TestCase):
             "likelihood": {
                 "TestMFLike": {
                     "external": TestMFLike,
-                    "datapath": os.path.join(packages_path, "data/MFLike/v0.6/"),
+                    "datapath": os.path.join(packages_path, "data/TestMFLike"),
+                    # "data/MFLike/v0.6/"),
                     "input_file": pre + "00000.fits",
-                    "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
+                   # "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
                 }
             },
             "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1},
@@ -173,6 +176,6 @@ class MFLikeTest(unittest.TestCase):
         from cobaya.model import get_model
 
         model = get_model(info)
-        my_mflike = model.likelihood["soliket.mflike"]
+        my_mflike = model.likelihood["TestMFLike"]
         chi2 = -2 * (model.loglikes(nuisance_params)[0] - my_mflike.logp_const)
         self.assertAlmostEqual(chi2[0], chi2s["tt-te-et-ee"], 2)
