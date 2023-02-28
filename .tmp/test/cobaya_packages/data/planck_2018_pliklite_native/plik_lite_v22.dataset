@@ -1,0 +1,25 @@
+
+use_cl = TT TE EE
+
+#List of bins to actually use
+use_bins = 
+
+#Tuple giving min and max L to actually use
+bins_for_L_range =
+
+#total bins in data file and covariance
+nbintt=215
+nbinte=199
+nbinee=199
+
+lmax=2508
+
+data = cl_cmb_plik_v22.dat
+
+bin_lmin_offset = 30
+blmin = blmin.dat
+blmax = blmax.dat
+weights = bweight.dat
+
+#cov_file = plik_lite_cov.dat
+cov_file_binary = c_matrix_plik_v22.dat
