@@ -6,6 +6,13 @@
 # Import SOLikeT (for autodoc)
 import sys
 sys.path.insert(0, "..")
+
+# Create some mock imports
+import mock
+MOCK_MODULES = [ "cosmopower", "tensorflow", "pyccl" ]
+for module in MOCK_MODULES:
+    sys.modules[module] = mock.Mock()
+
 import soliket
 
 # -- Project information -----------------------------------------------------
