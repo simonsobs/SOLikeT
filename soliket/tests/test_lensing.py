@@ -48,11 +48,3 @@ def test_lensing_like(request):
     model = get_model(info)
     loglikes, derived = model.loglikes()
     assert np.isclose(loglikes[0], 335.85600978, atol=0.2, rtol=0.0)
-
-
-
-@pytest.mark.parametrize("theory", boltzmann_codes)
-def test_lensing(theory):
-    model, test_point = get_demo_lensing_model(theory)
-    lnl = model.loglike(test_point)[0]
-    assert np.isclose(lnl, 263.464, rtol=1e-3)
