@@ -32,18 +32,19 @@ info['params'] = fiducial_params
 
 
 def test_lensing_import(request):
-    from soliket.lensing import lensing
+    from soliket.lensing import LensingLikelihood
 
 
 def test_lensing_like(request):
-    from soliket.lensing import lensing
-
-    info["likelihood"] = {
-        "LensLikelihood": {"external": lensing.LensingLikelihood},
-        "soliket.utils.OneWithCls": {"lmax": 10000}}
 
     from cobaya.install import install
-    install(info, path=packages_path, skip_global=True)
+    install({"likelihood": {"soliket.lensing.LensingLikelihood": None}},
+            path=packages_path, skip_global=False, force=True, debug=True)
+
+    from soliket.lensing import LensingLikelihood
+
+    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood},
+                          "soliket.utils.OneWithCls": {"lmax": 10000}}
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
