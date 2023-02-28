@@ -1,8 +1,14 @@
 import pkgutil
 import pytest
-
+import tempfile
 from cobaya.yaml import yaml_load
 from cobaya.run import run
+
+import os
+
+packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
+    tempfile.gettempdir(), "lensing_packages"
+)
 
 import os
 
@@ -20,8 +26,8 @@ packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
                           ])
 def test_evaluate(lhood):
 
-    if lhood == "lensing" or lhood == "multi":
-        pytest.xfail(reason="lensing lhood install failure")
+    if lhood == "multi":
+        pytest.xfail(reason="multi lhood install failure")
 
     if lhood == "mflike":
         pytest.skip(reason="don't want to install 300Mb of data!")
@@ -32,6 +38,9 @@ def test_evaluate(lhood):
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
     info['sampler'] = {'evaluate': {}}
+
+    from cobaya.install import install
+    install(info, path=packages_path, skip_global=True)
 
     updated_info, sampler = run(info)
 
@@ -46,8 +55,8 @@ def test_evaluate(lhood):
                           ])
 def test_mcmc(lhood):
 
-    if lhood == "lensing" or lhood == "multi":
-        pytest.xfail(reason="lensing lhood install failure")
+    if lhood == "multi":
+        pytest.xfail(reason="multi lhood install failure")
 
     if lhood == "mflike":
         pytest.skip(reason="don't want to install 300Mb of data!")
@@ -58,5 +67,8 @@ def test_mcmc(lhood):
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
     info['sampler'] = {'mcmc': {'max_samples': 10, 'max_tries': 1000}}
+
+    from cobaya.install import install
+    install(info, path=packages_path, skip_global=True)
 
     updated_info, sampler = run(info)
