@@ -1,9 +1,7 @@
 import os
 import tempfile
-
 import pytest
 import numpy as np
-
 from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
@@ -29,8 +27,8 @@ fiducial_params = {
     "ns": 0.9625356e00,
 }
 
-info={"theory": {"camb": {"extra_args": {"kmax": 0.9}}}}
-info['params']=fiducial_params
+info = {"theory": {"camb": {"extra_args": {"kmax": 0.9}}}}
+info['params'] = fiducial_params
 
 
 def test_lensing_import(request):
@@ -46,8 +44,7 @@ def test_lensing_like(request):
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
-    assert np.isclose(loglikes[0], 335.85600978, atol=0.2, rtol=0.0)  
-
+    assert np.isclose(loglikes[0], 335.85600978, atol=0.2, rtol=0.0)
 
 
 def get_demo_lensing_model(theory):
@@ -124,5 +121,4 @@ def get_demo_lensing_model(theory):
 def test_lensing(theory):
     model, test_point = get_demo_lensing_model(theory)
     lnl = model.loglike(test_point)[0]
-    assert np.isclose(lnl,263.464, rtol=1e-3)
-
+    assert np.isclose(lnl, 263.464, rtol=1e-3)
