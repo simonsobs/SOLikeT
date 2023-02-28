@@ -148,7 +148,7 @@ class MFLikeTest(unittest.TestCase):
             "likelihood": {
                 "soliket.mflike": {
                     "external": MFLike,
-                    "datapath": os.path.join(packages_path,"data/MFLike/v0.6/"),
+                    "datapath": os.path.join(packages_path, "data/MFLike/v0.6/"),
                     "input_file": pre + "00000.fits",
                     "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
                 }
@@ -159,7 +159,7 @@ class MFLikeTest(unittest.TestCase):
             "modules": packages_path,
             "debug": True,
         }
-            
+
         info["theory"]["soliket.TheoryForge_MFLike"] = {'stop_at_error': True}
         info["theory"]["soliket.Foreground"] = {'stop_at_error': True}
         info["theory"]["soliket.BandPass"] = {'stop_at_error': True}
@@ -169,5 +169,3 @@ class MFLikeTest(unittest.TestCase):
         my_mflike = model.likelihood["soliket.mflike"]
         chi2 = -2 * (model.loglikes(nuisance_params)[0] - my_mflike.logp_const)
         self.assertAlmostEqual(chi2[0], chi2s["tt-te-et-ee"], 2)
-
-
