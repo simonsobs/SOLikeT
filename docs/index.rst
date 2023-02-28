@@ -11,10 +11,21 @@ Table of contents
 Main modules:
 
 .. toctree::
+   :caption: Getting started
+   :maxdepth: 1
+   
+   index
+   install
+
+.. toctree::
+   :caption: Theory codes:
    :maxdepth: 2
-   :caption: Contents:
    
    cosmopower
+
+.. toctree::
+   :caption: Likelihoods:
+   :maxdepth: 2
 
 * :ref:`genindex`
 * :ref:`search`
