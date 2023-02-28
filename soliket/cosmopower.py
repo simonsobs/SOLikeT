@@ -22,13 +22,16 @@
 Usage
 -----
 
-After installing SOLikeT and cosmopower, you can use the ``CosmoPower`` theory codes
-by adding the ``soliket.CosmoPower`` code as a block in your parameter files.
+After installing SOLikeT and cosmopower, you can use the ``CosmoPower`` theory
+codes by adding the ``soliket.CosmoPower`` code as a block in your parameter
+files.
 
 Example: CMB emulators
 ----------------------
 
-You can get the example CMB emulators from the `cosmopower release repository <https://github.com/alessiospuriomancini/cosmopower/tree/main/cosmopower/trained_models/CP_paper>`_.
+You can get the example CMB emulators from the
+`cosmopower release repository
+<https://github.com/alessiospuriomancini/cosmopower/tree/main/cosmopower/trained_models/CP_paper>`_.
 After downloading these, you should have a directory structure like:
 
 .. code-block:: bash
@@ -38,7 +41,8 @@ After downloading these, you should have a directory structure like:
     ├── cmb_TE_PCAplusNN.pkl
     └── cmb_EE_NN.pkl
 
-With these and with ``soliket.CosmoPower`` installed and visible to cobaya, you can add it as a theory block to your run yaml as:
+With these and with ``soliket.CosmoPower`` installed and visible to cobaya, you
+can add it as a theory block to your run yaml as:
 
 .. code-block:: yaml
 
@@ -57,9 +61,11 @@ With these and with ``soliket.CosmoPower`` installed and visible to cobaya, you 
           type: NN
           filename: cmb_EE_NN
 
-Running this with cobaya will use ``soliket.CosmoPower`` as a theory to calculate the CMB Cl's from the emulators.
+Running this with cobaya will use ``soliket.CosmoPower`` as a theory to
+calculate the CMB Cl's from the emulators.
 
-If you want to add the example PP networks as well, you can do that simply with a block as:
+If you want to add the example PP networks as well, you can do that simply with
+a block as:
 
 .. code-block:: yaml
 
@@ -67,12 +73,22 @@ If you want to add the example PP networks as well, you can do that simply with 
     soliket.CosmoPower:
       network_path: /path/to/cosmopower/data
       network_settings:
+        [...]
         pp:
           type: PCAplusNN
           filename: cmb_PP_PCAplusNN
 
-SOLikeT will automatically use the correct conversion prefactors :math:`\ell (\ell + 1) / 2 \pi` terms and similar, as well as the CMB temperature.
-See the :func:`~soliket.cosmopower.CosmoPower.ell_factor` and :func:`~soliket.cosmopower.CosmoPower.cmb_unit_factor` functions for more information.
+In this example, the TT, EE and PP networks output :math:`\log(C_\ell)`, hence
+the default (``log: True``) is left, while the TE network outputs the
+:math:`C_\ell` values directly. The TT and EE networks use the CosmoPower
+Neural Network (NN) type emulators, while TE and PP use the Principal Component
+Analysis + NN (PCAplusNN) types.
+
+SOLikeT will automatically use the correct conversion prefactors
+:math:`\ell (\ell + 1) / 2 \pi` terms and similar, as well as the CMB
+temperature. See the :func:`~soliket.cosmopower.CosmoPower.ell_factor` and
+:func:`~soliket.cosmopower.CosmoPower.cmb_unit_factor` functions for more
+information on how SOLikeT infers these values.
 """
 import os
 try:
