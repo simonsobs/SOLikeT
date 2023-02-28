@@ -12,7 +12,6 @@ Table of contents
    :caption: Getting started
    :maxdepth: 1
    
-   index
    install
 
 .. toctree::
