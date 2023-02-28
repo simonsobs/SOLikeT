@@ -1,5 +1,5 @@
-Cosmopower Theory Code
-===================================
+Cosmopower
+==========
 
 .. automodule:: soliket.cosmopower
 

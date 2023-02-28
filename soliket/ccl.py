@@ -1,4 +1,7 @@
 """
+.. module:: soliket.ccl
+
+:Synopsis: A simple CCL wrapper for Cobaya.
 
 Simple CCL wrapper with function to return CCL cosmo object, and (optional) result of
 calling various custom methods on the ccl object. The idea is this is included with the
@@ -48,6 +51,9 @@ import pyccl as ccl
 
 
 class CCL(Theory):
+    """
+    
+    """
     # Options for Pk.
     # Default options can be set globally, and updated from requirements as needed
     kmax: float = 0  # Maximum k (1/Mpc units) for Pk, or zero if not needed

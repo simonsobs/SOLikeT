@@ -8,8 +8,6 @@
 Table of contents
 =================
 
-Main modules:
-
 .. toctree::
    :caption: Getting started
    :maxdepth: 1
@@ -21,11 +19,15 @@ Main modules:
    :caption: Theory codes:
    :maxdepth: 2
    
+   ccl
    cosmopower
 
 .. toctree::
    :caption: Likelihoods:
    :maxdepth: 2
+
+Indices and Tables
+==================
 
 * :ref:`genindex`
 * :ref:`search`
