@@ -10,7 +10,6 @@ portalocker
 dill
 fuzzywuzzy
 astropy
-camb
 getdist
 cobaya
 pyccl
