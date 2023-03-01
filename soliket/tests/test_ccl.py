@@ -3,10 +3,15 @@ Check that CCL works correctly.
 """
 import pytest
 from cobaya.model import get_model
+from cobaya.likelihood import Likelihood
 
-def logp(CCL):
-    """A logL function that we use to test CCL against."""
-    return 0.0
+class TestLike(Likelihood):
+    def logp(self, **params_values):
+        ccl = self.theory.get_CCL()
+        return 0.0
+    
+    def get_requirements(self):
+        return { "CCL" : None }
 
 fiducial_params = {
     "ombh2": 0.0224,
@@ -22,7 +27,7 @@ fiducial_params = {
 info_dict = {
     "params" : fiducial_params,
     "likelihood" : {
-        "logp" : logp
+        "testLike" : { "external" : TestLike }
     },
     "theory" : {
         "camb" : {
