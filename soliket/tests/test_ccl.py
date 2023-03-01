@@ -87,7 +87,7 @@ def test_ccl_pk(request):
     cosmo = model.provider.get_CCL()["cosmo"]
 
     k = np.logspace(np.log10(3e-1), 1, 1000)
-    pk_lin = cosmo.linear_matter_power(k, a = 0.5)
-    pk_nonlin = cosmo.nonlin_matter_power(k, a = 0.5)
+    pk_lin = cosmo.linear_matter_power(k, a=0.5)
+    pk_nonlin = cosmo.nonlin_matter_power(k, a=0.5)
 
     assert np.all(pk_nonlin > pk_lin)
