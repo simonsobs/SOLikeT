@@ -18,14 +18,20 @@ Main modules:
    install
 
 .. toctree::
-   :caption: Theory codes:
+   :caption: Theory codes
    :maxdepth: 2
    
    cosmopower
 
 .. toctree::
-   :caption: Likelihoods:
+   :caption: Likelihoods
    :maxdepth: 2
+
+.. toctree::
+   :caption: Developers
+   :maxdepth: 2
+   
+   developers
 
 * :ref:`genindex`
 * :ref:`search`
