@@ -227,13 +227,14 @@ class CosmoPower(BoltzmannBase):
 
         See also:
         cobaya.BoltzmannBase.get_Cl
-        `camb.CAMBresults.get_cmb_power_spectra <https://camb.readthedocs.io/en/latest/results.html#camb.results.CAMBdata.get_cmb_power_spectra>`_
+        `camb.CAMBresults.get_cmb_power_spectra
+        <https://camb.readthedocs.io/en/latest/results.html#camb.results.CAMBdata.get_cmb_power_spectra>`_
 
         Examples:
 
-        ell_factor(l, "tt") -> :math:`\ell ( \ell + 1 )/(2 pi)`
+        ell_factor(l, "tt") -> :math:`\ell ( \ell + 1 )/(2 \pi)`
 
-        ell_factor(l, "pp") -> :math:`\ell^2 ( \ell + 1 )^2/(2 pi)`.
+        ell_factor(l, "pp") -> :math:`\ell^2 ( \ell + 1 )^2/(2 \pi)`.
 
         :param ls: the range of ells.
         :param spectra: a two-character string with each character being one of [tebp].

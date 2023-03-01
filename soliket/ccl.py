@@ -16,23 +16,24 @@ here for now.
 First version by AL. Untested example of usage at
 https://github.com/cmbant/SZCl_like/blob/methods/szcl_like/szcl_like.py
 
-``get_CCL`` results a dictionary of results, where ``results['cosmo']`` is the CCL cosmology
-object.
+``get_CCL`` results a dictionary of results, where ``results['cosmo']`` is the
+CCL cosmology object.
 
 Classes that need other CCL-computed results (without additional free parameters), should
 pass them in the requirements list.
 
 e.g. a Likelihood with :func:`~soliket.ccl.CCL.get_requirements` returning
-``{'CCL': {'methods:{'name': self.method}}}`` [where self is the Theory instance] will have
-``results['name']`` set to the result of ``self.method(cosmo)`` being called with the CCL cosmo
-object.
+``{'CCL': {'methods:{'name': self.method}}}`` [where self is the Theory instance]
+will have ``results['name']`` set to the result of ``self.method(cosmo)`` being
+called with the CCL cosmo object.
 
 The Likelihood class can therefore handle for itself which results specifically it needs
 from CCL, and just give the method to return them (to be called and cached by Cobaya with
 the right parameters at the appropriate time).
 
-Alternatively the Likelihood can compute what it needs from ``results['cosmo']``, however in
-this case it will be up to the Likelihood to cache the results appropriately itself.
+Alternatively the Likelihood can compute what it needs from ``results['cosmo']``,
+however in this case it will be up to the Likelihood to cache the results
+appropriately itself.
 
 Note that this approach preclude sharing results other than the cosmo object itself
 between different likelihoods.

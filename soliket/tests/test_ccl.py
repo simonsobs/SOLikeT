@@ -5,13 +5,14 @@ import pytest
 from cobaya.model import get_model
 from cobaya.likelihood import Likelihood
 
+
 class TestLike(Likelihood):
     def logp(self, **params_values):
-        ccl = self.theory.get_CCL()
+        ccl = self.theory.get_CCL() # noqa F841
         return 0.0
-    
+
     def get_requirements(self):
-        return { "CCL" : None }
+        return {"CCL": None}
 
 fiducial_params = {
     "ombh2": 0.0224,
@@ -25,21 +26,26 @@ fiducial_params = {
 }
 
 info_dict = {
-    "params" : fiducial_params,
-    "likelihood" : {
-        "testLike" : { "external" : TestLike }
+    "params": fiducial_params,
+    "likelihood": {
+        "testLike": {"external": TestLike}
     },
-    "theory" : {
-        "camb" : {
+    "theory": {
+        "camb": {
         },
-        "soliket.CCL" : {
-            "kmax" : 10.0
+        "soliket.CCL": {
+            "kmax": 10.0
         }
     }
 }
 
+
 def test_ccl_import(request):
+    """
+    Test whether we can import pyCCL.
+    """
     import pyccl
+
 
 def test_ccl_cobaya(request):
     """
