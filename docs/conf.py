@@ -28,6 +28,7 @@ author = 'The SO Collaboration'
 extensions = [
     "sphinx.ext.autodoc", # Generate doc pages from source docstrings
     "sphinx.ext.viewcode", # Generate links to source code
+    "sphinx.ext.mathjax", # Mathematical symbols
 ]
 
 templates_path = ['_templates']
