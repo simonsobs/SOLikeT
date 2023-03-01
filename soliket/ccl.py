@@ -55,9 +55,9 @@ general.
 Usage
 -----
 
-To use CCL, simply add ``soliket.CCL`` as a theory code to your run settings. The likelihood
-then needs to have ``CCL`` as a requirement, optionally with any of the following
-additional reqs:
+To use CCL, simply add ``soliket.CCL`` as a theory code to your run settings. The
+likelihood then needs to have ``CCL`` as a requirement, optionally with any of the
+following additional reqs:
 
 * ``Pk_grid``
 * ``Hubble``
