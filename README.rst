@@ -4,6 +4,11 @@ SOLikeT
 
 .. image:: https://github.com/simonsobs/soliket/workflows/Testing/badge.svg
    :target: https://github.com/simonsobs/SOLikeT/actions?query=workflow%3ATesting
+   :alt: Testing Status
+
+.. image:: https://readthedocs.org/projects/soliket/badge/?version=latest
+   :target: https://soliket.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 **SO Likelihoods and Theories**
 

@@ -22,19 +22,23 @@ fiducial_params = {
 info_dict = {
     "params" : fiducial_params,
     "likelihood" : {
-        "Hz" : logp
+        "logp" : logp
     },
     "theory" : {
-        "camb" : {},
+        "camb" : {
+        },
         "soliket.CCL" : {
-            "nonlinear" : False,
-            "z" : [ 0.0, 0.2, 0.5, 1.0 ]
+            "kmax" : 10.0
         }
     }
 }
 
-def test_ccl_cobaya():
+def test_ccl_import(request):
+    import pyccl
+
+def test_ccl_cobaya(request):
     """
     Test whether we can call CCL from cobaya.
     """
-    model_fiducial = get_model(info_dict)
+    model = get_model(info_dict)
+    model.loglikes({})
