@@ -155,7 +155,7 @@ will use your codes for better science.
 Adding your documentation to the index
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This step is probably the easiers to do. All you need to do is open the file
+This step is probably the easiest to do. All you need to do is open the file
 ``SOLikeT/docs/index.rst``, where you will see a list of ``toctree`` entries,
 something like this:
 
