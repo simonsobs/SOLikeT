@@ -24,7 +24,7 @@ pass them in the requirements list.
 
 e.g. a Likelihood with :func:`~soliket.ccl.CCL.get_requirements` returning
 ``{'CCL': {'methods:{'name': self.method}}}`` [where self is the Theory instance] will have
-``results['name']`` set to the result of ``self.method(cosmo)`` being called with theCCL cosmo
+``results['name']`` set to the result of ``self.method(cosmo)`` being called with the CCL cosmo
 object.
 
 The Likelihood class can therefore handle for itself which results specifically it needs
@@ -119,7 +119,7 @@ class CCL(Theory):
         assert len(self._var_pairs) < 2, "CCL doesn't support other Pk yet"
         return needs
 
-    def get_can_support_params(self) -> list:
+    def get_can_support_params(self) -> Sequence[str]:
         # return any nuisance parameters that CCL can support
         return []
 
