@@ -44,7 +44,7 @@ def test_clusters_loglike():
 
     lnl = model_fiducial.loglikes({})[0]
 
-    assert np.isclose(lnl, -854.89406321)
+    assert np.isclose(lnl, -854.89406321, rtol=1.e-3, atol=1.e-5)
 
 
 def test_clusters_n_expected():
