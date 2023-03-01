@@ -1,4 +1,12 @@
 """
+.. module:: soliket.ccl
+
+:Synopsis: A simple CCL wrapper for Cobaya.
+:Author: Pablo Lemos.
+
+.. |br| raw:: html
+
+   <br />
 
 Simple CCL wrapper with function to return CCL cosmo object, and (optional) result of
 calling various custom methods on the ccl object. The idea is this is included with the
@@ -8,23 +16,24 @@ here for now.
 First version by AL. Untested example of usage at
 https://github.com/cmbant/SZCl_like/blob/methods/szcl_like/szcl_like.py
 
-get_CCL results a dictionary of results, where results['cosmo'] is the CCL cosmology
-object.
+``get_CCL`` results a dictionary of results, where ``results['cosmo']`` is the
+CCL cosmology object.
 
 Classes that need other CCL-computed results (without additional free parameters), should
 pass them in the requirements list.
 
-e.g. a Likelihood with get_requirements() returning
-{'CCL': {'methods:{'name': self.method}}} [where self is the Theory instance] will have
-results['name'] set to the result of self.method(cosmo) being called with theCCL cosmo
-object.
+e.g. a Likelihood with :func:`~soliket.ccl.CCL.get_requirements` returning
+``{'CCL': {'methods:{'name': self.method}}}`` [where self is the Theory instance]
+will have ``results['name']`` set to the result of ``self.method(cosmo)`` being
+called with the CCL cosmo object.
 
 The Likelihood class can therefore handle for itself which results specifically it needs
 from CCL, and just give the method to return them (to be called and cached by Cobaya with
 the right parameters at the appropriate time).
 
-Alternatively the Likelihood can compute what it needs from results['cosmo'], however in
-this case it will be up to the Likelihood to cache the results appropriately itself.
+Alternatively the Likelihood can compute what it needs from ``results['cosmo']``,
+however in this case it will be up to the Likelihood to cache the results
+appropriately itself.
 
 Note that this approach preclude sharing results other than the cosmo object itself
 between different likelihoods.
@@ -32,9 +41,32 @@ between different likelihoods.
 Also note lots of things still cannot be done consistently in CCL, so this is far from
 general.
 
-April 2021:
------------
-Second version by PL. Using CCL's newly implemented cosmology calculator.
+.. note::
+
+   **If you use this cosmological code, please cite it as:**
+   |br|
+   N. Chiasari et al.
+   *Core Cosmology Library: Precision Cosmological Predictions for LSST*
+   (`arXiv:1812.05995 <https://arxiv.org/abs/1812.05995>`_)
+   (`Homepage <https://github.com/LSSTDESC/CCL>`_)
+   |br|
+   CCL is open source and available for free under the *BSD-3-Clause license*.
+
+Usage
+-----
+
+To use CCL, simply add ``soliket.CCL`` as a theory code to your run settings. The
+likelihood then needs to have ``CCL`` as a requirement, optionally with any of the
+following additional reqs:
+
+* ``Pk_grid``
+* ``Hubble``
+* ``comoving_radial_distance``
+* ``fsigma8``
+* ``sigma8_z``
+
+Then, to obtain the results, evaluate the contents of ``self.theory.get_CCL()`` in
+the likelihood.
 """
 
 # For Cobaya docs see
@@ -48,27 +80,21 @@ import pyccl as ccl
 
 
 class CCL(Theory):
-    # Options for Pk.
-    # Default options can be set globally, and updated from requirements as needed
-    kmax: float = 0  # Maximum k (1/Mpc units) for Pk, or zero if not needed
-    nonlinear: bool = False  # whether to get non-linear Pk from CAMB/Class
-    z: Union[Sequence, np.ndarray] = []  # redshift sampling
-    extra_args: dict = {}  # extra (non-parameter) arguments passed to ccl.Cosmology()
-
+    """A theory code wrapper for CCL."""
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10**_logz
     _default_z_sampling[0] = 0
 
-    def initialize(self):
+    def initialize(self) -> None:
         self._var_pairs = set()
         self._required_results = {}
 
-    def get_requirements(self):
+    def get_requirements(self) -> set:
         # These are currently required to construct a CCL cosmology object.
         # Ultimately CCL should depend only on observable not parameters
         return {'omch2', 'ombh2'}
 
-    def must_provide(self, **requirements):
+    def must_provide(self, **requirements) -> dict:
         # requirements is dictionary of things requested by likelihoods
         # Note this may be called more than once
 
@@ -110,11 +136,12 @@ class CCL(Theory):
         assert len(self._var_pairs) < 2, "CCL doesn't support other Pk yet"
         return needs
 
-    def get_can_support_params(self):
+    def get_can_support_params(self) -> Sequence[str]:
         # return any nuisance parameters that CCL can support
         return []
 
-    def calculate(self, state, want_derived=True, **params_values_dict):
+    def calculate(self, state: dict, want_derived: bool = True,
+                  **params_values_dict) -> bool:
         # calculate the general CCL cosmo object which likelihoods can then use to get
         # what they need (likelihoods should cache results appropriately)
         # get our requirements from self.provider
@@ -189,5 +216,5 @@ class CCL(Theory):
         for required_result, method in self._required_results.items():
             state['CCL'][required_result] = method(cosmo)
 
-    def get_CCL(self):
+    def get_CCL(self) -> ccl.CosmologyCalculator:
         return self._current_state['CCL']
