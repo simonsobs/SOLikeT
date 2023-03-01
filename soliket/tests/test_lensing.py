@@ -33,44 +33,35 @@ def test_lensing_like(request):
 
     from cobaya.install import install
     install({"likelihood": {"soliket.lensing.LensingLikelihood": None}},
-            path=packages_path, skip_global=False, force=False, debug=True)
+            path=packages_path, skip_global=False, force=True, debug=True)
 
     from soliket.lensing import LensingLikelihood
 
-    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood},
-                            # "soliket.utils.OneWithCls": {"lmax": 10000}
-                          }
+    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood}}
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
 
-    lhood = model.likelihood['LensingLikelihood']
+    # code for looking at a validation plot. to be removed.
+    # lhood = model.likelihood['LensingLikelihood']
 
-    import copy
-    info_owc = copy.copy(info)
+    # x_data, y_data = lhood._get_data()
+    # y_th = lhood._get_theory()
+    # y_th_owc = lhood_owc._get_theory()
 
-    info_owc["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood},
-                          "soliket.utils.OneWithCls": {"lmax": 10000}}
+    # x = lhood.data.x
+    # y = lhood.data.y
+    # cov =lhood.data.cov
 
-    model_owc = get_model(info_owc)
-    loglikes_owc, derived_owc = model_owc.loglikes()
-
-    lhood_owc = model_owc.likelihood['LensingLikelihood']
-
-    x_data, y_data = lhood._get_data()
-    y_th = lhood._get_theory()
-    y_th_owc = lhood_owc._get_theory()
-
-    from matplotlib import pyplot as plt
-    plt.plot(x_data, y_data, 'o')
-    plt.plot(x_data, y_th, '-.')
-    plt.plot(x_data, y_th_owc, '.')
-    plt.legend(['test data', 'computed theory', 'computed theory (inc. OneWithCls)'])
-    plt.xscale('log')
-    plt.xlabel('l')
-    plt.ylabel('C_l')
+    # from matplotlib import pyplot as plt
+    # plt.plot(x_data, y_data, 'o')
+    # plt.plot(x, y, 'x')
+    # plt.plot(x_data, y_th, '-.')
+    # plt.legend(['_get_data', '.data', 'computed theory'])
+    # plt.xscale('log')
+    # plt.xlabel('l')
+    # plt.ylabel('C_l')
 
     # plt.savefig('./lensing_like_testdata.png')
-    import pdb; pdb.set_trace()
 
     assert np.isclose(loglikes[0], 44.2959257, atol=0.2, rtol=0.0)
