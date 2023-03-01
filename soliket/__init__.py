@@ -9,6 +9,7 @@ from .xcorr import XcorrLikelihood  # noqa: F401
 from .foreground import Foreground
 from .bandpass import BandPass
 from .cosmopower import CosmoPower, CosmoPowerDerived
+from .ccl import CCL  # noqa: F401
 
 try:
     from .clusters import ClusterLikelihood  # noqa: F401
