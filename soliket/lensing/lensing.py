@@ -14,8 +14,8 @@ from ..ps import BinnedPSLikelihood
 class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     _url = "https://portal.nersc.gov/project/act/jia_qu/lensing_like/likelihood.tar.gz"
     install_options = {"download_url": _url}
-    data_folder = "LensingLikelihood"
-    data_filename = "clkk_binned.txt"
+    data_folder = "LensingLikelihood/"
+    data_filename = "clkk_reconstruction_sim.fits"
     cov_filename = "lensingbinnedcov.txt"
     binning_matrix_filename = "lensing_binning_matrix.txt"
 
@@ -30,7 +30,6 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         "H0": 67.02393,
         "tau": 0.6574325e-01,
         "nnu": 3.046,
-        "num_massive_neutrinos": 1,
         "As": 2.15086031154146e-9,
         "ns": 0.9625356e00,
     }
@@ -66,6 +65,8 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         # Set files where data/covariance are loaded from
         self.datapath = os.path.join(self.data_folder, self.data_filename)
+
+
         self.covpath = os.path.join(self.data_folder, self.cov_filename)
         self.binning_matrix_path = os.path.join(self.data_folder,
                                                 self.binning_matrix_filename)
@@ -126,7 +127,10 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         }
 
     def _get_data(self):
-        bandpowers = np.loadtxt(self.datapath)[self.sim_number, :]
+        import sacc
+
+        s = sacc.Sacc.load_fits(self.datapath)
+        bin_centers, bandpowers, cov = s.get_ell_cl(None, 'ck', 'ck', return_cov=True)
         return self.bin_centers, bandpowers
 
     def _get_theory(self, **params_values):
