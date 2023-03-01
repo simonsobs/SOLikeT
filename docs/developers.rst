@@ -24,9 +24,9 @@ steps you need to take to get your documentation added here. This is done in
 only three simple steps:
 
 1. Annotate your code with **docstrings**, optionally including some nice
-formatting that sphinx can parse.
+   formatting that sphinx can parse.
 2. Creating a page where your documentation gets listed, or adding your docs
-to an existing page.
+   to an existing page.
 3. Ensuring your page gets added to the index on the left.
 
 
@@ -82,17 +82,17 @@ does. We see a couple of directives that are going to be parsed by the code
 that generated the webpages:
 
 * At the top of the page, we have a docstring that gives a general overview of
-the code. We name our module at the top with a directive, give a synopsis of
-this module, provide an author, and then give a much more descriptive summary
-of what this module does. All this will get formatted by sphinx and added to
-our webpage.
+  the code. We name our module at the top with a directive, give a synopsis of
+  this module, provide an author, and then give a much more descriptive summary
+  of what this module does. All this will get formatted by sphinx and added to
+  our webpage.
 * Immediately after the class and function definitions, we put docstrings that
-explain what this class (or function) does. If you are unsure what to put as
-a description of your class, have a look at other documentation pages in
-here and in other projects to get an idea of what would be good summaries.
+  explain what this class (or function) does. If you are unsure what to put as
+  a description of your class, have a look at other documentation pages in
+  here and in other projects to get an idea of what would be good summaries.
 * When writing docstrings for functions, good practice is to (at minimum) write
-descriptions for every parameter and the return value. This can be done (as
-seen in the example) with the ``:param <parname>:`` and ``:return:`` directives.
+  descriptions for every parameter and the return value. This can be done (as
+  seen in the example) with the ``:param <parname>:`` and ``:return:`` directives.
 
 We also have an extra function called ``extra_function`` that we might need for
 technical reasons (e.g. for internal calculations, or as boilerplate code to
