@@ -15,18 +15,21 @@ Table of contents
    install
 
 .. toctree::
-   :caption: Theory codes:
+   :caption: Theory codes
    :maxdepth: 2
    
    ccl
    cosmopower
 
 .. toctree::
-   :caption: Likelihoods:
+   :caption: Likelihoods
    :maxdepth: 2
 
-Indices and Tables
-==================
+.. toctree::
+   :caption: Developers
+   :maxdepth: 2
+   
+   developers
 
 * :ref:`genindex`
 * :ref:`search`
