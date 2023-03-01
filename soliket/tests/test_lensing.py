@@ -9,6 +9,8 @@ packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "lensing_packages"
 )
 
+# Cosmological parameters for the test data from SO sims
+# See https://github.com/simonsobs/SOLikeT/pull/101 for validation plots
 fiducial_params = {
     'omch2': 0.1203058,
     'ombh2': 0.02219218,
