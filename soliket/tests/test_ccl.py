@@ -68,13 +68,13 @@ def test_ccl_distances(request):
     model = get_model(info_dict)
     model.loglikes({})
     cosmo = model.provider.get_CCL()["cosmo"]
-    
+
     z = np.linspace(0.0, 10.0, 100)
     a = 1.0 / (z + 1.0)
-    
+
     da = cosmo.angular_diameter_distance(a)
     dl = cosmo.luminosity_distance(a)
-    
+
     assert np.allclose(da * (1.0 + z) ** 2.0, dl)
 
 
@@ -85,9 +85,9 @@ def test_ccl_pk(request):
     model = get_model(info_dict)
     model.loglikes({})
     cosmo = model.provider.get_CCL()["cosmo"]
-    
+
     k = np.logspace(np.log10(3e-1), 1, 1000)
     pk_lin = cosmo.linear_matter_power(k, a = 0.5)
     pk_nonlin = cosmo.nonlin_matter_power(k, a = 0.5)
-    
+
     assert np.all(pk_nonlin > pk_lin)
