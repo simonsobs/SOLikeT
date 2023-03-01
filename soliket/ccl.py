@@ -51,6 +51,22 @@ general.
    (`Homepage <https://github.com/LSSTDESC/CCL>`_)
    |br|
    CCL is open source and available for free under the *BSD-3-Clause license*.
+
+Usage
+-----
+
+To use CCL, simply add ``soliket.CCL`` as a theory code to your run settings. The likelihood
+then needs to have ``CCL`` as a requirement, optionally with any of the following
+additional reqs:
+
+* ``Pk_grid``
+* ``Hubble``
+* ``comoving_radial_distance``
+* ``fsigma8``
+* ``sigma8_z``
+
+Then, to obtain the results, evaluate the contents of ``self.theory.get_CCL()`` in
+the likelihood.
 """
 
 # For Cobaya docs see
