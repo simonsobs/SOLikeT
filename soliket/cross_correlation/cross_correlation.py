@@ -6,7 +6,7 @@ First version by Pablo Lemos
 """
 
 import numpy as np
-from .gaussian import GaussianData, GaussianLikelihood
+from ..gaussian import GaussianData, GaussianLikelihood
 import pyccl as ccl
 from cobaya.log import LoggedError
 
