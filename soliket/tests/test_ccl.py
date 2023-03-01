@@ -39,6 +39,7 @@ info_dict = {
         },
         "soliket.CCL": {
             "kmax": 10.0,
+            "nonlinear": True
         }
     }
 }
@@ -59,7 +60,6 @@ def test_ccl_cobaya(request):
     model.loglikes()
 
 
-# Test if angular diameter distance & lum distance have good propto.
 def test_ccl_distances(request):
     """
     Test whether the calculated angular diameter distance & luminosity distances
@@ -77,4 +77,17 @@ def test_ccl_distances(request):
     
     assert np.allclose(da * (1.0 + z) ** 2.0, dl)
 
-# Test that Pk-nonlin > Pk-lin in expected regimes.
+
+def test_ccl_pk(request):
+    """
+    Test whether non-linear Pk > linear Pk in expected regimes.
+    """
+    model = get_model(info_dict)
+    model.loglikes({})
+    cosmo = model.provider.get_CCL()["cosmo"]
+    
+    k = np.logspace(np.log10(3e-1), 1, 1000)
+    pk_lin = cosmo.linear_matter_power(k, a = 0.5)
+    pk_nonlin = cosmo.nonlin_matter_power(k, a = 0.5)
+    
+    assert np.all(pk_nonlin > pk_lin)
