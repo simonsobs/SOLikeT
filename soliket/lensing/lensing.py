@@ -30,7 +30,6 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         "H0": 67.02393,
         "tau": 0.6574325e-01,
         "nnu": 3.046,
-        "num_massive_neutrinos": 1,
         "As": 2.15086031154146e-9,
         "ns": 0.9625356e00,
     }
