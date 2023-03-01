@@ -10,6 +10,11 @@ packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "lensing_packages"
 )
 
+import os
+
+packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
+    tempfile.gettempdir(), "lensing_packages"
+)
 
 @pytest.mark.parametrize("lhood",
                          ["mflike",
