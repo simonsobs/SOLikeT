@@ -16,21 +16,22 @@ info = {"params": {
         "debug": True
        }
 
-freqs = np.array([93,145,225])
+freqs = np.array([93, 145, 225])
 
 
 def test_bandpass_import():
     from soliket.bandpass import BandPass
 
-def test_bandpass_model():
 
+def test_bandpass_model():
     from soliket.bandpass import BandPass
 
-    info["theory"] = {
-                   "bandpass": {"external": BandPass}
-                   }
-
+    info["theory"] = {"bandpass": {
+                                   "external": BandPass,
+                                   },
+                     }
     model = get_model(info)  # noqa F841
+
 
 def test_bandpass_compute():
 
@@ -53,7 +54,7 @@ def test_bandpass_compute():
 
     bandint_freqs = np.empty_like(freqs, dtype=float)
     for ifr, fr in enumerate(freqs):
-                bandpar = 'bandint_shift_' + str(fr)
-                bandint_freqs[ifr] = fr + info["params"][bandpar]
+        bandpar = 'bandint_shift_' + str(fr)
+        bandint_freqs[ifr] = fr + info["params"][bandpar]
 
     assert np.allclose(bandint_freqs, bandpass)
