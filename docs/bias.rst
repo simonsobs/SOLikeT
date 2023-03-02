@@ -7,12 +7,12 @@ Bias
 Bias Theory
 -----------
 
-.. autoclass:: soliket.Bias
+.. autoclass:: soliket.bias.Bias
     :members:
 
 
 Linear Bias
 -----------
 
-.. autoclass:: soliket.Linear_bias
+.. autoclass:: soliket.bias.Linear_bias
     :members:
