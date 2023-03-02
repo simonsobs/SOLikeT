@@ -26,12 +26,10 @@ If you want to add your own bias model, you can do so by inheriting from the
 function (have a look at the linear bias model for ideas).
 """
 
-import pdb
 import numpy as np
-from typing import Sequence, Optional, Union
+from typing import Optional
 from cobaya.theory import Theory
 from cobaya.typing import InfoDict
-from cobaya.log import LoggedError
 
 
 class Bias(Theory):
