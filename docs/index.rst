@@ -18,6 +18,7 @@ Table of contents
    :caption: Theory codes
    :maxdepth: 2
    
+   bias
    ccl
    cosmopower
 
