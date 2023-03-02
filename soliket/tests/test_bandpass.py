@@ -36,7 +36,6 @@ def test_bandpass_model():
 def test_bandpass_compute():
 
     from soliket.bandpass import BandPass
-    from soliket.foreground import Foreground
 
     info["theory"] = {
                "bandpass": {"external": BandPass},
