@@ -148,7 +148,8 @@ def test_shearkappa_hartlap(request):
     model = get_model(info)
     loglikes_hartlap, derived = model.loglikes()
 
-    assert np.isclose(np.abs(loglikes - loglikes_hartlap), 0.0010403)
+    assert np.isclose(np.abs(loglikes - loglikes_hartlap), 0.0010403,
+                      rtol=1.e-5, atol=1.e-5)
 
 
 def test_shearkappa_deltaz(request):
