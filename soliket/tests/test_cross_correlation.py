@@ -68,7 +68,8 @@ def test_galaxykappa_like(request):
 
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": os.path.join(request.config.rootdir, gkappa_sacc_file)}}
+                                  "datapath": os.path.join(request.config.rootdir, gkappa_sacc_file),
+                                  "use_tracers": [('gc_unwise','gc_unwise'), ('gc_unwise','ck_so')]}}
 
     model = get_model(info)
     loglikes, derived = model.loglikes()

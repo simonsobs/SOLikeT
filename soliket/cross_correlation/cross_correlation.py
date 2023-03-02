@@ -46,8 +46,9 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
         if self.use_tracers == 'all':
             pass
         else:
-            raise LoggedError('Tracer selection not implemented yet!')
-            # self.sacc_data.keep_selection(tracers=self.use_tracers.split(','))
+            for tracer_comb in self.sacc_data.get_tracer_combinations():
+                if tracer_comb not in self.use_tracers:
+                    self.sacc_data.remove_selection(tracers=tracer_comb)
 
         self.x = self._construct_ell_bins()
         self.y = self.sacc_data.mean
@@ -85,7 +86,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         return x, y, dy
 
-    def bin_spectra(self, cl_unbinned, tracer_comb):
+    def get_binning(self, tracer_comb):
             
             bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
             bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
@@ -93,7 +94,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
             ells_theory = np.asarray(ells_theory, dtype=int)
             w_bins = bpw.weight.T
 
-            cl_binned = np.dot(w_bins, cl_unbinned)
+            return ells_theory, w_bins
 
     def logp(self, **params_values):
         theory = self._get_theory(**params_values)
@@ -107,21 +108,23 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
 
         tracer_comb = self.sacc_data.get_tracer_combinations()
 
-        if len(np.unique(tracer_comb)) > 2:
-            raise LoggedError('Tracer selection not implemented! \
-                               Please provide a sacc file with \
-                               only Cl_gg and Cl_kg')
-
         for tracer in np.unique(tracer_comb):
 
-            if tracer.quantity == "cmb_convergence":
+            if self.sacc_data.tracers[tracer].quantity == "cmb_convergence":
                 cmbk_tracer = tracer
-            elif tracer.quantity == "galaxy_density":
+            elif self.sacc_data.tracers[tracer].quantity == "galaxy_density":
                 gal_tracer = tracer
             else:
                 raise LoggedError('Tracer selection not implemented! \
-                               Please provide a sacc file with \
-                               only Cl_gg and Cl_kg')
+                                  Please provide a sacc file with \
+                                  only Cl_gg and Cl_gk')
+
+        n_tracers = len(np.unique(tracer_comb))
+
+        # check we only have gk and gg tracers
+        if len(tracer_comb) > n_tracers:
+            self.log.warning('Cl_gk and Cl_gg will be used, \
+                                 Cl_kk will be removed.')
 
         z_gal_tracer = self.sacc_data.tracers[gal_tracer].z
         nz_gal_tracer = self.sacc_data.tracers[gal_tracer].nz
@@ -129,23 +132,28 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         # this should use the bias theory!
         tracer_g = ccl.NumberCountsTracer(cosmo,
                                           has_rsd=False,
-                                          dndz=(z_tracer, nz_tracer),
-                                          bias=(z_tracer,
+                                          dndz=(z_gal_tracer, nz_gal_tracer),
+                                          bias=(z_gal_tracer,
                                                 params_values["b1"] *
-                                                    np.ones(len(z_tracer))),
-                                          mag_bias=(z_tracer,
+                                                    np.ones(len(z_gal_tracer))),
+                                          mag_bias=(z_gal_tracer,
                                                     params_values["s1"] *
-                                                        np.ones(len(z_tracer)))
+                                                        np.ones(len(z_gal_tracer)))
                                           )
         tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
 
-        cl_gg_unbinned = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, ells_theory_g)
-        cl_kg_unbinned = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, ells_theory_k)
+        ells_theory_gg, w_bins_gg = self.get_binning((gal_tracer, gal_tracer))
+        ells_theory_gk, w_bins_gk = self.get_binning((gal_tracer, cmbk_tracer))
 
-        cl_gg_binned = self.bin_spectra(cl_gg_unbinned, tracer_comb)
-        cl_kg_binned = self.bin_spectra(cl_kg_unbinned, tracer_comb)
+        cl_gg_unbinned = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, ells_theory_gg)
+        cl_gk_unbinned = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, ells_theory_gk)
 
-        return np.concatenate([cl_gg_binned, cl_kg_binned])
+        cl_gg_binned = np.dot(w_bins_gg, cl_gg_unbinned)
+        cl_gk_binned = np.dot(w_bins_gk, cl_gk_unbinned)
+
+        import pdb; pdb.set_trace()
+
+        return np.concatenate([cl_gg_binned, cl_gk_binned])
 
 
 class ShearKappaLikelihood(CrossCorrelationLikelihood):
