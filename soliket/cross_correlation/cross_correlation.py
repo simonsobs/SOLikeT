@@ -85,31 +85,67 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         return x, y, dy
 
+    def bin_spectra(self, cl_unbinned, tracer_comb):
+            
+            bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
+            bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
+            ells_theory = bpw.values
+            ells_theory = np.asarray(ells_theory, dtype=int)
+            w_bins = bpw.weight.T
+
+            cl_binned = np.dot(w_bins, cl_unbinned)
+
     def logp(self, **params_values):
         theory = self._get_theory(**params_values)
         return self.data.loglike(theory)
 
 
 class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
+    
     def _get_theory(self, **params_values):
         cosmo = self.provider.get_CCL()["cosmo"]
 
+        tracer_comb = self.sacc_data.get_tracer_combinations()
+
+        if len(np.unique(tracer_comb)) > 2:
+            raise LoggedError('Tracer selection not implemented! \
+                               Please provide a sacc file with \
+                               only Cl_gg and Cl_kg')
+
+        for tracer in np.unique(tracer_comb):
+
+            if tracer.quantity == "cmb_convergence":
+                cmbk_tracer = tracer
+            elif tracer.quantity == "galaxy_density":
+                gal_tracer = tracer
+            else:
+                raise LoggedError('Tracer selection not implemented! \
+                               Please provide a sacc file with \
+                               only Cl_gg and Cl_kg')
+
+        z_gal_tracer = self.sacc_data.tracers[gal_tracer].z
+        nz_gal_tracer = self.sacc_data.tracers[gal_tracer].nz
+
+        # this should use the bias theory!
         tracer_g = ccl.NumberCountsTracer(cosmo,
                                           has_rsd=False,
-                                          dndz=self.dndz.T,
-                                          bias=(self.dndz[:, 0],
+                                          dndz=(z_tracer, nz_tracer),
+                                          bias=(z_tracer,
                                                 params_values["b1"] *
-                                                    np.ones(len(self.dndz[:, 0]))),
-                                          mag_bias=(self.dndz[:, 0],
+                                                    np.ones(len(z_tracer))),
+                                          mag_bias=(z_tracer,
                                                     params_values["s1"] *
-                                                        np.ones(len(self.dndz[:, 0])))
+                                                        np.ones(len(z_tracer)))
                                           )
         tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
 
-        cl_gg = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto)  # + 1e-7
-        cl_kg = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)
+        cl_gg_unbinned = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, ells_theory_g)
+        cl_kg_unbinned = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, ells_theory_k)
 
-        return np.concatenate([cl_gg, cl_kg])
+        cl_gg_binned = self.bin_spectra(cl_gg_unbinned, tracer_comb)
+        cl_kg_binned = self.bin_spectra(cl_kg_unbinned, tracer_comb)
+
+        return np.concatenate([cl_gg_binned, cl_kg_binned])
 
 
 class ShearKappaLikelihood(CrossCorrelationLikelihood):
