@@ -3,6 +3,27 @@
 
 :Synopsis: Class to calculate bias models for haloes and galaxies as cobaya
 Theory classes.
+:author: Ian Harrison
+
+Usage
+-----
+
+To use the Linear Bias model, simply add it as a theory code alongside camb in
+your run settings, e.g.:
+
+.. code-block:: yaml
+
+  theory:
+    camb:
+    soliket.bias.linear_bias:
+
+
+Implementing your own bias model
+--------------------------------
+
+If you want to add your own bias model, you can do so by inheriting from the
+``soliket.Bias`` theory class and implementing your own custom ``calculate()``
+function (have a look at the linear bias model for ideas).
 """
 
 import pdb
@@ -69,7 +90,11 @@ class Bias(Theory):
 
 
 class Linear_bias(Bias):
-    """Linear bias model."""
+    """
+    :Synopsis: Linear bias model.
+    
+    Has one free parameter, :math:`b_\mathrm{lin}` (``b_lin``).
+    """
 
     def calculate(self, state: dict, want_derived: bool = True,
                   **params_values_dict) -> Optional[bool]:
