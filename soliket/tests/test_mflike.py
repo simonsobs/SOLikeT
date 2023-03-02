@@ -59,17 +59,17 @@ nuisance_params = {
 
 
 if LooseVersion(camb.__version__) >= LooseVersion('1.4'):
-    chi2s = {"tt": 734.9398,
-             "te": 669.7417,
-             "ee": 715.8768,
-             "tt-te-et-ee": 2455.6822}
+    chi2s = {"tt": 545.1257,
+             "te": 137.4146,
+             "ee": 167.9850,
+             "tt-te-et-ee": 790.5121}
 else:
-    chi2s = {"tt": 737.8571537677649,
-             "te-et": 998.2730263280033,
-             "ee": 716.4015196388742,
-             "tt-te-et-ee": 2459.7250}
+    chi2s = {"tt": 544.9745,
+             "te-et": 152.6807,
+             "ee": 168.0953,
+             "tt-te-et-ee": 790.4124}
 
-pre = "data_sacc+cov_"
+pre = "test_data_sacc_"
 
 
 class MFLikeTest(unittest.TestCase):
@@ -127,10 +127,10 @@ class MFLikeTest(unittest.TestCase):
                     "defaults": {
                         "polarizations": select.upper().split("-"),
                         "scales": {
-                            "TT": [2, 5000],
-                            "TE": [2, 5000],
-                            "ET": [2, 5000],
-                            "EE": [2, 5000],
+                            "TT": [2, 179],
+                            "TE": [2, 179],
+                            "ET": [2, 179],
+                            "EE": [2, 179],
                         },
                         "symmetrize": False,
                     },
