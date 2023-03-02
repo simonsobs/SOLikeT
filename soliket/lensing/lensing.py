@@ -16,8 +16,6 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     install_options = {"download_url": _url}
     data_folder = "LensingLikelihood/"
     data_filename = "clkk_reconstruction_sim.fits"
-    cov_filename = "lensingbinnedcov.txt"
-    binning_matrix_filename = "lensing_binning_matrix.txt"
 
     kind = "pp"
     sim_number = 0
@@ -65,11 +63,11 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         # Set files where data/covariance are loaded from
         self.datapath = os.path.join(self.data_folder, self.data_filename)
+        x, y = self._get_data()
+        self.cov = self._get_cov()
+        self.binning_matrix = self._get_binning_matrix()
 
-
-        self.covpath = os.path.join(self.data_folder, self.cov_filename)
-        self.binning_matrix_path = os.path.join(self.data_folder,
-                                                self.binning_matrix_filename)
+       
 
         # cov = np.loadtxt(self.covpath)
 
@@ -126,12 +124,32 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             }
         }
 
+
+    
     def _get_data(self):
         import sacc
-
         s = sacc.Sacc.load_fits(self.datapath)
         bin_centers, bandpowers, cov = s.get_ell_cl(None, 'ck', 'ck', return_cov=True)
-        return self.bin_centers, bandpowers
+        self.x = bin_centers
+        self.y = bandpowers
+        return bin_centers, self.y
+    
+    def _get_cov(self):
+        import sacc
+        s = sacc.Sacc.load_fits(self.datapath)
+        bin_centers, bandpowers, cov = s.get_ell_cl(None, 'ck', 'ck', return_cov=True)
+        self.cov = cov
+        return cov
+    
+    def _get_binning_matrix(self):
+        import sacc
+        s = sacc.Sacc.load_fits(self.datapath)
+        bin_centers, bandpowers, cov, ind = \
+        s.get_ell_cl(None, 'ck', 'ck', return_cov=True, return_ind=True)
+        bpw = s.get_bandpower_windows(ind)
+        binning_matrix = bpw.weight.T
+        self.binning_matrix = binning_matrix
+        return binning_matrix
 
     def _get_theory(self, **params_values):
         cl = self.provider.get_Cl(ell_factor=False)
@@ -146,7 +164,6 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         Clkk_theo = (ls * (ls + 1)) ** 2 * Cl_theo * 0.25
 
         Clkk_binned = self.binning_matrix.dot(Clkk_theo)
-        # Cltt_binned = self.binning_matrix.dot(Cl_tt)
 
         correction = (
             2
