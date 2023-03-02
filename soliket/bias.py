@@ -1,7 +1,8 @@
 """
 .. module:: soliket.bias
 
-:Synopsis: Class to calculate bias models for haloes and galaxies as cobaya Theory classes.
+:Synopsis: Class to calculate bias models for haloes and galaxies as cobaya
+Theory classes.
 """
 
 import pdb
@@ -70,7 +71,7 @@ class Bias(Theory):
 class Linear_bias(Bias):
     """Linear bias model."""
 
-    def calculate(self, state: dict, want_derived: bool=True,
+    def calculate(self, state: dict, want_derived: bool = True,
                   **params_values_dict) -> Optional[bool]:
 
         Pk_mm = self._get_Pk_mm()
