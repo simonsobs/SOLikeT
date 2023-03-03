@@ -2,7 +2,7 @@ import os
 from pkg_resources import resource_filename
 
 import numpy as np
-
+import sacc
 from cobaya.likelihoods.base_classes import InstallableLikelihood
 from cobaya.model import get_model
 from cobaya.log import LoggedError
@@ -16,8 +16,6 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     install_options = {"download_url": _url}
     data_folder = "LensingLikelihood/"
     data_filename = "clkk_reconstruction_sim.fits"
-    cov_filename = "lensingbinnedcov.txt"
-    binning_matrix_filename = "lensing_binning_matrix.txt"
 
     kind = "pp"
     sim_number = 0
@@ -65,13 +63,14 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         # Set files where data/covariance are loaded from
         self.datapath = os.path.join(self.data_folder, self.data_filename)
+        self.sacc = sacc.Sacc.load_fits(self.datapath)
 
+        x, y = self._get_data()
+        self.cov = self._get_cov()
+        self.binning_matrix = self._get_binning_matrix()
 
-        self.covpath = os.path.join(self.data_folder, self.cov_filename)
-        self.binning_matrix_path = os.path.join(self.data_folder,
-                                                self.binning_matrix_filename)
+       
 
-        # cov = np.loadtxt(self.covpath)
 
         # Initialize fiducial PS
         Cls = self._get_fiducial_Cls()
@@ -108,10 +107,8 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             "theory": {"camb": {"extra_args": {"kmax": 0.9}}},
             # "modules": modules_path,
         }
-
         model_fiducial = get_model(info_fiducial)
         model_fiducial.logposterior({})
-
         Cls = model_fiducial.provider.get_Cl(ell_factor=False)
         return Cls
 
@@ -126,12 +123,29 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             }
         }
 
-    def _get_data(self):
-        import sacc
 
-        s = sacc.Sacc.load_fits(self.datapath)
-        bin_centers, bandpowers, cov = s.get_ell_cl(None, 'ck', 'ck', return_cov=True)
-        return self.bin_centers, bandpowers
+    
+    def _get_data(self):
+        bin_centers, bandpowers, cov = \
+        self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
+        self.x = bin_centers
+        self.y = bandpowers
+        return bin_centers, self.y
+    
+    def _get_cov(self):
+        bin_centers, bandpowers, cov = \
+        self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
+        self.cov = cov
+        return cov
+    
+    def _get_binning_matrix(self):
+        
+        bin_centers, bandpowers, cov, ind = \
+        self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True, return_ind=True)
+        bpw = self.sacc.get_bandpower_windows(ind)
+        binning_matrix = bpw.weight.T
+        self.binning_matrix = binning_matrix
+        return binning_matrix
 
     def _get_theory(self, **params_values):
         cl = self.provider.get_Cl(ell_factor=False)
@@ -146,7 +160,6 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         Clkk_theo = (ls * (ls + 1)) ** 2 * Cl_theo * 0.25
 
         Clkk_binned = self.binning_matrix.dot(Clkk_theo)
-        # Cltt_binned = self.binning_matrix.dot(Cl_tt)
 
         correction = (
             2
