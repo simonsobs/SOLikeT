@@ -13,7 +13,9 @@ from .constants import T_CMB, h_Planck, k_Boltzmann
 
 
 def _cmb2bb(nu):
-
+    r"""
+    Computes the conversion factor :math:`\frac{\partial B_{\nu}}{\partial T}`
+    """
     # NB: numerical factors not included
     x = nu * h_Planck * 1e9 / k_Boltzmann / T_CMB
     return np.exp(x) * (nu * x / np.expm1(x))**2
