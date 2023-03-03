@@ -70,5 +70,6 @@ class HMF:
         if M is None:
             M = self.M
         dndM = self.dn_dM(M, delta)
-        ans = RegularGridInterpolator((np.log10(M), self.zarr), np.log10(dndM), method='cubic', fill_value=0)
+        ans = RegularGridInterpolator((np.log10(M), self.zarr), 
+                                       np.log10(dndM), method='cubic', fill_value=0)
         return ans
