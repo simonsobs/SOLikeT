@@ -5,12 +5,20 @@ r"""
 :Authors: Thibaut Louis, Xavier Garrido, Max Abitbol,
           Erminia Calabrese, Antony Lewis, David Alonso.
 
-MFLike is a multi frequency likelihood code interfaced with the Cobaya sampler and a theory Boltzmann code such as CAMB, CLASS or Cosmopower.
-The ``MFLike`` likelihood class reads the data file (in ``sacc`` format) and all the settings 
-for the MCMC run (such as file paths, :math:`\ell` ranges, experiments and frequencies to be used, parameters priors...)
+MFLike is a multi frequency likelihood code interfaced with the Cobaya 
+sampler and a theory Boltzmann code such as CAMB, CLASS or Cosmopower.
+The ``MFLike`` likelihood class reads the data file (in ``sacc`` format) 
+and all the settings 
+for the MCMC run (such as file paths, :math:`\ell` ranges, experiments 
+and frequencies to be used, parameters priors...)
 from the ``MFLike.yaml`` file. 
 
-The theory :math:`C_{\ell}` are then summed to the (possibly frequency integrated) foreground power spectra and modified by systematic effects in the ``TheoryForge_MFLike`` class. The foreground power spectra are computed by the ``soliket.Foreground`` class, while the bandpasses from the ``soliket.BandPass`` one; the ``Foreground`` class is required by ``TheoryForge_MFLike``, while ``BandPass`` is requires by ``Foreground``.
+The theory :math:`C_{\ell}` are then summed to the (possibly frequency 
+integrated) foreground power spectra and modified by systematic effects 
+in the ``TheoryForge_MFLike`` class. The foreground power spectra are 
+computed by the ``soliket.Foreground`` class, while the bandpasses from 
+the ``soliket.BandPass`` one; the ``Foreground`` class is required by 
+``TheoryForge_MFLike``, while ``BandPass`` is requires by ``Foreground``.
 This is a scheme of how ``MFLike`` and ``TheoryForge_MFLike`` are interfaced:
 
 .. image:: images/mflike_scheme.png
