@@ -7,7 +7,7 @@ from cobaya.model import get_model
 from cobaya.likelihood import Likelihood
 
 
-class TestLike(Likelihood):
+class CheckLike(Likelihood):
     """
     This is a mock likelihood that simply forces soliket.CCL to calculate
     a CCL object.
@@ -32,7 +32,7 @@ fiducial_params = {
 info_dict = {
     "params": fiducial_params,
     "likelihood": {
-        "testLike": {"external": TestLike}
+        "checkLike": {"external": CheckLike}
     },
     "theory": {
         "camb": {

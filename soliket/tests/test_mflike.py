@@ -5,7 +5,7 @@ import os
 import tempfile
 import unittest
 import pytest
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import camb
 import mflike  # noqa
@@ -58,7 +58,7 @@ nuisance_params = {
 }
 
 
-if LooseVersion(camb.__version__) < LooseVersion('1.3'):
+if Version(camb.__version__) < Version('1.3'):
     chi2s = {"tt": 1384.5669,
              "te": 1400.2760,
              "ee": 1428.7597,
