@@ -102,6 +102,14 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         return self.loglike(cmbfg_dict)
 
     def loglike(self, cmbfg_dict):
+        """
+        Computes the gaussian log-likelihood
+
+        :param cmbfg_dict: the dictionary of theory + foregrounds
+                           :math:`D_{\ell}`
+
+        :return: the exact loglikelihood :math:`\ln \mathcal{L}` 
+        """
         ps_vec = self._get_power_spectra(cmbfg_dict)
         delta = self.data_vec - ps_vec
         logp = -0.5 * (delta @ self.inv_cov @ delta)
@@ -112,6 +120,12 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         return logp
 
     def prepare_data(self, verbose=False):
+        """
+        Reads the sacc data, extracts the data tracers,
+        trims the spectra and covariance according to the ell scales
+        set in the input file. It stores the ell vector, the deta vector
+        and the covariance in a GaussianData object.
+        """
         import sacc
         data = self.data
         # Read data
@@ -152,10 +166,15 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             return f"{xp}_{nu}"
 
         def get_cl_meta(spec):
-            # For each of the entries of the `spectra` section of the
-            # yaml file, extract the relevant information: experiments,
-            # frequencies, polarization combinations, scale cuts and
-            # whether TE should be symmetrized.
+            """
+            Lower-level function of `prepare_data`.
+            For each of the entries of the `spectra` section of the
+            yaml file, extracts the relevant information: experiments,
+            frequencies, polarization combinations, scale cuts and
+            whether TE should be symmetrized.
+
+            :param spec: the dictionary ``data["spectra"]`` 
+            """
             # Experiments/frequencies
             exp_1, exp_2 = spec["experiments"]
             freq_1, freq_2 = spec["frequencies"]
@@ -185,10 +204,22 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             return exp_1, exp_2, freq_1, freq_2, pols, scls, symm
 
         def get_sacc_names(pol, exp_1, exp_2, freq_1, freq_2):
-            # Translate the polarization combination, experiment
-            # and frequency names of a given entry in the `spectra`
-            # part of the input yaml file into the names expected
-            # in the SACC files.
+            """
+            Lower-level function of `prepare_data`.
+            Translates the polarization combination, experiment
+            and frequency names of a given entry in the `spectra`
+            part of the input yaml file into the names expected
+            in the SACC files.
+
+            :param pol: temperature or polarization fields, i.e. 'TT', 'TE'
+            :param exp_1: experiment of map 1
+            :param exp_2: experiment of map 2
+            :param freq_1: frequency of map 1
+            :param freq_2: frequency of map 2
+
+            :return: tracer name 1, tracer name 2, string for :math:`C_{\ell}`
+                     type
+            """
             p1, p2 = pol
             tname_1 = xp_nu(exp_1, freq_1)
             tname_2 = xp_nu(exp_2, freq_2)
@@ -358,7 +389,14 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         self.data = GaussianData("mflike", self.ell_vec, self.data_vec, self.cov)
 
     def _get_power_spectra(self, cmbfg):
-        # Get Dl's from the theory component
+        """
+        Get :math:`D_{\ell}` from the theory component
+        already modified by ``theoryforge_MFLike``
+
+        :param cmbfg: the dictionary of theory+foreground :math:`D_{\ell}`
+
+        :return: the binned data vector
+        """
         ps_vec = np.zeros_like(self.data_vec)
         DlsObs = dict()
         # Note we rescale l_bpws because cmbfg spectra start from l=2
