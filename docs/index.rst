@@ -8,24 +8,29 @@
 Table of contents
 =================
 
-Main modules:
-
 .. toctree::
    :caption: Getting started
    :maxdepth: 1
    
-   index
    install
 
 .. toctree::
-   :caption: Theory codes:
+   :caption: Theory codes
    :maxdepth: 2
    
+   bias
+   ccl
    cosmopower
 
 .. toctree::
-   :caption: Likelihoods:
+   :caption: Likelihoods
    :maxdepth: 2
+
+.. toctree::
+   :caption: Developers
+   :maxdepth: 2
+   
+   developers
 
 * :ref:`genindex`
 * :ref:`search`

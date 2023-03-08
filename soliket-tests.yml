@@ -14,5 +14,6 @@ dependencies:
   - fftw
   - cython
   - mpi4py
+  - camb
   - pip:
       - -r requirements.txt
