@@ -125,6 +125,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         trims the spectra and covariance according to the ell scales
         set in the input file. It stores the ell vector, the deta vector
         and the covariance in a GaussianData object.
+        If ``verbose=True``, it plots the tracer names, the spectrum name,
+        the shape of the indices array, lmin, lmax.
         """
         import sacc
         data = self.data

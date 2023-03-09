@@ -15,6 +15,10 @@ from .constants import T_CMB, h_Planck, k_Boltzmann
 def _cmb2bb(nu):
     r"""
     Computes the conversion factor :math:`\frac{\partial B_{\nu}}{\partial T}`
+
+    :param nu: frequency array
+
+    :return: the array :math:`\frac{\partial B_{\nu}}{\partial T}`
     """
     # NB: numerical factors not included
     x = nu * h_Planck * 1e9 / k_Boltzmann / T_CMB
