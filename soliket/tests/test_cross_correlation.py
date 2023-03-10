@@ -45,7 +45,8 @@ def test_galaxykappa_model(request):
 
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": os.path.join(request.config.rootdir, gkappa_sacc_file)}}
+                                  "datapath": os.path.join(request.config.rootdir,
+                                                           gkappa_sacc_file)}}
 
     model = get_model(info) # noqa F841
 
@@ -56,7 +57,8 @@ def test_shearkappa_model(request):
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir, gammakappa_sacc_file)}}
+                           "datapath": os.path.join(request.config.rootdir,
+                                                    gammakappa_sacc_file)}}
 
     model = get_model(info) # noqa F841
 
@@ -67,8 +69,10 @@ def test_galaxykappa_like(request):
 
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": os.path.join(request.config.rootdir, gkappa_sacc_file),
-                                  "use_spectra": [('gc_unwise','gc_unwise'), ('gc_unwise','ck_so')]}}
+                                  "datapath": os.path.join(request.config.rootdir,
+                                                           gkappa_sacc_file),
+                                  "use_spectra": [('gc_unwise', 'gc_unwise'),
+                                                  ('gc_unwise', 'ck_so')]}}
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
@@ -106,6 +110,7 @@ def test_shearkappa_like(request):
 
     assert np.isclose(loglikes, 637.64473666)
 
+
 def test_shearkappa_tracerselect(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
@@ -123,13 +128,13 @@ def test_shearkappa_tracerselect(request):
 
     info_onebin = copy.deepcopy(info)
     info_onebin['likelihood']['ShearKappaLikelihood']['use_spectra'] = \
-                                                                [('gs_des_bin1','ck_act')]
+                                                            [('gs_des_bin1', 'ck_act')]
     
     info_twobin = copy.deepcopy(info)
     info_twobin['likelihood']['ShearKappaLikelihood']['use_spectra'] = \
                                                                 [
-                                                                ('gs_des_bin1','ck_act'),
-                                                                ('gs_des_bin3','ck_act'),
+                                                                ('gs_des_bin1', 'ck_act'),
+                                                                ('gs_des_bin3', 'ck_act'),
                                                                 ]
 
     model = get_model(info)
@@ -203,7 +208,8 @@ def test_shearkappa_deltaz(request):
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir, gammakappa_sacc_file),
+                           "datapath": os.path.join(request.config.rootdir,
+                                                    gammakappa_sacc_file),
                            "z_nuisance_mode": "deltaz"}}
 
     model = get_model(info) # noqa F841
@@ -218,7 +224,8 @@ def test_shearkappa_m(request):
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir, gammakappa_sacc_file),
+                           "datapath": os.path.join(request.config.rootdir,
+                                                    gammakappa_sacc_file),
                            "m_nuisance_mode": True}}
 
     model = get_model(info) # noqa F841
@@ -233,7 +240,8 @@ def test_shearkappa_ia_nla_noevo(request):
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir, gammakappa_sacc_file),
+                           "datapath": os.path.join(request.config.rootdir,
+                                                    gammakappa_sacc_file),
                            "ia_mode": 'nla-noevo'}}
 
     model = get_model(info) # noqa F841
@@ -248,7 +256,8 @@ def test_shearkappa_ia_nla(request):
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir, gammakappa_sacc_file),
+                           "datapath": os.path.join(request.config.rootdir,
+                                                    gammakappa_sacc_file),
                            "ia_mode": 'nla'}}
 
     info["params"]["eta_IA"] = 1.7
@@ -265,7 +274,8 @@ def test_shearkappa_ia_perbin(request):
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir, gammakappa_sacc_file),
+                           "datapath": os.path.join(request.config.rootdir,
+                                                    gammakappa_sacc_file),
                            "ia_mode": 'nla-perbin'}}
 
     model = get_model(info) # noqa F841
@@ -280,7 +290,8 @@ def test_shearkappa_hmcode(request):
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir, gammakappa_sacc_file)}}
+                           "datapath": os.path.join(request.config.rootdir,
+                                                    gammakappa_sacc_file)}}
     info["theory"] = {"camb": {'extra_args': {'halofit_version': 'mead2020_feedback',
                                               'HMCode_logT_AGN': 7.8}},
                       "ccl": {"external": CCL, "nonlinear": False}}

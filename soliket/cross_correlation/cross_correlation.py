@@ -81,13 +81,13 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
     def get_binning(self, tracer_comb):
             
-            bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
-            bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
-            ells_theory = bpw.values
-            ells_theory = np.asarray(ells_theory, dtype=int)
-            w_bins = bpw.weight.T
+        bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
+        bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
+        ells_theory = bpw.values
+        ells_theory = np.asarray(ells_theory, dtype=int)
+        w_bins = bpw.weight.T
 
-            return ells_theory, w_bins
+        return ells_theory, w_bins
 
     def logp(self, **params_values):
         theory = self._get_theory(**params_values)
