@@ -16,14 +16,7 @@ import sacc
 class CrossCorrelationLikelihood(GaussianLikelihood):
     def initialize(self):
 
-        if self.datapath is None:
-            self.dndz = np.loadtxt(self.dndz_file)
-
-            x, y, dy = self._get_data()
-            cov = np.diag(dy**2)
-            self.data = GaussianData("CrossCorrelation", x, y, cov, self.ncovsims)
-        else:
-            self._get_sacc_data()
+        self._get_sacc_data()
 
     def get_requirements(self):
         return {"CCL": {"kmax": 10, "nonlinear": True}}
@@ -43,11 +36,11 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         self.sacc_data = sacc.Sacc.load_fits(self.datapath)
 
-        if self.use_tracers == 'all':
+        if self.use_spectra == 'all':
             pass
         else:
             for tracer_comb in self.sacc_data.get_tracer_combinations():
-                if tracer_comb not in self.use_tracers:
+                if tracer_comb not in self.use_spectra:
                     self.sacc_data.remove_selection(tracers=tracer_comb)
 
         self.x = self._construct_ell_bins()

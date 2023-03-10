@@ -20,8 +20,8 @@ info = {
         "ns": cosmo_params["n_s"],
         "As": 2.2e-9,
         "tau": 0,
-        "b1": 1,
-        "s1": 0.4,
+        # "b1": 1,
+        # "s1": 0.4,
     },
     "theory": {"camb": None, "ccl": {"external": CCL, "nonlinear": False}},
     "debug": False,
@@ -50,7 +50,6 @@ def test_galaxykappa_model(request):
     model = get_model(info) # noqa F841
 
 
-# @pytest.mark.xfail(reason="data file not in repo")
 def test_shearkappa_model(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
@@ -69,14 +68,13 @@ def test_galaxykappa_like(request):
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
                                   "datapath": os.path.join(request.config.rootdir, gkappa_sacc_file),
-                                  "use_tracers": [('gc_unwise','gc_unwise'), ('gc_unwise','ck_so')]}}
+                                  "use_spectra": [('gc_unwise','gc_unwise'), ('gc_unwise','ck_so')]}}
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
     assert np.isclose(loglikes[0], 88.2, atol=0.2, rtol=0.0)
 
 
-# @pytest.mark.xfail(reason="data file not in repo")
 def test_shearkappa_like(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
@@ -101,14 +99,44 @@ def test_shearkappa_like(request):
                       "As": 2.1e-9,
                       "tau": 0.094,
                       "mnu": 0.0,
-                      "nnu": 3.046,
-                      "s1": 0.4,
-                      "b1": 1.0}
+                      "nnu": 3.046}
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
 
     assert np.isclose(loglikes, 637.64473666)
+
+def test_shearkappa_tracerselect(request):
+
+    from soliket.cross_correlation import ShearKappaLikelihood
+    import copy
+
+    rootdir = request.config.rootdir
+
+    test_datapath = os.path.join(rootdir, gammakappa_sacc_file)
+
+    info["likelihood"] = {
+        "ShearKappaLikelihood": {"external": ShearKappaLikelihood,
+                                 "datapath": test_datapath,
+                                 'use_spectra': 'all'}
+    }
+
+    info_onebin = copy.deepcopy(info)
+    info_onebin['likelihood']['ShearKappaLikelihood']['use_spectra'] = \
+                                                                [('gs_des_bin1','ck_act')]
+
+    model = get_model(info)
+    loglikes, derived = model.loglikes()
+
+    lhood = model.likelihood['ShearKappaLikelihood']
+
+    model_onebin = get_model(info_onebin)
+    loglikes_onebin, derived_onebin = model_onebin.loglikes()
+
+    lhood_onebin = model_onebin.likelihood['ShearKappaLikelihood']
+
+    assert len(lhood.data.x) // 4 == len(lhood_onebin.data.x)
+    assert np.allclose(lhood.data.y[:len(lhood_onebin.data.x)], lhood_onebin.data.y)
 
 
 def test_shearkappa_hartlap(request):
@@ -136,9 +164,7 @@ def test_shearkappa_hartlap(request):
                       "As": 2.5e-9, # offset the theory to upweight inv_cov in loglike
                       "tau": 0.094,
                       "mnu": 0.0,
-                      "nnu": 3.046,
-                      "s1": 0.4,
-                      "b1": 1.0}
+                      "nnu": 3.046}
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
