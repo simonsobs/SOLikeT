@@ -161,7 +161,7 @@ class ClusterLikelihood(PoissonLikelihood):
                 HMF.M, c_z, c_y * 1e-4, c_yerr * 1e-4, param_vals, Ez_fn, DA_fn
             )
 
-            dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp(c_z, np.log10(HMF.M))) * h**4.0
+            dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp((np.log10(HMF.M), c_z))) * h**4.0
 
             ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
             return ans

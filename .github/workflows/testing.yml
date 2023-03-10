@@ -18,8 +18,8 @@ jobs:
 
           - name: oldest supported versions
             os: ubuntu-latest
-            python-version: '3.7'
-            toxenv: py37-test-oldest
+            python-version: '3.8'
+            toxenv: py38-test-oldest
 
           - name: macOS 11
             os: macos-11
