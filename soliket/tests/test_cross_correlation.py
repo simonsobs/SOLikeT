@@ -124,6 +124,13 @@ def test_shearkappa_tracerselect(request):
     info_onebin = copy.deepcopy(info)
     info_onebin['likelihood']['ShearKappaLikelihood']['use_spectra'] = \
                                                                 [('gs_des_bin1','ck_act')]
+    
+    info_twobin = copy.deepcopy(info)
+    info_twobin['likelihood']['ShearKappaLikelihood']['use_spectra'] = \
+                                                                [
+                                                                ('gs_des_bin1','ck_act'),
+                                                                ('gs_des_bin3','ck_act'),
+                                                                ]
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
@@ -135,8 +142,20 @@ def test_shearkappa_tracerselect(request):
 
     lhood_onebin = model_onebin.likelihood['ShearKappaLikelihood']
 
-    assert len(lhood.data.x) // 4 == len(lhood_onebin.data.x)
-    assert np.allclose(lhood.data.y[:len(lhood_onebin.data.x)], lhood_onebin.data.y)
+    model_twobin = get_model(info_twobin)
+    loglikes_twobin, derived_twobin = model_twobin.loglikes()
+
+    lhood_twobin = model_twobin.likelihood['ShearKappaLikelihood']
+
+    n_ell_perbin = len(lhood.data.x) // 4
+
+    assert n_ell_perbin == len(lhood_onebin.data.x)
+    assert np.allclose(lhood.data.y[:n_ell_perbin], lhood_onebin.data.y)
+
+    assert 2 * n_ell_perbin == len(lhood_twobin.data.x)
+    assert np.allclose(np.concatenate([lhood.data.y[:n_ell_perbin],
+                                       lhood.data.y[2 * n_ell_perbin:3 * n_ell_perbin]]),
+                       lhood_twobin.data.y)
 
 
 def test_shearkappa_hartlap(request):
