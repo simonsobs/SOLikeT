@@ -5,7 +5,7 @@ import os
 import tempfile
 import unittest
 import pytest
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 import camb
 import soliket  # noqa
@@ -58,7 +58,7 @@ nuisance_params = {
 }
 
 
-if LooseVersion(camb.__version__) >= LooseVersion('1.4'):
+if Version(camb.__version__) >= Version('1.4'):
     chi2s = {"tt": 545.1257,
              "te": 137.4146,
              "ee": 167.9850,

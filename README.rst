@@ -5,6 +5,10 @@ SOLikeT
 .. image:: https://github.com/simonsobs/soliket/workflows/Testing/badge.svg
    :target: https://github.com/simonsobs/SOLikeT/actions?query=workflow%3ATesting
    :alt: Testing Status
+   
+.. image:: https://codecov.io/gh/simonsobs/SOLikeT/branch/master/graph/badge.svg?token=ND945EQDWR 
+   :target: https://codecov.io/gh/simonsobs/SOLikeT
+   :alt: Test Coverage
 
 .. image:: https://readthedocs.org/projects/soliket/badge/?version=latest
    :target: https://soliket.readthedocs.io/en/latest/?badge=latest
@@ -18,7 +22,7 @@ A centralized package for likelihood and theory implementations for SO.
 Installation
 ============
 
-For a set of detailed instructions for different machines (e.g. NERSC), please see :ref:`the installation page <INSTALL>`.
+For a set of detailed instructions for different machines (e.g. NERSC), please see `the installation page <INSTALL.rst>`_.
 
 To install SOLikeT we expect that you have the following system-level tools:
 
