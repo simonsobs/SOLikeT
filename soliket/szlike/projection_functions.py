@@ -70,7 +70,7 @@ def project_ksz(
     r_use2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
     r_ext = AngDis * np.arctan(np.max(r)) # total profile
     r_ext2 = r_ext
-    
+
     rad = np.logspace(-3, 1, 200)  # Mpc
     rad2 = np.logspace(-3, 1, 200)
 
@@ -81,9 +81,7 @@ def project_ksz(
     dtht2 = np.arctan(radlim2 / AngDis) / NNR  # rads
     dtht_use = np.arctan(r_use / AngDis) / NNR
     dtht2_use = np.arctan(r_use2 / AngDis) / NNR
-    
-    thta = (np.arange(NNR) + 1.0) * dtht
-    thta2 = (np.arange(NNR) + 1.0) * dtht2
+
     thta_use = (np.arange(NNR) + 1.0) * dtht_use
     thta2_use = (np.arange(NNR) + 1.0) * dtht2_use
 
@@ -182,7 +180,7 @@ def project_tsz(
     r_use2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
     r_ext = AngDis * np.arctan(np.max(r)) # total profile
     r_ext2 = r_ext
-    
+
     rad = np.logspace(-3, 1, 200)  # Mpc
     rad2 = np.logspace(-3, 1, 200)
 
@@ -193,9 +191,7 @@ def project_tsz(
     dtht2 = np.arctan(radlim2 / AngDis) / NNR  # rads
     dtht_use = np.arctan(r_use / AngDis) / NNR
     dtht2_use = np.arctan(r_use2 / AngDis) / NNR
-    
-    thta = (np.arange(NNR) + 1.0) * dtht
-    thta2 = (np.arange(NNR) + 1.0) * dtht2
+
     thta_use = (np.arange(NNR) + 1.0) * dtht_use
     thta2_use = (np.arange(NNR) + 1.0) * dtht2_use
 
