@@ -27,9 +27,9 @@ MP_CGS = proton_mass_kg * 1.0e3
 sr2sqarcmin = 3282.8 * 60.0**2
 XH = hydrogen_fraction
 
-# This is for beam convolution through FFT. Change when updated to Hankel, or other
-sizeArcmin = 15.0  # [degree]
-sz = 500
+# This is for beam convolution through FFT. New default from 15-500 to 30-1000
+sizeArcmin = 30.0  # [degree]
+sz = 1000
 baseMap = FlatMap(
     nX=sz,
     nY=sz,
@@ -66,9 +66,11 @@ def project_ksz(
 
     AngDis = AngDist(z, provider)
 
-    r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
-    r_ext2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
-
+    r_use = AngDis * np.arctan(np.radians(tht / 60.0))
+    r_use2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
+    r_ext = AngDis * np.arctan(np.max(r)) # total profile
+    r_ext2 = r_ext
+    
     rad = np.logspace(-3, 1, 200)  # Mpc
     rad2 = np.logspace(-3, 1, 200)
 
@@ -77,13 +79,16 @@ def project_ksz(
 
     dtht = np.arctan(radlim / AngDis) / NNR  # rads
     dtht2 = np.arctan(radlim2 / AngDis) / NNR  # rads
-
+    dtht_use = np.arctan(r_use / AngDis) / NNR
+    dtht2_use = np.arctan(r_use2 / AngDis) / NNR
+    
     thta = (np.arange(NNR) + 1.0) * dtht
     thta2 = (np.arange(NNR) + 1.0) * dtht2
+    thta_use = (np.arange(NNR) + 1.0) * dtht_use
+    thta2_use = (np.arange(NNR) + 1.0) * dtht2_use
 
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht / resolution_factor
     thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2 / resolution_factor
-
     thta_smooth = thta_smooth[:, None]
     thta2_smooth = thta2_smooth[:, None]
 
@@ -132,26 +137,23 @@ def project_ksz(
     convolvedProfMap = baseMap.inverseFourier(convolvedProfMapF)
     convolvedProfMap2 = baseMap.inverseFourier(convolvedProfMapF2)
 
-    thta = (np.arange(NNR) + 1.0) * dtht
-    thta2 = (np.arange(NNR) + 1.0) * dtht2
-
     rho2D_beam = interp1d(
         r.flatten(),
         convolvedProfMap.flatten(),
         kind="linear",
         bounds_error=False,
         fill_value=0.0,
-    )(thta)
+    )(thta_use)
     rho2D2_beam = interp1d(
         r.flatten(),
         convolvedProfMap2.flatten(),
         kind="linear",
         bounds_error=False,
         fill_value=0.0,
-    )(thta2)
+    )(thta2_use)
 
-    sig = 2.0 * np.pi * dtht * np.sum(thta * rho2D_beam)
-    sig2 = 2.0 * np.pi * dtht2 * np.sum(thta2 * rho2D2_beam)
+    sig = 2.0 * np.pi * dtht_use * np.sum(thta_use * rho2D_beam)
+    sig2 = 2.0 * np.pi * dtht2_use * np.sum(thta2_use * rho2D2_beam)
 
     sig_all_beam = (
         (2 * sig - sig2)
@@ -176,9 +178,11 @@ def project_tsz(
 
     AngDis = AngDist(z, provider)
 
-    r_ext = AngDis * np.arctan(np.radians(tht / 60.0))
-    r_ext2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
-
+    r_use = AngDis * np.arctan(np.radians(tht / 60.0))
+    r_use2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
+    r_ext = AngDis * np.arctan(np.max(r)) # total profile
+    r_ext2 = r_ext
+    
     rad = np.logspace(-3, 1, 200)  # Mpc
     rad2 = np.logspace(-3, 1, 200)
 
@@ -187,13 +191,16 @@ def project_tsz(
 
     dtht = np.arctan(radlim / AngDis) / NNR  # rads
     dtht2 = np.arctan(radlim2 / AngDis) / NNR  # rads
-
+    dtht_use = np.arctan(r_use / AngDis) / NNR
+    dtht2_use = np.arctan(r_use2 / AngDis) / NNR
+    
     thta = (np.arange(NNR) + 1.0) * dtht
     thta2 = (np.arange(NNR) + 1.0) * dtht2
+    thta_use = (np.arange(NNR) + 1.0) * dtht_use
+    thta2_use = (np.arange(NNR) + 1.0) * dtht2_use
 
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht / resolution_factor
     thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2 / resolution_factor
-
     thta_smooth = thta_smooth[:, None]
     thta2_smooth = thta2_smooth[:, None]
 
@@ -242,26 +249,23 @@ def project_tsz(
     convolvedProfMap = baseMap.inverseFourier(convolvedProfMapF)
     convolvedProfMap2 = baseMap.inverseFourier(convolvedProfMapF2)
 
-    thta = (np.arange(NNR) + 1.0) * dtht
-    thta2 = (np.arange(NNR) + 1.0) * dtht2
-
     Pth2D_beam = interp1d(
         r.flatten(),
         convolvedProfMap.flatten(),
         kind="linear",
         bounds_error=False,
         fill_value=0.0,
-    )(thta)
+    )(thta_use)
     Pth2D2_beam = interp1d(
         r.flatten(),
         convolvedProfMap2.flatten(),
         kind="linear",
         bounds_error=False,
         fill_value=0.0,
-    )(thta2)
+    )(thta2_use)
 
-    sig_p = 2.0 * np.pi * dtht * np.sum(thta * Pth2D_beam)
-    sig2_p = 2.0 * np.pi * dtht2 * np.sum(thta2 * Pth2D2_beam)
+    sig_p = 2.0 * np.pi * dtht_use * np.sum(thta_use * Pth2D_beam)
+    sig2_p = 2.0 * np.pi * dtht2_use * np.sum(thta2_use * Pth2D2_beam)
     sig_all_p_beam = (
         (2 * sig_p - sig2_p)
         * ST_CGS
@@ -276,6 +280,7 @@ def project_tsz(
 
 def project_obb(tht, M, z, beam_txt, theta, nu, fbeam, provider):
     # NOTE: this is convolving through analytical integral, not FFT like GNFW functions
+    # NOTE: needs to be updated with new method for r from baseMap
     disc_fac = np.sqrt(2)
     NNR = 100
     resolution_factor = 3.0
