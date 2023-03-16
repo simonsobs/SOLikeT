@@ -26,6 +26,7 @@ info_fiducial = {
                 "nonlinear": False,
                 "kmax": 10.0,
                 "dark_energy_model": "ppf",
+                "bbn_predictor": "PArthENoPE_880.2_standard.dat"
             }
         },
     },
@@ -43,7 +44,7 @@ def test_clusters_loglike():
 
     lnl = model_fiducial.loglikes({})[0]
 
-    assert np.isclose(lnl, -855.0)
+    assert np.isclose(lnl, -854.89406321)
 
 
 def test_clusters_n_expected():
