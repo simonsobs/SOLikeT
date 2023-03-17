@@ -1,5 +1,6 @@
 sz_data_file: gnfw_test_projections.txt
 beam_file: beam_f150_daynight.txt 
+transform_type:	Hankel #FFT or Hankel
 #optional beam response file
 beam_response: act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt #False, or give file
 #optional 2-halo file

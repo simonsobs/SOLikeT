@@ -3,7 +3,6 @@ import os
 from soliket.szlike import KSZLikelihood, TSZLikelihood
 from cobaya.model import get_model
 
-
 sz_data_file = "soliket/szlike/gnfw_test_projections.txt"
 cov_tsz_file = "soliket/szlike/cov_diskring_tsz_varweight_bootstrap.txt"
 cov_ksz_file = "soliket/szlike/cov_diskring_ksz_varweight_bootstrap.txt"
@@ -30,9 +29,9 @@ def test_ksz(request):
         },
     }
 
-    thta_arc, ksz_gnfw, tsz_gnfw = np.loadtxt(
+    thta_arc, ksz_fft, tsz_fft, ksz_hank, tsz_hank = np.loadtxt(
         os.path.join(request.config.rootdir, sz_data_file),
-        usecols=(0, 1, 2),
+        usecols=(0, 1, 2, 3, 4),
         unpack=True,
     )
 
@@ -44,8 +43,8 @@ def test_ksz(request):
     ksz_theory = lhood._get_theory(**info["params"])
     ksz_theory *= 3282.8 * 60.0**2
     print("ksz_theory", ksz_theory)
-    print("ksz_gnfw", ksz_gnfw)
-    assert np.allclose(ksz_gnfw, ksz_theory, atol=1.0e-1, rtol=0.01)
+    print("ksz_hank", ksz_hank)
+    assert np.allclose(ksz_hank, ksz_theory, atol=1.0e-3, rtol=1.0e-3)
 
 
 def test_tsz(request):
@@ -67,9 +66,9 @@ def test_tsz(request):
         },
     }
 
-    thta_arc, ksz_gnfw, tsz_gnfw = np.loadtxt(
+    thta_arc, ksz_fft, tsz_fft, ksz_hank, tsz_hank = np.loadtxt(
         os.path.join(request.config.rootdir, sz_data_file),
-        usecols=(0, 1, 2),
+        usecols=(0, 1, 2, 3, 4),
         unpack=True,
     )
 
@@ -81,5 +80,5 @@ def test_tsz(request):
     tsz_theory = lhood._get_theory(**info["params"])
     tsz_theory *= 3282.8 * 60.0**2
     print("tsz_theory", tsz_theory)
-    print("tsz_gnfw", tsz_gnfw)
-    assert np.allclose(tsz_gnfw, tsz_theory, atol=1.0e-1, rtol=0.01)
+    print("tsz_hank", tsz_hank)
+    assert np.allclose(tsz_hank, tsz_theory, atol=1.0e-3, rtol=1.0e-3)

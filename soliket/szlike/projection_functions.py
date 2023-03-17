@@ -7,7 +7,7 @@ from .gnfw import r200, rho_gnfw1h, Pth_gnfw1h, rho_gnfw, Pth_gnfw
 from .obb import con, fstar_func, return_prof_pars, rho, Pth
 from .beam import read_beam, f_beam, f_beam_fft, f_response
 from .flat_map import FlatMap
-
+from .hankel_transform_class import RadialFourierTransform
 from ..constants import (
     MPC2CM,
     C_M_S,
@@ -56,8 +56,59 @@ def fnu(nu):
     return ans
 
 
+def convolve_FFT(r, thta_smooth, prof2D, beam_txt, thta_use, beam_response=False):
+    profMap = np.interp(r, thta_smooth, prof2D)
+    beamMapF = f_beam_fft(beam_txt, baseMap.ell)
+    # Fourier transform the profile
+    profMapF = baseMap.fourier(profMap)  # see note in flat_map.py about precision
+    # multiply by the beam transfer function
+    convolvedProfMapF = profMapF * beamMapF
+
+    if beam_response is not False:  # for tSZ
+        respTF = f_response(beam_response, baseMap.ell)
+        # multiply by the response
+        convolvedProfMapF *= respTF
+
+    # inverse fourier transform
+    convolvedProfMap = baseMap.inverseFourier(convolvedProfMapF)
+    prof2D_beam = interp1d(
+        r.flatten(),
+        convolvedProfMap.flatten(),
+        kind="linear",
+        bounds_error=False,
+        fill_value=0.0,
+    )(thta_use)
+    return prof2D_beam
+
+
+def convolve_Hankel(thta_smooth, prof2D, beam_txt, thta_use, beam_response=False):
+    rht = RadialFourierTransform(
+        n=200, pad=100, lrange=[170.0, 1.4e6]
+    )  # note hard values
+    profMap = np.interp(rht.r, thta_smooth, prof2D)
+    lprofs = rht.real2harm(profMap)
+    lprofs *= f_beam_fft(beam_txt, rht.ell)
+
+    if beam_response is not False:
+        respTF = f_response(beam_response, rht.ell)
+        # multiply by the response
+        lprofs *= respTF
+
+    rprofs = rht.harm2real(lprofs)
+    # padding
+    r_unpad, rprofs = rht.unpad(rht.r, rprofs)
+    prof2D_beam = interp1d(
+        r_unpad.flatten(),
+        rprofs.flatten(),
+        kind="linear",
+        bounds_error=False,
+        fill_value=0.0,
+    )(thta_use)
+    return prof2D_beam
+
+
 def project_ksz(
-    tht, M, z, beam_txt, model_params, twohalo_term, provider
+    tht, M, z, beam_txt, transform_type, model_params, twohalo_term, provider
 ):  # input_model
     disc_fac = np.sqrt(2)
     NNR = 100
@@ -68,7 +119,7 @@ def project_ksz(
 
     r_use = AngDis * np.arctan(np.radians(tht / 60.0))
     r_use2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
-    r_ext = AngDis * np.arctan(np.max(r)) # total profile
+    r_ext = AngDis * np.arctan(np.max(r))  # total profile
     r_ext2 = r_ext
 
     rad = np.logspace(-3, 1, 200)  # Mpc
@@ -122,33 +173,13 @@ def project_ksz(
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht / resolution_factor
     thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2 / resolution_factor
 
-    profMap = np.interp(r, thta_smooth, rho2D)
-    profMap2 = np.interp(r, thta2_smooth, rho2D2)
-    beamMapF = f_beam_fft(beam_txt, baseMap.ell)
-    # Fourier transform the profile
-    profMapF = baseMap.fourier(profMap) # see note in flat_map.py about precision
-    profMapF2 = baseMap.fourier(profMap2)
-    # multiply by the beam transfer function
-    convolvedProfMapF = profMapF * beamMapF
-    convolvedProfMapF2 = profMapF2 * beamMapF
-    # inverse Fourier transform
-    convolvedProfMap = baseMap.inverseFourier(convolvedProfMapF)
-    convolvedProfMap2 = baseMap.inverseFourier(convolvedProfMapF2)
+    if transform_type == "FFT":
+        rho2D_beam = convolve_FFT(r, thta_smooth, rho2D, beam_txt, thta_use)
+        rho2D2_beam = convolve_FFT(r, thta2_smooth, rho2D2, beam_txt, thta2_use)
 
-    rho2D_beam = interp1d(
-        r.flatten(),
-        convolvedProfMap.flatten(),
-        kind="linear",
-        bounds_error=False,
-        fill_value=0.0,
-    )(thta_use)
-    rho2D2_beam = interp1d(
-        r.flatten(),
-        convolvedProfMap2.flatten(),
-        kind="linear",
-        bounds_error=False,
-        fill_value=0.0,
-    )(thta2_use)
+    elif transform_type == "Hankel":
+        rho2D_beam = convolve_Hankel(thta_smooth, rho2D, beam_txt, thta_use)
+        rho2D2_beam = convolve_Hankel(thta2_smooth, rho2D2, beam_txt, thta2_use)
 
     sig = 2.0 * np.pi * dtht_use * np.sum(thta_use * rho2D_beam)
     sig2 = 2.0 * np.pi * dtht2_use * np.sum(thta2_use * rho2D2_beam)
@@ -167,7 +198,16 @@ def project_ksz(
 
 
 def project_tsz(
-    tht, M, z, nu, beam_txt, model_params, beam_response, twohalo_term, provider
+    tht,
+    M,
+    z,
+    nu,
+    beam_txt,
+    transform_type,
+    model_params,
+    beam_response,
+    twohalo_term,
+    provider,
 ):
     disc_fac = np.sqrt(2)
     NNR = 100
@@ -178,7 +218,7 @@ def project_tsz(
 
     r_use = AngDis * np.arctan(np.radians(tht / 60.0))
     r_use2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
-    r_ext = AngDis * np.arctan(np.max(r)) # total profile
+    r_ext = AngDis * np.arctan(np.max(r))  # total profile
     r_ext2 = r_ext
 
     rad = np.logspace(-3, 1, 200)  # Mpc
@@ -225,40 +265,20 @@ def project_tsz(
     thta_smooth = (np.arange(NNR2) + 1.0) * dtht / resolution_factor
     thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2 / resolution_factor
 
-    profMap = np.interp(r, thta_smooth, Pth2D)
-    profMap2 = np.interp(r, thta2_smooth, Pth2D2)
-    # Fourier transform the profile
-    profMapF = baseMap.fourier(profMap)
-    profMapF2 = baseMap.fourier(profMap2)
-    beamMapF = f_beam_fft(beam_txt, baseMap.ell)
-    # multiply by beam
-    convolvedProfMapF = profMapF * beamMapF
-    convolvedProfMapF2 = profMapF2 * beamMapF
-
-    if beam_response is not False:
-        respTF = f_response(beam_response, baseMap.ell)
-        # multiply by the response
-        convolvedProfMapF *= respTF
-        convolvedProfMapF2 *= respTF
-
-    # inverse Fourier transform
-    convolvedProfMap = baseMap.inverseFourier(convolvedProfMapF)
-    convolvedProfMap2 = baseMap.inverseFourier(convolvedProfMapF2)
-
-    Pth2D_beam = interp1d(
-        r.flatten(),
-        convolvedProfMap.flatten(),
-        kind="linear",
-        bounds_error=False,
-        fill_value=0.0,
-    )(thta_use)
-    Pth2D2_beam = interp1d(
-        r.flatten(),
-        convolvedProfMap2.flatten(),
-        kind="linear",
-        bounds_error=False,
-        fill_value=0.0,
-    )(thta2_use)
+    if transform_type == "FFT":
+        Pth2D_beam = convolve_FFT(
+            r, thta_smooth, Pth2D, beam_txt, thta_use, beam_response
+        )
+        Pth2D2_beam = convolve_FFT(
+            r, thta2_smooth, Pth2D2, beam_txt, thta2_use, beam_response
+        )
+    elif transform_type == "Hankel":
+        Pth2D_beam = convolve_Hankel(
+            thta_smooth, Pth2D, beam_txt, thta_use, beam_response
+        )
+        Pth2D2_beam = convolve_Hankel(
+            thta2_smooth, Pth2D2, beam_txt, thta2_use, beam_response
+        )
 
     sig_p = 2.0 * np.pi * dtht_use * np.sum(thta_use * Pth2D_beam)
     sig2_p = 2.0 * np.pi * dtht2_use * np.sum(thta2_use * Pth2D2_beam)
@@ -276,7 +296,7 @@ def project_tsz(
 
 def project_obb(tht, M, z, beam_txt, theta, nu, fbeam, provider):
     # NOTE: this is convolving through analytical integral, not FFT like GNFW functions
-    # NOTE: needs to be updated with new method for r from baseMap
+    # NOTE: needs to be updated with new method for r from baseMap and Hankel transform
     disc_fac = np.sqrt(2)
     NNR = 100
     resolution_factor = 3.0

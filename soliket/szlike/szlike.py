@@ -10,6 +10,7 @@ class SZLikelihood(GaussianLikelihood):
     def initialize(self):
 
         self.beam_txt = self.beam_file
+        self.transform_type = self.transform_type
         self.z = self.redshift
         self.nu = self.frequency_GHz
         self.M = self.mass_halo_mean_Msol
@@ -51,6 +52,7 @@ class KSZLikelihood(SZLikelihood):  # this is for GNFW model
                 self.M,
                 self.z,
                 self.beam_txt,
+                self.transform_type,
                 model_params,
                 self.twohalo_term,
                 self.provider,
@@ -84,6 +86,7 @@ class TSZLikelihood(SZLikelihood):  # this is for GNFW model
                 self.z,
                 self.nu,
                 self.beam_txt,
+                self.transform_type,
                 model_params,
                 self.beam_response,
                 self.twohalo_term,
