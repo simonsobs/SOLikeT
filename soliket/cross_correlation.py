@@ -233,4 +233,6 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
         cl_binned_total = np.concatenate(cl_binned_list)
 
+        cl_binned_total *= params_values['Alens_cross']
+
         return cl_binned_total

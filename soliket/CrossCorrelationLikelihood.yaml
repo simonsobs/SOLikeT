@@ -12,6 +12,9 @@ ia_mode: null
 ncovsims: null
 
 params:
+  Alens_cross:
+    value: 1.0
+    latex: A_\mathrm{lens}
   b1: 
     prior:
       min: 0.
