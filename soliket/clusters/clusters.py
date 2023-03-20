@@ -120,8 +120,8 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         h = self.theory.get_param("H0") / 100.0
 
-        dndlnm = get_dndlnm(self, zz, pk_intp) #, **kwargs)
-        dVdzdO = get_dVdz(self, zz)
+        dndlnm = get_dndlnm(self, zz, pk_intp)
+        dVdzdO = get_dVdz(self, zz, dVdz_interp=False)
         surveydeg2 = self.skyfracs.sum()
         intgr = dndlnm * dVdzdO * surveydeg2
         intgr = intgr.T
@@ -185,7 +185,6 @@ class BinnedClusterLikelihood(CashCLikelihood):
             comp[comp < 0] = 0
 
         else:
-
             comp = np.zeros((theta.shape[0], theta.shape[1], self.lny.shape[0]))
             for i in range(theta.shape[0]):
                 comp[i, :] = self.compThetaInterpolator[qbin](theta[i, :], np.exp(self.lny)/1e-4, grid=True)
@@ -297,6 +296,9 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             }
         )
 
+        # this is for liklihood computation
+        self.zcut = self.binning['exclude_zbin']
+
         super().initialize()
 
     def get_requirements(self):
@@ -311,23 +313,55 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     # def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs):
     #     return get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs)
 
+    def Pfunc_inj(self, marr, z, **params):
+        if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
+            marr_ymmd = convert_masses(self, marr, z)
+        else:
+            marr_ymmd = marr
+        if self.theorypred['md_ym'] != '500c':
+            marr_500c = get_m500c(self, marr, z)
+        else:
+            marr_500c = marr_ymmd
+
+        y0 = get_y0(self, marr_ymmd, z, marr_500c, use_Q=False, Ez_interp=False, **params)
+        theta = get_theta(self, marr_500c, z)
+
+        comp = np.zeros_like(theta)
+        for i in range(theta.shape[0]):
+            comp[i] = self.compThetaInterpolator(theta[i], y0[i]/1e-4, grid=False)
+        comp[comp < 0] = 0
+
+        return comp.T
+
+
     def _get_n_expected(self, pk_intp, **kwargs):
 
         start = time.time()
 
-        zarr = self.zz
+        zz = self.zz
         marr = np.exp(self.lnmarr)
         Ynoise = self.noise
 
-        dVdz = get_dVdz(self, zarr)
-        dndlnm = get_dndlnm(self, zarr, pk_intp)
-        Pfunc = self.PfuncY(Ynoise, marr, zarr, kwargs)
+        dVdz = get_dVdz(self, zz, dVdz_interp=False)
+        dndlnm = get_dndlnm(self, zz, pk_intp)
+
+        zcut = self.zcut
+
+        if self.selfunc['method'] == 'injection':
+            Pfunc = self.Pfunc_inj(marr, zz, **kwargs)
+            Pfunc = np.repeat(Pfunc[:,:, np.newaxis], Ynoise.shape[0], axis=2)
+        else:
+            Pfunc = self.PfuncY(Ynoise, marr, zz, kwargs)
 
         Ntot = 0
         for index, frac in enumerate(self.skyfracs):
-
-            Nz = np.trapz(dndlnm * Pfunc[:,:,index], dx=np.diff(self.lnmarr[:, None], axis=0), axis=0)
-            Ntot += np.trapz(Nz * dVdz, x=zarr) * frac
+            if zcut > 0:
+                Nz = self._get_n_expected_zbinned(zz, dVdz, dndlnm, Pfunc)
+                zcut_arr = np.arange(zcut)
+                Ntot = np.sum(np.delete(Nz, zcut_arr, 0))
+            else:
+                Nz = np.trapz(dndlnm * Pfunc[:,:,index], dx=np.diff(self.lnmarr[:, None], axis=0), axis=0)
+                Ntot += np.trapz(Nz * dVdz, x=zz) * frac
 
         self.log.info("Total predicted N = {}".format(Ntot))
 
@@ -336,26 +370,17 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         return Ntot
 
-    def _get_n_expected_zbinned(self, pk_intp, **kwargs):
-    # this is just for the comparison with binned Nz
+    def _get_n_expected_zbinned(self, zz, dVdz, dndlnm, Pfunc):
 
-        zz = self.zz
         zarr = self.zarr
         nzarr = self.zbins
-        marr = np.exp(self.lnmarr)
-        Ynoise = self.noise
-
-        dVdz = get_dVdz(self, zz)
-        dndlnm = get_dndlnm(self, zz, pk_intp, **kwargs)
-        Pfunc = self.PfuncY(Ynoise, marr, zz, kwargs)
 
         Nz = 0
         for index, frac in enumerate(self.skyfracs):
-            Nz += np.trapz(dndlnm * dVdz * Pfunc[:,:,index], dx=np.diff(self.lnmarr[:, None], axis=0), axis=0) * frac
+            Nz += np.trapz(dndlnm * dVdz * Pfunc[:,:,index], x=self.lnmarr[:, None], axis=0) * frac
 
         Nzz = np.zeros(len(zarr))
         for i in range(len(zarr)):
-
             test = np.abs(zz - nzarr[i])
             i1 = np.argmin(test)
             test = np.abs(zz - nzarr[i+1])
@@ -363,11 +388,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             Nzz[i] = np.trapz(Nz[i1:i2+1], x=zz[i1:i2+1])
 
-        self.log.info("\r Total predicted N = {}".format(Nzz.sum()))
-
-        for i in range(len(zarr)):
-            self.log.info('Number of clusters in redshift bin {}: {}.'.format(i, Nzz[i]))
-        self.log.info('------------')
+        # self.log.info("\r Total predicted N = {}".format(Nzz.sum()))
+        # for i in range(len(zarr)):
+        #     self.log.info('Number of clusters in redshift bin {}: {}.'.format(i, Nzz[i]))
+        # self.log.info('------------')
 
         return Nzz
 
@@ -381,6 +405,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         dn_dzdm = dn_dzdlnm / marr[:,None]
 
         dn_dzdm_intp = interp2d(zarr, self.lnmarr, np.log(dn_dzdm), kind='cubic', fill_value=0)
+        #dn_dzdm_intp = interp2d(zarr, marr, np.log(dn_dzdm), kind='cubic', fill_value=0)
 
         def Prob_per_cluster(z, tsz_signal, tsz_signal_err, tile_name):
 
@@ -394,9 +419,17 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             c_z, c_y, c_yerr, tile_index = zip(*sorted(zip(c_z, c_y, c_yerr, tile_index)))
             c_z, c_y, c_yerr, tile_index = np.array(c_z), np.array(c_y), np.array(c_yerr), np.array(tile_index)
 
+            zcut = self.zcut
+            if zcut > 0:
+                ind = np.where(c_z > self.zbins[zcut])[0]
+                c_z, c_y, c_yerr, tile_index = c_z[ind], c_y[ind], c_yerr[ind], tile_index[ind]
+                print("::: Excluding clusters of z < {} in likelihood.".format(self.zbins[zcut]))
+                print("Total observed N = {}".format(len(c_z)))
+
             Pfunc_ind = self.Pfunc_per(tile_index, marr, c_z, c_y, c_yerr, kwargs)
             dn_dzdm = np.exp(np.squeeze(dn_dzdm_intp(c_z, self.lnmarr)))
-            ans = np.trapz(dn_dzdm * Pfunc_ind.T, dx=np.diff(marr[:,None], axis=0), axis=0)
+            dVdz = get_dVdz(self, c_z, dVdz_interp=True)
+            ans = np.trapz(dn_dzdm * Pfunc_ind.T * dVdz[None,:], dx=np.diff(marr[:,None], axis=0), axis=0)
 
             return ans
 
@@ -589,6 +622,10 @@ def initialize_common(self):
     cat_tile_name = data.field("tileName")
     # to print all columns: print(catf[1].columns)
 
+    # SPT-style SNR bias correction, this should be applied before applying SNR cut
+    debiasDOF = self.selfunc['debiasDOF']
+    qcat = np.sqrt(np.power(qcat, 2) - debiasDOF)
+
     # only above given SNR cut
     ind = np.where(qcat >= self.qcut)[0]
     self.z_cat = zcat[ind]
@@ -597,11 +634,7 @@ def initialize_common(self):
     self.cat_tsz_signal_err = cat_tsz_signal_err[ind]
     self.cat_tile_name = cat_tile_name[ind]
 
-    # SPT-style SNR bias correction
-    debiasDOF = 0
-    self.q_cat = np.sqrt(np.power(self.q_cat, 2) - debiasDOF)
-
-    self.N_cat = len(self.z_cat)
+    self.N_cat = len(self.q_cat)
     self.log.info('Total number of clusters in catalogue = {}.'.format(len(zcat)))
     self.log.info('SNR cut = {}.'.format(self.qcut))
     self.log.info('Number of clusters above the SNR cut = {}.'.format(self.N_cat))
@@ -868,9 +901,14 @@ def initialize_common(self):
 
     if self.selfunc['method'] == 'injection':
 
-        self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut, self.qbins)
+        try:
+            self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut, self.qbins)
+        except:
+            self.compThetaInterpolator = selfunc.get_completess_inj_theta_y_unb(self.data_directory, self.qcut)
+
 
     self.log.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
+
 
 def get_requirements(self):
     if self.theorypred['choose_theory'] == "camb":
@@ -921,14 +959,22 @@ def get_om(both):
         exit(0)
     return om
 
-def get_dVdz(both, zarr):
+def get_dVdz(both, zarr, dVdz_interp):
     """dV/dzdOmega"""
-    DA_z = both.theory.get_angular_diameter_distance(zarr)
+
+    if dVdz_interp:
+        Da_intp = interp1d(both.zz, both.theory.get_angular_diameter_distance(both.zz))
+        DA_z = Da_intp(zarr)
+        H_intp = interp1d(both.zz, both.theory.get_Hubble(both.zz))
+        H_z = H_intp(zarr)
+    else:
+        DA_z = both.theory.get_angular_diameter_distance(zarr)
+        H_z = both.theory.get_Hubble(zarr)
 
     dV_dz = (
         DA_z**2
         * (1.0 + zarr) ** 2
-        / (both.theory.get_Hubble(zarr) / C_KM_S)
+        / (H_z / C_KM_S)
     )
     h = both.theory.get_param("H0") / 100.0
     return dV_dz*h**3

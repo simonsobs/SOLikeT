@@ -188,3 +188,65 @@ def _parseSourceInjectionData(injDataPath, inputDataPath, SNRCut, qbins):
 		thetaQ[i]=np.nan_to_num(np.median(outFlux/injFlux))
 
 	return theta500s, binCentres, compThetaGrid, thetaQ
+
+
+
+
+# unbinned test 
+
+def get_completess_inj_theta_y_unb(pathdata, SNRCut):
+
+	selFnDir = os.path.join(pathdata, 'selFn')
+
+	# Stuff from the source injection sims (now required for completeness calculation)
+	injDataPath = selFnDir + os.path.sep + "sourceInjectionData.fits"
+	inputDataPath = selFnDir + os.path.sep + "sourceInjectionInputCatalog.fits"
+	if os.path.exists(injDataPath) == False or os.path.exists(inputDataPath) == False:
+		raise Exception(
+			"%s not found - run a source injection test to generate (now required for completeness calculations)." % (
+				injDataPath))
+
+	theta500s, binCentres, compThetaGrid, thetaQ = _parseSourceInjectionData_unb(injDataPath, inputDataPath, SNRCut)
+
+	compThetaInterpolator = scipy.interpolate.RectBivariateSpline(theta500s, binCentres, compThetaGrid, kx=3, ky=3)
+
+	return compThetaInterpolator
+
+def _parseSourceInjectionData_unb(injDataPath, inputDataPath, SNRCut):
+	"""Produce arrays for constructing interpolator objects from source injection test data.
+	Args:
+		injDataPath (:obj:`str`): Path to the output catalog produced by the source injection test.
+		inputDataPath (:obj:`str`): Path to the input catalog produced by the source injectio test.
+		SNRCut (:obj:`float`): Selection threshold in S/N to apply.
+	Returns:
+		theta500s, ycBinCentres, compThetaGrid, thetaQ
+	"""
+
+	injTab= table.Table().read(injDataPath)
+	inputTab= table.Table().read(inputDataPath)
+
+	# Completeness given y0 (NOT y0~) and theta500 and the S/N cut as 2D spline
+	# We also derive survey-averaged Q here from the injection sim results [for y0 -> y0~ mapping]
+	# NOTE: This is a survey-wide average, doesn't respect footprints at the moment
+	# NOTE: This will need re-thinking for evolving, non-self-similar models?
+
+	theta500s=np.unique(inputTab['theta500Arcmin'])
+	binEdges=np.linspace(inputTab['inFlux'].min(), inputTab['inFlux'].max(), 101)
+	binCentres=(binEdges[1:]+binEdges[:-1])/2
+	compThetaGrid=np.zeros((theta500s.shape[0], binCentres.shape[0]))
+	thetaQ=np.zeros(len(theta500s))
+
+	for i in range(len(theta500s)):
+		t = theta500s[i]
+		injMask=np.logical_and(injTab['theta500Arcmin'] == t, injTab['SNR'] > SNRCut)
+		inputMask=inputTab['theta500Arcmin'] == t
+		injFlux=injTab['inFlux'][injMask]
+		outFlux=injTab['outFlux'][injMask]
+		inputFlux=inputTab['inFlux'][inputMask]
+		recN, binEdges=np.histogram(injFlux, bins = binEdges)
+		inpN, binEdges=np.histogram(inputFlux, bins = binEdges)
+		valid=inpN > 0
+		compThetaGrid[i][valid]=recN[valid]/inpN[valid]
+		thetaQ[i]=np.nan_to_num(np.median(outFlux/injFlux))
+
+	return theta500s, binCentres, compThetaGrid, thetaQ
