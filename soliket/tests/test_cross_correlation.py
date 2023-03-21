@@ -8,7 +8,7 @@ from cobaya.model import get_model
 # cross_file = 'soliket/data/xcorr_simulated/clkg_noiseless.txt'
 # dndz_file = 'soliket/data/xcorr_simulated/dndz.txt'
 gammakappa_sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
-gkappa_sacc_file = 'soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits'
+gkappa_sacc_file = 'soliket/tests/data/sdss_gc-act-dr4_kappa.sim.sacc.fits'
 
 cosmo_params = {"Omega_c": 0.25, "Omega_b": 0.05, "h": 0.67, "n_s": 0.96}
 
@@ -74,8 +74,7 @@ def test_galaxykappa_like(request):
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
                                   "datapath": os.path.join(request.config.rootdir,
                                                            gkappa_sacc_file),
-                                  "use_spectra": [('gc_unwise', 'gc_unwise'),
-                                                  ('gc_unwise', 'ck_so')]}}
+                                  "use_spectra": [('gc_sdss', 'ck_act-dr4')]}}
 
     model = get_model(info)
     loglikes, derived = model.loglikes()

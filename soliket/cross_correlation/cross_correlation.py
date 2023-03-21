@@ -135,13 +135,13 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
                                           )
         tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
 
-        ells_theory_gg, w_bins_gg = self.get_binning((gal_tracer, gal_tracer))
+        # ells_theory_gg, w_bins_gg = self.get_binning((gal_tracer, gal_tracer))
         ells_theory_gk, w_bins_gk = self.get_binning((gal_tracer, cmbk_tracer))
 
-        cl_gg_unbinned = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, ells_theory_gg)
+        # cl_gg_unbinned = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, ells_theory_gg)
         cl_gk_unbinned = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, ells_theory_gk)
 
-        cl_gg_binned = np.dot(w_bins_gg, cl_gg_unbinned)
+        # cl_gg_binned = np.dot(w_bins_gg, cl_gg_unbinned)
         cl_gk_binned = np.dot(w_bins_gk, cl_gk_unbinned)
 
         import pdb; pdb.set_trace()
