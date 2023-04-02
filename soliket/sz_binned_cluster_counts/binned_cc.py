@@ -361,7 +361,7 @@ class unbinned_cc_likelihood(Likelihood):
 
     def _get_theory(self, **params_values):
         theory = self.theory.get_sz_unbinned_cluster_counts()
-        # # print(theory)
+        # print(theory)
         # dNdzdy_theoretical = theory['dndzdy']
         # # z_center = M.dndzdy_theoretical()['z_center']
         # z_edges = theory['z_edges']
