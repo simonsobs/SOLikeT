@@ -28,7 +28,7 @@ class SZLikelihood(GaussianLikelihood):
 
 class KSZLikelihood(SZLikelihood):  # this is for GNFW model
     def _get_data(self, **params_values):
-        # Modify these lines as necessary. Usecols 1 for FFT, 3 for Hankel 
+        # Modify these lines as necessary. Usecols 1 for FFT, 3 for Hankel
         thta_arc, ksz_data = np.loadtxt(self.sz_data_file, usecols=(0, 3), unpack=True)
         ksz_data /= 3282.8 * 60.0**2  # units muK*sr
         cov_ksz = np.loadtxt(self.cov_ksz_file)  # units muK*sr

@@ -27,21 +27,33 @@ MP_CGS = proton_mass_kg * 1.0e3
 sr2sqarcmin = 3282.8 * 60.0**2
 XH = hydrogen_fraction
 
-# This is for beam convolution through FFT. New default from 15-500 to 30-1000
-sizeArcmin = 30.0  # [degree]
-sz = 1000
-baseMap = FlatMap(
-    nX=sz,
-    nY=sz,
-    sizeX=sizeArcmin * np.pi / 180.0 / 60.0,
-    sizeY=sizeArcmin * np.pi / 180.0 / 60.0,
-)
-# map of the cluster, not yet convolved with the beam
-xc = baseMap.sizeX / 2.0
-yc = baseMap.sizeY / 2.0
-r = np.sqrt(
-    (baseMap.x - xc) ** 2 + (baseMap.y - yc) ** 2
-)  # cluster centric radius in rad
+
+def radius_definition(transform_type):
+    # There is probably a cleaner way to do this...
+    if transform_type == "FFT":
+        # New default from 15-500 (Amodeo21) to 30-1000 (Moser23)
+        sizeArcmin = 30.0  # [degree]
+        sz = 1000
+        baseMap = FlatMap(
+            nX=sz,
+            nY=sz,
+            sizeX=sizeArcmin * np.pi / 180.0 / 60.0,
+            sizeY=sizeArcmin * np.pi / 180.0 / 60.0,
+        )
+        # map of the cluster, not yet convolved with the beam
+        xc = baseMap.sizeX / 2.0
+        yc = baseMap.sizeY / 2.0
+        r = np.sqrt(
+            (baseMap.x - xc) ** 2 + (baseMap.y - yc) ** 2
+        )  # cluster centric radius in rad
+        r_max = np.max(r)
+
+    elif transform_type == "Hankel":
+        baseMap = False
+        r = False
+        sizeArcmin = 30.0
+        r_max = sizeArcmin * np.pi / 180.0 / 60.0 / np.sqrt(2)
+    return baseMap, r, r_max
 
 
 def coth(x):
@@ -56,7 +68,9 @@ def fnu(nu):
     return ans
 
 
-def convolve_FFT(r, thta_smooth, prof2D, beam_txt, thta_use, beam_response=False):
+def convolve_FFT(
+    r, thta_smooth, prof2D, beam_txt, baseMap, thta_use, beam_response=False
+):
     profMap = np.interp(r, thta_smooth, prof2D)
     beamMapF = f_beam_fft(beam_txt, baseMap.ell)
     # Fourier transform the profile
@@ -84,7 +98,7 @@ def convolve_FFT(r, thta_smooth, prof2D, beam_txt, thta_use, beam_response=False
 def convolve_Hankel(thta_smooth, prof2D, beam_txt, thta_use, beam_response=False):
     rht = RadialFourierTransform(
         n=200, pad=100, lrange=[170.0, 1.4e6]
-    )  # note hard values
+    )  # note hard values, n here needs to be same size as rad in project
     profMap = np.interp(rht.r, thta_smooth, prof2D)
     lprofs = rht.real2harm(profMap)
     lprofs *= f_beam_fft(beam_txt, rht.ell)
@@ -114,16 +128,17 @@ def project_ksz(
     NNR = 100
     resolution_factor = 2.0
     NNR2 = resolution_factor * NNR
-
     AngDis = AngDist(z, provider)
+
+    baseMap, r, r_max = radius_definition(transform_type)
 
     r_use = AngDis * np.arctan(np.radians(tht / 60.0))
     r_use2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
-    r_ext = AngDis * np.arctan(np.max(r))  # total profile
+    r_ext = AngDis * np.arctan(r_max)  # total profile
     r_ext2 = r_ext
 
     rad = np.logspace(-3, 1, 200)  # Mpc
-    rad2 = np.logspace(-3, 1, 200)
+    rad2 = rad
 
     radlim = r_ext
     radlim2 = r_ext2
@@ -174,8 +189,10 @@ def project_ksz(
     thta2_smooth = (np.arange(NNR2) + 1.0) * dtht2 / resolution_factor
 
     if transform_type == "FFT":
-        rho2D_beam = convolve_FFT(r, thta_smooth, rho2D, beam_txt, thta_use)
-        rho2D2_beam = convolve_FFT(r, thta2_smooth, rho2D2, beam_txt, thta2_use)
+        rho2D_beam = convolve_FFT(r, thta_smooth, rho2D, beam_txt, baseMap, thta_use)
+        rho2D2_beam = convolve_FFT(
+            r, thta2_smooth, rho2D2, beam_txt, baseMap, thta2_use
+        )
 
     elif transform_type == "Hankel":
         rho2D_beam = convolve_Hankel(thta_smooth, rho2D, beam_txt, thta_use)
@@ -213,16 +230,17 @@ def project_tsz(
     NNR = 100
     resolution_factor = 3.5
     NNR2 = resolution_factor * NNR
-
     AngDis = AngDist(z, provider)
+
+    baseMap, r, r_max = radius_definition(transform_type)
 
     r_use = AngDis * np.arctan(np.radians(tht / 60.0))
     r_use2 = AngDis * np.arctan(np.radians(tht * disc_fac / 60.0))
-    r_ext = AngDis * np.arctan(np.max(r))  # total profile
+    r_ext = AngDis * np.arctan(r_max)  # total profile
     r_ext2 = r_ext
 
     rad = np.logspace(-3, 1, 200)  # Mpc
-    rad2 = np.logspace(-3, 1, 200)
+    rad2 = rad
 
     radlim = r_ext
     radlim2 = r_ext2
@@ -267,10 +285,10 @@ def project_tsz(
 
     if transform_type == "FFT":
         Pth2D_beam = convolve_FFT(
-            r, thta_smooth, Pth2D, beam_txt, thta_use, beam_response
+            r, thta_smooth, Pth2D, beam_txt, baseMap, thta_use, beam_response
         )
         Pth2D2_beam = convolve_FFT(
-            r, thta2_smooth, Pth2D2, beam_txt, thta2_use, beam_response
+            r, thta2_smooth, Pth2D2, beam_txt, baseMap, thta2_use, beam_response
         )
     elif transform_type == "Hankel":
         Pth2D_beam = convolve_Hankel(
@@ -295,7 +313,7 @@ def project_tsz(
 
 
 def project_obb(tht, M, z, beam_txt, theta, nu, fbeam, provider):
-    # NOTE: this is convolving through analytical integral, not FFT like GNFW functions
+    # NOTE: this is convolving through analytical integral, not FFT or FHT
     # NOTE: needs to be updated with new method for r from baseMap and Hankel transform
     disc_fac = np.sqrt(2)
     NNR = 100

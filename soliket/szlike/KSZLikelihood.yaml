@@ -2,7 +2,7 @@ sz_data_file: gnfw_test_projections.txt
 beam_file: beam_f150_daynight.txt 
 transform_type: Hankel #FFT or Hankel
 #optional beam response file
-beam_response: act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt #False, or give file
+beam_response: False #False, or give file
 cov_ksz_file: cov_diskring_ksz_varweight_bootstrap.txt
 #optional 2-halo file
 twohalo_term: twohalo_cmass_average.txt #False, or give file. Need to flesh out this option more, but the idea is that if False it will use two_halo.py to calculate a 2h term
