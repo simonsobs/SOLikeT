@@ -425,3 +425,10 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             ps_vec[i] = clt
 
         return ps_vec
+
+
+class TestMFLike(MFLike):
+
+    _url = "https://portal.nersc.gov/cfs/sobs/users/MFLike_data"
+    filename = "v0.1_test"
+    install_options = {"download_url": f"{_url}/{filename}.tar.gz"}

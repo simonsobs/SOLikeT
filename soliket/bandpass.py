@@ -129,7 +129,7 @@ class BandPass(Theory):
 
         if not hasattr(self.bandint_width, "__len__"):
             self.bandint_width = np.full_like(self.freqs, self.bandint_width,
-                                              dtype=np.float)
+                                              dtype=float)
         if np.any(np.array(self.bandint_width) > 0):
             assert self.bandint_nsteps > 1, 'bandint_width and bandint_nsteps not \
                                              coherent'

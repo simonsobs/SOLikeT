@@ -3,7 +3,8 @@
 debug: True
 
 likelihood:
-  soliket.mflike.MFLike:
+  soliket.mflike.TestMFLike:
+    data_folder: TestMFLike
     input_file: data_sacc_00044.fits
     cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
     defaults:
