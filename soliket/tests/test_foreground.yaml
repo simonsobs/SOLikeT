@@ -1,0 +1,7 @@
+params:
+   T_d: 9.60,
+likelihood: 
+   one: None
+sampler: 
+   evaluate: None
+debug: True
