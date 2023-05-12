@@ -1,0 +1,58 @@
+SOLikeT installation
+
+
+* version change in cobaya needs python > 3.8 but soliket INSTALL.rst states
+
+conda create -q -n cobaya-env python=3.7 scipy matplotlib cython PyYAML pytest pytest-forked flaky
+
+* some example ipynb in dev directory has old uses (solike rather than soliket)
+
+* getting the data for SOLikeT (e.g.mflike). No clear instructions about how to get/use data for existing likelihoods. Inside the multi-like-test it installs directly, but as v0.6 
+
+- Specify model more directly as an argument to mflike?
+
+- Or include a copy of mflike_example.yaml in the documentation so that folks can download the data and/or correctly link to cobaya?
+
+- What is soliket/data? (I initially made mflike directory and pulled the data from NERSC, but this should be made more clear).  This was of course not used since the data were downloaded directly when mflike was called within soliket
+
+- Also, when I run an example script it continually tries to download the data file - what am I doing wrong?
+
+
+- also when trying to call a data file within mflike it defaults to looking for v0.6 [corrected with link to data_folder in the example, but we should change the default as the versions change]
+
+- Requirement cmbfg_dict of soliket.mflike.MFLike is not provided by any component, nor sampled directly
+
+
+- theoryforge_MFLike sets cmbfg_dict but we need to do this in the test as well --> need to make the need for this theory setting a little more obvious/clear
+
+----------------------------------------------------------------
+
+
+Issues for SOLikeT page:
+
+- creating a general public-facing ipython notebook + add edit the guidelines piece to make them more friendly to new users
+- discussion on mflike status in the documentation 
+
+** Plan of attack ** 
+
+
+- basic information notebook etc.
+- reproduce Martina's notebook with the gaussian covmat + mflike results
+- then develop the cross probe covariance
+
+Initial discussion on separation of mflike inside and outside SOLikeT; so it isn't entirely clear if they have really diverged far enough that it wasn't that clear what to do. 
+
+Right now the version inside mflike really _IS_ v0.6; so this documentation needs to be made more clear. 
+
+Also, input from TAC is needed here.
+
+
+Cross-probe covariance:
+
+- Code up analytic estimate of the lensing-TT covariance to that joint covariance matrix and include it in the probe.
+-https://github.com/JulienPeloton/lenscov
+
+- only computing once (unless you add the ability to delens, in which case you need to estimate at each step)
+
+Question for TAC: how much do SOLikeT team have to deal with people who are installing it locally?
+
