@@ -144,6 +144,13 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         # cl_gg_binned = np.dot(w_bins_gg, cl_gg_unbinned)
         cl_gk_binned = np.dot(w_bins_gk, cl_gk_unbinned)
 
+        from matplotlib import pyplot as plt
+        plt.ion()
+        plt.plot(self.data.x, self.data.y, 'o')
+        plt.plot(self.data.x, cl_gk_binned, '-')
+        plt.yscale('log')
+        plt.show()
+
         import pdb; pdb.set_trace()
 
         return np.concatenate([cl_gg_binned, cl_gk_binned])
@@ -269,5 +276,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
 
         cl_binned_total = np.concatenate(cl_binned_list)
+
+        import pdb; pdb.set_trace()
 
         return cl_binned_total

@@ -43,7 +43,7 @@ def test_galaxykappa_model(request):
 
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
-    info["params"]["b1"] = 1.
+    info["params"]["b1"] = 2.
     info["params"]["s1"] = 0.4
 
     info["likelihood"] = {
@@ -70,11 +70,15 @@ def test_galaxykappa_like(request):
 
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
+    info["params"]["b1"] = 2.
+    info["params"]["s1"] = 0.4
+
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
                                   "datapath": os.path.join(request.config.rootdir,
                                                            gkappa_sacc_file),
                                   "use_spectra": [('gc_sdss', 'ck_act-dr4')]}}
+
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
