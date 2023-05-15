@@ -138,22 +138,28 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         # ells_theory_gg, w_bins_gg = self.get_binning((gal_tracer, gal_tracer))
         ells_theory_gk, w_bins_gk = self.get_binning((gal_tracer, cmbk_tracer))
 
+        # bpw_idx = self.sacc_data.indices(tracers=(gal_tracer, cmbk_tracer))
+        # bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
+        # ells_theory = bpw.values
+        # ells_theory = np.asarray(ells_theory, dtype=int)
+        # w_bins = bpw.weight.T
+
         # cl_gg_unbinned = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, ells_theory_gg)
         cl_gk_unbinned = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, ells_theory_gk)
 
         # cl_gg_binned = np.dot(w_bins_gg, cl_gg_unbinned)
         cl_gk_binned = np.dot(w_bins_gk, cl_gk_unbinned)
 
-        from matplotlib import pyplot as plt
-        plt.ion()
-        plt.plot(self.data.x, self.data.y, 'o')
-        plt.plot(self.data.x, cl_gk_binned, '-')
-        plt.yscale('log')
-        plt.show()
+        # from matplotlib import pyplot as plt
+        # plt.ion()
+        # plt.plot(self.data.x, self.data.y, 'o')
+        # plt.plot(self.data.x, cl_gk_binned, '-')
+        # plt.yscale('log')
+        # plt.show()
 
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
-        return np.concatenate([cl_gg_binned, cl_gk_binned])
+        return cl_gk_binned
 
 
 class ShearKappaLikelihood(CrossCorrelationLikelihood):
@@ -271,6 +277,8 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                 cl_unbinned = (1 + m_bias) * cl_unbinned
 
             cl_binned = np.dot(w_bins, cl_unbinned)
+
+            import pdb; pdb.set_trace()
 
             cl_binned_list.append(cl_binned)
 

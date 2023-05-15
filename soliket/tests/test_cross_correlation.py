@@ -8,7 +8,8 @@ from cobaya.model import get_model
 # cross_file = 'soliket/data/xcorr_simulated/clkg_noiseless.txt'
 # dndz_file = 'soliket/data/xcorr_simulated/dndz.txt'
 gammakappa_sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
-gkappa_sacc_file = 'soliket/tests/data/sdss_gc-act-dr4_kappa.sim.sacc.fits'
+# gkappa_sacc_file = 'soliket/tests/data/sdss_gc-act-dr4_kappa.sim.sacc.fits'
+gkappa_sacc_file = 'soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits'
 
 cosmo_params = {"Omega_c": 0.25, "Omega_b": 0.05, "h": 0.67, "n_s": 0.96}
 
@@ -77,12 +78,13 @@ def test_galaxykappa_like(request):
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
                                   "datapath": os.path.join(request.config.rootdir,
                                                            gkappa_sacc_file),
-                                  "use_spectra": [('gc_sdss', 'ck_act-dr4')]}}
+                                  "use_spectra": [('gc_cmass', 'ck_actdr4')]}}
 
 
     model = get_model(info)
     loglikes, derived = model.loglikes()
-    assert np.isclose(loglikes[0], 88.2, atol=0.2, rtol=0.0)
+
+    assert np.isclose(loglikes[0], 174.013, atol=0.2, rtol=0.0)
 
 
 def test_shearkappa_like(request):
