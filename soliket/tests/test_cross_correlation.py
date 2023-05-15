@@ -4,11 +4,7 @@ import pytest
 from soliket.ccl import CCL
 from cobaya.model import get_model
 
-# auto_file = 'soliket/data/xcorr_simulated/clgg_noiseless.txt'
-# cross_file = 'soliket/data/xcorr_simulated/clkg_noiseless.txt'
-# dndz_file = 'soliket/data/xcorr_simulated/dndz.txt'
 gammakappa_sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
-# gkappa_sacc_file = 'soliket/tests/data/sdss_gc-act-dr4_kappa.sim.sacc.fits'
 gkappa_sacc_file = 'soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits'
 
 cosmo_params = {"Omega_c": 0.25, "Omega_b": 0.05, "h": 0.67, "n_s": 0.96}
