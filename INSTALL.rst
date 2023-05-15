@@ -66,11 +66,15 @@ There is an issue with installing tensorflow (needed for cosmopower) on M1 Mac t
 1. Download latest miniconda installer (e.g., `here: Download Conda environment <https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh>`_) and properly rename it (e.g., -> miniconda.sh)
 2. Install miniconda and tensor flow-deps
 
+::
+
    bash ~/miniconda.sh -b -p $HOME/miniconda
    source ~/miniconda/bin/activate
    conda install -c apple tensorflow-deps
 
 3. git clone soliket and create your virtual env
+
+::
 
    git clone https://github.com/simonsobs/soliket
    cd soliket
@@ -79,16 +83,23 @@ There is an issue with installing tensorflow (needed for cosmopower) on M1 Mac t
 
 4. Install tensorflow-macos and metal with correct versioning
 
+::
+
    pip install tensorflow-macos
    pip install tensorflow-metal
 
 5. Download and install cosmopower manually
+
+::
 
    git clone https://github.com/alessiospuriomancini/cosmopower
    cd cosmopower
    pip install .
 
 6. Go back to soliket folder and install it
+
+::
+
    cd path/to/your/soliket
    pip install -e .
 
