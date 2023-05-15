@@ -22,7 +22,7 @@ A centralized package for likelihood and theory implementations for SO.
 Installation
 ============
 
-For a set of detailed instructions for different machines (e.g. NERSC), please see `the installation page <INSTALL.rst>`_.
+For a set of detailed instructions for different machines (e.g. NERSC, M1 Mac), please see `the installation page <INSTALL.rst>`_.
 
 To install SOLikeT we expect that you have the following system-level tools:
 
@@ -42,6 +42,8 @@ You can then install SOLikeT in the usual way with pip::
 
   git clone https://github.com/simonsobs/soliket
   cd soliket
+  conda env create -n my_env -f soliket-tests.yml
+  conda activate my_env
   pip install -e .
 
 
