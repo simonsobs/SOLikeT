@@ -158,6 +158,10 @@ class BinnedClusterLikelihood(CashCLikelihood):
             test = np.abs(zz - nzarr[i+1])
             i2 = np.argmin(test)
 
+            # if kwargs['scatter_z']:
+            #     dndzz[:, i1:i2+1] *= 0.5*(special.erf((nzarr[i+1]-zz[i1:i2+1])/(np.sqrt(2)*sigma_z))
+            #                               - special.erf((nzarr[i]-zz[i1:i2+1])/(np.sqrt(2)*sigma_z)))
+
             delN2D[i,:] = np.trapz(dndzz[:, i1:i2+1], x=zz[i1:i2+1]).T
 
         self.log.info("\r Total predicted 2D N = {}".format(delN2D.sum()))
@@ -264,7 +268,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
 class UnbinnedClusterLikelihood(PoissonLikelihood):
     name = "Unbinned Clusters"
-    columns = ["z", "tsz_signal", "tsz_signal_err", "tile_name"]
+    columns = []
 
     verbose: bool = False
     data: dict = {}
@@ -272,7 +276,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     selfunc: dict = {}
     binning: dict = {}
     YM: dict = {}
-    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
+    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "scatter_z":None, "bias_sz":None, "bias_wl":None}
 
     def initialize(self):
 
@@ -283,18 +287,36 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         self.zz = np.arange(0, zmax, 0.01) # redshift bounds should correspond to catalogue
         if self.zz[0] == 0: self.zz[0] = 1e-5
 
+        # Quantities for z_scatter
+        self.nbins_sigmaz = 20
+        self.zobs_arr = np.logspace(-5, np.log10(2), 1000)
+
         self.log.info('Number of redshift points for theory calculation = {}.'.format(len(self.zz)))
         self.log.info('Number of mass points for theory calculation = {}.'.format(len(self.lnmarr)))
         self.log.info('Number of y0 points for theory calculation = {}.'.format(len(self.lny)))
 
-        self.catalog = pd.DataFrame(
-            {
-                "z": self.z_cat.byteswap().newbyteorder(),
-                "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(),
-                "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),
-                "tile_name": self.cat_tile_name.byteswap().newbyteorder()
-            }
-        )
+        if not hasattr(self, 'Mobs'):
+            self.catalog = pd.DataFrame(
+                {
+                    "z": self.z_cat.byteswap().newbyteorder(),
+                    "z_err": self.cat_zerr.byteswap().newbyteorder(),
+                    "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(),
+                    "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),
+                    "tile_name": self.cat_tile_name.byteswap().newbyteorder()
+                }
+            )
+        else:
+            self.catalog = pd.DataFrame(
+                {
+                    "z": self.z_cat.byteswap().newbyteorder(),
+                    "z_err": self.cat_zerr.byteswap().newbyteorder(),
+                    "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(),
+                    "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),
+                    "Mobs": self.cat_Mobs.byteswap().newbyteorder(),
+                    "Mobs_err": self.cat_Mobs_err.byteswap().newbyteorder(),
+                    "tile_name": self.cat_tile_name.byteswap().newbyteorder()
+                }
+            )
 
         # this is for liklihood computation
         self.zcut = self.binning['exclude_zbin']
@@ -305,7 +327,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         return get_requirements(self)
 
     def _get_catalog(self):
-        return self.catalog, self.columns
+        return self.catalog, self.catalog.columns
 
     # # checking rate_densities
     # def get_dndlnm(self, z, pk_intp):
@@ -338,6 +360,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         start = time.time()
 
+        # Set scatter_z to False if not defined
+        if not hasattr(kwargs, 'scatter_z'):
+            kwargs['scatter_z'] = False
+
         zz = self.zz
         marr = np.exp(self.lnmarr)
         Ynoise = self.noise
@@ -353,15 +379,35 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         else:
             Pfunc = self.PfuncY(Ynoise, marr, zz, kwargs)
 
+        if kwargs['scatter_z']:
+            if not hasattr(self, 'pztr'):
+                cat, cols = self._get_catalog()
+                zerr = cat['z_err']
+                assert np.any(zerr != 0.), 'z_scatter = True but all redshift errors in catalog are zero. Aborting.'
+                pzerr, zerr_binedges = np.histogram(zerr, bins=np.linspace(np.amin(zerr), np.amax(zerr),
+                                                                           self.nbins_sigmaz), density=True)
+                zerr_bins = 0.5*(zerr_binedges[:-1]+zerr_binedges[1:])
+                intg = np.trapz(pzerr, zerr_bins)
+
+                pzztrsig = gaussian(self.zz[:, None, None], self.zobs_arr[None, :, None], zerr_bins[None, None, :])
+                pzztr = np.trapz(pzztrsig*(pzerr/intg)[None, None, :], zerr_bins, axis=-1)
+                self.pztr = np.trapz(pzztr, self.zobs_arr, axis=-1)
+            pztr = self.pztr
+        else:
+            pztr = None
+
         Ntot = 0
         for index, frac in enumerate(self.skyfracs):
             if zcut > 0:
-                Nz = self._get_n_expected_zbinned(zz, dVdz, dndlnm, Pfunc)
+                Nz = self._get_n_expected_zbinned(zz, dVdz, dndlnm, Pfunc, kwargs['scatter_z'], pztr)
                 zcut_arr = np.arange(zcut)
                 Ntot = np.sum(np.delete(Nz, zcut_arr, 0))
             else:
-                Nz = np.trapz(dndlnm * Pfunc[:,:,index], dx=np.diff(self.lnmarr[:, None], axis=0), axis=0)
-                Ntot += np.trapz(Nz * dVdz, x=zz) * frac
+                Nz = np.trapz(dndlnm * Pfunc[:,:,index], self.lnmarr, axis=0)
+                if not kwargs['scatter_z']:
+                    Ntot += np.trapz(Nz * dVdz, x=zz) * frac
+                else:
+                    Ntot += np.trapz(Nz * dVdz * pztr, x=zz) * frac
 
         self.log.info("Total predicted N = {}".format(Ntot))
 
@@ -370,14 +416,20 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         return Ntot
 
-    def _get_n_expected_zbinned(self, zz, dVdz, dndlnm, Pfunc):
+    def _get_n_expected_zbinned(self, zz, dVdz, dndlnm, Pfunc, scatter_z=None, pztr=None):
+
+        if scatter_z is None:
+            scatter_z = False
 
         zarr = self.zarr
         nzarr = self.zbins
 
         Nz = 0
         for index, frac in enumerate(self.skyfracs):
-            Nz += np.trapz(dndlnm * dVdz * Pfunc[:,:,index], x=self.lnmarr[:, None], axis=0) * frac
+            if not scatter_z:
+                Nz += np.trapz(dndlnm * dVdz * Pfunc[:,:,index], x=self.lnmarr[:, None], axis=0) * frac
+            else:
+                Nz += np.trapz(dndlnm * dVdz * pztr * Pfunc[:, :, index], x=self.lnmarr[:, None], axis=0) * frac
 
         Nzz = np.zeros(len(zarr))
         for i in range(len(zarr)):
@@ -398,6 +450,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     def _get_rate_fn(self, pk_intp, **kwargs):
 
+        # Set scatter_z to False if not defined
+        if not hasattr(kwargs, 'scatter_z'):
+            kwargs['scatter_z'] = False
+
         zarr = self.zz
         marr = np.exp(self.lnmarr)
 
@@ -407,17 +463,27 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         dn_dzdm_intp = interp2d(zarr, self.lnmarr, np.log(dn_dzdm), kind='cubic', fill_value=0)
         #dn_dzdm_intp = interp2d(zarr, marr, np.log(dn_dzdm), kind='cubic', fill_value=0)
 
-        def Prob_per_cluster(z, tsz_signal, tsz_signal_err, tile_name):
+        def Prob_per_cluster(z, z_err, tsz_signal, tsz_signal_err, tile_name, Mobs=None, Mobs_err=None):
 
             c_z = z
+            c_zerr = z_err
             c_y = tsz_signal * 1e-4
             c_yerr = tsz_signal_err * 1e-4
             c_tile = tile_name
+            if Mobs is not None:
+                c_Mobs = Mobs
+                c_Mobs_err = Mobs_err
 
-            tile_index = [self.tiles_dwnsmpld[c] for c in c_tile]
-
-            c_z, c_y, c_yerr, tile_index = zip(*sorted(zip(c_z, c_y, c_yerr, tile_index)))
-            c_z, c_y, c_yerr, tile_index = np.array(c_z), np.array(c_y), np.array(c_yerr), np.array(tile_index)
+            # Need to sort arrays because of interp2d
+            tile_index = np.array([self.tiles_dwnsmpld[c] for c in c_tile])
+            if Mobs is None:
+                sort_ind = np.argsort(c_z)
+                c_z, c_zerr, c_y, c_yerr, tile_index = c_z[sort_ind], c_zerr[sort_ind], c_y[sort_ind], \
+                                                       c_yerr[sort_ind], tile_index[sort_ind]
+            else:
+                sort_ind = np.argsort(c_z)
+                c_z, c_zerr, c_y, c_yerr, tile_index, c_Mobs, c_Mobs_err = c_z[sort_ind], c_zerr[sort_ind], \
+                        c_y[sort_ind], c_yerr[sort_ind], tile_index[sort_ind], c_Mobs[sort_ind], c_Mobs_err[sort_ind]
 
             zcut = self.zcut
             if zcut > 0:
@@ -426,11 +492,50 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 print("::: Excluding clusters of z < {} in likelihood.".format(self.zbins[zcut]))
                 print("Total observed N = {}".format(len(c_z)))
 
-            Pfunc_ind = self.Pfunc_per(tile_index, marr, c_z, c_y, c_yerr, kwargs)
-            dn_dzdm = np.exp(np.squeeze(dn_dzdm_intp(c_z, self.lnmarr)))
-            dVdz = get_dVdz(self, c_z, dVdz_interp=True)
-            ans = np.trapz(dn_dzdm * Pfunc_ind.T * dVdz[None,:], dx=np.diff(marr[:,None], axis=0), axis=0)
+            if not kwargs['scatter_z']:
+                P_Mobs = np.ones((self.lnmarr.shape[0], c_z.shape[0]))
+                if Mobs is not None:
+                    P_Mobs[:, c_Mobs != 0.] = gaussian(kwargs['bias_wl']*np.exp(self.lnmarr)[:, None], c_Mobs[None, :],
+                                                       c_Mobs_err[None, :])
+                Pfunc_ind = self.Pfunc_per(tile_index, marr, c_z, c_y, c_yerr, kwargs)
+                dn_dzdm = np.exp(np.squeeze(dn_dzdm_intp(c_z, self.lnmarr)))
+                dVdz = get_dVdz(self, c_z, dVdz_interp=True)
+                ans = np.trapz(dn_dzdm * Pfunc_ind.T * dVdz[None,:] * P_Mobs, marr, axis=0)
 
+            else:
+                assert np.any(c_zerr != 0.), 'z_scatter = True but all redshift errors in catalog are zero. Aborting.'
+                P_Mobs = np.ones((self.lnmarr.shape[0], c_z.shape[0]))
+                if Mobs is not None:
+                    P_Mobs[:, c_Mobs != 0.] = gaussian(kwargs['bias_wl']*np.exp(self.lnmarr)[:, None], c_Mobs[None, :],
+                                                       c_Mobs_err[None, :])
+                # Clusters with speczs
+                mask_nozerr = c_zerr == 0.
+                tile_index_nozerr = tile_index[mask_nozerr]
+                c_z_nozerr = c_z[mask_nozerr]
+                c_y_nozerr = c_y[mask_nozerr]
+                c_yerr_nozer = c_yerr[mask_nozerr]
+                Pfunc_ind = self.Pfunc_per(tile_index_nozerr, marr, c_z_nozerr, c_y_nozerr, c_yerr_nozer, kwargs)
+                dn_dzdm = np.exp(dn_dzdm_intp(c_z_nozerr, self.lnmarr))
+                dVdz = get_dVdz(self, c_z_nozerr, dVdz_interp=True)
+                rates_nozerr = np.trapz(dn_dzdm * Pfunc_ind.T * dVdz[None,:] * P_Mobs[:, mask_nozerr], marr, axis=0)
+
+                # Clusters with photozs
+                mask_zerr = c_zerr != 0.
+                tile_index_zerr = tile_index[mask_zerr]
+                c_z_zerr = c_z[mask_zerr]
+                c_zerr_zerr = c_zerr[mask_zerr]
+                c_y_zerr = c_y[mask_zerr]
+                c_yerr_zer = c_yerr[mask_zerr]
+                P_z = gaussian(self.zz[None, :], c_z_zerr[:, None], c_zerr_zerr[:, None])
+                dn_dzdm = np.exp(dn_dzdm_intp(self.zz, self.lnmarr))
+                dVdz = get_dVdz(self, self.zz, dVdz_interp=True)
+                Pfunc_ind = self.Pfunc_per(tile_index_zerr, marr, self.zz, c_y_zerr, c_yerr_zer, kwargs,
+                                           use_zscatter=True)
+                rates_zerr = np.trapz(dn_dzdm[None, :, :] * np.transpose(Pfunc_ind, axes=(0, 2, 1)) *
+                               P_Mobs.T[mask_zerr, :, None] , marr, axis=1)
+                rates_zerr = np.trapz(rates_zerr * P_z * dVdz[None, :], self.zz, axis=1)
+
+                ans = np.concatenate((rates_nozerr, rates_zerr))
             return ans
 
         return Prob_per_cluster
@@ -537,7 +642,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     def PfuncY(self, Ynoise, marr, z, params):
         LgY = self.lny
-        P_func = np.outer(marr, np.zeros([len(z)]))
+        # P_func = np.outer(marr, np.zeros([len(z)]))
         P_func = self.P_of_gt_SN(LgY, marr, z, Ynoise, params)
         return P_func
 
@@ -546,7 +651,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         ans = gaussian(Y, Y_c, Ynoise)
         return ans
 
-    def Pfunc_per(self, tile_index, marr, z, Y_c, Y_err, params):
+    def Pfunc_per(self, tile_index, marr, z, Y_c, Y_err, params, use_zscatter=False):
 
         if params["scatter_sz"] == 0:
             if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
@@ -558,10 +663,21 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             else:
                 marr_500c = marr_ymmd
 
-            Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **params)
-            LgYtilde = np.log(Ytilde)
-            P_Y_sig = np.nan_to_num(self.Y_prob(Y_c[:, None], LgYtilde, Y_err[:, None]))
-            ans = P_Y_sig
+            if not use_zscatter:
+                Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **params)
+                LgYtilde = np.log(Ytilde)
+                P_Y_sig = np.nan_to_num(self.Y_prob(Y_c[:, None], LgYtilde, Y_err[:, None]))
+                ans = P_Y_sig
+            else:
+                Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **params)
+                LgYtilde = np.log(Ytilde)
+                P_Y_sig = np.nan_to_num(self.Y_prob(Y_c[:, None, None], LgYtilde, Y_err[:, None, None]))
+                ans = P_Y_sig
+            # else:
+            #     Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **params)
+            #     LgYtilde = np.log(Ytilde)
+            #     P_Y_sig = np.nan_to_num(self.Y_prob(Y_c, LgYtilde, Y_err))
+            #     ans = P_Y_sig
 
         else:
             LgY = self.lny
@@ -620,6 +736,10 @@ def initialize_common(self):
     cat_tsz_signal = data.field("fixed_y_c")
     cat_tsz_signal_err = data.field("fixed_err_y_c")
     cat_tile_name = data.field("tileName")
+    cat_zerr = data.field('redshiftErr')
+    if 'Mobs' in data.columns.names:
+        cat_Mobs = data.field('Mobs')
+        cat_Mobs_err = data.field('Mobs_err')
     # to print all columns: print(catf[1].columns)
 
     # SPT-style SNR bias correction, this should be applied before applying SNR cut
@@ -633,6 +753,10 @@ def initialize_common(self):
     self.cat_tsz_signal = cat_tsz_signal[ind]
     self.cat_tsz_signal_err = cat_tsz_signal_err[ind]
     self.cat_tile_name = cat_tile_name[ind]
+    self.cat_zerr = cat_zerr[ind]
+    if 'Mobs' in data.columns.names:
+        self.cat_Mobs = cat_Mobs
+        self.cat_Mobs_err = cat_Mobs_err
 
     self.N_cat = len(self.q_cat)
     self.log.info('Total number of clusters in catalogue = {}.'.format(len(zcat)))
@@ -1261,10 +1385,16 @@ def get_splQ(self, theta, tile_index=None):
 
         if tile_index is not None: # for faster rate_fn in unbinned
 
-            chosenQ = np.zeros((newQ.shape[1], newQ.shape[2]))
-            for i in range(len(tile_index)):
-                chosenQ[i, :] = newQ[tile_index[i], i, :]
-            newQ = chosenQ
+            if len(tile_index) == newQ.shape[1]:
+                chosenQ = np.zeros((newQ.shape[1], newQ.shape[2]))
+                for i in range(len(tile_index)):
+                    chosenQ[i, :] = newQ[tile_index[i], i, :]
+                newQ = chosenQ
+            else:
+                chosenQ = np.zeros((len(tile_index), newQ.shape[1], newQ.shape[2]))
+                for i in range(len(tile_index)):
+                    chosenQ[i, :] = newQ[tile_index[i], :]
+                newQ = chosenQ
 
     else:
         newQ = []

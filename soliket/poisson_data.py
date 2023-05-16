@@ -19,7 +19,7 @@ def poisson_logpdf(n_expected, catalog, columns, rate_fn, name="unbinned"):
     elapsed = time.time() - start
     print("\r ::: rate density calculation took {:.3f} seconds.".format(elapsed))
 
-    loglike = -n_expected + np.nansum(np.log(rate_densities))
+    loglike = -n_expected + np.nansum(np.log(rate_densities[rate_densities!=0.]))
 
     print("\r ::: 2D ln likelihood = ", loglike)
 
