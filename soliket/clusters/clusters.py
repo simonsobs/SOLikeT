@@ -276,7 +276,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     selfunc: dict = {}
     binning: dict = {}
     YM: dict = {}
-    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "scatter_z":None, "bias_sz":None, "bias_wl":None}
+    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None, "bias_wl":None}
 
     def initialize(self):
 
@@ -295,7 +295,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         self.log.info('Number of mass points for theory calculation = {}.'.format(len(self.lnmarr)))
         self.log.info('Number of y0 points for theory calculation = {}.'.format(len(self.lny)))
 
-        if not hasattr(self, 'Mobs'):
+        if not self.theorypred['masscal_indiv']:
             self.catalog = pd.DataFrame(
                 {
                     "z": self.z_cat.byteswap().newbyteorder(),
@@ -360,10 +360,6 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         start = time.time()
 
-        # Set scatter_z to False if not defined
-        if not hasattr(kwargs, 'scatter_z'):
-            kwargs['scatter_z'] = False
-
         zz = self.zz
         marr = np.exp(self.lnmarr)
         Ynoise = self.noise
@@ -379,7 +375,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         else:
             Pfunc = self.PfuncY(Ynoise, marr, zz, kwargs)
 
-        if kwargs['scatter_z']:
+        if self.theorypred['scatter_z']:
             if not hasattr(self, 'pztr'):
                 cat, cols = self._get_catalog()
                 zerr = cat['z_err']
@@ -399,12 +395,12 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         Ntot = 0
         for index, frac in enumerate(self.skyfracs):
             if zcut > 0:
-                Nz = self._get_n_expected_zbinned(zz, dVdz, dndlnm, Pfunc, kwargs['scatter_z'], pztr)
+                Nz = self._get_n_expected_zbinned(zz, dVdz, dndlnm, Pfunc, self.theorypred['scatter_z'], pztr)
                 zcut_arr = np.arange(zcut)
                 Ntot = np.sum(np.delete(Nz, zcut_arr, 0))
             else:
                 Nz = np.trapz(dndlnm * Pfunc[:,:,index], self.lnmarr, axis=0)
-                if not kwargs['scatter_z']:
+                if not self.theorypred['scatter_z']:
                     Ntot += np.trapz(Nz * dVdz, x=zz) * frac
                 else:
                     Ntot += np.trapz(Nz * dVdz * pztr, x=zz) * frac
@@ -450,10 +446,6 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     def _get_rate_fn(self, pk_intp, **kwargs):
 
-        # Set scatter_z to False if not defined
-        if not hasattr(kwargs, 'scatter_z'):
-            kwargs['scatter_z'] = False
-
         zarr = self.zz
         marr = np.exp(self.lnmarr)
 
@@ -492,7 +484,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 print("::: Excluding clusters of z < {} in likelihood.".format(self.zbins[zcut]))
                 print("Total observed N = {}".format(len(c_z)))
 
-            if not kwargs['scatter_z']:
+            if not self.theorypred['scatter_z']:
                 P_Mobs = np.ones((self.lnmarr.shape[0], c_z.shape[0]))
                 if Mobs is not None:
                     P_Mobs[:, c_Mobs != 0.] = gaussian(kwargs['bias_wl']*np.exp(self.lnmarr)[:, None], c_Mobs[None, :],
@@ -729,6 +721,15 @@ def initialize_common(self):
         assert self.selfunc['dwnsmpl_bins'] is not None, 'resolution = downsample but no bin number given. Aborting.'
         self.log.info('Running completeness with down-sampled selection function inputs.')
 
+    # Photoz error settings
+    if 'scatter_z' not in self.theorypred:
+        self.log.info('Not considering photoz uncertainties.')
+        self.theorypred['scatter_z'] = False
+    # Masscalibration settings
+    if 'masscal_indiv' not in self.theorypred:
+        self.log.info('Not considering cluster-based mass-calibration.')
+        self.theorypred['masscal_indiv'] = False
+
     catf = fits.open(os.path.join(self.data_directory, self.datafile))
     data = catf[1].data
     zcat = data.field("redshift")
@@ -737,7 +738,8 @@ def initialize_common(self):
     cat_tsz_signal_err = data.field("fixed_err_y_c")
     cat_tile_name = data.field("tileName")
     cat_zerr = data.field('redshiftErr')
-    if 'Mobs' in data.columns.names:
+    if self.theorypred['masscal_indiv']:
+        assert 'Mobs' in data.columns.names, 'Cluster-based masscalibration requested but no individual masses provided. Aborting.'
         cat_Mobs = data.field('Mobs')
         cat_Mobs_err = data.field('Mobs_err')
     # to print all columns: print(catf[1].columns)
@@ -754,9 +756,9 @@ def initialize_common(self):
     self.cat_tsz_signal_err = cat_tsz_signal_err[ind]
     self.cat_tile_name = cat_tile_name[ind]
     self.cat_zerr = cat_zerr[ind]
-    if 'Mobs' in data.columns.names:
-        self.cat_Mobs = cat_Mobs
-        self.cat_Mobs_err = cat_Mobs_err
+    if self.theorypred['masscal_indiv']:
+        self.cat_Mobs = cat_Mobs[ind]
+        self.cat_Mobs_err = cat_Mobs_err[ind]
 
     self.N_cat = len(self.q_cat)
     self.log.info('Total number of clusters in catalogue = {}.'.format(len(zcat)))
