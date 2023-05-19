@@ -3,20 +3,26 @@
 Install and run Cobaya+SOLikeT
 ==============================
 
-Using conda
------------
+Preferred Way: Using the provided conda environment
+---------------------------------------------------
 
-We have provided a conda environment defined in `soliket-tests.yml <https://github.com/simonsobs/SOLikeT/blob/master/soliket-tests.yml>`_ which provides easy set up of a virtual envrinoment with all the dependencies installed in order to run SOLikeT and its tests on multiple platforms (explicitly tested for ubuntu and MacOS-11).
+We have provided a conda environment defined in `soliket-tests.yml <https://github.com/simonsobs/SOLikeT/blob/master/soliket-tests.yml>`_ which provides easy set up of a virtual envrinoment with all the dependencies installed in order to run SOLikeT and its tests on multiple platforms (explicitly tested for ubuntu and MacOS-11):
 
+::
+
+   $ conda env create --file soliket-tests.yml
+
+Optional: Install CosmoPower
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation).
 
 This should be easily achievable with::
 
-  pip install cosmopower
+  $ pip install cosmopower
 
 If you wish to install it using your own system tools some useful information is provided below.
 
-On your own laptop/virtual machine
+Harder Way: Preparing your own conda environment
 ----------------------------------
 
 **CREATE VIRTUAL CONDA ENV TO RUN COBAYA**
