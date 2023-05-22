@@ -21,7 +21,7 @@ def _cmb2bb(nu):
 
     :param nu: frequency array
 
-    :return: the array :math:`\frac{\partial B_{\nu}}{\partial T}`
+    :return: the array :math:`\frac{\partial B_{\nu}}{\partial T} \nu^2`
     """
     # NB: numerical factors not included
     x = nu * h_Planck * 1e9 / k_Boltzmann / T_CMB
@@ -138,6 +138,9 @@ class BandPass(Theory):
         state["bandint_freqs"] = self.bandint_freqs
 
     def get_bandint_freqs(self):
+        """
+        Returns the ``state`` dictionary of bandpass transmissions
+        """
         return self.current_state["bandint_freqs"]
 
     # Takes care of the bandpass construction. It returns a list of nu-transmittance for
@@ -157,6 +160,8 @@ class BandPass(Theory):
         centered at :math:`\nu+\Delta \nu`.
 
         :param *params: dictionary of nuisance parameters 
+        :return: the list of [nu, transmission] in the multifrequency case  
+                 or just an array of frequencies in the single frequency one
         """
 
         if not hasattr(self.bandint_width, "__len__"):
@@ -228,6 +233,8 @@ class BandPass(Theory):
         possible bandpass shift parameters :math:`\Delta \nu`.
 
         :param *params: dictionary of nuisance parameters
+
+        :return: the list of [nu, transmission]
         """
         bandint_freqs = []
         order = []

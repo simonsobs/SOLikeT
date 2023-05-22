@@ -5,5 +5,7 @@ Foreground computation
 ----------------------
 
 .. autoclass:: soliket.Foreground
-    :exclude-members: initialize
     :members:
+    :show-inheritance:
+    :private-members:
+
