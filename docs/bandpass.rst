@@ -5,8 +5,7 @@ Bandpass computation
 --------------------
 
 .. automodule:: soliket.bandpass
-   :members:
-   :private-members:
-   :exclude-members: initialize
-   :show-inheritance:
-   :undoc-members:
+    :exclude-members: initialize
+    :members:
+    :show-inheritance:
+    :private-members:

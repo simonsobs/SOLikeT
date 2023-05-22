@@ -15,6 +15,9 @@ from .constants import T_CMB, h_Planck, k_Boltzmann
 def _cmb2bb(nu):
     r"""
     Computes the conversion factor :math:`\frac{\partial B_{\nu}}{\partial T}`
+    from CMB thermodynamic units to antenna temperature units.
+    There is an additional :math:`\nu^2` factor to convert passbands from
+    Rayleigh-Jeans units to antenna temperature units.
 
     :param nu: frequency array
 
@@ -27,6 +30,10 @@ def _cmb2bb(nu):
 
 # Provides the frequency value given the bandpass name. To be modified - it is ACT based!!
 def _get_fr(array):
+    r"""
+    Provides the strings for the ACT frequency array. It will be removed in 
+    future versions.
+    """
 
     #a = array.split("_")[0]
     #if a == 'PA1' or a == 'PA2':
@@ -45,6 +52,10 @@ def _get_fr(array):
 
 
 def _get_arrays_weights(arrays, polarized_arrays, freqs):
+    """
+    Provides the array weights for the ACT frequency array. It could be removed in
+    future versions.
+    """
     array_weights = {}
     counter = []
     for array in arrays:
@@ -109,6 +120,12 @@ class BandPass(Theory):
             self.freqs = requirements["bandint_freqs"]["freqs"]
 
     def calculate(self, state, want_derived=False, **params_values_dict):
+        r"""
+        Adds the bandpass transmission to the ``state`` dictionary of the
+        BandPass Theory class.
+
+        :param *params_values_dict: dictionary of nuisance parameters
+        """
 
         nuis_params = {k: params_values_dict[k] for k in self.expected_params_bp}
 
@@ -126,6 +143,21 @@ class BandPass(Theory):
     # Takes care of the bandpass construction. It returns a list of nu-transmittance for
     # each frequency or an array with the effective freqs.
     def _bandpass_construction(self, **params):
+        r"""
+        Builds the bandpass transmission 
+        :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T} 
+        (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu 
+        \frac{\partial B_{\nu}}{\partial T} (\nu)^2 \tau(\nu)}` 
+        (WRONG! DENOMINATOR SHOULD USE BANDPASS SHIFT PARAM, TO BE CORRECTED!) 
+        using passbands :math:`\tau(\nu)` (in RJ units, not read from file)
+        and bandpass shift :math:`\Delta \nu`. :math:`\tau(\nu)` is built as a top-hat
+        with width ``bandint_width`` and number of samples ``nsteps``, 
+        read from the ``BandPass.yaml``.
+        If ``nstep = 1`` and ``bandint_width = 0``, the passband is a Dirac delta
+        centered at :math:`\nu+\Delta \nu`.
+
+        :param *params: dictionary of nuisance parameters 
+        """
 
         if not hasattr(self.bandint_width, "__len__"):
             self.bandint_width = np.full_like(self.freqs, self.bandint_width,
@@ -164,6 +196,12 @@ class BandPass(Theory):
     #        trans_norm = np.trapz(bp * _cmb2bb(nu_ghz), nu_ghz)
     #        self.external_bandpass.append([fr, nu_ghz, bp / trans_norm])
     def _init_external_bandpass_construction(self, path, arrays):
+        """
+        Initializes the passband reading for ``_external_bandpass_construction``.
+
+        :param path: path of the passband txt file
+        :param arrays: list of arrays
+        """
         self.external_bandpass = []
         for array in arrays:
             fr, pa = _get_fr(array)
@@ -180,6 +218,17 @@ class BandPass(Theory):
     #        trans = bp * _cmb2bb(nub)
     #        bandint_freqs.append([nub, trans])
     def _external_bandpass_construction(self, **params):
+        r"""
+        Builds bandpass transmission 
+        :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T} 
+        (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu 
+        \frac{\partial B_{\nu}}{\partial T} (\nu)^2 \tau(\nu)}` 
+        (WRONG! DENOMINATOR SHOULD USE BANDPASS SHIFT PARAM, TO BE CORRECTED!)  
+        using passbands :math:`\tau(\nu)` (in RJ units) read from file and 
+        possible bandpass shift parameters :math:`\Delta \nu`.
+
+        :param *params: dictionary of nuisance parameters
+        """
         bandint_freqs = []
         order = []
         for pa, fr, nu_ghz, bp in self.external_bandpass:
