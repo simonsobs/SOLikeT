@@ -36,7 +36,7 @@ theory:
           M_max : 3.5e15
           z_max_pk : 4.
 
-          non linear: 'halofit'
+          non_linear: 'halofit'
           k_per_decade_class_sz : 20.
           k_min_for_pk_class_sz : 1e-3
           k_max_for_pk_class_sz : 1e1
