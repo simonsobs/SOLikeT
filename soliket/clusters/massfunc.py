@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.interpolate import interp2d
+from scipy.interpolate import RegularGridInterpolator
 from .tinker import dn_dlogM
 from ..constants import MSUN_CGS, G_CGS, MPC2CM
 
@@ -70,5 +70,6 @@ class HMF:
         if M is None:
             M = self.M
         dndM = self.dn_dM(M, delta)
-        ans = interp2d(self.zarr, np.log10(M), np.log10(dndM), kind='cubic', fill_value=0)
+        ans = RegularGridInterpolator((np.log10(M), self.zarr), 
+                                       np.log10(dndM), method='cubic', fill_value=0)
         return ans
