@@ -1,17 +1,42 @@
-data_folder: MFLike/v0.6
+data_folder: MFLike/v0.8
 
-band_integration:
-  external_bandpass: False
-  nsteps: 1
-  bandwidth: 0
+
+# Parameters to build a top-hat band:
+# - nsteps sets the number of frequencies used in the band integration
+# - bandwidth sets the relative width of the band wrt the central frequency
+#   the central frequency of each band is set from the bands stored in the sacc file
+#     - with nstep: 1, bandwidth must be 0
+#     Dirac delta bandpass, no band integration
+#     useful if you don't want to do band integration
+#     when the bandpasses in the sacc file are multifrequency
+#     the freq used is the effective frequency from the bandpass
+#     - if nstep > 1,  bandwidth must be > 1
+#     bandwidth can be a list if you want a different width for each band
+#     e.g. bandwidth: [0.3,0.2,0.3] for 3 bands
+# when top_hat_band is a null dict: no top-hat band is built and
+# bandpasses read from sacc file. Band integration is performed accordingly
+# (if bandpass in sacc is a single freq, no band integration)
+# the default is to read bandpasses from file, to build top-hat uncomment the
+# parameters of the block!
+# Bandpass has to be in RJ units
+top_hat_band:
+#  nsteps: 1
+#  bandwidth: 0
+
+
+# If passband read from an external file, provide the field
+# "filepath" with the correct path 
+external_bandpass:
+  #filepath: path
+
 
 params:
-  bandint_shift_93:
+  bandint_shift_LAT_93:
     value: 0
     latex: \Delta_{\rm band}^{93}
-  bandint_shift_145:
+  bandint_shift_LAT_145:
     value: 0
     latex: \Delta_{\rm band}^{145}
-  bandint_shift_225:
+  bandint_shift_LAT_225:
     value: 0
     latex: \Delta_{\rm band}^{225}

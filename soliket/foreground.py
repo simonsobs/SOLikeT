@@ -32,7 +32,7 @@ class Foreground(Theory):
         self.lmin = self.spectra["lmin"]
         self.lmax = self.spectra["lmax"]
         self.ell = np.arange(self.lmin, self.lmax + 1)
-        self.freqs = self.spectra["frequencies"]
+        self.exp_freqs = self.spectra["exp_freqs"]
 
         template_path = os.path.join(os.path.dirname(os.path.abspath(fgp.__file__)),
                                      'data')
@@ -69,7 +69,7 @@ class Foreground(Theory):
     def _get_foreground_model(self,
                               requested_cls=None,
                               ell=None,
-                              freqs=None,
+                              exp_freqs=None,
                               bandint_freqs=None,
                               **fg_params):
         r"""
@@ -82,9 +82,10 @@ class Foreground(Theory):
                               ``Foreground.yaml``
         :param ell: ell range. If ``None`` the default range 
                     set in ``Foreground.yaml`` is used
-        :param freqs: list of frequency channels. If ``None``, 
+        :param exp_freqs: list of strings "exp_freq". If ``None``, 
                       it uses the default ones in the ``Foreground.yaml``
-        :param bandint_freqs: the bandpass transmissions. If ``None`` it uses ``freqs``, 
+        :param bandint_freqs: the bandpass transmissions. If ``None`` it is built as an 
+                              array of freqs trimmed from the strings in ``exp_freqs``, 
                               otherwise the transmissions computed by the ``BandPass`` 
                               class
 
@@ -107,10 +108,16 @@ class Foreground(Theory):
         # Set component spectra
         self.fg_component_list = {s: self.components[s] for s in requested_cls}
 
-        # Set frequency
-        if not hasattr(freqs, '__len__'):
-            freqs = self.freqs
-            bandint_freqs = self.freqs.copy()
+        # Set exp_freqs list
+        if not hasattr(exp_freqs, '__len__'):
+            exp_freqs = self.exp_freqs
+
+        # Set array of freqs to use if bandint_freqs is None
+        if not hasattr(bandint_freqs, '__len__'):
+            bandint_freqs = np.empty_like(exp_freqs, dtype = float)
+            for i, e in enumerate(exp_freqs):
+                bandint_freqs[i] = float(e.strip('LAT_'))
+
 
         model = {}
         model["tt", "kSZ"] = fg_params["a_kSZ"] * self.ksz({"nu": bandint_freqs},
@@ -197,8 +204,8 @@ class Foreground(Theory):
                                                               "alpha": -0.4})
 
         fg_dict = {}
-        for c1, f1 in enumerate(freqs):
-            for c2, f2 in enumerate(freqs):
+        for c1, f1 in enumerate(exp_freqs):
+            for c2, f2 in enumerate(exp_freqs):
                 for s in requested_cls:
                     fg_dict[s, "all", f1, f2] = np.zeros(len(ell))
                     for comp in self.fg_component_list[s]:
@@ -228,8 +235,8 @@ class Foreground(Theory):
             req = requirements["fg_dict"]
             self.requested_cls = req.get("requested_cls", self.requested_cls)
             self.ell = req.get("ell", self.ell)
-            self.freqs = req.get("freqs", self.freqs)
-            return {"bandint_freqs": {"freqs": self.freqs}}
+            self.exp_freqs = req.get("exp_freqs", self.exp_freqs)
+            return {"bandint_freqs": {"freqs": float(self.exp_freqs.strip('LAT_')}}
 
     def get_bandpasses(self, **params):
         """
@@ -247,7 +254,7 @@ class Foreground(Theory):
         self.bandint_freqs = self.get_bandpasses(**params_values_dict)
         fg_params = {k: params_values_dict[k] for k in self.expected_params_fg}
         state["fg_dict"] = self._get_foreground_model(requested_cls=self.requested_cls,
-                                                    freqs=self.freqs,
+                                                    exp_freqs=self.exp_freqs,
                                                     bandint_freqs=self.bandint_freqs,
                                                     **fg_params)
 
