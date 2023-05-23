@@ -3,18 +3,58 @@
 Install and run Cobaya+SOLikeT
 ==============================
 
-Using conda - Ubuntu and pre-M1 Mac
------------
+Preferred Way: Using the provided conda environment
+---------------------------------------------------
 
-We have provided a conda environment defined in `soliket-tests.yml <https://github.com/simonsobs/SOLikeT/blob/master/soliket-tests.yml>`_ which provides easy set up of a virtual envrinoment with all the dependencies installed in order to run SOLikeT and its tests on multiple platforms (explicitly tested for ubuntu and MacOS-11).
+We have provided a conda environment defined in `soliket-tests.yml <https://github.com/simonsobs/SOLikeT/blob/master/soliket-tests.yml>`_ which provides easy set up of a virtual envrinoment with all the dependencies installed in order to run SOLikeT and its tests on multiple platforms (explicitly tested for ubuntu and MacOS-11):
 
+::
+
+   $ conda env create --file soliket-tests.yml
+
+Optional: Install CosmoPower
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation).
 
-This should be easily achievable with::
+Unless using an M1 Mac this should be easily achievable with::
 
-  pip install cosmopower
+  $ pip install cosmopower
 
 If you wish to install it using your own system tools (including new M1 Mac) some useful information is provided below.
+
+Harder Way: Preparing your own conda environment
+----------------------------------
+
+**CREATE VIRTUAL CONDA ENV TO RUN COBAYA**
+Based on `cobaya documentation <https://cobaya.readthedocs.io/en/latest/cluster_amazon.html>`_.
+
+::
+
+   $ sudo apt update && sudo apt install gcc gfortran g++ openmpi-bin openmpi-common libopenmpi-dev libopenblas-base liblapack3 liblapack-dev make
+   $ wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+   $ bash miniconda.sh -b -p $HOME/miniconda
+   $ export PATH="$HOME/miniconda/bin:$PATH"
+   $ conda config --set always_yes yes --set changeps1 no
+   $ conda create -q -n cobaya-env python=3.7 scipy matplotlib cython PyYAML pytest pytest-forked flaky
+   $ source activate cobaya-env
+   $ pip install mpi4py
+
+**INSTALL COBAYA**
+
+::
+
+   $ pip install cobaya
+   $ sudo apt install libcfitsio-bin libcfitsio-dev
+   $ cobaya-install cosmo --packages-path cobaya_packages
+
+**INSTALL SOLIKET**
+
+::
+
+   $ conda install -c conda-forge compilers pyccl
+   $ git clone https://github.com/simonsobs/soliket
+   $ cd soliket
+   $ pip install -e .
 
 At NERSC
 --------
