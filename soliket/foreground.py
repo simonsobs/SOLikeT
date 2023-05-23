@@ -236,7 +236,7 @@ class Foreground(Theory):
             self.requested_cls = req.get("requested_cls", self.requested_cls)
             self.ell = req.get("ell", self.ell)
             self.exp_freqs = req.get("exp_freqs", self.exp_freqs)
-            return {"bandint_freqs": {"freqs": float(self.exp_freqs.strip('LAT_')}}
+            return {"bandint_freqs": {"freqs": float(self.exp_freqs.strip('LAT_'))}}
 
     def get_bandpasses(self, **params):
         """
