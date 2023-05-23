@@ -1,3 +1,7 @@
+"""
+**This class will be heavily modified with the updated version of mflike**
+"""
+
 import numpy as np
 import os
 from typing import Optional
@@ -102,7 +106,20 @@ class TheoryForge_MFLike(Theory):
         return self.current_state["cmbfg_dict"]
 
     def get_modified_theory(self, Dls, fg_dict, **params):
+        """
+        Takes the theory :math:`D_{\ell}`, sums it to the total 
+        foreground power spectrum (possibly computed with bandpass 
+        shift and bandpass integration) and applies calibration, 
+        polarization angles rotation and systematic templates.
 
+        :param Dls: CMB theory spectra
+        :param fg_dict: total foreground spectra, provided by 
+                        ``soliket.Foreground``
+        :param *params: dictionary of nuisance and foregrounds parameters
+
+        :return: the CMB+foregrounds :math:`D_{\ell}` dictionary, 
+                 modulated by systematics
+        """
         self.Dls = Dls
 
         nuis_params = {k: params[k] for k in self.expected_params_nuis}
@@ -130,7 +147,31 @@ class TheoryForge_MFLike(Theory):
 
 
     def _get_calibrated_spectra(self, dls_dict, **nuis_params):
+        r"""
+        Calibrates the spectra through calibration factors at 
+        the map level:
 
+        .. math::
+        
+           D^{{\rm cal}, TT, \nu_1 \nu_2}_{\ell} &= {\rm cal}_{G}\, 
+           {\rm cal}^{\nu_1}_{\rm T}\,
+           {\rm cal}^{\nu_2}_{\rm T}\, D^{TT, \nu_1 \nu_2}_{\ell} 
+
+           D^{{\rm cal}, TE, \nu_1 \nu_2}_{\ell} &= {\rm cal}_{G}\,
+           {\rm cal}^{\nu_1}_{\rm T}\,
+           {\rm cal}^{\nu_2}_{\rm E}\, D^{TT, \nu_1 \nu_2}_{\ell} 
+        
+           D^{{\rm cal}, EE, \nu_1 \nu_2}_{\ell} &= {\rm cal}_{G}\,
+           {\rm cal}^{\nu_1}_{\rm E}\,
+           {\rm cal}^{\nu_2}_{\rm E}\, D^{EE, \nu_1 \nu_2}_{\ell}
+
+        It uses the ``syslibrary.syslib_mflike.Calibration_alm`` function.
+
+        :param dls_dict: the CMB+foregrounds :math:`D_{\ell}` dictionary
+        :param *nuis_params: dictionary of nuisance parameters
+
+        :return: dictionary of calibrated CMB+foregrounds :math:`D_{\ell}`
+        """
         from syslibrary import syslib_mflike as syl
 
         cal_pars = {}
@@ -154,7 +195,24 @@ class TheoryForge_MFLike(Theory):
 ###########################################################################
 
     def _get_rotated_spectra(self, dls_dict, **nuis_params):
+        r"""
+        Rotates the polarization spectra through polarization angles:
+        
+        .. math::
+        
+           D^{{\rm rot}, TE, \nu_1 \nu_2}_{\ell} &= \cos(\alpha^{\nu_2})
+           D^{TE, \nu_1 \nu_2}_{\ell} 
 
+           D^{{\rm rot}, EE, \nu_1 \nu_2}_{\ell} &= \cos(\alpha^{\nu_1})
+           \cos(\alpha^{\nu_2}) D^{EE, \nu_1 \nu_2}_{\ell}
+
+        It uses the ``syslibrary.syslib_mflike.Rotation_alm`` function.
+
+        :param dls_dict: the CMB+foregrounds :math:`D_{\ell}` dictionary
+        :param *nuis_params: dictionary of nuisance parameters
+
+        :return: dictionary of rotated CMB+foregrounds :math:`D_{\ell}`
+        """
         from syslibrary import syslib_mflike as syl
 
         rot_pars = [nuis_params['alpha_' + str(fr)] for fr in self.freqs]
@@ -172,7 +230,11 @@ class TheoryForge_MFLike(Theory):
     # Initializes the systematics templates
     # This is slow, but should be done only once
     def _init_template_from_file(self):
-
+        """
+        Reads the systematics template from file, using
+        the ``syslibrary.syslib_mflike.ReadTemplateFromFile``
+        function.
+        """
         from syslibrary import syslib_mflike as syl
 
         # decide where to store systematics template.
@@ -182,7 +244,16 @@ class TheoryForge_MFLike(Theory):
         self.dltempl_from_file = templ_from_file(ell=self.ell)
 
     def _get_template_from_file(self, dls_dict, **nuis_params):
+        """
+        Adds the systematics template, modulated by ``nuis_params['templ_freq']``
+        parameters, to the :math:`D_{\ell}`.
 
+        :param dls_dict: the CMB+foregrounds :math:`D_{\ell}` dictionary
+        :param *nuis_params: dictionary of nuisance parameters
+
+        :return: dictionary of CMB+foregrounds :math:`D_{\ell}`
+                 with systematics templates
+        """
         # templ_pars=[nuis_params['templ_'+str(fr)] for fr in self.freqs]
         # templ_pars currently hard-coded
         # but ideally should be passed as input nuisance

@@ -15,7 +15,11 @@ class Foreground(Theory):
 
     # Initializes the foreground model. It sets the SED and reads the templates
     def initialize(self):
-
+        """
+        Initializes the foreground models from ``fgspectra``. Sets the SED 
+        of kSZ, tSZ, dust, radio, CIB Poisson and clustered,
+        tSZxCIB, and reads the templates for CIB and tSZxCIB.
+        """
         from fgspectra import cross as fgc
         from fgspectra import frequency as fgf
         from fgspectra import power as fgp
@@ -68,6 +72,24 @@ class Foreground(Theory):
                               freqs=None,
                               bandint_freqs=None,
                               **fg_params):
+        r"""
+        Gets the foreground power spectra for each component computed by ``fgspectra``.
+        The computation assumes the bandpass transmissions from the ``BandPass`` class
+        and integration in frequency is performed if the passbands are not Dirac delta.
+
+        :param requested_cls: the fields required. If ``None``, 
+                              it uses the default ones in the 
+                              ``Foreground.yaml``
+        :param ell: ell range. If ``None`` the default range 
+                    set in ``Foreground.yaml`` is used
+        :param freqs: list of frequency channels. If ``None``, 
+                      it uses the default ones in the ``Foreground.yaml``
+        :param bandint_freqs: the bandpass transmissions. If ``None`` it uses ``freqs``, 
+                              otherwise the transmissions computed by the ``BandPass`` 
+                              class
+
+        :return: the foreground dictionary
+        """
 
         if not requested_cls:
             requested_cls = self.requested_cls
@@ -210,10 +232,18 @@ class Foreground(Theory):
             return {"bandint_freqs": {"freqs": self.freqs}}
 
     def get_bandpasses(self, **params):
+        """
+        Gets bandpass transmissions from the ``BandPass`` class.
+        """
         return self.provider.get_bandint_freqs()
 
     def calculate(self, state, want_derived=False, **params_values_dict):
-
+        """
+        Fills the ``state`` dictionary of the ``Foreground`` Theory class
+        with the foreground spectra, computed using the bandpass 
+        transmissions from the ``BandPass`` class and the sampled foreground
+        parameters.
+        """
         self.bandint_freqs = self.get_bandpasses(**params_values_dict)
         fg_params = {k: params_values_dict[k] for k in self.expected_params_fg}
         state["fg_dict"] = self._get_foreground_model(requested_cls=self.requested_cls,
@@ -222,4 +252,7 @@ class Foreground(Theory):
                                                     **fg_params)
 
     def get_fg_dict(self):
+        """
+        Returns the ``state`` dictionary of fogreground spectra
+        """
         return self.current_state["fg_dict"]
