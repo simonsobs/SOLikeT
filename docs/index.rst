@@ -21,10 +21,14 @@ Table of contents
    bias
    ccl
    cosmopower
+   bandpass
+   foreground
 
 .. toctree::
    :caption: Likelihoods
    :maxdepth: 2
+
+   mflike
 
 .. toctree::
    :caption: Developers
