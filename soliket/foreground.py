@@ -114,7 +114,7 @@ class Foreground(Theory):
 
         # Set array of freqs to use if bandint_freqs is None
         if not hasattr(bandint_freqs, '__len__'):
-            bandint_freqs = np.empty_like(exp_freqs, dtype = float)
+            bandint_freqs = np.empty_like(exp_freqs, dtype=float)
             for i, e in enumerate(exp_freqs):
                 bandint_freqs[i] = float(e.strip('LAT_'))
 
