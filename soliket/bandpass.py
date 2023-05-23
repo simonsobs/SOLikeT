@@ -147,8 +147,10 @@ class BandPass(Theory):
     # each frequency or an array with the effective freqs.
     def _bandpass_construction(self, **params):
         r"""
-        Note: There is currently `a known bug <https://github.com/simonsobs/LAT_MFLike/pull/58>`_ here where the denominator does not depend
-        on the bandpass shift as it should. Results should be used with caution.
+        Note: There is currently
+        `a known bug <https://github.com/simonsobs/LAT_MFLike/pull/58>`_ here where the
+        denominator does not depend on the bandpass shift as it should.
+        Results should be used with caution.
         Builds the bandpass transmission 
         :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T} 
         (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu 
@@ -225,8 +227,10 @@ class BandPass(Theory):
     #        bandint_freqs.append([nub, trans])
     def _external_bandpass_construction(self, **params):
         r"""
-        Note: There is currently `a known bug <https://github.com/simonsobs/LAT_MFLike/pull/58>`_ here where the denominator does not depend
-        on the bandpass shift as it should. Results should be used with caution.
+        Note: There is currently
+        `a known bug <https://github.com/simonsobs/LAT_MFLike/pull/58>`_ here where the
+        denominator does not depend on the bandpass shift as it should.
+        Results should be used with caution.
         Builds bandpass transmission 
         :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T} 
         (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu 
