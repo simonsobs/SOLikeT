@@ -11,7 +11,8 @@ class Foreground(Theory):
 
     spectra: dict
     foregrounds: dict
-    freqs: Optional[list]
+    exp_string: Optional[list]
+    exp_freqs: Optional[list]
 
     # Initializes the foreground model. It sets the SED and reads the templates
     def initialize(self):
@@ -33,6 +34,11 @@ class Foreground(Theory):
         self.lmax = self.spectra["lmax"]
         self.ell = np.arange(self.lmin, self.lmax + 1)
         self.exp_freqs = self.spectra["exp_freqs"]
+        self.exp_string = self.spectra["exp_string"]
+        #builds the list of freqs appearing in exp_freqs 
+        #stripping the string with the experiment
+        self.freqs = [float(ef.strip(es)) for ef in self.exp_freqs 
+                       for es in self.exp_string if es in ef]
 
         template_path = os.path.join(os.path.dirname(os.path.abspath(fgp.__file__)),
                                      'data')
@@ -71,6 +77,7 @@ class Foreground(Theory):
                               ell=None,
                               exp_freqs=None,
                               bandint_freqs=None,
+                              freqs=None,
                               **fg_params):
         r"""
         Gets the foreground power spectra for each component computed by ``fgspectra``.
@@ -82,12 +89,18 @@ class Foreground(Theory):
                               ``Foreground.yaml``
         :param ell: ell range. If ``None`` the default range 
                     set in ``Foreground.yaml`` is used
-        :param exp_freqs: list of strings "exp_freq". If ``None``, 
-                      it uses the default ones in the ``Foreground.yaml``
+        :param exp_freqs: list of strings "exp_freq" used to indicate the foreground
+                      components computed at a particular frequency of an experiment. 
+                      If ``None``, it uses the default ones in the ``Foreground.yaml``
         :param bandint_freqs: the bandpass transmissions. If ``None`` it is built as an 
-                              array of freqs trimmed from the strings in ``exp_freqs``, 
-                              otherwise the transmissions computed by the ``BandPass`` 
-                              class
+                              array of frequencies stored in the ``freqs`` argument,
+                              which in this case has to be not ``None``. If 
+                              ``bandint_freqs`` is not ``None``, it is
+                              the transmissions computed by the ``BandPass`` class
+        :param freqs: list of frequencies used to compute the foreground components
+                      (assuming a Dirac delta passband at these frequencies) if the
+                      ``bandint_freqs`` argument is not provided
+        :param *fg_params: parameters of the foreground components
 
         :return: the foreground dictionary
         """
@@ -114,9 +127,10 @@ class Foreground(Theory):
 
         # Set array of freqs to use if bandint_freqs is None
         if not hasattr(bandint_freqs, '__len__'):
-            bandint_freqs = np.empty_like(exp_freqs, dtype=float)
-            for i, e in enumerate(exp_freqs):
-                bandint_freqs[i] = float(e.strip('LAT_'))
+            if hasattr(freqs, '__len__'):
+                bandint_freqs = np.asarray(freqs)
+            else:
+                self.log.info("no frequency list provided to compute the passbands")
 
 
         model = {}
@@ -235,8 +249,9 @@ class Foreground(Theory):
             req = requirements["fg_dict"]
             self.requested_cls = req.get("requested_cls", self.requested_cls)
             self.ell = req.get("ell", self.ell)
+            self.freqs = req.get("freqs", self.freqs)
             self.exp_freqs = req.get("exp_freqs", self.exp_freqs)
-            return {"bandint_freqs": {"freqs": float(self.exp_freqs.strip('LAT_'))}}
+            return {"bandint_freqs": {"freqs": self.freqs, "exp_freqs": self.exp_freqs}}
 
     def get_bandpasses(self, **params):
         """

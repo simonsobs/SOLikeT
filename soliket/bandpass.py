@@ -1,3 +1,61 @@
+r"""
+.. module:: bandpass
+
+This module computes the bandpass transmission based on the inputs from 
+the parameter file ``BandPass.yaml``. There are two possibilities:
+    * building the passbands :math:`\tau(\nu)`, either as Dirac delta or as top-hat
+    * reading the passbands :math:`\tau(\nu)` from an external file.
+For the first option, the ``top_hat_band`` dictionary in ``BandPass.yaml``
+has to be filled with two keys:
+
+    * ``nsteps``: setting the number of frequencies used in the band integration
+      (either 1 for a Dirac delta or > 1)
+    * ``bandwidth``: setting the relative width :math:`\delta` of the band with respect to
+      the central frequency, such that the frequency extrems are 
+      :math:`\nu_{\rm{low/high}} = \nu_{\rm{center}}(1 \mp \delta/2) + 
+      \Delta^{\nu}_{\rm band}` (with :math:`\Delta^{\nu}_{\rm band}` 
+       being the possible bandpass shift). ``bandwidth`` has to be 0
+       if ``nstep`` = 1, > 0 otherwise. ``bandwidth`` can be a list 
+       if you want a different width for each band
+       e.g. ``bandwidth: [0.3,0.2,0.3]`` for 3 bands.
+
+.. code-block:: yaml
+  
+  top_hat_band:
+    nsteps: 1
+    bandwidth: 0
+
+
+For the second option, the ``external_bandpass`` dictionary in ``BandPass.yaml``
+has to have the the ``path`` key, representing the path to the folder with all the
+passbands. 
+
+.. code-block:: yaml
+  
+  external_bandpass:
+    path: "path_of_passband_folder"
+
+
+The path has to be relative to the ``data_folder`` in ``BandPass.yaml``. 
+This folder has to have subfolders with the names of the experiment or array and the 
+nominal frequency of the channel, e.g. ``LAT_93`` or ``dr6_pa4_f150``.
+
+To avoid one of the two options, the corresponding dictionary has to be ``null``.
+If both dictionaries are ``null``, there will be an error message inviting to choose
+one of the two options.
+
+The bandpass transmission is built as :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}
+{\partial T}(\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu\frac{\partial 
+B_{\nu+\Delta \nu}}{\partial T} (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}`
+
+where :math:`\frac{\partial B_{\nu}}{\partial T}` converts from CMB thermodynamic 
+units to antenna temperature units, the additional :math:`\nu^2` factor 
+converts passbands from Rayleigh-Jeans units to antenna temperature units, 
+the passband :math:`\tau(\nu)` has then to be in RJ units and :math:`\Delta \nu` is the 
+possible bandpass shift for that channel.
+
+"""
+
 import numpy as np
 import os
 from typing import Optional
@@ -18,6 +76,9 @@ def _cmb2bb(nu):
     from CMB thermodynamic units to antenna temperature units.
     There is an additional :math:`\nu^2` factor to convert passbands from
     Rayleigh-Jeans units to antenna temperature units.
+
+    Numerical constants are not included, which is not a problem when using this 
+    conversion both at numerator and denominator.
 
     :param nu: frequency array
 
@@ -73,17 +134,47 @@ class BandPass(Theory):
 
     # attributes set from .yaml
     data_folder: Optional[str]
-    band_integration: dict
+    top_hat_band: dict
+    external_bandpass: dict
 
     def initialize(self):
 
-        self.expected_params_bp = ["bandint_shift_93",
-                                   "bandint_shift_145",
-                                   "bandint_shift_225"]
+        self.expected_params_bp = ["bandint_shift_LAT_93",
+                                   "bandint_shift_LAT_145",
+                                   "bandint_shift_LAT_225"]
 
-        self.freqs = None
+        self.exp_freqs = None
+
 
         # Parameters for band integration
+        self.use_top_hat_band = bool(self.top_hat_band)
+        if self.use_top_hat_band:
+            self.bandint_nsteps = self.top_hat_band["nsteps"]
+            self.bandint_width = self.top_hat_band["bandwidth"]
+
+            # checks on the bandpass input params, to be done only at the initialization
+            if not hasattr(self.bandint_width, "__len__"):
+                self.bandint_width = np.full_like(
+                    self.experiments, self.bandint_width, dtype=float
+                )
+            if self.bandint_nsteps > 1 and np.any(np.array(self.bandint_width) == 0):
+                raise LoggedError(
+                    self.log, "One band has width = 0, set a positive width and run again"
+                )
+
+
+        self.bandint_external_bandpass = bool(self.external_bandpass)
+        if self.bandint_external_bandpass:
+            path = os.path.normpath(os.path.join(self.data_folder,
+                                    self.external_bandpass["path"]))
+            arrays = os.listdir(path)
+            self._init_external_bandpass_construction(path, arrays)
+            self.array_weights = _get_arrays_weights(arrays,
+                                                     self.polarized_arrays,
+                                                     self.freqs)
+
+
+
         self.bandint_nsteps = self.band_integration["nsteps"]
         self.bandint_width = self.band_integration["bandwidth"]
         self.bandint_external_bandpass = self.band_integration["external_bandpass"]

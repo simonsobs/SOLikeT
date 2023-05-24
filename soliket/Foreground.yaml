@@ -4,7 +4,8 @@ spectra:
   polarizations: ["tt", "te", "ee"]
   lmin: 2
   lmax: 9000
-  frequencies: ["LAT_150"]
+  exp_freqs: ["LAT_150"]
+  exp_string: ["LAT_"]
 
 foregrounds:
   normalisation:

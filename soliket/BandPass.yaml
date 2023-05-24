@@ -10,14 +10,12 @@ data_folder: MFLike/v0.8
 #     useful if you don't want to do band integration
 #     when the bandpasses in the sacc file are multifrequency
 #     the freq used is the effective frequency from the bandpass
-#     - if nstep > 1,  bandwidth must be > 1
+#     - if nstep > 1,  bandwidth must be > 0
 #     bandwidth can be a list if you want a different width for each band
 #     e.g. bandwidth: [0.3,0.2,0.3] for 3 bands
 # when top_hat_band is a null dict: no top-hat band is built and
-# bandpasses read from sacc file. Band integration is performed accordingly
-# (if bandpass in sacc is a single freq, no band integration)
-# the default is to read bandpasses from file, to build top-hat uncomment the
-# parameters of the block!
+# bandpasses read from external path. Band integration is performed accordingly
+# (if bandpass in the file is a single freq, no band integration)
 # Bandpass has to be in RJ units
 top_hat_band:
 #  nsteps: 1
@@ -25,9 +23,11 @@ top_hat_band:
 
 
 # If passband read from an external file, provide the field
-# "filepath" with the correct path 
+# "path" with the directory path under the data_folder
+# this directory would store several subdirectories with the 
+# name of experiment/array and the frequency
 external_bandpass:
-  #filepath: path
+  #path: path
 
 
 params:
