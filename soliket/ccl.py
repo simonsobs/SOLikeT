@@ -81,7 +81,7 @@ import pyccl as ccl
 
 class CCL(Theory):
     """A theory code wrapper for CCL."""
-    _logz = np.linspace(-3, np.log10(1100), 150)
+    _logz = np.linspace(-3, np.log10(1100), 130)
     _default_z_sampling = 10**_logz
     _default_z_sampling[0] = 0
 
@@ -146,6 +146,7 @@ class CCL(Theory):
         # what they need (likelihoods should cache results appropriately)
         # get our requirements from self.provider
 
+
         distance = self.provider.get_comoving_radial_distance(self.z)
         hubble_z = self.provider.get_Hubble(self.z)
         H0 = hubble_z[0]
@@ -173,6 +174,16 @@ class CCL(Theory):
                 k, z, Pk_lin = self.provider.get_Pk_grid(var_pair=pair, nonlinear=False)
                 Pk_lin = np.flip(Pk_lin, axis=0)
 
+                diffzs = set(z) - set(self.z)
+                diffzs = np.array(tuple(diffzs))
+                zmask = np.ones_like(z, dtype=bool)
+
+                indices = []
+
+                for iz in diffzs: indices.append(np.where(iz==z)[0][0])
+
+                zmask[indices] = False
+
                 if self.nonlinear:
                     _, z, Pk_nonlin = self.provider.get_Pk_grid(var_pair=pair,
                                                                 nonlinear=True)
@@ -191,10 +202,10 @@ class CCL(Theory):
                                                                 'h_over_h0': E_of_z},
                                                     pk_linear={'a': a,
                                                                'k': k,
-                                                               'delta_matter:delta_matter': Pk_lin}, # noqa E501
+                                                               'delta_matter:delta_matter': Pk_lin[zmask]}, # noqa E501
                                                     pk_nonlin={'a': a,
                                                                'k': k,
-                                                               'delta_matter:delta_matter': Pk_nonlin} # noqa E501
+                                                               'delta_matter:delta_matter': Pk_nonlin[zmask]} # noqa E501
                                                     )
 
                 else:
@@ -209,7 +220,7 @@ class CCL(Theory):
                                                                 'h_over_h0': E_of_z},
                                                     pk_linear={'a': a,
                                                                'k': k,
-                                                               'delta_matter:delta_matter': Pk_lin} # noqa E501
+                                                               'delta_matter:delta_matter': Pk_lin[zmask]} # noqa E501
                                                     )
 
         state['CCL'] = {'cosmo': cosmo}
