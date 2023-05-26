@@ -16,7 +16,7 @@ SOLikeT: SO Likelihoods and Theories
 
 SOLikeT is a centralized package for likelihood and theory implementations for the `Simons Observatory <https://simonsobservatory.org/>`_.
 
-.. image:: images/Sky_UCSD2b.jpg
+.. image:: docs/images/Sky_UCSD2b.jpg
    :target: https://simonsobservatory.org/
    :alt: Simons Observatory Logo
    :width: 200
