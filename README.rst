@@ -26,7 +26,7 @@ Installation
 
 For a set of detailed requirements and installation instructions for different machines (e.g. NERSC, M1 Mac), please see `the installation page <INSTALL.rst>`_.
 
-A preferred and convenient way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <soliket-tests.yml>`_.
+A preferred and convenient way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <https://github.com/simonsobs/soliket/soliket-tests.yml>`_.
 
 After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a locally cloned version of SOLikeT using pip::
 
@@ -57,8 +57,8 @@ Running Tests
 
 Tests run a set of SOLikeT calculations with known expected results. There are (at least) two reasons you might want to run tests:
 
-1. Checking code in development
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Checking code in development
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 To see if codes you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
 
 If you are using conda, the easiest way to run tests (and the way we run them) is to use tox-conda::
@@ -76,8 +76,8 @@ will only run tests which have names containing the string 'my_new_model', and :
 
 will start a pdb debug instance when (sorry, *if*) a test fails.
 
-2. Checking environment configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Checking environment configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Check SOLikeT is working as intended in a python environment of your own specification (i.e. you have installed SOLikeT not using the solike-tests conda environment).
 
 

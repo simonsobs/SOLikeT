@@ -3,16 +3,30 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. include:: ../README.rst
+.. image:: images/Sky_UCSD2b.jpg
+   :target: https://simonsobservatory.org/
+   :alt: Simons Observatory Logo
+   :width: 200
 
-Table of contents
-=================
+=======
+SOLikeT: SO Likelihoods and Theories
+=======
+
+|Read the Docs| |Github| |Codecov|
+
+SOLikeT is a centralized package for Likelihood and Theory codes for the `Simons Observatory <https://simonsobservatory.org/>`_.
+
+You can find the code on our `Github repository <https://github.com/simonsobs/soliket/>`_, where you can also help us develop it. If you have any questions or problems using SOLikeT please `open an Issue <https://github.com/simonsobs/soliket/issues>`_.
+
+The pages here describe how to install and run SOLikeT, and document the functions available within it.
 
 .. toctree::
    :caption: Getting started
    :maxdepth: 1
    
    install
+   examples
+   help
 
 .. toctree::
    :caption: Theory codes
@@ -25,16 +39,29 @@ Table of contents
    foreground
 
 .. toctree::
-   :caption: Likelihoods
+   :caption: Likelihood codes
    :maxdepth: 2
 
    mflike
 
 .. toctree::
-   :caption: Developers
+   :caption: Development guidelines
    :maxdepth: 2
    
    developers
 
 * :ref:`genindex`
 * :ref:`search`
+
+
+.. |Github| image:: https://github.com/simonsobs/soliket/workflows/Testing/badge.svg
+   :target: https://github.com/simonsobs/SOLikeT/actions?query=workflow%3ATesting
+   :alt: Testing Status
+
+.. |Read the Docs| image:: https://readthedocs.org/projects/soliket/badge/?version=latest&label=Docs&logo=read%20the%20docs
+   :target: https://soliket.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
+
+.. |Codecov| image:: https://codecov.io/gh/simonsobs/SOLikeT/branch/master/graph/badge.svg?token=ND945EQDWR
+   :target: https://codecov.io/gh/simonsobs/SOLikeT
+   :alt: Test Coverage

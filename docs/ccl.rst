@@ -1,5 +1,5 @@
-CCL
-===
+CCL Calculator
+==============
 
 .. automodule:: soliket.ccl
 
