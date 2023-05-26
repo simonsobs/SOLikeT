@@ -1,5 +1,5 @@
 =======
-SOLikeT
+SOLikeT: SO Likelihoods and Theories
 =======
 
 .. image:: https://github.com/simonsobs/soliket/workflows/Testing/badge.svg
@@ -14,55 +14,52 @@ SOLikeT
    :target: https://soliket.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
-**SO Likelihoods and Theories**
+SOLikeT is a centralized package for likelihood and theory implementations for the `Simons Observatory <https://simonsobservatory.org/>`_.
 
-A centralized package for likelihood and theory implementations for SO.
-
+.. image:: images/Sky_UCSD2b.jpg
+   :target: https://simonsobservatory.org/
+   :alt: Simons Observatory Logo
+   :width: 200
 
 Installation
 ============
 
-For a set of detailed instructions for different machines (e.g. NERSC, M1 Mac), please see `the installation page <INSTALL.rst>`_.
+For a set of detailed requirements and installation instructions for different machines (e.g. NERSC, M1 Mac), please see `the installation page <INSTALL.rst>`_.
 
-To install SOLikeT we expect that you have the following system-level tools:
+A preferred and convenient way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <soliket-tests.yml>`_.
 
-* python>=3.7,<3.11
-* pip
-* compilers (c, cxx, fortran)
-* cmake
-* swig
-* gsl
-* fftw
-* cython
-* mpi4py
-
-A convenient way to obtain these things (along with the python dependencies listed in requirements.txt) is through using the conda environment in soliket-tests.yml. This conda environment is the one we use for running tests.
-
-You can then install SOLikeT in the usual way with pip::
+After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a locally cloned version of SOLikeT using pip::
 
   git clone https://github.com/simonsobs/soliket
   cd soliket
-  conda env create -n my_env -f soliket-tests.yml
-  conda activate my_env
+  conda env create -f soliket-tests.yml
+  conda activate soliket-tests
   pip install -e .
 
 
-Optional Extras
----------------
+Running an Example
+==================
 
-In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation).
+SOLikeT is a collection of modules for the Cobaya workflow manager. Please see `the Cobaya documentation <https://cobaya.readthedocs.io/en/latest/>`_ for detailed instructions on how to use Cobaya to perform cosmological calculations and generate constraints on cosmological parameters.
 
-This should be easily achievable with::
+SOLikeT examples and explanatory notebooks are under construction. The examples will be run using something similar to::
 
-  pip install cosmopower
+  cobaya-run soliket-example.yml
 
+
+Developing SOLikeT Theories and Likelihoods
+===========================================
+
+If you wish to develop your own Theory and Likelihood codes for use in SOLikeT please see the detailed instructions on the `Contribution Guidelines <CONTRIBUTING.rst>`_ page.
 
 Running Tests
 =============
 
-There are (at least) two reasons you might want to run tests:
+Tests run a set of SOLikeT calculations with known expected results. There are (at least) two reasons you might want to run tests:
 
-1. To see if tests you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
+1. Checking code in development
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+To see if codes you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
 
 If you are using conda, the easiest way to run tests (and the way we run them) is to use tox-conda::
 
@@ -79,9 +76,12 @@ will only run tests which have names containing the string 'my_new_model', and :
 
 will start a pdb debug instance when (sorry, *if*) a test fails.
 
-2. Check SOLikeT is working as intended in an environment of your own specification.
+2. Checking environment configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Check SOLikeT is working as intended in a python environment of your own specification (i.e. you have installed SOLikeT not using the solike-tests conda environment).
 
-For this you need to make sure all of the above system-level and python dependencies are working correctly, then run::
+
+For this you need to make sure all of the required system-level and python dependencies described in `the installation instructions <INSTALL.rst>`_ are working correctly, then run::
 
   pytest -v soliket
 
