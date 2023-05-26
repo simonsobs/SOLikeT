@@ -74,7 +74,8 @@ class TheoryForge_MFLike(Theory):
             self.ell = req.get("ell", self.ell)
             self.requested_cls = req.get("requested_cls", self.requested_cls)
             self.lcuts = req.get("lcuts", self.lcuts)
-            self.freqs = req.get("freqs", self.freqs)
+            self.exp_ch = req.get("exp_ch", self.exp_ch)
+            self.bands = req.get("bands", self.bands) 
 
         # theoryforge requires Cl from boltzmann solver
         # and fg_dict from Foreground theory component
@@ -85,7 +86,7 @@ class TheoryForge_MFLike(Theory):
         reqs["Cl"] = {k: max(c, self.lmax_boltzmann + 1) for k, c in self.lcuts.items()}
         reqs["fg_dict"] = {"requested_cls": self.requested_cls,
                            "ell": np.arange(max(self.ell[-1], self.lmax_fg + 1)),
-                           "freqs": self.freqs}
+                           "exp_ch": self.exp_ch, "bands": self.bands}
         return reqs
 
     def get_cmb_theory(self, **params):

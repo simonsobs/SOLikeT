@@ -30,6 +30,11 @@ external_bandpass:
   #path: path
 
 
+# The mflike default is to read passbands from the sacc file
+# storing the data. If you are not using mflike, make this
+# dictionary empty and fill one of the other two dictionaries
+read_from_sacc: True
+
 params:
   bandint_shift_LAT_93:
     value: 0

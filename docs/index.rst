@@ -35,6 +35,7 @@ Table of contents
    :maxdepth: 2
    
    developers
+   theory-component-guidelines
 
 * :ref:`genindex`
 * :ref:`search`
