@@ -126,8 +126,8 @@ If your unit tests check the statistical distribution of a random sample, the te
 Documentation
 =============
 
-Along with writing your code and creating tests we also ask that you create documentation for any work you do within SOLikeT.
+Along with writing your code and creating tests we also ask that you create documentation for any work you do within SOLikeT, which is then listed on our documentation page `http://soliket.readthedocs.io <http://soliket.readthedocs.io>`_.
 
-Code should be annotated with docstrings which can be automatically parsed by the sphinx tool. See here for a syntax reference. You should then create a page in the `/docs` folder of the repository on which the code is to be listed, and add the new page to the index.
+Code should be annotated with docstrings which can be automatically parsed by the sphinx tool. See `here for a syntax reference <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_. You should then create a page in the ``/docs`` folder of the repository on which the code is to be listed, and add the new page to the index.
 
 Detailed instructions and examples on how to do this can be found in our `documentation guide <docs_guidelines.html>`_.

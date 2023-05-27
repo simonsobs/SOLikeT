@@ -1,11 +1,3 @@
-==========================
-Information for Developers
-==========================
-
-Adding your own likelihood or theory code
------------------------------------------
-
-
 ================================
 Documenting Your Code in SOLikeT
 ================================
