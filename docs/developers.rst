@@ -197,7 +197,7 @@ Checking environment configuration
 ----------------------------------
 Check SOLikeT is working as intended in a python environment of your own specification (i.e. you have installed SOLikeT not using the soliket-tests conda environment).
 
-For this you need to make sure all of the required system-level and python dependencies described in `the installation instructions <INSTALL.rst>`_ are working correctly, then run::
+For this you need to make sure all of the required system-level and python dependencies described in `the installation instructions <install.html>`_ are working correctly, then run::
 
   pytest -v soliket
 
