@@ -11,6 +11,9 @@ python:
     - method: pip
       path: .
 
+conda:
+  environment: soliket-tests.yml
+
 build:
   image: latest
 
