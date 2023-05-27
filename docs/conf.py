@@ -30,6 +30,7 @@ extensions = [
     "sphinx.ext.viewcode", # Generate links to source code
     "sphinx.ext.mathjax", # Mathematical symbols
     "sphinx_rtd_theme", # readthedocs theme
+    'sphinxemoji.sphinxemoji' # emoji
 ]
 
 templates_path = ['_templates']
