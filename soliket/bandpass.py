@@ -55,9 +55,10 @@ passbands.
 
 
 The path has to be relative to the ``data_folder`` in ``BandPass.yaml``. 
-This folder has to have files with the names of the experiment or array and the 
+This folder has to have text files with the names of the experiment or array and the 
 nominal frequency of the channel, e.g. ``LAT_93`` or ``dr6_pa4_f150``. No other extensions 
-to be added!
+to be added to the name! These files will contain the frequencies as first column and 
+the passband as second column.
 
 To avoid the options you don't want to select, the corresponding dictionary has to be 
 ``null``.
