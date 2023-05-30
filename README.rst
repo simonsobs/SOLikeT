@@ -41,7 +41,7 @@ Running an Example
 
 SOLikeT is a collection of modules for use within the Cobaya cosmological inference and sampling workflow manager. Please see `the Cobaya documentation <https://cobaya.readthedocs.io/en/latest/>`_ for detailed instructions on how to use Cobaya to perform cosmological calculations and generate constraints on cosmological parameters.
 
-SOLikeT examples and explanatory notebooks are under construction. The examples will be run using something similar to::
+SOLikeT examples and explanatory notebooks are under construction, but will be run using standard [yaml](https://en.wikipedia.org/wiki/YAML) format (which can in turn be read in as Python dictionaries). The examples will be run using something similar to::
 
   cobaya-run soliket-example.yml
 
