@@ -101,7 +101,7 @@ If this happens, then the external Theory block (in this example, ``TheoryForge`
 
    if this is the only job of ``must_provide``, then the function will not return anything
 
-   2. if needed, what external elements are needed by this specific theory block to perform its duties. In this case, the function will return a dictionary of (empty or not) dictionaries which are the requirements of the specific theory block. Note this can be also done via ``get_requirement``. However, if you need to pass some params read from the block above to the new requirements, this can only be done with ``must_provide``. For example, ``TheoryForge`` needs ``Foreground`` to compute the fg spectra, which we store in a dict called ``fg_dict``. We also want ``TheoryForge`` to pass to ``Foreground`` ``self.param1``. This is done as follows:
+   2. if needed, what external elements are needed by this specific theory block to perform its duties. In this case, the function will return a dictionary of dictionaries which are the requirements of the specific theory block. These dictionaries do not have to necessarily contain content (they can be empty instances of the dictionary), but must be included if expected. Note this can be also done via ``get_requirement``. However, if you need to pass some params read from the block above to the new requirements, this can only be done with ``must_provide``. For example, ``TheoryForge`` needs ``Foreground`` to compute the fg spectra, which we store in a dict called ``fg_dict``. We also want ``TheoryForge`` to pass to ``Foreground`` ``self.param1``. This is done as follows:
    ::
 
       must_provide(self, **requirements):
