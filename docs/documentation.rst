@@ -130,15 +130,14 @@ excessive documentation that the end-user might not really need or should not
 care about. In our Pulsars example, we had the ``extra_function`` that we did
 not want to add to our docs page. For this, there exists the
 ``:exclude-members:`` directive, that will skip given functions that people
-might not need.
+might not need. Care should be taken to ensure this list stays correct and useful
+code does not disappear from the documentation unnecessarily.
 
 
-Obviously, there are many many more ways in which you can make your documentation
-better than whatever example we can come up with. We highly recommend you to
-explore the docstrings written by other people, both inside and outside the
-SOLikeT codes, to improve on your skills to get other people to understand
-your code. The better your documentation, the more likely that other people
-will use your codes for better science.
+We highly recommend you to explore the docstrings written by other people, both 
+inside and outside the SOLikeT codes, to improve on your skills to get other 
+people to understand your code. The better your documentation, the more likely 
+that other people will use your codes for better science.
 
 
 Adding your documentation to the index

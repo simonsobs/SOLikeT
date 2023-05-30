@@ -1,6 +1,6 @@
-==========================
-Information for Developers
-==========================
+==============================
+General Development Guidelines
+==============================
 
 This page describes dow to develop new code within SOLikeT, including changing existing components and adding new ones.
 
@@ -91,17 +91,19 @@ It might be possible that, in order to compute ``cmbfg_dict``, we should pass to
    {"cmbfg_dict": {"param1": param1_value, "param2": param2_value, etc}}
 
 If this happens, then the external Theory block (in this example, ``TheoryForge``) must have a ``must_provide`` function. ``must_provide`` tells the code:
-  1. what values should be assigned to the parameters needed to compute the element required from the Theory block. The required elements are stored in the ``**requirements`` dictionary which is the input of ``must_provide``.
+
+   1. The values which should be assigned to the parameters needed to compute the element required from the Theory block. The required elements are stored in the 
+   ``**requirements`` dictionary which is the input of ``must_provide``.
    In our example, ``TheoryForge`` will assign to ``param1`` the ``param1_value`` passed from ``mflike`` via the ``get_requirement`` in ``mflike`` (and so on). For example:
    ::
 
-      must_provide(self, **requirements):
-         if "cmbfg_dict" in requirements:
-            self.param1 = requirements["cmbfg_dict"]["param1"]
+        must_provide(self, **requirements):
+           if "cmbfg_dict" in requirements:
+              self.param1 = requirements["cmbfg_dict"]["param1"]
 
    if this is the only job of ``must_provide``, then the function will not return anything
 
-   2. if needed, what external elements are needed by this specific theory block to perform its duties. In this case, the function will return a dictionary of dictionaries which are the requirements of the specific theory block. These dictionaries do not have to necessarily contain content (they can be empty instances of the dictionary), but must be included if expected. Note this can be also done via ``get_requirement``. However, if you need to pass some params read from the block above to the new requirements, this can only be done with ``must_provide``. For example, ``TheoryForge`` needs ``Foreground`` to compute the fg spectra, which we store in a dict called ``fg_dict``. We also want ``TheoryForge`` to pass to ``Foreground`` ``self.param1``. This is done as follows:
+   2. If required, what external elements are needed by this specific theory block to perform its duties. In this case, the function will return a dictionary of dictionaries which are the requirements of the specific theory block. These dictionaries do not have to necessarily contain content (they can be empty instances of the dictionary), but must be included if expected. Note this can be also done via ``get_requirement``. However, if you need to pass some params read from the block above to the new requirements, this can only be done with ``must_provide``. For example, ``TheoryForge`` needs ``Foreground`` to compute the fg spectra, which we store in a dict called ``fg_dict``. We also want ``TheoryForge`` to pass to ``Foreground`` ``self.param1``. This is done as follows:
    ::
 
       must_provide(self, **requirements):
@@ -202,8 +204,6 @@ For this you need to make sure all of the required system-level and python depen
   pytest -v soliket
 
 Good luck!
-
-If your unit tests check the statistical distribution of a random sample, the test outcome itself is a random variable, and the test will fail from time to time. Please mark such tests with the ``@pytest.mark.flaky`` decorator, so that they will be automatically tried again on failure. To prevent non-random test failures from being run multiple times, please isolate random statistical tests and deterministic tests in their own test cases.
 
 Documentation
 =============

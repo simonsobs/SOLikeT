@@ -8,9 +8,9 @@
    :alt: Simons Observatory Logo
    :width: 200
 
-=======
+====================================
 SOLikeT: SO Likelihoods and Theories
-=======
+====================================
 
 |Read the Docs| |Github| |Codecov|
 
@@ -25,12 +25,10 @@ The pages here describe how to install and run SOLikeT, and document the functio
    :maxdepth: 1
    
    install
-   examples
-   help
 
 .. toctree::
    :caption: Theory codes
-   :maxdepth: 2
+   :maxdepth: 1
    
    bias
    ccl
@@ -40,15 +38,17 @@ The pages here describe how to install and run SOLikeT, and document the functio
 
 .. toctree::
    :caption: Likelihood codes
-   :maxdepth: 2
+   :maxdepth: 1
 
    mflike
 
 .. toctree::
    :caption: Development guidelines
-   :maxdepth: 2
+   :maxdepth: 1
    
    developers
+   workflow
+   documentation
 
 * :ref:`genindex`
 * :ref:`search`

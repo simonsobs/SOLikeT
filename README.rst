@@ -27,7 +27,7 @@ Installation
 
 For a set of detailed requirements and installation instructions for different machines (e.g. NERSC, M1 Mac), please see `the installation page <INSTALL.rst>`_.
 
-A preferred and convenient way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <https://github.com/simonsobs/soliket/soliket-tests.yml>`_. After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a locally cloned version of SOLikeT using pip::
+A preferred and convenient way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <soliket-tests.yml>`_. After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a locally cloned version of SOLikeT using pip::
 
   git clone https://github.com/simonsobs/soliket
   cd soliket
