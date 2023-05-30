@@ -56,7 +56,8 @@ passbands.
 
 The path has to be relative to the ``data_folder`` in ``BandPass.yaml``. 
 This folder has to have files with the names of the experiment or array and the 
-nominal frequency of the channel, e.g. ``LAT_93`` or ``dr6_pa4_f150``.
+nominal frequency of the channel, e.g. ``LAT_93`` or ``dr6_pa4_f150``. No other extensions 
+to be added!
 
 To avoid the options you don't want to select, the corresponding dictionary has to be 
 ``null``.
@@ -138,16 +139,6 @@ class BandPass(Theory):
         if self.use_top_hat_band:
             self.bandint_nsteps = self.top_hat_band["nsteps"]
             self.bandint_width = self.top_hat_band["bandwidth"]
-
-            # checks on the bandpass input params, to be done only at the initialization
-            if not hasattr(self.bandint_width, "__len__"):
-                self.bandint_width = np.full_like(
-                    self.experiments, self.bandint_width, dtype=float
-                )
-            if self.bandint_nsteps > 1 and np.any(np.array(self.bandint_width) == 0):
-                raise LoggedError(
-                    self.log, "One band has width = 0, set a positive width and run again"
-                )
 
 
         self.bandint_external_bandpass = bool(self.external_bandpass)
@@ -242,6 +233,15 @@ class BandPass(Theory):
             bands = self.bands[f"{fr}_s0"]
             nu_ghz, bp = np.asarray(bands["nu"]), np.asarray(bands["bandpass"])
             if self.use_top_hat_band:
+                # checks on the bandpass input params
+                if not hasattr(self.bandint_width, "__len__"):
+                    self.bandint_width = np.full_like(
+                    self.exp_ch, self.bandint_width, dtype=float
+                    )
+                if self.bandint_nsteps > 1 and np.any(np.array(self.bandint_width) == 0):
+                    raise LoggedError(
+                    self.log, "One band has width = 0, set a positive width and run again"
+                    )
                 # Compute central frequency given bandpass
                 fr = nu_ghz @ bp / bp.sum()
                 if self.bandint_nsteps > 1:
@@ -274,7 +274,7 @@ class BandPass(Theory):
 
         return bandint_freqs
 
-    def _init_external_bandpass_construction(self, exp_ch, path):
+    def _init_external_bandpass_construction(self, path, exp_ch):
         """
         Initializes the passband reading for ``_external_bandpass_construction``.
 
@@ -283,9 +283,9 @@ class BandPass(Theory):
         """
         self.external_bandpass = []
         for expc in exp_ch:
-            if expc in self.exp_ch:
-                nu_ghz, bp = np.loadtxt(path + "/" + expc, usecols=(0, 1), unpack=True)
-                self.external_bandpass.append([expc, nu_ghz, bp])
+            print(path, expc)
+            nu_ghz, bp = np.loadtxt(path + "/" + expc, usecols=(0, 1), unpack=True)
+            self.external_bandpass.append([expc, nu_ghz, bp])
 
     def _external_bandpass_construction(self, **params):
         r"""
