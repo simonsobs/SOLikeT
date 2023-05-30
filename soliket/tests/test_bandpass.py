@@ -7,9 +7,9 @@ from cobaya.model import get_model
 from cobaya.run import run
 
 info = {"params": {
-                   "bandint_shift_93": 0.0,
-                   "bandint_shift_145": 0.0,
-                   "bandint_shift_225": 0.0
+                   "bandint_shift_LAT_93": 0.0,
+                   "bandint_shift_LAT_145": 0.0,
+                   "bandint_shift_LAT_225": 0.0
                    },
         "likelihood": {"one": None},
         "sampler": {"evaluate": None},

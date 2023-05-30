@@ -104,7 +104,7 @@ class TheoryForge_MFLike(Theory):
         self.bands = {f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]} 
                 for iexpc, expc in enumerate(self.exp_ch)}
 
-        self.expected_params_nuis = ["cal_LAT_93", "cal_LAT_145","cal_LAT_225",
+        self.expected_params_nuis = ["cal_LAT_93", "cal_LAT_145", "cal_LAT_225",
                                      "calT_LAT_93", "calE_LAT_93",
                                      "calT_LAT_145", "calE_LAT_145",
                                      "calT_LAT_225", "calE_LAT_225",
@@ -113,10 +113,10 @@ class TheoryForge_MFLike(Theory):
                                      "alpha_LAT_225",
                                      ]
 
-        self.use_systematics_template = bool(mflike.systematics_template)
+        self.use_systematics_template = bool(self.systematics_template)
 
         if self.use_systematics_template:
-            self.systematics_template = mflike.systematics_template
+            self.systematics_template = self.systematics_template
             # Initialize template for marginalization, if needed
             self._init_template_from_file()
 
@@ -249,13 +249,13 @@ class TheoryForge_MFLike(Theory):
         cal_pars = {}
         if "tt" in self.requested_cls or "te" in self.requested_cls:
             cal = (nuis_params["calG_all"] *
-                    np.array([nuis_params[f"cal_{exp}"]* nuis_params[f"calT_{exp}"]
+                    np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calT_{exp}"]
                                   for exp in self.exp_ch]))
             cal_pars["tt"] = 1 / cal
 
         if "ee" in self.requested_cls or "te" in self.requested_cls:
             cal = (nuis_params["calG_all"] *
-                    np.array([nuis_params[f"cal_{exp}"]* nuis_params[f"calE_{exp}"]
+                    np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calE_{exp}"]
                                   for exp in self.exp_ch]))
             cal_pars["ee"] = 1 / cal
 
@@ -265,7 +265,8 @@ class TheoryForge_MFLike(Theory):
 
 ###########################################################################
 # This part deals with rotation of spectra
-# Each freq {freq1,freq2,...,freqn} gets a rotation angle alpha_LAT_93, alpha_LAT_145, etc..
+# Each freq {freq1,freq2,...,freqn} gets a rotation angle alpha_LAT_93, 
+# alpha_LAT_145, etc..
 ###########################################################################
 
     def _get_rotated_spectra(self, dls_dict, **nuis_params):

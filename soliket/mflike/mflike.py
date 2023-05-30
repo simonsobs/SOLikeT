@@ -227,6 +227,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             """
             tname_1 = exp_1
             tname_2 = exp_2
+            p1, p2 = pol
             if p1 in ["E", "B"]:
                 tname_1 += "_s2"
             else:
