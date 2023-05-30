@@ -39,7 +39,7 @@ A preferred and convenient way to install SOLikeT and its dependents is through 
 Running an Example
 ==================
 
-SOLikeT is a collection of modules for the Cobaya workflow manager. Please see `the Cobaya documentation <https://cobaya.readthedocs.io/en/latest/>`_ for detailed instructions on how to use Cobaya to perform cosmological calculations and generate constraints on cosmological parameters.
+SOLikeT is a collection of modules for use within the Cobaya cosmological inference and sampling workflow manager. Please see `the Cobaya documentation <https://cobaya.readthedocs.io/en/latest/>`_ for detailed instructions on how to use Cobaya to perform cosmological calculations and generate constraints on cosmological parameters.
 
 SOLikeT examples and explanatory notebooks are under construction. The examples will be run using something similar to::
 
