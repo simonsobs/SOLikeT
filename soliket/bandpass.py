@@ -63,9 +63,12 @@ To avoid the options you don't want to select, the corresponding dictionary has 
 If all dictionaries are ``null``, there will be an error message inviting to choose
 one of the three options.
 
-The bandpass transmission is built as :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}
-{\partial T}(\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu\frac{\partial 
-B_{\nu+\Delta \nu}}{\partial T} (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}`
+The bandpass transmission is built as 
+
+.. math::
+  \frac{\frac{\partial B_{\nu+\Delta \nu}}
+  {\partial T}(\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu\frac{\partial 
+  B_{\nu+\Delta \nu}}{\partial T} (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}
 
 where :math:`\frac{\partial B_{\nu}}{\partial T}` converts from CMB thermodynamic 
 units to antenna temperature units, the additional :math:`\nu^2` factor 
@@ -217,8 +220,8 @@ class BandPass(Theory):
         (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu 
         \frac{\partial B_{\nu+\Delta \nu}}{\partial T} (\nu+\Delta \nu)^2 
         \tau(\nu+\Delta \nu)}`  
-        using passbands :math:`\tau(\nu)` (in RJ units, not read from file)
-        and bandpass shift :math:`\Delta \nu`. If ``read_from_sacc = True``
+        using passbands :math:`\tau(\nu)` (in RJ units, not read from a txt
+        file) and bandpass shift :math:`\Delta \nu`. If ``read_from_sacc = True``
         (the default), :math:`\tau(\nu)` has been read from the sacc file
         and passed through ``Foreground`` from ``TheoryForge``.
         If ``use_top_hat_band``, :math:`\tau(\nu)` is built as a top-hat
@@ -281,19 +284,18 @@ class BandPass(Theory):
         self.external_bandpass = []
         for expc in exp_ch:
             if expc in self.exp_ch:
-                #fr, pa = _get_fr(array)
                 nu_ghz, bp = np.loadtxt(path + "/" + expc, usecols=(0, 1), unpack=True)
                 self.external_bandpass.append([expc, nu_ghz, bp])
 
     def _external_bandpass_construction(self, **params):
         r"""
-        Results should be used with caution.
         Builds bandpass transmission 
         :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T} 
         (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu 
         \frac{\partial B_{\nu+\Delta \nu}}{\partial T} (\nu+\Delta \nu)^2 
         \tau(\nu+\Delta \nu)}`   
-        using passbands :math:`\tau(\nu)` (in RJ units) read from file and 
+        using passbands :math:`\tau(\nu)` (in RJ units) read from 
+        an external txt file and 
         possible bandpass shift parameters :math:`\Delta \nu`.
 
         :param *params: dictionary of nuisance parameters

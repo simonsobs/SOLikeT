@@ -310,6 +310,7 @@ class Foreground(Theory):
             self.requested_cls = req.get("requested_cls", self.requested_cls)
             self.ell = req.get("ell", self.ell)
             self.bands = req.get("bands", self.bands)
+            self.exp_ch = req.get("exp_ch", self.exp_ch)
             return {"bandint_freqs": {"bands": self.bands}}
 
     def get_bandpasses(self, **params):
@@ -324,8 +325,24 @@ class Foreground(Theory):
         with the foreground spectra, computed using the bandpass 
         transmissions from the ``BandPass`` class and the sampled foreground
         parameters.
+
+        :param state: ``state`` dictionary to be filled with computed foreground
+                      spectra
+        :param *params_values_dict: dictionary of parameters from the sampler
         """
-        self.bandint_freqs = self.get_bandpasses(**params_values_dict)
+
+        # compute bandpasses at each step only if bandint_shift params are not null
+        # and bandint_freqs has been computed at least once
+        if np.all(
+            np.array([params_values_dict[k] for k in params_values_dict.keys() 
+                if "bandint_shift_" in k]) == 0.0
+        ):
+            if not hasattr(self, "bandint_freqs"):
+                self.log.info("Computing bandpass at first step, no shifts")
+                self.bandint_freqs = self.get_bandpasses(**params_values_dict)
+        else:
+            self.bandint_freqs = self.get_bandpasses(**params_values_dict)
+
         fg_params = {k: params_values_dict[k] for k in self.expected_params_fg}
         state["fg_dict"] = self._get_foreground_model(requested_cls=self.requested_cls,
                                                     exp_ch=self.exp_ch,

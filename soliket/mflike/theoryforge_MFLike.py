@@ -1,5 +1,56 @@
 """
-**This class will be heavily modified with the updated version of mflike**
+.. module:: theoryforge
+
+The ``TheoryForge_MFLike`` class applies the foreground spectra and systematic
+effects to the theory spectra provided by ``MFLike``. To do that, ``MFLike`` 
+provides ``TheoryForge_MFLike`` with the appropriate list of channels, the
+requested temperature/polarization fields, the
+:math:`\ell` ranges and a dictionary of the passbands read from the ``sacc`` file:
+
+.. code-block:: python
+   
+   bands = {"experiment_channel": {{"nu": [freqs...], 
+     "bandpass": [...]}}, ...}
+
+This dictionary is then passed to ``Bandpass`` (through ``Foreground``) 
+to compute the bandpass 
+transmissions, which are then used for the actual foreground spectra computation.
+
+
+If one wants to use this class as standalone, the ``bands`` dictionary is
+filled when initializing ``TheoryForge_MFLike``. The name of the channels to use 
+are read from the ``exp_ch`` list in ``TheoryForge_MFLike.yaml``, the effective
+frequencies are in the ``eff_freqs`` list. Of course the effective frequencies
+have to match the information from ``exp_ch``, i.e.:
+
+.. code-block:: yaml
+
+  exp_ch: ["LAT_93", "LAT_145", "ACT_145"]
+  eff_freqs: [93, 145, 145]
+
+This class applies three kinds of systematic effects to the CMB + foreground
+power spectrum:
+    * calibrations (global ``calG_all``, per channel ``cal_exp_nu``, per field
+      ``calT_exp_nu``, ``calE_exp_nu``)
+    * polarization angles effect (``alpha_exp_nu``)
+    * systematic templates (e.g. T --> P leakage). In this case the dictionary
+      ``systematics_template`` has to be filled with the correct path 
+      ``rootname``:
+
+      .. code-block:: yaml
+      
+        systematics_template:
+          rootname: "test_template"
+      
+      If left ``null``, no systematic template is applied.
+
+
+The bandpass shifts are applied within the ``Bandpass`` class.
+
+The values of the systematic parameters are set in ``TheoryForge_MFLike.yaml``.
+They have to be named as ``cal/calT/calE/alpha`` + ``_``  + experiment_channel string
+(e.g. ``LAT_93/dr6_pa4_f150``).
+
 """
 
 import numpy as np
@@ -15,9 +66,9 @@ class TheoryForge_MFLike(Theory):
 
     # attributes set from .yaml
     data_folder: Optional[str]
-    freqs: str
+    exp_ch: list
+    eff_freqs: list
     spectra: dict
-    band_integration: dict
     systematics_template: dict
 
     def initialize(self):
@@ -25,7 +76,6 @@ class TheoryForge_MFLike(Theory):
         self.lmin = self.spectra["lmin"]
         self.lmax = self.spectra["lmax"]
         self.ell = np.arange(self.lmin, self.lmax + 1)
-
 
         # State requisites to the theory code
         # Which lmax for theory CMB
@@ -42,16 +92,34 @@ class TheoryForge_MFLike(Theory):
         # Set lmax for theory CMB requirements
         self.lcuts = {k: self.lmax_boltzmann for k in self.requested_cls}
 
-        self.expected_params_nuis = ["calT_93", "calE_93",
-                                     "calT_145", "calE_145",
-                                     "calT_225", "calE_225",
+        if hasattr(self.eff_freqs, "__len__"):
+            if not len(self.exp_ch) == len(self.eff_freqs):
+                raise LoggedError(
+                    self.log, "list of effective frequency has to have"\
+                            "same length as list of channels!"
+                )
+
+        # self.bands to be filled with passbands read from sacc file
+        # if mflike is used
+        self.bands = {f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]} 
+                for iexpc, expc in enumerate(self.exp_ch)}
+
+        self.expected_params_nuis = ["cal_LAT_93", "cal_LAT_145","cal_LAT_225",
+                                     "calT_LAT_93", "calE_LAT_93",
+                                     "calT_LAT_145", "calE_LAT_145",
+                                     "calT_LAT_225", "calE_LAT_225",
                                      "calG_all",
-                                     "alpha_93", "alpha_145", "alpha_225",
+                                     "alpha_LAT_93", "alpha_LAT_145", 
+                                     "alpha_LAT_225",
                                      ]
 
-        # Initialize template for marginalization, if needed
-        if self.systematics_template["has_file"]:
+        self.use_systematics_template = bool(mflike.systematics_template)
+
+        if self.use_systematics_template:
+            self.systematics_template = mflike.systematics_template
+            # Initialize template for marginalization, if needed
             self._init_template_from_file()
+
 
 
     def initialize_with_params(self):
@@ -127,8 +195,8 @@ class TheoryForge_MFLike(Theory):
 
         cmbfg_dict = {}
         # Sum CMB and FGs
-        for f1 in self.freqs:
-            for f2 in self.freqs:
+        for f1 in self.exp_ch:
+            for f2 in self.exp_ch:
                 for s in self.requested_cls:
                     cmbfg_dict[s, f1, f2] = (self.Dls[s][self.ell] +
                         fg_dict[s, 'all', f1, f2][self.ell])
@@ -140,7 +208,7 @@ class TheoryForge_MFLike(Theory):
         cmbfg_dict = self._get_rotated_spectra(cmbfg_dict, **nuis_params)
 
         # Introduce templates of systematics from file, if needed
-        if self.systematics_template['has_file']:
+        if self.use_systematics_template:
             cmbfg_dict = self._get_template_from_file(cmbfg_dict, **nuis_params)
 
 
@@ -154,17 +222,20 @@ class TheoryForge_MFLike(Theory):
 
         .. math::
         
-           D^{{\rm cal}, TT, \nu_1 \nu_2}_{\ell} &= {\rm cal}_{G}\, 
+           D^{{\rm cal}, TT, \nu_1 \nu_2}_{\ell} &= \frac{1}{
+           {\rm cal}_{G}\, {\rm cal}^{\nu_1} \, {\rm cal}^{\nu_2}\,
            {\rm cal}^{\nu_1}_{\rm T}\,
-           {\rm cal}^{\nu_2}_{\rm T}\, D^{TT, \nu_1 \nu_2}_{\ell} 
+           {\rm cal}^{\nu_2}_{\rm T}}\, D^{TT, \nu_1 \nu_2}_{\ell} 
 
-           D^{{\rm cal}, TE, \nu_1 \nu_2}_{\ell} &= {\rm cal}_{G}\,
+           D^{{\rm cal}, TE, \nu_1 \nu_2}_{\ell} &= \frac{1}{
+           {\rm cal}_{G}\,{\rm cal}^{\nu_1} \, {\rm cal}^{\nu_2}\,
            {\rm cal}^{\nu_1}_{\rm T}\,
-           {\rm cal}^{\nu_2}_{\rm E}\, D^{TT, \nu_1 \nu_2}_{\ell} 
+           {\rm cal}^{\nu_2}_{\rm E}}\, D^{TT, \nu_1 \nu_2}_{\ell} 
         
-           D^{{\rm cal}, EE, \nu_1 \nu_2}_{\ell} &= {\rm cal}_{G}\,
+           D^{{\rm cal}, EE, \nu_1 \nu_2}_{\ell} &= \frac{1}{
+           {\rm cal}_{G}\,{\rm cal}^{\nu_1} \, {\rm cal}^{\nu_2}\,
            {\rm cal}^{\nu_1}_{\rm E}\,
-           {\rm cal}^{\nu_2}_{\rm E}\, D^{EE, \nu_1 \nu_2}_{\ell}
+           {\rm cal}^{\nu_2}_{\rm E}}\, D^{EE, \nu_1 \nu_2}_{\ell}
 
         It uses the ``syslibrary.syslib_mflike.Calibration_alm`` function.
 
@@ -177,22 +248,24 @@ class TheoryForge_MFLike(Theory):
 
         cal_pars = {}
         if "tt" in self.requested_cls or "te" in self.requested_cls:
-            cal_pars["tt"] = (nuis_params["calG_all"] *
-                              np.array([nuis_params['calT_' + str(fr)] for
-                                        fr in self.freqs]))
+            cal = (nuis_params["calG_all"] *
+                    np.array([nuis_params[f"cal_{exp}"]* nuis_params[f"calT_{exp}"]
+                                  for exp in self.exp_ch]))
+            cal_pars["tt"] = 1 / cal
 
         if "ee" in self.requested_cls or "te" in self.requested_cls:
-            cal_pars["ee"] = (nuis_params["calG_all"] *
-                              np.array([nuis_params['calE_' + str(fr)] for
-                                        fr in self.freqs]))
+            cal = (nuis_params["calG_all"] *
+                    np.array([nuis_params[f"cal_{exp}"]* nuis_params[f"calE_{exp}"]
+                                  for exp in self.exp_ch]))
+            cal_pars["ee"] = 1 / cal
 
         calib = syl.Calibration_alm(ell=self.ell, spectra=dls_dict)
 
-        return calib(cal1=cal_pars, cal2=cal_pars, nu=self.freqs)
+        return calib(cal1=cal_pars, cal2=cal_pars, nu=self.exp_ch)
 
 ###########################################################################
 # This part deals with rotation of spectra
-# Each freq {freq1,freq2,...,freqn} gets a rotation angle alpha_93, alpha_145, etc..
+# Each freq {freq1,freq2,...,freqn} gets a rotation angle alpha_LAT_93, alpha_LAT_145, etc..
 ###########################################################################
 
     def _get_rotated_spectra(self, dls_dict, **nuis_params):
@@ -216,11 +289,11 @@ class TheoryForge_MFLike(Theory):
         """
         from syslibrary import syslib_mflike as syl
 
-        rot_pars = [nuis_params['alpha_' + str(fr)] for fr in self.freqs]
+        rot_pars = [nuis_params[f"alpha_{exp}"] for exp in self.exp_ch]
 
-        rot = syl.Rotation_alm(ell=self.ell, spectra=dls_dict, cls=self.requested_cls)
+        rot = syl.Rotation_alm(ell=self.ell, spectra=dls_dict)
 
-        return rot(rot_pars, nu=self.freqs)
+        return rot(rot_pars, nu=self.exp_ch, cls=self.requested_cls)
 
 ###########################################################################
 # This part deals with template marginalization
@@ -236,6 +309,10 @@ class TheoryForge_MFLike(Theory):
         the ``syslibrary.syslib_mflike.ReadTemplateFromFile``
         function.
         """
+
+        if not self.systematics_template.get("rootname"):
+            raise LoggedError(self.log, "Missing 'rootname' for systematics template!")
+
         from syslibrary import syslib_mflike as syl
 
         # decide where to store systematics template.
@@ -255,15 +332,15 @@ class TheoryForge_MFLike(Theory):
         :return: dictionary of CMB+foregrounds :math:`D_{\ell}`
                  with systematics templates
         """
-        # templ_pars=[nuis_params['templ_'+str(fr)] for fr in self.freqs]
+        # templ_pars=[nuis_params['templ_'+str(fr)] for fr in self.exp_ch]
         # templ_pars currently hard-coded
         # but ideally should be passed as input nuisance
-        templ_pars = {cls: np.zeros((len(self.freqs), len(self.freqs)))
+        templ_pars = {cls: np.zeros((len(self.exp_ch), len(self.exp_ch)))
                       for cls in self.requested_cls}
 
         for cls in self.requested_cls:
-            for i1, f1 in enumerate(self.freqs):
-                for i2, f2 in enumerate(self.freqs):
+            for i1, f1 in enumerate(self.exp_ch):
+                for i2, f2 in enumerate(self.exp_ch):
                     dls_dict[cls, f1, f2] += (templ_pars[cls][i1][i2] *
                                               self.dltempl_from_file[cls, f1, f2])
 
