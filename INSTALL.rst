@@ -16,11 +16,11 @@ Optional: Install CosmoPower
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation).
 
-This should be easily achievable with::
+Unless using an M1 Mac this should be easily achievable with::
 
   $ pip install cosmopower
 
-If you wish to install it using your own system tools some useful information is provided below.
+If you wish to install it using your own system tools (including new M1 Mac) some useful information is provided below.
 
 Harder Way: Preparing your own conda environment
 ----------------------------------
@@ -59,7 +59,7 @@ Based on `cobaya documentation <https://cobaya.readthedocs.io/en/latest/cluster_
 At NERSC
 --------
 
-Note: you may want to run cobaya in the SCRATCH directory (see thread `here <https://github.com/CobayaSampler/cobaya/issues/219>`_).
+Based on CORI. To be checked against Perlmutter yet. Note: you may want to run cobaya in the SCRATCH directory (see thread `here <https://github.com/CobayaSampler/cobaya/issues/219>`_).
 
 **CREATE A CONDA-ENV COPYING LAZY-MPI4PY AND USING GNU**
 Based on `NERSC documentation <https://docs.nersc.gov/development/languages/python/parallel-python/#mpi4py>`_.
@@ -98,3 +98,47 @@ Based on `NERSC documentation <https://docs.nersc.gov/development/languages/pyth
 Create your job script following `cobaya docs <https://cobaya.readthedocs.io/en/devel/run_job.html>`_.
 
 Many thanks to Luca Pagano, Serena Giardiello, Pablo Lemos, +++
+
+On M1 Mac
+--------
+There is an issue with installing tensorflow (needed for cosmopower) on M1 Mac that is likely to be solved in the future. For the moment, if you want to couple SOLikeT to cosmopower, please follow this guidance:
+
+1. Download latest miniconda installer (e.g., `here: Download Conda environment <https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh>`_) and properly rename it (e.g., -> miniconda.sh)
+2. Install miniconda and tensor flow-deps
+
+::
+
+   bash ~/miniconda.sh -b -p $HOME/miniconda
+   source ~/miniconda/bin/activate
+   conda install -c apple tensorflow-deps
+
+3. git clone soliket and create your virtual env
+
+::
+
+   git clone https://github.com/simonsobs/soliket
+   cd soliket
+   conda env create -n my_env -f soliket-tests.yml
+   conda activate my_env 
+
+4. Install tensorflow-macos and metal with correct versioning
+
+::
+
+   pip install tensorflow-macos
+   pip install tensorflow-metal
+
+5. Download and install cosmopower manually
+
+::
+
+   git clone https://github.com/alessiospuriomancini/cosmopower
+   cd cosmopower
+   pip install .
+
+6. Go back to soliket folder and install it
+
+::
+
+   cd path/to/your/soliket
+   pip install -e .

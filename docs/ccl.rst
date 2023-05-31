@@ -1,5 +1,5 @@
-CCL
-===
+The Core Cosmology Library (CCL) Calculator
+===========================================
 
 .. automodule:: soliket.ccl
 
