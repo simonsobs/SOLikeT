@@ -69,13 +69,19 @@ The bandpass transmission is built as
 
 .. math::
   \frac{\frac{\partial B_{\nu+\Delta \nu}}
-  {\partial T}(\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu\frac{\partial 
-  B_{\nu+\Delta \nu}}{\partial T} (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}
+  {\partial T} \tau(\nu+\Delta \nu)}{\int d\nu\frac{\partial 
+  B_{\nu+\Delta \nu}}{\partial T} \tau(\nu+\Delta \nu)}
 
-where :math:`\frac{\partial B_{\nu}}{\partial T}` converts from CMB thermodynamic 
-units to antenna temperature units, the additional :math:`\nu^2` factor 
-converts passbands from Rayleigh-Jeans units to antenna temperature units, 
-the passband :math:`\tau(\nu)` has then to be in RJ units and :math:`\Delta \nu` is the 
+where
+
+.. math::
+  &\frac{\partial B_{\nu}}{\partial T} \propto \frac{x^2 e^x \nu^2}{(e^x-1)^2} \\
+  & x \equiv \frac{h \nu}{k_B T_{CMB}}
+
+which converts from CMB thermodynamic temperature to differential source intensity
+(see eq.8 of https://arxiv.org/abs/1303.5070).
+The passband :math:`\tau(\nu)` has to be divided by :math:`\nu^2` if it has been 
+measured with respect to a Rayleigh-Jeans (RJ) source and :math:`\Delta \nu` is the 
 possible bandpass shift for that channel.
 
 """
@@ -97,16 +103,16 @@ from .constants import T_CMB, h_Planck, k_Boltzmann
 def _cmb2bb(nu):
     r"""
     Computes the conversion factor :math:`\frac{\partial B_{\nu}}{\partial T}`
-    from CMB thermodynamic units to antenna temperature units.
-    There is an additional :math:`\nu^2` factor to convert passbands from
-    Rayleigh-Jeans units to antenna temperature units.
+    from CMB thermodynamic units to differential source intensity.
+    Passbands measured with respect to a RJ source have to be divided by a 
+    :math:`\nu^2` factor.
 
     Numerical constants are not included, which is not a problem when using this 
     conversion both at numerator and denominator.
 
     :param nu: frequency array
 
-    :return: the array :math:`\frac{\partial B_{\nu}}{\partial T} \nu^2`
+    :return: the array :math:`\frac{\partial B_{\nu}}{\partial T}`
     """
     # NB: numerical factors not included
     x = nu * h_Planck * 1e9 / k_Boltzmann / T_CMB
@@ -209,10 +215,10 @@ class BandPass(Theory):
         r"""
         Builds the bandpass transmission 
         :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T} 
-        (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu 
-        \frac{\partial B_{\nu+\Delta \nu}}{\partial T} (\nu+\Delta \nu)^2 
-        \tau(\nu+\Delta \nu)}`  
-        using passbands :math:`\tau(\nu)` (in RJ units, not read from a txt
+        \tau(\nu+\Delta \nu)}{\int d\nu 
+        \frac{\partial B_{\nu+\Delta \nu}}{\partial T} \tau(\nu+\Delta \nu)}`  
+        using passbands :math:`\tau(\nu)` (divided by :math:`\nu^2` if 
+        measured with respect to a RJ source, not read from a txt
         file) and bandpass shift :math:`\Delta \nu`. If ``read_from_sacc = True``
         (the default), :math:`\tau(\nu)` has been read from the sacc file
         and passed through ``Foreground`` from ``TheoryForge``.
@@ -292,10 +298,10 @@ class BandPass(Theory):
         r"""
         Builds bandpass transmission 
         :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T} 
-        (\nu+\Delta \nu)^2 \tau(\nu+\Delta \nu)}{\int d\nu 
-        \frac{\partial B_{\nu+\Delta \nu}}{\partial T} (\nu+\Delta \nu)^2 
-        \tau(\nu+\Delta \nu)}`   
-        using passbands :math:`\tau(\nu)` (in RJ units) read from 
+        \tau(\nu+\Delta \nu)}{\int d\nu 
+        \frac{\partial B_{\nu+\Delta \nu}}{\partial T} \tau(\nu+\Delta \nu)}`   
+        using passbands :math:`\tau(\nu)` (divided by :math:`\nu^2` if measured
+        with respect to a RJ source) read from 
         an external txt file and 
         possible bandpass shift parameters :math:`\Delta \nu`.
 

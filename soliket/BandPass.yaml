@@ -16,7 +16,7 @@ data_folder: MFLike/v0.8
 # when top_hat_band is a null dict: no top-hat band is built and
 # bandpasses read from external path. Band integration is performed accordingly
 # (if bandpass in the file is a single freq, no band integration)
-# Bandpass has to be in RJ units
+# Bandpass has to be divided by nu**2 if measured with respect to a RJ source
 top_hat_band:
 #  nsteps: 1
 #  bandwidth: 0
