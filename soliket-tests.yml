@@ -13,3 +13,7 @@ dependencies:
   - gsl
   - fftw
   - cython
+  - mpi4py
+  - camb
+  - pip:
+      - -r requirements.txt
