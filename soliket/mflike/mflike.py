@@ -92,6 +92,14 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
 
     def get_requirements(self):
+        r"""
+        Passes the fields ``ell``, ``requested_cls``, ``lcuts``, 
+        ``exp_ch`` (list of array names) and ``bands`` 
+        (dictionary of ``exp_ch`` and the corresponding frequency
+        and passbands) inside the dictionary ``requirements["cmbfg_dict"]``.
+
+        :return: the dictionary ``requirements["cmbfg_dict"]``
+        """
         # mflike requires cmbfg_dict from theoryforge
         # cmbfg_dict requires some params to be computed
         reqs = dict()

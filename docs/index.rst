@@ -35,6 +35,8 @@ Table of contents
    :maxdepth: 2
    
    developers
+   workflow
+   documentation
    theory-component-guidelines
 
 * :ref:`genindex`
