@@ -59,45 +59,49 @@ Based on `cobaya documentation <https://cobaya.readthedocs.io/en/latest/cluster_
 At NERSC
 --------
 
-Based on CORI. To be checked against Perlmutter yet. Note: you may want to run cobaya in the SCRATCH directory (see thread `here <https://github.com/CobayaSampler/cobaya/issues/219>`_).
+Based on Perlmutter. Note: you may want to run cobaya in the SCRATCH directory (see thread `here <https://github.com/CobayaSampler/cobaya/issues/219>`_).
 
-**CREATE A CONDA-ENV COPYING LAZY-MPI4PY AND USING GNU**
+**Build mpi4py in your custom conda environment**
 Based on `NERSC documentation <https://docs.nersc.gov/development/languages/python/parallel-python/#mpi4py>`_.
 
 ::
 
-   module unload PrgEnv-intel
-   module load PrgEnv-gnu
-   module load python
-   conda create --name my_mpi4py_env --clone lazy-mpi4py
-   conda activate my_mpi4py_env
+  module load python
+  conda create -n soliket-tests python
+  conda activate soliket-tests
+  module swap PrgEnv-${PE_ENV,,} PrgEnv-gnu
+  MPICC="cc -shared" pip install --force-reinstall --no-cache-dir --no-binary=mpi4py mpi4py
 
-**INSTALL COBAYA**
-
-::
-
-   pip install cobaya
-   cobaya-install cosmo --packages-path cobaya_packages
-
-**LOAD CMAKE (WOULD BE NEEDED BY PYCCL)**
+**Load fftw, gsl and cmake (WOULD BE NEEDED BY PYCCL)**
 
 ::
 
+   module load cray-fftw
+   module load gsl
    module load cmake
 
-**INSTALL SOLIKET**
+Please, make sure to load cmake as your last command, so that the path to cmake bin is prepended to your PATH (see `this issue <https://github.com/LSSTDESC/CCL/issues/542>`_).
+
+**Install additional requirements and soliket**
 
 ::
 
+   pip install pytest-cov make swig
    git clone https://github.com/simonsobs/soliket
    cd soliket
    pip install -e .
 
-**RUN SOLIKET**
+**Test soliket**
+
+::
+
+   pytest -v soliket
+
+**Run soliket**
 
 Create your job script following `cobaya docs <https://cobaya.readthedocs.io/en/devel/run_job.html>`_.
 
-Many thanks to Luca Pagano, Serena Giardiello, Pablo Lemos, +++
+Please, don't hesitate to open issues and/or be in touch with us, should you find any problems. Many thanks to Luca Pagano, Serena Giardiello, Pablo Lemos, +++
 
 On M1 Mac
 --------
