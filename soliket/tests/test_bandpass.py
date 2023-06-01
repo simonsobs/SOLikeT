@@ -114,19 +114,20 @@ def test_bandpass_top_hat():
     assert np.allclose(bandint_freqs, bandpass)
 
 
-def test_bandpass_external_file():
+def test_bandpass_external_file(request):
  
     from soliket.bandpass import BandPass
     import os 
 
-    filepath = os.path.dirname(os.path.abspath(__file__))
+    filepath = os.path.join(request.config.rootdir,
+            "soliket/tests/data/")
     # now testing reading from external file
     info["theory"].update({
                "bandpass": {"external": BandPass,
                    "data_folder": f"{filepath}",
                    "top_hat_band": {},
                    "external_bandpass": {
-                       "path": "data/test_bandpass"},
+                       "path": "test_bandpass"},
                    "read_from_sacc": {},
                   },
                })
