@@ -107,9 +107,12 @@ class MFLikeTest(unittest.TestCase):
         ell = np.arange(lmax + 1)
         bands = TF.bands
         exp_ch = TF.exp_ch
+        print(exp_ch, bands)
 
         requested_cls = TF.requested_cls
         BP.bands = bands
+        BP.exp_ch = [k.replace("_s0", "") for k in bands.keys()
+                          if "_s0" in k]
 
         bandpass = BP._bandpass_construction(**nuisance_params)
 
@@ -146,7 +149,6 @@ class MFLikeTest(unittest.TestCase):
 
             self.assertAlmostEqual(-2 * (loglike - my_mflike.logp_const), chi2, 2)
 
-    #@pytest.mark.skip(reason="don't want to install 300Mb of data!")
     def test_cobaya(self):
 
         info = {
@@ -155,7 +157,17 @@ class MFLikeTest(unittest.TestCase):
                     "datapath": os.path.join(packages_path, "data/TestMFLike"),
                     "data_folder": "TestMFLike",
                     "input_file": pre + "00000.fits",
-                }
+                    "defaults": {
+                        "polarizations": ["TT", "TE", "ET", "EE"],
+                        "scales": {
+                            "TT": [2, 179],
+                            "TE": [2, 179],
+                            "ET": [2, 179],
+                            "EE": [2, 179],
+                        },
+                        "symmetrize": False,
+                    },
+                },
             },
             "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1},
                                 "stop_at_error": True}},

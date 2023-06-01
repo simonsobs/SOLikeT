@@ -181,7 +181,8 @@ class BandPass(Theory):
         # Assign those from Foreground
         if "bandint_freqs" in requirements:
             self.bands = requirements["bandint_freqs"]["bands"]
-            self.exp_ch = [k.replace("_s0", "") for k in self.bands.keys()]
+            self.exp_ch = [k.replace("_s0", "") for k in self.bands.keys() 
+                    if "_s0" in k]
             # self.eff_freqs = [np.array(self.bands[k]['nu'])
             #                      for k in self.bands.keys()]
 
