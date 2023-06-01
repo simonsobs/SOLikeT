@@ -8,10 +8,15 @@
 
    <br />
 
-Simple CCL wrapper with function to return CCL cosmo object, and (optional) result of
-calling various custom methods on the ccl object. The idea is this is included with the
-CCL package, so it can easily be used as a Cobaya component whenever CCL is installed,
-here for now.
+The `Core Cosmology Library (CCL) <https://ccl.readthedocs.io/en/latest/>`_ is a 
+standardized library of routines to calculate basic observables used in cosmology. 
+It will be the standard analysis package used by the LSST 
+Dark Energy Science Collaboration (DESC).
+
+This Theory is a simple CCL wrapper with function to return CCL cosmo object, and 
+(optional) result of calling various custom methods on the ccl object. 
+The idea is this is included with the CCL package, so it can easily be used as a Cobaya 
+component whenever CCL is installed, here for now.
 
 First version by AL. Untested example of usage at
 https://github.com/cmbant/SZCl_like/blob/methods/szcl_like/szcl_like.py
