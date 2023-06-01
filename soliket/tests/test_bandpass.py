@@ -119,10 +119,11 @@ def test_bandpass_external_file():
     from soliket.bandpass import BandPass
     import os 
 
+    filepath = os.path.dirname(os.path.abspath(__file__))
     # now testing reading from external file
     info["theory"].update({
                "bandpass": {"external": BandPass,
-                   "data_folder": "./",
+                   "data_folder": f"{filepath}",
                    "top_hat_band": {},
                    "external_bandpass": {
                        "path": "data/test_bandpass"},
