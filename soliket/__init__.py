@@ -5,6 +5,7 @@ from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401
 from .mflike import MFLike  # noqa: F401
 from .mflike import TheoryForge_MFLike
 from .xcorr import XcorrLikelihood  # noqa: F401
+from .szlike import KSZLikelihood, TSZLikelihood
 from .foreground import Foreground
 from .bandpass import BandPass
 from .cosmopower import CosmoPower, CosmoPowerDerived
