@@ -67,7 +67,7 @@ Based on `NERSC documentation <https://docs.nersc.gov/development/languages/pyth
 ::
 
   module load python
-  conda create -n soliket-tests python
+  conda create -n soliket-tests python numpy
   conda activate soliket-tests
   module swap PrgEnv-${PE_ENV,,} PrgEnv-gnu
   MPICC="cc -shared" pip install --force-reinstall --no-cache-dir --no-binary=mpi4py mpi4py
