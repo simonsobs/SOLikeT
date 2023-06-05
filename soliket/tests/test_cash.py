@@ -31,7 +31,7 @@ def test_cash_read_data():
     from soliket.cash import CashCLikelihood
 
     soliket_dir = os.getcwd()
-    if (".tmp/test" in soliket_dir):
+    if (".tmp" in soliket_dir):
         soliket_dir += "/../.."
     cash_data_path = soliket_dir + "/soliket/tests/data/cash_data.txt"
 
@@ -46,7 +46,7 @@ def test_cash_logp():
 
     params = {"cash_test_logp": 20}
     soliket_dir = os.getcwd()
-    if (".tmp/test" in soliket_dir):
+    if (".tmp" in soliket_dir):
         soliket_dir += "/../.."
     cash_data_path = soliket_dir + "/soliket/tests/data/cash_data.txt"
 
