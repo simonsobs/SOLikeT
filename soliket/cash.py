@@ -21,8 +21,8 @@ class CashCLikelihood(Likelihood):
         return x, N
 
     def _get_theory(self, **kwargs):
-        if("param_test_cash" in kwargs):
-            return np.arange(kwargs["param_test_cash"])
+        if ("cash_test_logp" in kwargs):
+            return np.arange(kwargs["cash_test_logp"])
         else:
             raise NotImplementedError
 
