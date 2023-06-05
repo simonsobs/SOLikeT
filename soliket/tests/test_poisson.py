@@ -48,7 +48,8 @@ def test_poisson_experiment(a_true=3, N=100, with_samples=False, Nk=64):
                 data = PoissonData("toy_samples", catalog, ["x"], samples=samples)
     
             a_grid = np.arange(0.1, 10, 0.1)
-            lnl = [data.loglike(partial(rate_density, a=a), n_expected(a)) for a in a_grid]
+            lnl = [data.loglike(partial(rate_density, a=a), 
+                n_expected(a)) for a in a_grid]
             a_maxlike = a_grid[np.argmax(lnl)]
     
             a_maxlikes.append(a_maxlike)
