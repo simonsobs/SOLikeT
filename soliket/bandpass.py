@@ -112,7 +112,7 @@ def _cmb2bb(nu):
 
     :param nu: frequency array
 
-    :return: the array :math:`\frac{\partial B_{\nu}}{\partial T}`
+    :return: the array :math:`\frac{\partial B_{\nu}}{\partial T}`. See note above.
     """
     # NB: numerical factors not included
     x = nu * h_Planck * 1e9 / k_Boltzmann / T_CMB
@@ -159,9 +159,9 @@ class BandPass(Theory):
         if (not self.read_from_sacc and not self.use_top_hat_band 
                    and not self.bandint_external_bandpass):
             raise LoggedError(
-                    self.log, "fill the dictionaries for either reding" \
-                    "the passband from sacc file (mflike default) or an"\
-                    "external passband or building a top-hat one!"
+                    self.log, "fill the dictionaries in the yaml file for" \
+                "either reading the passband from sacc file (mflike default)" \
+                "or an external passband or building a top-hat one!"
                 )
 
 
@@ -183,8 +183,6 @@ class BandPass(Theory):
             self.bands = requirements["bandint_freqs"]["bands"]
             self.exp_ch = [k.replace("_s0", "") for k in self.bands.keys() 
                     if "_s0" in k]
-            # self.eff_freqs = [np.array(self.bands[k]['nu'])
-            #                      for k in self.bands.keys()]
 
     def calculate(self, state, want_derived=False, **params_values_dict):
         r"""

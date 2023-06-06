@@ -21,40 +21,40 @@ params:
   # Systematics
   cal_LAT_93:
     value: 1
-    latex: \mathrm{Cal}^{93}
+    latex: \mathrm{Cal}_{\rm LAT}^{93}
   cal_LAT_145:
     value: 1
-    latex: \mathrm{Cal}^{145}
+    latex: \mathrm{Cal}_{\rm LAT}^{145}
   cal_LAT_225:
     value: 1
-    latex: \mathrm{Cal}^{225}
+    latex: \mathrm{Cal}_{\rm LAT}^{225}
   calT_LAT_93:
     value: 1
-    latex: \mathrm{Cal}_{\rm T}^{93}
+    latex: \mathrm{Cal}_{\rm LAT, T}^{93}
   calE_LAT_93:
     value: 1
-    latex: \mathrm{Cal}_{\rm E}^{93}
+    latex: \mathrm{Cal}_{\rm LAT, E}^{93}
   calT_LAT_145:
     value: 1
-    latex: \mathrm{Cal}_{\rm T}^{145}
+    latex: \mathrm{Cal}_{\rm LAT, T}^{145}
   calE_LAT_145:
     value: 1
-    latex: \mathrm{Cal}_{\rm E}^{145}
+    latex: \mathrm{Cal}_{\rm LAT, E}^{145}
   calT_LAT_225:
     value: 1
-    latex: \mathrm{Cal}_{\rm T}^{225}
+    latex: \mathrm{Cal}_{\rm LAT, T}^{225}
   calE_LAT_225:
     value: 1
-    latex: \mathrm{Cal}_{\rm E}^{225}
+    latex: \mathrm{Cal}_{\rm LAT, E}^{225}
   calG_all:
     value: 1
     latex: \mathrm{Cal}_{\rm G}^{\rm All}
   alpha_LAT_93:
     value: 0 #deg
-    latex: \alpha^{93}
+    latex: \alpha_{\rm LAT}^{93}
   alpha_LAT_145:
     value: 0 #deg
-    latex: \alpha^{145}
+    latex: \alpha_{\rm LAT}^{145}
   alpha_LAT_225:
     value: 0 #deg
-    latex: \alpha^{225}
+    latex: \alpha_{\rm LAT}^{225}

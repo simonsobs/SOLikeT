@@ -190,7 +190,9 @@ class Foreground(Theory):
             if hasattr(eff_freqs, '__len__'):
                 bandint_freqs = np.asarray(eff_freqs)
             else:
-                self.log.info("no frequency list provided to compute the passbands")
+                raise LoggedError(
+                    self.log, "no frequency list provided to compute the passbands"
+                        )
 
 
         model = {}

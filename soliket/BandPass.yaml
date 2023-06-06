@@ -1,5 +1,9 @@
 data_folder: MFLike/v0.8
 
+# Three options for passband construction (top_hat_band, external_bandpass,
+# read_from_sacc). Fill the corresponding dictionary to select one of the
+# options. The other dictionaries have to be left empty. Default is 
+# read_from_sacc.
 
 # Parameters to build a top-hat band:
 # - nsteps sets the number of frequencies used in the band integration
@@ -38,10 +42,10 @@ read_from_sacc: True
 params:
   bandint_shift_LAT_93:
     value: 0
-    latex: \Delta_{\rm band}^{93}
+    latex: \Delta_{\rm LAT}^{93}
   bandint_shift_LAT_145:
     value: 0
-    latex: \Delta_{\rm band}^{145}
+    latex: \Delta_{\rm LAT}^{145}
   bandint_shift_LAT_225:
     value: 0
-    latex: \Delta_{\rm band}^{225}
+    latex: \Delta_{\rm LAT}^{225}
