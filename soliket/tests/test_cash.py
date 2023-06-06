@@ -26,29 +26,25 @@ def test_cash_import():
     from soliket.cash import CashCLikelihood
 
 
-def test_cash_read_data():
+def test_cash_read_data(request):
     import os
     from soliket.cash import CashCLikelihood
 
-    soliket_dir = os.getcwd()
-    if (".tmp" in soliket_dir):
-        soliket_dir += "/../.."
-    cash_data_path = soliket_dir + "/soliket/tests/data/cash_data.txt"
+    cash_data_path = os.path.join(request.config.rootdir,
+            "soliket/tests/data/cash_data.txt")
 
     cash_lkl = CashCLikelihood({"datapath": cash_data_path})
     cash_data = cash_lkl._get_data()
     assert np.allclose(cash_data[1], np.arange(20))
 
 
-def test_cash_logp():
+def test_cash_logp(request):
     import os
     from soliket.cash import CashCLikelihood
 
     params = {"cash_test_logp": 20}
-    soliket_dir = os.getcwd()
-    if (".tmp" in soliket_dir):
-        soliket_dir += "/../.."
-    cash_data_path = soliket_dir + "/soliket/tests/data/cash_data.txt"
+    cash_data_path = os.path.join(request.config.rootdir,
+            "soliket/tests/data/cash_data.txt")
 
     cash_lkl = CashCLikelihood({"datapath": cash_data_path})
     cash_logp = cash_lkl.logp(**params)
