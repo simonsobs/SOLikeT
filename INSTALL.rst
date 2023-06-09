@@ -91,6 +91,14 @@ Please, make sure to load cmake as your last command, so that the path to cmake 
    cd soliket
    pip install -e .
 
+**BONUS: install cosmopower (optional)**
+cosmopower is not automatically installed (see above). However, if you want to use this option, do the following:
+
+::
+
+   pip install cosmopower
+   cobaya-install planck_2018_highl_plik.TTTEEE_lite_native
+
 **Test soliket**
 
 ::
@@ -101,7 +109,9 @@ Please, make sure to load cmake as your last command, so that the path to cmake 
 
 Create your job script following `cobaya docs <https://cobaya.readthedocs.io/en/devel/run_job.html>`_.
 
-Please, don't hesitate to open issues and/or be in touch with us, should you find any problems. Many thanks to Luca Pagano, Serena Giardiello, Pablo Lemos, +++
+NOTE: Any time you log in to a new perlmutter shell, remember to always load the relevant modules (in particular, those needed for pyccl). A good option is to create an alias in your bashr with all the relevant commands.
+
+Please, don't hesitate to open issues and/or be in touch with us, should you find any problems. Many thanks to Luca Pagano, Serena Giardiello, Massimiliano Lattanzi, Pablo Lemos, +++
 
 On M1 Mac
 --------
