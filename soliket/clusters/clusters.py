@@ -1,6 +1,7 @@
 """
 requires extra: astlib,fits,os,sys,nemo
 """
+
 import numpy as np
 import pandas as pd
 import nemo as nm # needed for reading Q-functions
@@ -218,21 +219,22 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
                 arg = []
                 for i in range(Npatches):
+
                     if compl_mode == 'erf_prod':
                         arg.append(get_erf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
                         #arg.append(get_stf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
                     elif compl_mode == 'erf_diff':
-                        arg.append(get_erf_diff(y0[i], noise[i], qmin, qmax,  qcut))
+                        arg.append(get_erf_diff(y0[i], noise[i], qmin, qmax, qcut))
                         #arg.append(get_stf_diff(y0[i], noise[i], qmin, qmax, qcut))
 
                 comp = np.einsum('ijk,i->jk', np.nan_to_num(arg), skyfracs)
 
             else:
 
-                lnyy = self.lny
+                lnyy = np.float32(self.lny)
                 yy0 = np.exp(lnyy)
-                mu = np.log(y0)
-                fac = 1./np.sqrt(2.*np.pi*scatter**2)
+                mu = np.float32(np.log(y0))
+                fac = np.float32(1./np.sqrt(2.*np.pi*scatter**2))
 
                 comp = 0.
                 for i in range(Npatches):
@@ -243,10 +245,10 @@ class BinnedClusterLikelihood(CashCLikelihood):
                         arg = get_erf_diff(yy0, noise[i], qmin, qmax, qcut)
                         #arg = get_stf_diff(yy0, noise[i], qmin, qmax, qcut)
 
-                    cc = arg * skyfracs[i]
-                    arg0 = (lnyy[:, None,None] - mu[i])/(np.sqrt(2.)*scatter)
-                    args = fac * np.exp(-arg0**2.) * cc[:, None,None]
-                    comp += np.trapz(args, x=lnyy, axis=0)
+                    cc = np.float32(arg * skyfracs[i])
+                    arg0 = np.float32((lnyy[:, None,None] - mu[i])/(np.sqrt(2.)*scatter))
+                    args = fac * np.exp(np.float32(-arg0**2.)) * cc[:, None,None]
+                    comp += np.trapz(np.float32(args), x=lnyy, axis=0)
 
             comp[comp < 0.] = 0.
             comp[comp > 1.] = 1.
@@ -254,12 +256,6 @@ class BinnedClusterLikelihood(CashCLikelihood):
         else:
             comp = self._get_completeness_inj(marr, zarr, marr_500c, qbin, **params)
         return comp
-
-
-
-
-
-
 
 
 class UnbinnedClusterLikelihood(PoissonLikelihood):
@@ -306,12 +302,6 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     def _get_catalog(self):
         return self.catalog, self.columns
-
-    # # checking rate_densities
-    # def get_dndlnm(self, z, pk_intp):
-    #     return get_dndlnm(self, z, pk_intp)
-    # def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs):
-    #     return get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=True, **kwargs)
 
     def Pfunc_inj(self, marr, z, **params):
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
@@ -401,11 +391,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         zarr = self.zz
         marr = np.exp(self.lnmarr)
 
-        dn_dzdlnm = get_dndlnm(self, zarr, pk_intp)
-        dn_dzdm = dn_dzdlnm / marr[:,None]
-
-        dn_dzdm_intp = interp2d(zarr, self.lnmarr, np.log(dn_dzdm), kind='cubic', fill_value=0)
-        #dn_dzdm_intp = interp2d(zarr, marr, np.log(dn_dzdm), kind='cubic', fill_value=0)
+        dndlnm = get_dndlnm(self, zarr, pk_intp)
+        dndlnm_intp = interp2d(zarr, self.lnmarr, dndlnm, kind='cubic', fill_value=0)
 
         def Prob_per_cluster(z, tsz_signal, tsz_signal_err, tile_name):
 
@@ -426,10 +413,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 print("::: Excluding clusters of z < {} in likelihood.".format(self.zbins[zcut]))
                 print("Total observed N = {}".format(len(c_z)))
 
-            Pfunc_ind = self.Pfunc_per(tile_index, marr, c_z, c_y, c_yerr, kwargs)
-            dn_dzdm = np.exp(np.squeeze(dn_dzdm_intp(c_z, self.lnmarr)))
+            Pfunc_ind = self.Pfunc_per(tile_index, marr, c_z, c_y, c_yerr, kwargs).T
+            dn_dlnm = np.squeeze(dndlnm_intp(c_z, self.lnmarr))
             dVdz = get_dVdz(self, c_z, dVdz_interp=True)
-            ans = np.trapz(dn_dzdm * Pfunc_ind.T * dVdz[None,:], dx=np.diff(marr[:,None], axis=0), axis=0)
+            ans = np.trapz(dn_dlnm * Pfunc_ind * dVdz[None,:], x=self.lnmarr[:,None], axis=0)
+            #ans = np.trapz(dn_dlnm * Pfunc_ind * dVdz[None,:] * self.skyfracs.sum(), x=self.lnmarr[:,None], axis=0)
 
             return ans
 
@@ -547,7 +535,6 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         return ans
 
     def Pfunc_per(self, tile_index, marr, z, Y_c, Y_err, params):
-
         if params["scatter_sz"] == 0:
             if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
                 marr_ymmd = convert_masses(self, marr, z)
@@ -559,14 +546,20 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 marr_500c = marr_ymmd
 
             Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **params)
-            LgYtilde = np.log(Ytilde)
-            P_Y_sig = np.nan_to_num(self.Y_prob(Y_c[:, None], LgYtilde, Y_err[:, None]))
-            ans = P_Y_sig
+            # LgYtilde = np.log(Ytilde)
+            # P_Y_sig = np.nan_to_num(self.Y_prob(Y_c[:, None], LgYtilde, Y_err[:, None]))
+            # ans = P_Y_sig
+
+            ans = np.nan_to_num(get_erf(Ytilde, Y_err[:, None], self.qcut)) # dN/dz
 
         else:
             LgY = self.lny
+            Y = np.exp(LgY)
             LgYa = np.outer(np.ones(len(marr)), LgY)
-            P_Y_sig = self.Y_prob(Y_c[:, None], LgY, Y_err[:, None])
+
+            P_Y_sig = np.nan_to_num(get_erf(Y, Y_err[:,None], self.qcut))
+            #P_Y_sig = self.Y_prob(Y_c[:, None], LgY, Y_err[:, None])
+
             P_Y = np.nan_to_num(self.P_Yo(tile_index, LgYa, marr, z, params))
             P_Y_sig = np.repeat(P_Y_sig[:, np.newaxis, :], P_Y.shape[1], axis=1)
             LgY = LgY[None, None, :]
@@ -713,8 +706,6 @@ def initialize_common(self):
             self.tt500 = tt500
             self.Q = allQ
 
-
-
             # # fiddling Q fit using injection Q ---------------------------------
             #
             # if self.selfunc['Qtest'] == True:
@@ -732,9 +723,6 @@ def initialize_common(self):
             #     self.Q = allQ * fac_arr
             #
             # #-------------------------------------------------------------------
-
-
-
 
 
         filename_rms, ext = os.path.splitext(self.datafile_rms)
@@ -832,7 +820,6 @@ def initialize_common(self):
         self.tt500 = tt500
         self.Q = allQ
 
-
         # when using full Q functions, noise values should be downsampled
         # in a current setting, the number of noise values has to be same as the number of Q funcs
         # hence the number of tiles - they are averaged by each tile
@@ -896,8 +883,6 @@ def initialize_common(self):
         #     self.Q = allQ * fac_arr
         #
         # #-------------------------------------------------------------------
-
-
 
     if self.selfunc['method'] == 'injection':
 
@@ -1148,8 +1133,10 @@ def get_dndlnm(self, z, pk_intp):
     # elif self.theorypred['massfunc_mode'] == 'class_sz':
         # return self.get_dndlnM_at_z_and_M(z,marr)
 
+
 def get_erf(y, noise, cut):
-    arg = (y - cut*noise)/np.sqrt(2.)/noise
+    #arg = (y - cut*noise)/np.sqrt(2.)/noise
+    arg = (y/noise - cut)/np.sqrt(2.)
     erfc = (special.erf(arg) + 1.)/2.
     return erfc
 
@@ -1198,7 +1185,6 @@ def get_stf_prod(y, noise, qmin, qmax, qcut, k, Nq):
     if k == Nq-1: arg2 = 1
 
     return arg0 * arg1 * arg2
-
 
 def gaussian(xx, mu, sig, noNorm=False):
     if noNorm:
@@ -1275,6 +1261,7 @@ def get_splQ(self, theta, tile_index=None):
         if tile_index is not None: # for faster rate_fn in unbinned
 
             newQ = np.array(newQ)
+
             chosenQ = np.zeros((newQ.shape[1], newQ.shape[2]))
             for i in range(len(tile_index)):
                 chosenQ[i, :] = newQ[tile_index[i], i, :]

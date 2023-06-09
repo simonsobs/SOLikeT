@@ -19,7 +19,7 @@ def poisson_logpdf(n_expected, catalog, columns, rate_fn, name="unbinned"):
     elapsed = time.time() - start
     print("\r ::: rate density calculation took {:.3f} seconds.".format(elapsed))
 
-    loglike = -n_expected + np.nansum(np.log(rate_densities))
+    loglike = -n_expected + np.nansum(np.log(rate_densities[np.nonzero(rate_densities)]))
 
     print("\r ::: 2D ln likelihood = ", loglike)
 
@@ -42,9 +42,6 @@ class PoissonData:
         self.name = str(name)
         self.catalog = pd.DataFrame(catalog)[columns]
         self.columns = columns
-
-    # def __len__(self):
-    #     return self._len
 
     def loglike(self, rate_fn, n_expected):
         return poisson_logpdf(n_expected, self.catalog, self.columns, rate_fn, name=self.name)

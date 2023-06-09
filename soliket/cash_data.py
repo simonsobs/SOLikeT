@@ -32,8 +32,11 @@ def cash_c_logpdf(theory, data, usestirling=True, name="binned"):
         ln_fac[obs > 0] = np.log(factorial(obs[obs > 0]))
     ln_fac[obs == 0] = 0.
 
-    loglike = obs * np.log(theory) - theory - ln_fac
-    #loglike = obs * np.log(obs) - obs - ln_fac
+    log_theory = np.zeros_like(theory, dtype=float)
+    log_theory[theory > 0] = np.log(theory[theory > 0])
+    log_theory[theory == 0] = 0.
+
+    loglike = obs * log_theory - theory - ln_fac
 
     print("\r ::: 2D ln likelihood = ", np.nansum(loglike[np.isfinite(loglike)]))
 
@@ -49,9 +52,6 @@ class CashCData:
         self.name = str(name)
         self.data = N
         self.usestirling = usestirling
-
-    # def __len__(self):
-    #     return len(self.data)
 
     def loglike(self, theory):
         return cash_c_logpdf(theory, self.data, name=self.name)
