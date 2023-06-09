@@ -15,6 +15,23 @@ def gof_cash(npred, nobs):
     Ce: expectation value for C-stat
     Cv: variance of C-stat
     Cd: observed value of C-stat
+
+    Note that cashstatistic doesn't handle the case of mu=0,
+    I had to edit the function cash_mod_expectations
+    in cashstatistic.py slightly:
+
+      mu = np.asarray(mu_in)
+      lnmu = np.empty(mu.shape)
+      lnmu[mu > 0] = np.log(mu[mu > 0])
+      lnmu[mu == 0] = 0.
+      mi = np.empty(mu.shape)
+      mi[mu > 0] = 1.0/mu[mu > 0]
+      mi[mu == 0] = 1.
+      C_e = np.empty(mu.shape)
+      C_v = np.empty(mu.shape)
+      C_e[mu == 0.0] = 0.
+      C_v[mu == 0.0] = 0.
+
     """
 
     Ce_bin, Cv_bin = cashstat.cash_mod_expectations(npred)
