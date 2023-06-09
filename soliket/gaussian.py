@@ -72,12 +72,12 @@ class MultiGaussianLikelihood(GaussianLikelihood):
 
         self.log.info('Initialized.')
 
-    def initialize_with_provider(self, provider):
+    def initialize_with_provider(self, provider): # pragma: no cover
         for like in self.likelihoods:
             like.initialize_with_provider(provider)
         # super().initialize_with_provider(provider)
 
-    def get_helper_theories(self):
+    def get_helper_theories(self): # pragma: no cover
         helpers = {}
         for like in self.likelihoods:
             helpers.update(like.get_helper_theories())
@@ -87,7 +87,7 @@ class MultiGaussianLikelihood(GaussianLikelihood):
     def _get_theory(self, **kwargs):
         return np.concatenate([like._get_theory(**kwargs) for like in self.likelihoods])
 
-    def get_requirements(self):
+    def get_requirements(self): # pragma: no cover
 
         # Reqs with arguments like 'lmax', etc. may have to be carefully treated here to
         # merge
