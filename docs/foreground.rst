@@ -4,8 +4,9 @@ Foreground
 Foreground computation
 ----------------------
 
-.. autoclass:: soliket.Foreground
+.. automodule:: soliket.foreground
     :members:
     :show-inheritance:
     :private-members:
+
 
