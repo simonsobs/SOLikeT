@@ -46,8 +46,6 @@ def test_foreground_compute():
     from soliket.foreground import Foreground
     from soliket.bandpass import BandPass
 
-    freqs = np.array([93, 145, 225])
-
     info["theory"] = {
                       "foreground": {"external": Foreground},
                       "bandpass": {"external": BandPass},
@@ -70,7 +68,8 @@ def test_foreground_compute():
                        "polarizations": ["tt", "te", "ee"],
                        "lmin": 2,
                        "lmax": 9000,
-                       "frequencies": [150],
+                       "exp_ch": ["LAT_93", "LAT_145", "LAT_225"],
+                       "eff_freqs": [93, 145, 225]
                        }
 
     nu_0 = info["foregrounds"]["normalisation"]["nu_0"]
@@ -78,12 +77,17 @@ def test_foreground_compute():
     ell = np.arange(info["spectra"]["lmin"], info["spectra"]["lmax"] + 1)
     requested_cls = info["spectra"]["polarizations"]
     components = info["foregrounds"]["components"]
+    exp_ch = info["spectra"]["exp_ch"]
+    eff_freqs = np.asarray(info["spectra"]["eff_freqs"])
+    bands = {f"{expc}_s0": {'nu': [eff_freqs[iexpc]], 'bandpass': [1.]} 
+                for iexpc, expc in enumerate(exp_ch)}
 
     model = get_model(info)  # noqa F841
     model.add_requirements({"fg_dict": {
                                         "requested_cls": requested_cls,
                                         "ell": ell,
-                                        "freqs": freqs},
+                                        "exp_ch": exp_ch,
+                                        "bands": bands},
                             })
 
     model.logposterior(info['params'])  # force computation of model
@@ -91,7 +95,7 @@ def test_foreground_compute():
     lhood = model.likelihood['one']
 
     fg_model = lhood.provider.get_fg_dict()
-    fg_model_test = get_fg(freqs, freqs, ell, ell_0, nu_0, requested_cls, components)
+    fg_model_test = get_fg(exp_ch, eff_freqs, ell, ell_0, nu_0, requested_cls, components)
 
     for k in fg_model_test.keys():
         assert np.allclose(fg_model[k], fg_model_test[k])

@@ -42,19 +42,22 @@ nuisance_params = {
     "a_psee": 0,
     "a_pste": 0,
     "xi": 0,
-    "bandint_shift_93": 0,
-    "bandint_shift_145": 0,
-    "bandint_shift_225": 0,
-    "calT_93": 1,
-    "calE_93": 1,
-    "calT_145": 1,
-    "calE_145": 1,
-    "calT_225": 1,
-    "calE_225": 1,
+    "bandint_shift_LAT_93": 0,
+    "bandint_shift_LAT_145": 0,
+    "bandint_shift_LAT_225": 0,
+    "cal_LAT_93": 1,
+    "cal_LAT_145": 1,
+    "cal_LAT_225": 1,
+    "calT_LAT_93": 1,
+    "calE_LAT_93": 1,
+    "calT_LAT_145": 1,
+    "calE_LAT_145": 1,
+    "calT_LAT_225": 1,
+    "calE_LAT_225": 1,
     "calG_all": 1,
-    "alpha_93": 0,
-    "alpha_145": 0,
-    "alpha_225": 0,
+    "alpha_LAT_93": 0,
+    "alpha_LAT_145": 0,
+    "alpha_LAT_225": 0,
 }
 
 
@@ -102,15 +105,20 @@ class MFLikeTest(unittest.TestCase):
         TF = soliket.TheoryForge_MFLike()
 
         ell = np.arange(lmax + 1)
-        freqs = TF.freqs
+        bands = TF.bands
+        exp_ch = TF.exp_ch
+        print(exp_ch, bands)
+
         requested_cls = TF.requested_cls
-        BP.freqs = freqs
+        BP.bands = bands
+        BP.exp_ch = [k.replace("_s0", "") for k in bands.keys()
+                          if "_s0" in k]
 
         bandpass = BP._bandpass_construction(**nuisance_params)
 
         fg_dict = FG._get_foreground_model(requested_cls=requested_cls,
                                                     ell=ell,
-                                                    freqs=freqs,
+                                                    exp_ch=exp_ch,
                                                     bandint_freqs=bandpass,
                                                     **nuisance_params)
 
@@ -141,7 +149,6 @@ class MFLikeTest(unittest.TestCase):
 
             self.assertAlmostEqual(-2 * (loglike - my_mflike.logp_const), chi2, 2)
 
-    #@pytest.mark.skip(reason="don't want to install 300Mb of data!")
     def test_cobaya(self):
 
         info = {
@@ -150,7 +157,17 @@ class MFLikeTest(unittest.TestCase):
                     "datapath": os.path.join(packages_path, "data/TestMFLike"),
                     "data_folder": "TestMFLike",
                     "input_file": pre + "00000.fits",
-                }
+                    "defaults": {
+                        "polarizations": ["TT", "TE", "ET", "EE"],
+                        "scales": {
+                            "TT": [2, 179],
+                            "TE": [2, 179],
+                            "ET": [2, 179],
+                            "EE": [2, 179],
+                        },
+                        "symmetrize": False,
+                    },
+                },
             },
             "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1},
                                 "stop_at_error": True}},

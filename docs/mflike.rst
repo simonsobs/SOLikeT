@@ -9,8 +9,11 @@ Multi Frequency Likelihood
 .. autoclass:: soliket.mflike.MFLike
     :exclude-members: initialize
     :members:
-    :show-inheritance:
     :private-members:
+    :show-inheritance:
+
+Application of foregrounds and systematics
+------------------------------------------
 
 .. automodule:: soliket.mflike.theoryforge_MFLike
 

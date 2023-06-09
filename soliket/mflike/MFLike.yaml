@@ -1,6 +1,6 @@
 # A simple cobaya likelihood for SO/LAT
 
-data_folder: MFLike/v0.6
+data_folder: MFLike/v0.8
 # Path to the input SACC file, containing, minimally,
 # information about the different tracers (i.e. frequency
 # bands) and the set of power spectra.
@@ -12,6 +12,9 @@ input_file: null
 # realizations that share the same bandpowers and covariance)
 cov_Bbl_file: null
 
+# Maximum multipole value up to compute theory Cl
+# If set to null i.e. None, the program will set the value to 9000
+lmax_theory: null
 
 # Specify default set of spectra and scale cuts
 # to be used
@@ -20,10 +23,10 @@ defaults:
   polarizations: ['TT', 'TE', 'ET', 'EE']
   # Scale cuts (in ell) for each spectrum
   scales:
-    TT: [2, 5000]
-    TE: [2, 5000]
-    ET: [2, 5000]
-    EE: [2, 5000]
+    TT: [50, 5000]
+    TE: [50, 5000]
+    ET: [50, 5000]
+    EE: [50, 5000]
   # If True, TE' = (TE + ET) / 2 will be used
   # instead of TE and ET separately.
   symmetrize: False
@@ -32,10 +35,10 @@ data:
   # List the names and frequencies of all the
   # relevant experiments.
   experiments:
-    LAT:
-      frequencies: [93, 145, 225]
+    - LAT_93
+    - LAT_145
+    - LAT_225
     # PlanckHFI:
-    #   frequencies: [545]
 
   spectra:
     # Here, list all the different cross-correlations
@@ -44,15 +47,11 @@ data:
     # For each of them, you can specify which spectra
     # and scale cuts you'd like to use. If you don't
     # specify anything, the defaults will be used.
-    - experiments: ['LAT', 'LAT']
-      frequencies: [93, 93]
-    - experiments: ['LAT', 'LAT']
-      frequencies: [93, 145]
-    - experiments: ['LAT', 'LAT']
-      frequencies: [93, 225]
-    - experiments: ['LAT', 'LAT']
-      frequencies: [145, 145]
-    - experiments: ['LAT', 'LAT']
-      frequencies: [145, 225]
-    - experiments: ['LAT', 'LAT']
-      frequencies: [225, 225]
+    - experiments: [LAT_93, LAT_93]
+    - experiments: [LAT_93, LAT_145]
+    - experiments: [LAT_93, LAT_225]
+    - experiments: [LAT_145, LAT_145]
+    - experiments: [LAT_145, LAT_225]
+    - experiments: [LAT_225, LAT_225]
+
+
