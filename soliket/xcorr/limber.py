@@ -1,3 +1,9 @@
+"""
+.. module:: limber
+
+Compute angular power spectra of xcorr probes
+"""
+
 import numpy as np
 import pdb
 from ..constants import C_HMPC
