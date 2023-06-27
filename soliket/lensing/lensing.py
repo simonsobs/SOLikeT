@@ -1,3 +1,12 @@
+r"""
+.. module:: lensing
+
+:Synopsis: Gaussian Likelihood for kk for Simons Observatory
+:Authors: Frank Qu, Mat Madhavacheril.
+
+LensingLikelihoos inherits from generic binned power spectrum (PS) likelihood.
+"""
+
 import os
 from pkg_resources import resource_filename
 
@@ -100,7 +109,12 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         super().initialize()
 
     def _get_fiducial_Cls(self):
+        """
+        Obtain a set of fiducial ``Cls`` from theory provider (``camb``).
+        Fiducial ``Cls`` are used to compute correction terms for the theory vector.
 
+        :return: Fiducial ``Cls`` 
+        """
         info_fiducial = {
             "params": self.fiducial_params,
             "likelihood": {"soliket.utils.OneWithCls": {"lmax": self.theory_lmax}},
@@ -113,6 +127,11 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         return Cls
 
     def get_requirements(self):
+        """
+        Set ``lmax`` for theory ``Cls``
+
+        :return: Dictionary ``Cl`` of lmax for each spectrum type. 
+        """
         return {
             "Cl": {
                 "pp": self.theory_lmax,
@@ -148,6 +167,13 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         return binning_matrix
 
     def _get_theory(self, **params_values):
+        """
+        Generate binned theory vector of kk with correction terms.
+
+        :param params_values: Dictionary of cosmological parameters.
+
+        :return: Array ``Clkk``. 
+        """
         cl = self.provider.get_Cl(ell_factor=False)
 
         Cl_theo = cl["pp"][0: self.lmax]
@@ -184,6 +210,9 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
 
 class LensingLiteLikelihood(BinnedPSLikelihood):
+    """
+    Lite version of Lensing Likelihood for quick tests
+    """
     kind: str = "pp"
     lmax: int = 3000
     datapath: str = resource_filename("soliket", "lensing/data/binnedauto.txt")
