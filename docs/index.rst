@@ -42,6 +42,7 @@ The pages here describe how to install and run SOLikeT, and document the functio
 
    mflike
    lensing
+   clusters
 
 .. toctree::
    :caption: Development guidelines

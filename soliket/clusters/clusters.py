@@ -1,4 +1,9 @@
 """
+.. module:: clusters
+
+:Synopsis: Poisson likelihood for SZ clusters for Simons Osbervatory 
+:Authors: Nick Battaglia, Eunseong Lee
+
 requires extra: astlib
 """
 import numpy as np
@@ -37,6 +42,11 @@ class ClusterLikelihood(PoissonLikelihood):
         super().initialize()
 
     def get_requirements(self):
+        """
+        Need :math:`P(k,z)`, :math:`H(z)`, :math:`d_A(z)`, :math:`r(z)`
+
+        :return: Dictionary of requirements 
+        """
         return {
             "Pk_interpolator": {
                 "z": self.zarr,
@@ -142,6 +152,9 @@ class ClusterLikelihood(PoissonLikelihood):
         return param_vals
 
     def _get_rate_fn(self, **kwargs):
+        """
+        Implement a function that returns a rate function (function of (tsz_signal, z))
+        """
         HMF = self._get_HMF()
         param_vals = self._get_param_vals(**kwargs)
 
@@ -183,6 +196,9 @@ class ClusterLikelihood(PoissonLikelihood):
         return dV_dz
 
     def _get_n_expected(self, **kwargs):
+        """
+        Get expected number of clusters
+        """
         # def Ntot_survey(self,int_HMF,fsky,Ythresh,param_vals):
 
         HMF = self._get_HMF()

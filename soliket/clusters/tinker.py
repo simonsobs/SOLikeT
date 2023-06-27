@@ -1,3 +1,10 @@
+"""
+.. module:: tinker
+
+Parameters and useful functions for the Tinker profile
+
+"""
+
 from builtins import zip
 import numpy as np
 from scipy.interpolate import InterpolatedUnivariateSpline as iuSpline

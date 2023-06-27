@@ -1,3 +1,8 @@
+"""
+.. module:: szutils
+
+"""
+
 import numpy as np
 from scipy import interpolate
 # from astropy.cosmology import FlatLambdaCDM

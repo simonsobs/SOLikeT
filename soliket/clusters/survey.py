@@ -1,3 +1,11 @@
+"""
+.. module:: survey
+
+This module contains useful functions to navigate cluster catalogues.
+The ``SurveyData`` class contains information about the specific survey
+
+"""
+
 import os
 import numpy as np
 
