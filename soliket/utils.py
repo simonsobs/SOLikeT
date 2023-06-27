@@ -25,9 +25,10 @@ def binner(ls, cls, bin_edges):
 
     :return: The centers of the bins and the average of ``cls`` within the bins.
              Note that the centers are computed as :math:`0.5(edge_{min}+edge_{max})`,
-             where :math:`edge_{min}` and :math:`edge_{max}` are the bin edges. While this is 
-             ok for plotting purposes, the user may need to recompute the bin center
-             in case of integer ``ls`` if the correct baricenter is needed.
+             where :math:`edge_{min}` and :math:`edge_{max}` are the bin edges. 
+             While this is ok for plotting purposes, the user may need 
+             to recompute the bin center in case of integer ``ls`` 
+             if the correct baricenter is needed.
     """
     x = ls.copy()
     y = cls.copy()
