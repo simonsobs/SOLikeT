@@ -4,11 +4,12 @@ Make sure that this returns the same result as original mflike.MFLike from LAT_M
 import os
 import tempfile
 import unittest
-from distutils.version import LooseVersion
+import pytest
+from packaging.version import Version
 
 import camb
-import mflike  # noqa
 import soliket  # noqa
+from soliket.mflike import TestMFLike
 
 import numpy as np
 
@@ -41,57 +42,50 @@ nuisance_params = {
     "a_psee": 0,
     "a_pste": 0,
     "xi": 0,
-    "bandint_shift_93": 0,
-    "bandint_shift_145": 0,
-    "bandint_shift_225": 0,
-    "calT_93": 1,
-    "calE_93": 1,
-    "calT_145": 1,
-    "calE_145": 1,
-    "calT_225": 1,
-    "calE_225": 1,
+    "bandint_shift_LAT_93": 0,
+    "bandint_shift_LAT_145": 0,
+    "bandint_shift_LAT_225": 0,
+    "cal_LAT_93": 1,
+    "cal_LAT_145": 1,
+    "cal_LAT_225": 1,
+    "calT_LAT_93": 1,
+    "calE_LAT_93": 1,
+    "calT_LAT_145": 1,
+    "calE_LAT_145": 1,
+    "calT_LAT_225": 1,
+    "calE_LAT_225": 1,
     "calG_all": 1,
-    "alpha_93": 0,
-    "alpha_145": 0,
-    "alpha_225": 0,
+    "alpha_LAT_93": 0,
+    "alpha_LAT_145": 0,
+    "alpha_LAT_225": 0,
 }
 
 
-if LooseVersion(camb.__version__) < LooseVersion('1.3'):
-    chi2s = {"tt": 1384.5669,
-             "te": 1400.2760,
-             "ee": 1428.7597,
-             "tt-te-et-ee": 2412.9275}
+if Version(camb.__version__) >= Version('1.4'):
+    chi2s = {"tt": 545.1257,
+             "te": 137.4146,
+             "ee": 167.9850,
+             "tt-te-et-ee": 790.5121}
 else:
-    chi2s = {"tt": 737.8571537677649,
-             "te-et": 998.2730263280033,
-             "ee": 716.4015196388742,
-             "tt-te-et-ee": 2459.7250}
+    chi2s = {"tt": 544.9745,
+             "te-et": 152.6807,
+             "ee": 168.0953,
+             "tt-te-et-ee": 790.4124}
 
-pre = "data_sacc_"
+pre = "test_data_sacc_"
 
 
 class MFLikeTest(unittest.TestCase):
-    orig = False
 
     def setUp(self):
         from cobaya.install import install
 
-        install({"likelihood": {"mflike.MFLike": None}},
-                path=packages_path, skip_global=True)
+        install({"likelihood": {"soliket.mflike.TestMFLike": None}},
+                path=packages_path, skip_global=False, force=True, debug=True)
 
-    def get_mflike_type(self, as_string=False):
-        if self.orig:
-            t = "mflike.MFLike"
-        else:
-            t = "soliket.MFLike"
-
-        if as_string:
-            return t
-        else:
-            return eval(t)
 
     def test_mflike(self):
+
         # As of now, there is not a mechanism
         # in soliket to ensure there is .loglike that can be called like this
         # w/out cobaya
@@ -105,69 +99,75 @@ class MFLikeTest(unittest.TestCase):
         cl_dict = {k: powers["total"][:, v] for
                    k, v in {"tt": 0, "ee": 1, "te": 3}.items()}
 
-        if not self.orig:
 
-            BP = soliket.BandPass()
-            FG = soliket.Foreground()
-            TF = soliket.TheoryForge_MFLike()
+        BP = soliket.BandPass()
+        FG = soliket.Foreground()
+        TF = soliket.TheoryForge_MFLike()
 
-            ell = np.arange(lmax + 1)
-            freqs = TF.freqs
-            requested_cls = TF.requested_cls
-            BP.freqs = freqs
+        ell = np.arange(lmax + 1)
+        bands = TF.bands
+        exp_ch = TF.exp_ch
+        print(exp_ch, bands)
 
-            bandpass = BP._bandpass_construction(**nuisance_params)
+        requested_cls = TF.requested_cls
+        BP.bands = bands
+        BP.exp_ch = [k.replace("_s0", "") for k in bands.keys()
+                          if "_s0" in k]
 
-            fg_dict = FG._get_foreground_model(requested_cls=requested_cls,
+        bandpass = BP._bandpass_construction(**nuisance_params)
+
+        fg_dict = FG._get_foreground_model(requested_cls=requested_cls,
                                                     ell=ell,
-                                                    freqs=freqs,
+                                                    exp_ch=exp_ch,
                                                     bandint_freqs=bandpass,
                                                     **nuisance_params)
 
-            dlobs_dict = TF.get_modified_theory(cl_dict, fg_dict, **nuisance_params)
+        dlobs_dict = TF.get_modified_theory(cl_dict, fg_dict, **nuisance_params)
 
         for select, chi2 in chi2s.items():
-            MFLike = self.get_mflike_type()
 
-            my_mflike = MFLike(
+            my_mflike = TestMFLike(
                 {
+                    "external": TestMFLike,
                     "packages_path": packages_path,
-                    "data_folder": "MFLike/v0.6",
+                    "data_folder": "TestMFLike",
                     "input_file": pre + "00000.fits",
-                    "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
                     "defaults": {
                         "polarizations": select.upper().split("-"),
                         "scales": {
-                            "TT": [2, 5000],
-                            "TE": [2, 5000],
-                            "ET": [2, 5000],
-                            "EE": [2, 5000],
+                            "TT": [2, 179],
+                            "TE": [2, 179],
+                            "ET": [2, 179],
+                            "EE": [2, 179],
                         },
                         "symmetrize": False,
                     },
                 }
             )
 
-            if not self.orig:
-                loglike = my_mflike.loglike(dlobs_dict)
-            else:
-                loglike = my_mflike.loglike(cl_dict, **nuisance_params)
+            loglike = my_mflike.loglike(dlobs_dict)
 
             self.assertAlmostEqual(-2 * (loglike - my_mflike.logp_const), chi2, 2)
 
     def test_cobaya(self):
-        mflike_type = self.get_mflike_type(as_string=True)
-
-        # params = dict(cosmo_params)
-        # params['a_tSZ'] = 3.3
 
         info = {
             "likelihood": {
-                mflike_type: {
-                    "data_folder": "MFLike/v0.6",
+                "soliket.mflike.TestMFLike": {
+                    "datapath": os.path.join(packages_path, "data/TestMFLike"),
+                    "data_folder": "TestMFLike",
                     "input_file": pre + "00000.fits",
-                    "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
-                }
+                    "defaults": {
+                        "polarizations": ["TT", "TE", "ET", "EE"],
+                        "scales": {
+                            "TT": [2, 179],
+                            "TE": [2, 179],
+                            "ET": [2, 179],
+                            "EE": [2, 179],
+                        },
+                        "symmetrize": False,
+                    },
+                },
             },
             "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1},
                                 "stop_at_error": True}},
@@ -175,17 +175,13 @@ class MFLikeTest(unittest.TestCase):
             "modules": packages_path,
             "debug": True,
         }
-        if not self.orig:
-            info["theory"]["soliket.TheoryForge_MFLike"] = {'stop_at_error': True}
-            info["theory"]["soliket.Foreground"] = {'stop_at_error': True}
-            info["theory"]["soliket.BandPass"] = {'stop_at_error': True}
+
+        info["theory"]["soliket.TheoryForge_MFLike"] = {'stop_at_error': True}
+        info["theory"]["soliket.Foreground"] = {'stop_at_error': True}
+        info["theory"]["soliket.BandPass"] = {'stop_at_error': True}
         from cobaya.model import get_model
 
         model = get_model(info)
-        my_mflike = model.likelihood[mflike_type]
+        my_mflike = model.likelihood["soliket.mflike.TestMFLike"]
         chi2 = -2 * (model.loglikes(nuisance_params)[0] - my_mflike.logp_const)
         self.assertAlmostEqual(chi2[0], chi2s["tt-te-et-ee"], 2)
-
-
-class MFLikeTestOrig(MFLikeTest):
-    orig = True

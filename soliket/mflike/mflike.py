@@ -1,15 +1,34 @@
-"""
+r"""
 .. module:: mflike
 
-:Synopsis: Definition of simplistic likelihood for Simons Observatory
+:Synopsis: Multi frequency likelihood for TTTEEE CMB power spectra for Simons Observatory
 :Authors: Thibaut Louis, Xavier Garrido, Max Abitbol,
           Erminia Calabrese, Antony Lewis, David Alonso.
 
+MFLike is a multi frequency likelihood code interfaced with the Cobaya 
+sampler and a theory Boltzmann code such as CAMB, CLASS or Cosmopower.
+The ``MFLike`` likelihood class reads the data file (in ``sacc`` format) 
+and all the settings 
+for the MCMC run (such as file paths, :math:`\ell` ranges, experiments 
+and frequencies to be used, parameters priors...)
+from the ``MFLike.yaml`` file. 
+
+The theory :math:`C_{\ell}` are then summed to the (possibly frequency 
+integrated) foreground power spectra and modified by systematic effects 
+in the ``TheoryForge_MFLike`` class. The foreground power spectra are 
+computed by the ``soliket.Foreground`` class, while the bandpasses from 
+the ``soliket.BandPass`` one; the ``Foreground`` class is required by 
+``TheoryForge_MFLike``, while ``BandPass`` is requires by ``Foreground``.
+This is a scheme of how ``MFLike`` and ``TheoryForge_MFLike`` are interfaced:
+
+.. image:: images/mflike_scheme.png
+   :width: 400
 """
 import os
 from typing import Optional
 
 import numpy as np
+from cobaya.conventions import data_path, packages_path_input
 from cobaya.likelihoods.base_classes import InstallableLikelihood
 from cobaya.log import LoggedError
 from cobaya.tools import are_different_params_lists
@@ -19,7 +38,7 @@ from ..gaussian import GaussianData, GaussianLikelihood
 
 class MFLike(GaussianLikelihood, InstallableLikelihood):
     _url = "https://portal.nersc.gov/cfs/sobs/users/MFLike_data"
-    _release = "v0.6"
+    _release = "v0.8" 
     install_options = {"download_url": "{}/{}.tar.gz".format(_url, _release)}
 
     # attributes set from .yaml
@@ -29,6 +48,11 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
     defaults: dict
 
     def initialize(self):
+        # Set default values to data member not initialized via yaml file
+        self.l_bpws = None
+        self.spec_meta = []
+
+
         # Set path to data
         if ((not getattr(self, "path", None)) and
                 (not getattr(self, "packages_path", None))):
@@ -61,18 +85,29 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
         # Read data
         self.prepare_data()
-
+        self.lmax_theory = self.lmax_theory or 9000
+        self.log.debug(f"Maximum multipole value: {self.lmax_theory}")
+        
         self.log.info("Initialized!")
 
 
     def get_requirements(self):
+        r"""
+        Passes the fields ``ell``, ``requested_cls``, ``lcuts``, 
+        ``exp_ch`` (list of array names) and ``bands`` 
+        (dictionary of ``exp_ch`` and the corresponding frequency
+        and passbands) inside the dictionary ``requirements["cmbfg_dict"]``.
+
+        :return: the dictionary ``requirements["cmbfg_dict"]``
+        """
         # mflike requires cmbfg_dict from theoryforge
         # cmbfg_dict requires some params to be computed
         reqs = dict()
         reqs["cmbfg_dict"] = {"ell": self.l_bpws,
                               "requested_cls": self.requested_cls,
                               "lcuts": self.lcuts,
-                              "freqs": self.freqs}
+                              "exp_ch": self.experiments, 
+                              "bands": self.bands}
         return reqs
 
     def _get_theory(self, **params_values):
@@ -84,6 +119,14 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         return self.loglike(cmbfg_dict)
 
     def loglike(self, cmbfg_dict):
+        """
+        Computes the gaussian log-likelihood
+
+        :param cmbfg_dict: the dictionary of theory + foregrounds
+                           :math:`D_{\ell}`
+
+        :return: the exact loglikelihood :math:`\ln \mathcal{L}` 
+        """
         ps_vec = self._get_power_spectra(cmbfg_dict)
         delta = self.data_vec - ps_vec
         logp = -0.5 * (delta @ self.inv_cov @ delta)
@@ -94,6 +137,14 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         return logp
 
     def prepare_data(self, verbose=False):
+        """
+        Reads the sacc data, extracts the data tracers,
+        trims the spectra and covariance according to the ell scales
+        set in the input file. It stores the ell vector, the deta vector
+        and the covariance in a GaussianData object.
+        If ``verbose=True``, it plots the tracer names, the spectrum name,
+        the shape of the indices array, lmin, lmax.
+        """
         import sacc
         data = self.data
         # Read data
@@ -130,17 +181,18 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                      "BT": "tb",
                      "BB": "bb"}
 
-        def xp_nu(xp, nu):
-            return f"{xp}_{nu}"
-
         def get_cl_meta(spec):
-            # For each of the entries of the `spectra` section of the
-            # yaml file, extract the relevant information: experiments,
-            # frequencies, polarization combinations, scale cuts and
-            # whether TE should be symmetrized.
+            """
+            Lower-level function of `prepare_data`.
+            For each of the entries of the `spectra` section of the
+            yaml file, extracts the relevant information: channel,
+            polarization combinations, scale cuts and
+            whether TE should be symmetrized.
+
+            :param spec: the dictionary ``data["spectra"]`` 
+            """
             # Experiments/frequencies
             exp_1, exp_2 = spec["experiments"]
-            freq_1, freq_2 = spec["frequencies"]
             # Read off polarization channel combinations
             pols = spec.get("polarizations",
                             default_cuts["polarizations"]).copy()
@@ -149,7 +201,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                             default_cuts["scales"]).copy()
 
             # For the same two channels, do not include ET and TE, only TE
-            if (exp_1 == exp_2) and (freq_1 == freq_2):
+            if (exp_1 == exp_2):
                 if "ET" in pols:
                     pols.remove("ET")
                     if "TE" not in pols:
@@ -164,16 +216,26 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                 else:
                     symm = False
 
-            return exp_1, exp_2, freq_1, freq_2, pols, scls, symm
+            return exp_1, exp_2, pols, scls, symm
 
-        def get_sacc_names(pol, exp_1, exp_2, freq_1, freq_2):
-            # Translate the polarization combination, experiment
-            # and frequency names of a given entry in the `spectra`
-            # part of the input yaml file into the names expected
-            # in the SACC files.
+        def get_sacc_names(pol, exp_1, exp_2):
+            """
+            Lower-level function of `prepare_data`.
+            Translates the polarization combination and channel 
+            name of a given entry in the `spectra`
+            part of the input yaml file into the names expected
+            in the SACC files.
+
+            :param pol: temperature or polarization fields, i.e. 'TT', 'TE'
+            :param exp_1: experiment of map 1
+            :param exp_2: experiment of map 2
+
+            :return: tracer name 1, tracer name 2, string for :math:`C_{\ell}`
+                     type
+            """
+            tname_1 = exp_1
+            tname_2 = exp_2
             p1, p2 = pol
-            tname_1 = xp_nu(exp_1, freq_1)
-            tname_2 = xp_nu(exp_2, freq_2)
             if p1 in ["E", "B"]:
                 tname_1 += "_s2"
             else:
@@ -197,11 +259,9 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         # Length of the final data vector
         len_compressed = 0
         for spectrum in data["spectra"]:
-            (exp_1, exp_2, freq_1, freq_2,
-             pols, scls, symm) = get_cl_meta(spectrum)
+            (exp_1, exp_2, pols, scls, symm) = get_cl_meta(spectrum)
             for pol in pols:
-                tname_1, tname_2, dtype = get_sacc_names(pol, exp_1, exp_2,
-                                                         freq_1, freq_2)
+                tname_1, tname_2, dtype = get_sacc_names(pol, exp_1, exp_2)
                 lmin, lmax = scls[pol]
                 ind = s.indices(dtype,  # Power spectrum type
                                 (tname_1, tname_2),  # Channel combinations
@@ -220,8 +280,9 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                 else:
                     len_compressed += ind.size
 
-                if verbose:
-                    print(tname_1, tname_2, dtype, ind.shape, lmin, lmax)
+                
+                self.log.debug(f"{tname_1} {tname_2} {dtype} {ind.shape} {lmin} {lmax}")
+            
 
         # Get rid of all the unselected power spectra.
         # Sacc takes care of performing the same cuts in the
@@ -231,7 +292,6 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             s_b.keep_indices(np.array(indices_b))
 
         # Now create metadata for each spectrum
-        self.spec_meta = []
         len_full = s.mean.size
         # These are the matrices we'll use to compress the data if
         # `symmetrize` is true.
@@ -239,21 +299,16 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         # symmetrization option, for which SACC doesn't have native support.
         mat_compress = np.zeros([len_compressed, len_full])
         mat_compress_b = np.zeros([len_compressed, len_full])
-        bands = {}
+        
         self.lcuts = {k: c[1] for k, c in default_cuts["scales"].items()}
         index_sofar = 0
 
-        self.l_bpws = None
         for spectrum in data["spectra"]:
-            (exp_1, exp_2, freq_1, freq_2,
-             pols, scls, symm) = get_cl_meta(spectrum)
-            bands[xp_nu(exp_1, freq_1)] = freq_1
-            bands[xp_nu(exp_2, freq_2)] = freq_2
+            (exp_1, exp_2, pols, scls, symm) = get_cl_meta(spectrum)
             for k in scls.keys():
                 self.lcuts[k] = max(self.lcuts[k], scls[k][1])
             for pol in pols:
-                tname_1, tname_2, dtype = get_sacc_names(pol, exp_1, exp_2,
-                                                         freq_1, freq_2)
+                tname_1, tname_2, dtype = get_sacc_names(pol, exp_1, exp_2)
                 # The only reason why we need indices is the symmetrization.
                 # Otherwise all of this could have been done in the previous
                 # loop over data["spectra"].
@@ -275,8 +330,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                     pol2 = pol[::-1]
                     pols.remove(pol2)
                     tname_1, tname_2, dtype = get_sacc_names(pol2,
-                                                             exp_1, exp_2,
-                                                             freq_1, freq_2)
+                                                             exp_1, exp_2)
                     ind2 = s.indices(dtype,
                                      (tname_1, tname_2))
                     cls2 = s.get_ell_cl(dtype, tname_1, tname_2)[1]
@@ -304,10 +358,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                                                          dtype=int)),
                                        "pol": ppol_dict[pol],
                                        "hasYX_xsp": pol in ["ET", "BE", "BT"],  # For symm
-                                       "t1": xp_nu(exp_1, freq_1),
-                                       "t2": xp_nu(exp_2, freq_2),
-                                       "nu1": freq_1,
-                                       "nu2": freq_2,
+                                       "t1": exp_1,
+                                       "t2": exp_2,
                                        "leff": ls,
                                        "cl_data": cls,
                                        "bpw": ws})
@@ -322,9 +374,11 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         self.logp_const = np.log(2 * np.pi) * (-len(self.data_vec) / 2)
         self.logp_const -= 0.5 * np.linalg.slogdet(self.cov)[1]
 
-        # TODO: we should actually be using bandpass integration
-        self.bands = sorted(bands)
-        self.freqs = np.array([bands[b] for b in self.bands])
+        self.experiments = data["experiments"]
+        self.bands = {
+            name: {"nu": tracer.nu, "bandpass": tracer.bandpass}
+            for name, tracer in s.tracers.items()
+        }
 
         # Put lcuts in a format that is recognisable by CAMB.
         self.lcuts = {k.lower(): c for k, c in self.lcuts.items()}
@@ -340,7 +394,14 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         self.data = GaussianData("mflike", self.ell_vec, self.data_vec, self.cov)
 
     def _get_power_spectra(self, cmbfg):
-        # Get Dl's from the theory component
+        """
+        Get :math:`D_{\ell}` from the theory component
+        already modified by ``theoryforge_MFLike``
+
+        :param cmbfg: the dictionary of theory+foreground :math:`D_{\ell}`
+
+        :return: the binned data vector
+        """
         ps_vec = np.zeros_like(self.data_vec)
         DlsObs = dict()
         # Note we rescale l_bpws because cmbfg spectra start from l=2
@@ -352,18 +413,25 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             w = m["bpw"].weight.T
 
             if p in ['tt', 'ee', 'bb']:
-                DlsObs[p,  m['nu1'], m['nu2']] = cmbfg[p, m['nu1'], m['nu2']][ell]
+                DlsObs[p,  m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
             else:  # ['te','tb','eb']
                 if m['hasYX_xsp']:  # not symmetrizing
-                    DlsObs[p,  m['nu1'], m['nu2']] = cmbfg[p, m['nu2'], m['nu1']][ell]
+                    DlsObs[p,  m['t1'], m['t2']] = cmbfg[p, m['t2'], m['t1']][ell]
                 else:
-                    DlsObs[p,  m['nu1'], m['nu2']] = cmbfg[p, m['nu1'], m['nu2']][ell]
+                    DlsObs[p,  m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
 #
                 if self.defaults['symmetrize']:  # we average TE and ET (as for data)
-                    DlsObs[p,  m['nu1'], m['nu2']] += cmbfg[p, m['nu2'], m['nu1']][ell]
-                    DlsObs[p,  m['nu1'], m['nu2']] *= 0.5
+                    DlsObs[p,  m['t1'], m['t2']] += cmbfg[p, m['t2'], m['t1']][ell]
+                    DlsObs[p,  m['t1'], m['t2']] *= 0.5
 
-            clt = np.dot(w, DlsObs[p, m["nu1"], m["nu2"]])
+            clt = w @ DlsObs[p, m["t1"], m["t2"]]
             ps_vec[i] = clt
 
         return ps_vec
+
+
+class TestMFLike(MFLike):
+
+    _url = "https://portal.nersc.gov/cfs/sobs/users/MFLike_data"
+    filename = "v0.1_test"
+    install_options = {"download_url": f"{_url}/{filename}.tar.gz"}

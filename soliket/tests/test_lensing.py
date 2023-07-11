@@ -1,9 +1,7 @@
 import os
 import tempfile
-
 import pytest
 import numpy as np
-
 from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
@@ -11,80 +9,37 @@ packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "lensing_packages"
 )
 
+# Cosmological parameters for the test data from SO sims
+# See https://github.com/simonsobs/SOLikeT/pull/101 for validation plots
+fiducial_params = {
+    'omch2': 0.1203058,
+    'ombh2': 0.02219218,
+    'H0': 67.02393,
+    'ns': 0.9625356,
+    'As': 2.15086031154146e-9,
+    'mnu': 0.06,
+    'tau': 0.06574325,
+    'nnu': 3.04}
 
-def get_demo_lensing_model(theory):
-    if theory == "camb":
-        info_yaml = r"""
-        likelihood:
-            soliket.LensingLikelihood:
-                stop_at_error: True
+info = {"theory": {"camb": {"extra_args": {"kmax": 0.9}}}}
+info['params'] = fiducial_params
 
-        theory:
-            camb:
-                extra_args:
-                    lens_potential_accuracy: 1
 
-        params:
-            ns:
-                prior:
-                  min: 0.8
-                  max: 1.2
-            H0:
-                prior:
-                  min: 40
-                  max: 100
-        """
-    elif theory == "classy":
-        info_yaml = r"""
-        likelihood:
-            soliket.LensingLikelihood:
-                stop_at_error: True
+def test_lensing_import(request):
 
-        theory:
-            classy:
-                extra_args:
-                    output: lCl, tCl
-                path: global
+    from soliket.lensing import LensingLikelihood
 
-        params:
-            n_s:
-                prior:
-                  min: 0.8
-                  max: 1.2
-            H0:
-                prior:
-                  min: 40
-                  max: 100
 
-        """
-
-    info = yaml_load(info_yaml)
+def test_lensing_like(request):
 
     from cobaya.install import install
-    install(info, path=packages_path, skip_global=True)
+    install({"likelihood": {"soliket.lensing.LensingLikelihood": None}},
+            path=packages_path, skip_global=False, force=True, debug=True)
 
-    test_point = {}
-    for par, pdict in info["params"].items():
-        if not isinstance(pdict, dict):
-            continue
+    from soliket.lensing import LensingLikelihood
 
-        if "ref" in pdict:
-            try:
-                value = float(pdict["ref"])
-            except TypeError:
-                value = (pdict["ref"]["min"] + pdict["ref"]["max"]) / 2
-            test_point[par] = value
-        elif "prior" in pdict:
-            value = (pdict["prior"]["min"] + pdict["prior"]["max"]) / 2
-            test_point[par] = value
-
+    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood}}
     model = get_model(info)
-    return model, test_point
+    loglikes, derived = model.loglikes()
 
-
-@pytest.mark.parametrize("theory", ["camb", "classy"])
-def test_lensing(theory):
-    model, test_point = get_demo_lensing_model(theory)
-    lnl = model.loglike(test_point)[0]
-
-    assert np.isfinite(lnl)
+    assert np.isclose(loglikes[0], 335.8560097798468, atol=0.2, rtol=0.0)

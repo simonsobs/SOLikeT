@@ -8,15 +8,19 @@ jobs:
   flake8:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
-    - name: Install Python 3.x
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.x
-    - name: Install Dependencies
-      run: |
-        pip install tox
-    - name: Check Code Style
-      run: |
-        tox -e codestyle
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Install Conda w/ Python 3.10
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-activate-base: false
+          python-version: '3.10'
+          channels: conda-forge
+      - name: Install Dependencies
+        shell: bash -el {0}
+        run: |
+          pip install tox-conda flake8
+      - name: Check Code Style
+        shell: bash -el {0}
+        run: |
+          tox -e codestyle
