@@ -11,12 +11,6 @@ from .bandpass import BandPass
 from .cosmopower import CosmoPower, CosmoPowerDerived
 
 try:
-    from .clusters import ClusterLikelihood  # noqa: F401
-except ImportError:
-    print('Skipping cluster likelihood (is pyCCL installed?)')
-    pass
-
-try:
     import pyccl as ccl  # noqa: F401
     from .ccl import CCL  # noqa: F401
     from .cross_correlation import GalaxyKappaLikelihood, ShearKappaLikelihood  # noqa: F401, E501

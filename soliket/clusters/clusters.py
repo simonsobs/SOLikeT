@@ -11,6 +11,7 @@ import time # for timing
 from scipy import special, stats, interpolate, integrate
 from scipy.interpolate import interp1d, interp2d
 from astropy.io import fits
+import astropy.table as atpy
 import pyccl as ccl
 import soliket.clusters.nemo_mocks as selfunc
 
@@ -580,8 +581,13 @@ def initialize_common(self):
     self.log.info('Initializing clusters.py ' + self.name)
 
     self.qcut = self.selfunc['SNRcut']
-    self.datafile = self.data['cat_file']
-    self.data_directory = self.data['data_path']
+    self.datafile = os.path.abspath(self.data['cat_file'])
+    self.selfn_dir = os.path.abspath(self.data['selfn_path'])
+    if 'footprint' in self.data.keys():
+        self.footprint = self.data['footprint']
+        self.log.info('Footprint = {}.'.format(self.footprint))
+    else:
+        self.footprint = None
 
     if self.selfunc['method'] == 'SNRbased':
         self.log.info('Running SNR based selection function.')
@@ -606,14 +612,14 @@ def initialize_common(self):
         assert self.selfunc['dwnsmpl_bins'] is not None, 'resolution = downsample but no bin number given. Aborting.'
         self.log.info('Running completeness with down-sampled selection function inputs.')
 
-    catf = fits.open(os.path.join(self.data_directory, self.datafile))
-    data = catf[1].data
-    zcat = data.field("redshift")
-    qcat = data.field("fixed_SNR") #NB note that there are another SNR in the catalogue
-    cat_tsz_signal = data.field("fixed_y_c")
-    cat_tsz_signal_err = data.field("fixed_err_y_c")
-    cat_tile_name = data.field("tileName")
-    # to print all columns: print(catf[1].columns)
+    cat_tab = atpy.Table().read(self.datafile)
+    if self.footprint is not None:
+        cat_tab = cat_tab[cat_tab['footprint_{}'.format(self.footprint)] == True]
+    zcat = cat_tab['redshift'].data
+    qcat = cat_tab['fixed_SNR'].data
+    cat_tsz_signal = cat_tab['fixed_y_c'].data
+    cat_tsz_signal_err = cat_tab['fixed_err_y_c'].data
+    cat_tile_name = cat_tab['tileName'].data
 
     # SPT-style SNR bias correction, this should be applied before applying SNR cut
     debiasDOF = self.selfunc['debiasDOF']
@@ -659,18 +665,23 @@ def initialize_common(self):
     # this is to be consist with szcounts.f90
     self.k = np.logspace(-4, np.log10(4), 200, endpoint=False)
 
-    self.datafile_rms = self.data['rms_file']
-    self.datafile_Q = self.data['Q_file']
-    self.datafile_tile = self.data['tile_file']
+    if self.footprint is None:
+        self.datafile_rms = self.selfn_dir + os.path.sep + "RMSTab.fits"
+    else:
+        self.datafile_rms = self.selfn_dir + os.path.sep + "RMSTab_%s.fits" % (self.footprint)
+    self.datafile_Q = self.selfn_dir + os.path.sep + "QFit.fits"
 
-    list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
-    file_rms = list[1].data
+    # We need to get rid of the below some how
+    self.datafile_tile = self.selfn_dir + os.path.sep + "tileAreas.txt"
+
+    with fits.open(self.datafile_rms) as in_file:
+        file_rms = in_file[1].data
 
     if self.selfunc['resolution'] == 'downsample':
 
         filename_Q, ext = os.path.splitext(self.datafile_Q)
-        datafile_Q_dwsmpld = os.path.join(self.data_directory,
-            filename_Q + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
+        datafile_Q_dwsmpld = filename_Q + \
+            'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz'
 
         if os.path.exists(datafile_Q_dwsmpld):
             Qfile = np.load(datafile_Q_dwsmpld)
@@ -680,23 +691,24 @@ def initialize_common(self):
 
         else:
             self.log.info("Reading in full Q function.")
-            tile_info = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
 
-            # removing tiles with zero areas
-            tile_area0 = tile_info[:, 1]
-            zero_index = np.where(tile_area0 == '0.000000')[0]
-            tile_area = np.delete(tile_info, zero_index, 0)
+            # Old  - we want to ultimately remove
+            # tile_info = np.genfromtxt(self.datafile_tile, dtype=str)
+            # tile_area0 = tile_info[:, 1]
+            # zero_index = np.where(tile_area0 == '0.000000')[0]
+            # tile_area = np.delete(tile_info, zero_index, 0)
+            # tile_name = tile_area[:, 0]
 
-            tile_name = tile_area[:, 0]
-            QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-                                   tileNames=tile_name, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
+            tile_name = np.unique(file_rms['tileName'])
+            QFit = nm.signals.QFit(QSource=self.selfunc['whichQ'], selFnDir=self.selfn_dir,
+                                   tileNames = tile_name)
             Nt = len(tile_name)
             self.log.info("Number of tiles = {}.".format(Nt))
             self.tname = file_rms['tileName']
 
-            hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
-            data = hdulist[1].data
-            tt500 = data.field("theta500Arcmin")
+            with fits.open(self.datafile_Q) as hdulist:
+                data = hdulist[1].data
+                tt500 = data.field("theta500Arcmin")
 
             # reading in all Q functions
             allQ = np.zeros((len(tt500), Nt))
@@ -706,31 +718,12 @@ def initialize_common(self):
             self.tt500 = tt500
             self.Q = allQ
 
-            # # fiddling Q fit using injection Q ---------------------------------
-            #
-            # if self.selfunc['Qtest'] == True:
-            #
-            #     injQFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-            #                             tileNames=tile_name, QSource='injection', selFnDir=self.data_directory+'/selFn')
-            #
-            #     injQ = np.zeros(len(tt500))
-            #     injQ = injQFit.getQ(tt500, tileName=tile_area[:, 0][0])
-            #
-            #     meanQ = np.average(allQ, axis=1)
-            #     fac = injQ / meanQ
-            #     fac_arr = np.repeat(fac[:, np.newaxis], allQ.shape[1], axis=1)
-            #
-            #     self.Q = allQ * fac_arr
-            #
-            # #-------------------------------------------------------------------
-
-
         filename_rms, ext = os.path.splitext(self.datafile_rms)
         filename_tile, ext = os.path.splitext(self.datafile_tile)
-        datafile_rms_dwsmpld = os.path.join(self.data_directory,
-                filename_rms + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
-        datafile_tiles_dwsmpld = os.path.join(self.data_directory,
-                filename_tile + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy')
+        datafile_rms_dwsmpld = filename_rms + \
+            'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz'
+        datafile_tiles_dwsmpld = filename_tile + \
+            'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy'
 
         if os.path.exists(datafile_rms_dwsmpld):
             rms = np.load(datafile_rms_dwsmpld)
@@ -754,7 +747,7 @@ def initialize_common(self):
             binned_rms_edges = binned_stat[1]
 
             bin_ind = np.digitize(self.noise, binned_rms_edges)
-            tiledict = dict(zip(tile_name, np.arange(tile_area[:, 0].shape[0])))
+            tiledict = dict(zip(tile_name, np.arange(tile_name.shape[0])))
 
             Qdwnsmpld = np.zeros((self.Q.shape[0], self.selfunc['dwnsmpl_bins']))
             tiles_dwnsmpld = {}
