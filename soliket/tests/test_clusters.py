@@ -113,12 +113,8 @@ def test_clusters_loglike():
     binned_lnl = binned_model.loglikes({})[0]
     unbinned_lnl = unbinned_model.loglikes({})[0]
 
-<<<<<<< HEAD
     assert np.isfinite(binned_lnl)
     assert np.isfinite(unbinned_lnl)
-=======
-    assert np.isclose(lnl, -854.89406321, rtol=1.e-3, atol=1.e-5)
->>>>>>> master
 
 
 def test_clusters_prediction():
