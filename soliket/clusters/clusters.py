@@ -619,7 +619,7 @@ def initialize_common(self):
     qcat = cat_tab['fixed_SNR'].data
     cat_tsz_signal = cat_tab['fixed_y_c'].data
     cat_tsz_signal_err = cat_tab['fixed_err_y_c'].data
-    cat_tile_name = cat_tab['tileName'].data
+    cat_tile_name = np.array(cat_tab['tileName'].data, dtype = str)
 
     # SPT-style SNR bias correction, this should be applied before applying SNR cut
     debiasDOF = self.selfunc['debiasDOF']
@@ -704,7 +704,7 @@ def initialize_common(self):
                                    tileNames = tile_name)
             Nt = len(tile_name)
             self.log.info("Number of tiles = {}.".format(Nt))
-            self.tname = file_rms['tileName']
+            self.tname = np.array(file_rms['tileName'], dtype = str) # Avoids potential chararray weirdness
 
             with fits.open(self.datafile_Q) as hdulist:
                 data = hdulist[1].data
