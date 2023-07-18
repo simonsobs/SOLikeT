@@ -16,3 +16,4 @@ pyccl
 sacc
 fgspectra>=1.1.0
 syslibrary
+nemo-sz>=0.6.0
