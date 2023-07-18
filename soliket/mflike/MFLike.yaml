@@ -22,11 +22,12 @@ defaults:
   # Which spectra?
   polarizations: ['TT', 'TE', 'ET', 'EE']
   # Scale cuts (in ell) for each spectrum
+  # these scales should be used when marginalizing over foregrounds!
   scales:
-    TT: [50, 5000]
-    TE: [50, 5000]
-    ET: [50, 5000]
-    EE: [50, 5000]
+    TT: [30, 9000]
+    TE: [30, 9000]
+    ET: [30, 9000]
+    EE: [30, 9000]
   # If True, TE' = (TE + ET) / 2 will be used
   # instead of TE and ET separately.
   symmetrize: False

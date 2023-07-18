@@ -38,7 +38,7 @@ from ..gaussian import GaussianData, GaussianLikelihood
 
 class MFLike(GaussianLikelihood, InstallableLikelihood):
     _url = "https://portal.nersc.gov/cfs/sobs/users/MFLike_data"
-    _release = "v0.7.1" # data for v0.8 is the same as this version
+    _release = "v0.8" 
     install_options = {"download_url": "{}/{}.tar.gz".format(_url, _release)}
 
     # attributes set from .yaml
