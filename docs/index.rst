@@ -43,6 +43,12 @@ The pages here describe how to install and run SOLikeT, and document the functio
    mflike
 
 .. toctree::
+   :caption: Miscellaneous
+   :maxdepth: 1
+
+   utils
+
+.. toctree::
    :caption: Development guidelines
    :maxdepth: 1
    
