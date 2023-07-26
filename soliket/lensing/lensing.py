@@ -1,10 +1,13 @@
 r"""
 .. module:: lensing
 
-:Synopsis: Gaussian Likelihood for kk for Simons Observatory
+:Synopsis: Gaussian Likelihood for CMB Lensing for Simons Observatory
 :Authors: Frank Qu, Mat Madhavacheril.
 
-LensingLikelihoos inherits from generic binned power spectrum (PS) likelihood.
+This is a simple likelihood which inherits from generic binned power spectrum (PS)
+likelihood. It comes in two forms: the full ``LensingLikelihood`` which requires 
+(automated) downloading of external data and a more lightweight ``LensingLiteLikelihood`` 
+which is less accurate but does not require the data download.
 """
 
 import os
@@ -21,6 +24,24 @@ from ..ps import BinnedPSLikelihood
 
 
 class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
+    r"""
+    The full ``LensingLikelihood`` makes use of a *fiducial* lensing power spectrum which is 
+    calculated at a hard-coded set of fiducial cosmological parameters. This fiducial 
+    spectrum is combined with noise power spectra correction terms 
+    (:math:`N_0` and :math:`N_1` terms) appropriate for SO accounting for known biases in the 
+    lensing estimators. These correction terms are then combined with the power spectrum 
+    calculated at each Monte Carlo step. For more details on the calculation of the corrected 
+    power spectrum see e.g. Section 5.9 and Appendix E of
+    `Qu et al (2023) <https://arxiv.org/abs/2304.05202>`_.
+
+    Noise power spectra are downloaded as part of the ``LensingLikelihood`` installation. 
+    This is an `Installable Likelihood 
+    <https://cobaya.readthedocs.io/en/latest/installation_cosmo.html>`_
+    with necessary data files stored on NERSC. You can install these data files either by
+    running ``cobaya-install`` on the yaml file specifying your run, or letting the 
+    Likelihood install itself at run time. Please see the cobaya documentation for more
+    information about installable likelihoods.
+    """
     _url = "https://portal.nersc.gov/project/act/jia_qu/lensing_like/likelihood.tar.gz"
     install_options = {"download_url": _url}
     data_folder = "LensingLikelihood/"
@@ -110,7 +131,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
     def _get_fiducial_Cls(self):
         """
-        Obtain a set of fiducial ``Cls`` from theory provider (``camb``).
+        Obtain a set of fiducial ``Cls`` from theory provider (e.g. ``camb``).
         Fiducial ``Cls`` are used to compute correction terms for the theory vector.
 
         :return: Fiducial ``Cls`` 
@@ -168,7 +189,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
     def _get_theory(self, **params_values):
         """
-        Generate binned theory vector of kk with correction terms.
+        Generate binned theory vector of :math:`\kappa \kappa` with correction terms.
 
         :param params_values: Dictionary of cosmological parameters.
 
@@ -211,7 +232,10 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
 class LensingLiteLikelihood(BinnedPSLikelihood):
     """
-    Lite version of Lensing Likelihood for quick tests
+    Lite version of Lensing Likelihood for quick tests, which does not make any of the
+    bias corrections requiring fiducial spectra calculations or downloads of external 
+    data. Simply a Gaussian likelihood between a provided binned ``pp`` data vector 
+    and covariance matrix, and the appropriate theory vector.
     """
     kind: str = "pp"
     lmax: int = 3000

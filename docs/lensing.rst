@@ -12,7 +12,7 @@ Lensing Likelihood
     :private-members:
     :show-inheritance:
 
-Lite Lensing Likelihood
+LensingLite Likelihood
 --------------------------
 
 .. autoclass:: soliket.lensing.LensingLiteLikelihood
