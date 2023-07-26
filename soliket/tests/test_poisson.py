@@ -35,21 +35,23 @@ def generate_data(a, with_samples=False, unc=0.3, Nk=64):
 
 
 def test_poisson_experiment(a_true=3, N=100, with_samples=False, Nk=64):
-    a_maxlikes = []
-    for i in range(N):
-        observations = generate_data(a_true, with_samples=with_samples, Nk=Nk)
-        if not with_samples:
-            catalog = pd.DataFrame({"x": observations})
-            data = PoissonData("toy", catalog, ["x"])
-        else:
-            catalog = pd.DataFrame({"x": observations.mean(axis=1)})
-            samples = {"x": observations, "prior": np.ones(observations.shape)}
-            data = PoissonData("toy_samples", catalog, ["x"], samples=samples)
+    for with_samples in [False, True]:
+        a_maxlikes = []
+        for i in range(N):
+            observations = generate_data(a_true, with_samples=with_samples, Nk=Nk)
+            if not with_samples:
+                catalog = pd.DataFrame({"x": observations})
+                data = PoissonData("toy", catalog, ["x"])
+            else:
+                catalog = pd.DataFrame({"x": observations.mean(axis=1)})
+                samples = {"x": observations, "prior": np.ones(observations.shape)}
+                data = PoissonData("toy_samples", catalog, ["x"], samples=samples)
+    
+            a_grid = np.arange(0.1, 10, 0.1)
+            lnl = [data.loglike(partial(rate_density, a=a), 
+                n_expected(a)) for a in a_grid]
+            a_maxlike = a_grid[np.argmax(lnl)]
+    
+            a_maxlikes.append(a_maxlike)
 
-        a_grid = np.arange(0.1, 10, 0.1)
-        lnl = [data.loglike(partial(rate_density, a=a), n_expected(a)) for a in a_grid]
-        a_maxlike = a_grid[np.argmax(lnl)]
-
-        a_maxlikes.append(a_maxlike)
-
-    assert abs(np.mean(a_maxlikes) - a_true) < 0.1
+        assert abs(np.mean(a_maxlikes) - a_true) < 0.1
