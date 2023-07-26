@@ -46,6 +46,12 @@ The pages here describe how to install and run SOLikeT, and document the functio
    xcorr
 
 .. toctree::
+   :caption: Miscellaneous
+   :maxdepth: 1
+
+   utils
+
+.. toctree::
    :caption: Development guidelines
    :maxdepth: 1
    
