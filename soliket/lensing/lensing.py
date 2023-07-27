@@ -7,7 +7,8 @@ r"""
 This is a simple likelihood which inherits from generic binned power spectrum (PS)
 likelihood. It comes in two forms: the full ``LensingLikelihood`` which requires 
 (automated) downloading of external data and a more lightweight ``LensingLiteLikelihood`` 
-which is less accurate but does not require the data download.
+which is less accurate (and should only be used for testing) but does not require the 
+data download.
 """
 
 import os
@@ -25,13 +26,15 @@ from ..ps import BinnedPSLikelihood
 
 class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     r"""
-    The full ``LensingLikelihood`` makes use of a *fiducial* lensing power spectrum which is 
-    calculated at a hard-coded set of fiducial cosmological parameters. This fiducial 
+    The full ``LensingLikelihood`` makes use of a *fiducial* lensing power spectrum which 
+    is calculated at a hard-coded set of fiducial cosmological parameters. This fiducial 
     spectrum is combined with noise power spectra correction terms 
-    (:math:`N_0` and :math:`N_1` terms) appropriate for SO accounting for known biases in the 
-    lensing estimators. These correction terms are then combined with the power spectrum 
-    calculated at each Monte Carlo step. For more details on the calculation of the corrected 
-    power spectrum see e.g. Section 5.9 and Appendix E of
+    (:math:`N_0` and :math:`N_1` terms calculated using 
+    `this code <https://github.com/simonsobs/so-lenspipe/blob/master/bin/n1so.py>`_) 
+    appropriate for SO accounting for known biases in 
+    the lensing estimators. These correction terms are then combined with the power 
+    spectrum calculated at each Monte Carlo step. For more details on the calculation of 
+    the corrected power spectrum see e.g. Section 5.9 and Appendix E of
     `Qu et al (2023) <https://arxiv.org/abs/2304.05202>`_.
 
     Noise power spectra are downloaded as part of the ``LensingLikelihood`` installation. 

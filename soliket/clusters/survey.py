@@ -1,8 +1,9 @@
 """
 .. module:: survey
 
-This module contains useful functions to navigate cluster catalogues.
-The ``SurveyData`` class contains information about the specific survey
+This module contains useful functions to internally required by the cluster likelihood to 
+navigate cluster catalogues. The ``SurveyData`` class contains information about the 
+specific survey.
 
 """
 

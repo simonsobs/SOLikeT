@@ -1,7 +1,8 @@
 """
 .. module:: massfunction
 
-The ``HMF`` class build the halo mass function needed by the cluster likelihood
+The ``HMF`` class build the halo mass function internally required for the cluster 
+likelihood. Calculates the Halo Mass Function as in Tinker et al (2008) [2]_ .
 
 """
 

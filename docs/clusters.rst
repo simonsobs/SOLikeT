@@ -3,7 +3,7 @@ Clusters
 
 .. automodule:: soliket.clusters.clusters
 
-Poisson Likelihood for cluster abundance
+Cluster Likelihood
 --------------------------
 
 .. autoclass:: soliket.clusters.ClusterLikelihood
@@ -17,35 +17,19 @@ Halo Mass Function
 
 .. automodule:: soliket.clusters.massfunc
 
-HMF
-------------------
-
-.. autoclass:: soliket.clusters.HMF
-    :exclude-members: initialize
-    :members:
-    :show-inheritance:
-    :private-members:
 
 Survey
 ------------------------------------------
 
 .. automodule:: soliket.clusters.survey
 
-Survey specifications
-------------------
 
-.. autoclass:: soliket.clusters.SurveyData
-    :exclude-members: initialize
-    :members:
-    :show-inheritance:
-    :private-members:
-
-SZ utils
+SZ Utils
 ------------------------------------------
 
 .. automodule:: soliket.clusters.sz_utils
 
-Tinker profile
+Tinker
 ------------------------------------------
 
 .. automodule:: soliket.clusters.tinker

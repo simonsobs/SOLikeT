@@ -1,7 +1,7 @@
 """
 .. module:: tinker
 
-Parameters and useful functions for the Tinker profile
+Parameters and functions used internally by the cluster likelihood for the Tinker profile.
 
 """
 
