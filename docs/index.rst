@@ -44,6 +44,7 @@ The pages here describe how to install and run SOLikeT, and document the functio
    lensing
    clusters
    xcorr
+   crosscorrelation
 
 .. toctree::
    :caption: Miscellaneous
