@@ -3,7 +3,7 @@ XCorr
 
 .. automodule:: soliket.xcorr.xcorr
 
-Likelihood for cross-correlation between Simons Observatory probes and external probes of the large-scale structure
+Cross-correlation Likelihood
 --------------------------
 
 .. autoclass:: soliket.xcorr.XcorrLikelihood
@@ -12,7 +12,7 @@ Likelihood for cross-correlation between Simons Observatory probes and external 
     :private-members:
     :show-inheritance:
 
-Limber
+Limber Calculator
 ------------------------------------------
 
 .. automodule:: soliket.xcorr.limber
