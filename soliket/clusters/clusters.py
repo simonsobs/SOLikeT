@@ -1,5 +1,21 @@
 """
-requires extra: astlib
+.. module:: clusters
+
+:Synopsis: Poisson likelihood for SZ clusters for Simons Osbervatory 
+:Authors: Nick Battaglia, Eunseong Lee
+
+Likelihood for unbinned tSZ galaxy cluster number counts. Currently under development and
+should be used only with caution and advice. Uses the SZ scaling relations from 
+Hasselfield et al (2013) [1]_ to compare observed number of :math:`y`-map detections 
+with the prediction from a Tinker [2]_ Halo Mass Function.
+
+References
+----------
+.. [1] Hasselfield et al, JCAP 07, 008 (2013) `arXiv:1301.0816 
+                                                <https://arxiv.org/abs/1301.0816>`_
+.. [2] Tinker et al, Astrophys. J. 688, 2, 709 (2008) `arXiv:0803.2706 
+                                                    <https://arxiv.org/abs/0803.2706>`_
+
 """
 import numpy as np
 import pandas as pd
@@ -21,6 +37,9 @@ class SZModel:
 
 
 class ClusterLikelihood(PoissonLikelihood):
+    """
+    Poisson Likelihood for un-binned :math:`y`-map galaxy cluster counts.
+    """
     name = "Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err"]
     data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
@@ -37,6 +56,12 @@ class ClusterLikelihood(PoissonLikelihood):
         super().initialize()
 
     def get_requirements(self):
+        """
+        This likelihood require :math:`P(k,z)`, :math:`H(z)`, :math:`d_A(z)`, 
+        :math:`r(z)` (co-moving radial distance) from Theory codes.
+
+        :return: Dictionary of requirements 
+        """
         return {
             "Pk_interpolator": {
                 "z": self.zarr,
@@ -142,6 +167,10 @@ class ClusterLikelihood(PoissonLikelihood):
         return param_vals
 
     def _get_rate_fn(self, **kwargs):
+        """
+        Calculates the observed rate of clusters from the provided catalogue, which is
+        then compared directly to the predicted rate at the current parameter values.
+        """
         HMF = self._get_HMF()
         param_vals = self._get_param_vals(**kwargs)
 
@@ -170,7 +199,6 @@ class ClusterLikelihood(PoissonLikelihood):
         # Implement a function that returns a rate function (function of (tsz_signal, z))
 
     def _get_dVdz(self):
-        """dV/dzdOmega"""
         DA_z = self.theory.get_angular_diameter_distance(self.zarr)
 
         dV_dz = (
@@ -183,6 +211,9 @@ class ClusterLikelihood(PoissonLikelihood):
         return dV_dz
 
     def _get_n_expected(self, **kwargs):
+        """
+        Calculates expected number of clusters at the current parameter values.
+        """
         # def Ntot_survey(self,int_HMF,fsky,Ythresh,param_vals):
 
         HMF = self._get_HMF()

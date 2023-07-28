@@ -1,4 +1,4 @@
-Bandpass
+Bandpass (CMB)
 ========
 
 Bandpass computation
