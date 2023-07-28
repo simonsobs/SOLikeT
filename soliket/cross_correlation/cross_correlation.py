@@ -1,8 +1,8 @@
 """
-Simple likelihood for CMB-galaxy cross-correlations using the cobaya
-CCL module.
+:Synopsis: Likelihood for cross-correlation of CMB lensing with Large Scale Structure 
+data. Makes use of the cobaya CCL module for handling tracers and Limber integration.
 
-First version by Pablo Lemos
+:Authors: Pablo Lemos, Ian Harrison.
 """
 
 import numpy as np
@@ -14,6 +14,9 @@ import sacc
 
 
 class CrossCorrelationLikelihood(GaussianLikelihood):
+    r"""
+    Generic likelihood for cross-correlations of CCL tracer objects.
+    """
     def initialize(self):
 
         self._get_sacc_data()
@@ -95,7 +98,9 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
 
 class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
-    
+    r"""
+    Likelihood for cross-correlations of galaxy and CMB lensing data.
+    """    
     def _get_theory(self, **params_values):
         cosmo = self.provider.get_CCL()["cosmo"]
 
@@ -145,7 +150,9 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
 
 
 class ShearKappaLikelihood(CrossCorrelationLikelihood):
-
+    r"""
+    Likelihood for cross-correlations of galaxy weak lensing shear and CMB lensing data.
+    """
     def _get_theory(self, **params_values):
 
         cosmo = self.provider.get_CCL()["cosmo"]

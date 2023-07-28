@@ -113,7 +113,7 @@ class CosmoPower(BoltzmannBase):
     def initialize(self) -> None:
         super().initialize()
 
-        if self.network_settings is None:
+        if self.network_settings is None: # pragma: no cover
             raise LoggedError("No network settings were provided.")
 
         self.networks = {}
@@ -130,10 +130,10 @@ class CosmoPower(BoltzmannBase):
             elif nettype["type"] == "PCAplusNN":
                 network = cp.cosmopower_PCAplusNN(
                     restore=True, restore_filename=netpath)
-            elif self.stop_at_error:
+            elif self.stop_at_error: # pragma: no cover
                 raise ValueError(
                     f"Unknown network type {nettype['type']} for network {spectype}.")
-            else:
+            else: # pragma: no cover
                 self.log.warn(
                     f"Unknown network type {nettype['type']}\
                                                 for network {spectype}: skipped!")
@@ -150,7 +150,7 @@ class CosmoPower(BoltzmannBase):
             if network is not None:
                 self.networks[spectype.lower()] = netdata
 
-        if "lmax" not in self.extra_args:
+        if "lmax" not in self.extra_args: # pragma: no cover
             self.extra_args["lmax"] = None
 
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")

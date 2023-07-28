@@ -1,3 +1,12 @@
+"""
+.. module:: szutils
+
+Contains functions (many inherited from the 
+`nemo <https://nemo-sz.readthedocs.io/en/latest/>`_) code) which are used internally by 
+the cluster likelihood to convert between observed tSZ signal and cluster mass.
+
+"""
+
 import numpy as np
 from scipy import interpolate
 # from astropy.cosmology import FlatLambdaCDM
