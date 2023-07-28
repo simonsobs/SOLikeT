@@ -55,6 +55,10 @@ def test_shearkappa_model(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
+    # clear out the galaxykappa params if they've been added
+    info["params"].pop("b1", None)
+    info["params"].pop("s1", None)
+
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
                            "datapath": os.path.join(request.config.rootdir,
