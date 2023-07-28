@@ -1,3 +1,11 @@
+"""
+.. module:: massfunction
+
+The ``HMF`` class build the halo mass function internally required for the cluster 
+likelihood. Calculates the Halo Mass Function as in Tinker et al (2008) [2]_ .
+
+"""
+
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from .tinker import dn_dlogM
@@ -7,6 +15,9 @@ np.seterr(divide='ignore', invalid='ignore')
 
 
 class HMF:
+    """
+    Build halo mass function
+    """
     def __init__(self, om, Ez, pk=None, kh=None, zarr=None):
 
         # Initialize redshift and mass ranges
@@ -39,12 +50,16 @@ class HMF:
             # self.kh, self.pk = self._pk(self.zarr)
 
     def rhoc(self):
-        # critical density as a function of z
+        """
+        Critical density as a function of z
+        """
         ans = self.rho_crit0H100 * self.E_z ** 2.
         return ans
 
     def rhom(self):
-        # mean matter density as a function of z
+        """
+        Mean matter density as a function of z
+        """
         ans = self.rhoc0om * (1.0 + self.zarr) ** 3
         return ans
 
@@ -55,7 +70,9 @@ class HMF:
     def dn_dM(self, M, delta):
         """
         dN/dmdV Mass Function
-        M here is in MDeltam but we can convert
+
+        :param M: Mass in MDeltam, but we can convert
+        :param delta: Threshold for critical density
         """
         delts = self.critdensThreshold(delta)
         dn_dlnm = dn_dlogM(M, self.zarr, self.rhoc0om, delts, self.kh, self.pk,
@@ -65,7 +82,7 @@ class HMF:
 
     def inter_dndmLogm(self, delta, M=None):
         """
-        interpolating over M and z for faster calculations
+        Interpolating over M and z for faster calculations
         """
         if M is None:
             M = self.M

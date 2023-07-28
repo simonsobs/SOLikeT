@@ -1,4 +1,10 @@
 r""" Likelihood for cross-correlation of CMB lensing and galaxy clustering probes.
+Based on the original xcorr code [1]_ used in Krolewski et al (2021) [2]_.
+
+    References
+    ----------
+    .. [1] https://github.com/simonsobs/xcorr
+    .. [2] Krolewski, Ferraro and White, 2021, arXiv:2105.03421
 
 """
 
@@ -15,8 +21,6 @@ from .limber import do_limber
 
 class XcorrLikelihood(GaussianLikelihood):
     '''Cross-correlation Likelihood for CMB lensing and galaxy clustering probes.
-
-    Based on the original xcorr code [1]_ used in [2]_.
 
     Accepts data files containing the two spectra from either text files or a sacc file.
 
@@ -54,12 +58,6 @@ class XcorrLikelihood(GaussianLikelihood):
         Linear galaxy bias value for the galaxy sample.
     s1 : float
         Magnification bias slope for the galaxy sample.
-
-
-    References
-    ----------
-    .. [1] https://github.com/simonsobs/xcorr
-    .. [2] Krolewski, Ferraro and White, 2021, arXiv:2105.03421
 
     '''
 
