@@ -1,4 +1,4 @@
-Lensing
+Lensing (CMB Lensing)
 ======
 
 .. automodule:: soliket.lensing.lensing

@@ -1,4 +1,4 @@
-Clusters
+Clusters (Galaxy Clusters)
 ======
 
 .. automodule:: soliket.clusters.clusters

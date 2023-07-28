@@ -1,4 +1,4 @@
-Bias
+Bias (Galaxy Bias)
 ====
 
 .. automodule:: soliket.bias

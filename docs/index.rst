@@ -30,11 +30,11 @@ The pages here describe how to install and run SOLikeT, and document the functio
    :caption: Theory codes
    :maxdepth: 1
    
-   bias
    ccl
    cosmopower
    bandpass
    foreground
+   bias
 
 .. toctree::
    :caption: Likelihood codes

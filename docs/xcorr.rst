@@ -1,4 +1,4 @@
-XCorr
+XCorr (Cross-correlation)
 ======
 
 .. automodule:: soliket.xcorr.xcorr

@@ -1,4 +1,4 @@
-Utils
+Utilities
 ==================
 
 .. automodule:: soliket.utils
