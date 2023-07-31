@@ -20,9 +20,34 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     def initialize(self):
 
         self._get_sacc_data()
+        self._check_tracers()
 
     def get_requirements(self):
         return {"CCL": {"kmax": 10, "nonlinear": True}}
+
+    def _check_tracers(self):
+
+        # check correct tracers
+        for tracer_comb in self.sacc_data.get_tracer_combinations():
+
+            if (self.sacc_data.tracers[tracer_comb[0]].quantity ==
+                    self.sacc_data.tracers[tracer_comb[1]].quantity):
+                raise LoggedError(self.log,
+                                  'You have tried to use {0} to calculate an \
+                                   autocorrelation, but it is a cross-correlation \
+                                   likelihood. Please check your tracer selection in the \
+                                   ini file.'.format(self.__class__.__name__))
+
+            for tracer in tracer_comb:
+                if self.sacc_data.tracers[tracer].quantity not in self._allowable_tracers:
+                    raise LoggedError(self.log,
+                                      'You have tried to use a {0} tracer in \
+                                       {1}, which only allows {2}. Please check your \
+                                       tracer selection in the ini file.\
+                                       '.format(self.sacc_data.tracers[tracer].quantity,
+                                                self.__class__.__name__,
+                                                self._allowable_tracers))
+
 
     def _get_nz(self, z, tracer, tracer_name, **params_values):
 
@@ -100,8 +125,11 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
     r"""
     Likelihood for cross-correlations of galaxy and CMB lensing data.
-    """    
+    """
+    _allowable_tracers = ['cmb_convergence', 'galaxy_density']
+
     def _get_theory(self, **params_values):
+
         cosmo = self.provider.get_CCL()["cosmo"]
 
         tracer_comb = self.sacc_data.get_tracer_combinations()
@@ -112,17 +140,6 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
                 cmbk_tracer = tracer
             elif self.sacc_data.tracers[tracer].quantity == "galaxy_density":
                 gal_tracer = tracer
-            else:
-                raise LoggedError('Tracer selection not implemented! \
-                                  Please provide a sacc file with \
-                                  only Cl_gg and Cl_gk')
-
-        n_tracers = len(np.unique(tracer_comb))
-
-        # check we only have gk and gg tracers
-        if len(tracer_comb) > n_tracers:
-            self.log.warning('Cl_gk and Cl_gg will be used, \
-                                 Cl_kk will be removed.')
 
         z_gal_tracer = self.sacc_data.tracers[gal_tracer].z
         nz_gal_tracer = self.sacc_data.tracers[gal_tracer].nz
@@ -153,6 +170,8 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
     r"""
     Likelihood for cross-correlations of galaxy weak lensing shear and CMB lensing data.
     """
+    _allowable_tracers = ["cmb_convergence", "galaxy_shear"]
+
     def _get_theory(self, **params_values):
 
         cosmo = self.provider.get_CCL()["cosmo"]
@@ -160,14 +179,6 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
         cl_binned_list = []
 
         for tracer_comb in self.sacc_data.get_tracer_combinations():
-
-            if (self.sacc_data.tracers[tracer_comb[0]].quantity
-                    == self.sacc_data.tracers[tracer_comb[1]].quantity):
-                self.log.warning('You requested auto-correlation in '\
-                                 'ShearKappaLikelihood but it is only implemented for '\
-                                 'cross-correlations and resulting bias calculations '\
-                                 'will be incorrect. Please check your tracer '\
-                                 'combinations in the sacc file.')
 
             if self.sacc_data.tracers[tracer_comb[0]].quantity == "cmb_convergence":
                 tracer1 = ccl.CMBLensingTracer(cosmo, z_source=1060)
