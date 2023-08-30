@@ -1,4 +1,4 @@
-Cosmopower
+Cosmopower (Boltzmann Emulator)
 ==========
 
 .. automodule:: soliket.cosmopower

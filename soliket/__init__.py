@@ -5,15 +5,15 @@ from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401
 from .clusters import BinnedClusterLikelihood, UnbinnedClusterLikelihood  # noqa: F401
 from .mflike import MFLike  # noqa: F401
 from .mflike import TheoryForge_MFLike
+from .cross_correlation import GalaxyKappaLikelihood, ShearKappaLikelihood  # noqa: F401, E501
 from .xcorr import XcorrLikelihood  # noqa: F401
 from .foreground import Foreground
 from .bandpass import BandPass
 from .cosmopower import CosmoPower, CosmoPowerDerived
+from .ccl import CCL  # noqa: F401
 
 try:
-    import pyccl as ccl  # noqa: F401
-    from .ccl import CCL  # noqa: F401
-    from .cross_correlation import GalaxyKappaLikelihood, ShearKappaLikelihood  # noqa: F401, E501
+    from .clusters import ClusterLikelihood  # noqa: F401
 except ImportError:
-    print('Skipping CCL module as pyCCL is not installed')
+    print('Skipping cluster likelihood (is pyCCL installed?)')
     pass

@@ -1,4 +1,4 @@
-MFLike
+MFLike (Primary CMB)
 ======
 
 .. automodule:: soliket.mflike.mflike

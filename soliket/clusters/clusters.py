@@ -1,5 +1,23 @@
 """
 requires extra: astlib,fits,os,sys,nemo
+=======
+.. module:: clusters
+
+:Synopsis: Poisson likelihood for SZ clusters for Simons Osbervatory 
+:Authors: Nick Battaglia, Eunseong Lee
+
+Likelihood for unbinned tSZ galaxy cluster number counts. Currently under development and
+should be used only with caution and advice. Uses the SZ scaling relations from 
+Hasselfield et al (2013) [1]_ to compare observed number of :math:`y`-map detections 
+with the prediction from a Tinker [2]_ Halo Mass Function.
+
+References
+----------
+.. [1] Hasselfield et al, JCAP 07, 008 (2013) `arXiv:1301.0816 
+                                                <https://arxiv.org/abs/1301.0816>`_
+.. [2] Tinker et al, Astrophys. J. 688, 2, 709 (2008) `arXiv:0803.2706 
+                                                    <https://arxiv.org/abs/0803.2706>`_
+
 """
 
 import numpy as np
@@ -35,7 +53,21 @@ class BinnedClusterLikelihood(CashCLikelihood):
     binning: dict = {}
     verbose: bool = False
 
+<<<<<<< HEAD
     params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
+=======
+class ClusterLikelihood(PoissonLikelihood):
+    """
+    Poisson Likelihood for un-binned :math:`y`-map galaxy cluster counts.
+    """
+    name = "Clusters"
+    columns = ["tsz_signal", "z", "tsz_signal_err"]
+    data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
+    # data_path = resource_filename("soliket", "clusters/data/selFn_SO")
+    data_name = resource_filename("soliket", "clusters/data/E-D56Clusters.fits")
+    # data_name = resource_filename("soliket",
+    #                   "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
+>>>>>>> master
 
     def initialize(self):
 
@@ -86,7 +118,30 @@ class BinnedClusterLikelihood(CashCLikelihood):
         super().initialize()
 
     def get_requirements(self):
+<<<<<<< HEAD
         return get_requirements(self)
+=======
+        """
+        This likelihood require :math:`P(k,z)`, :math:`H(z)`, :math:`d_A(z)`, 
+        :math:`r(z)` (co-moving radial distance) from Theory codes.
+
+        :return: Dictionary of requirements 
+        """
+        return {
+            "Pk_interpolator": {
+                "z": self.zarr,
+                "k_max": 5.0,
+                "nonlinear": False,
+                "hubble_units": False,  # cobaya told me to
+                "k_hunit": False,  # cobaya told me to
+                "vars_pairs": [["delta_nonu", "delta_nonu"]],
+            },
+            "Hubble": {"z": self.zarr},
+            "angular_diameter_distance": {"z": self.zarr},
+            "comoving_radial_distance": {"z": self.zarr}
+            # "CCL": {"methods": {"sz_model": self._get_sz_model}, "kmax": 10},
+        }
+>>>>>>> master
 
     def _get_hres_z(self, zi):
         # bins in redshifts are defined with higher resolution for low redshift
@@ -336,7 +391,17 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         dVdz = get_dVdz(self, zz, dVdz_interp=False)
         dndlnm = get_dndlnm(self, zz, pk_intp)
 
+<<<<<<< HEAD
         zcut = self.zcut
+=======
+    def _get_rate_fn(self, **kwargs):
+        """
+        Calculates the observed rate of clusters from the provided catalogue, which is
+        then compared directly to the predicted rate at the current parameter values.
+        """
+        HMF = self._get_HMF()
+        param_vals = self._get_param_vals(**kwargs)
+>>>>>>> master
 
         if self.selfunc['method'] == 'injection':
             Pfunc = self.Pfunc_inj(marr, zz, **kwargs)
@@ -424,7 +489,12 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         return Prob_per_cluster
 
+<<<<<<< HEAD
     def P_Yo(self, tile_index, LgY, marr, z, params):
+=======
+    def _get_dVdz(self):
+        DA_z = self.theory.get_angular_diameter_distance(self.zarr)
+>>>>>>> master
 
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
             marr_ymmd = convert_masses(self, marr, z)
@@ -452,6 +522,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     def P_Yo_vec(self, LgY, marr, z, params):
 
+<<<<<<< HEAD
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
             marr_ymmd = convert_masses(self, marr, z)
         else:
@@ -460,6 +531,13 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             marr_500c = get_m500c(self, marr, z)
         else:
             marr_500c = marr_ymmd
+=======
+    def _get_n_expected(self, **kwargs):
+        """
+        Calculates expected number of clusters at the current parameter values.
+        """
+        # def Ntot_survey(self,int_HMF,fsky,Ythresh,param_vals):
+>>>>>>> master
 
         Y = np.exp(LgY).T
         Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=False, **params)

@@ -12,8 +12,11 @@ class CashCLikelihood(Likelihood):
     def _get_data(self):
         raise NotImplementedError
 
-    def _get_theory(self, pk_intp, **kwargs):
-        raise NotImplementedError
+    def _get_theory(self, **kwargs):
+        if ("cash_test_logp" in kwargs):
+            return np.arange(kwargs["cash_test_logp"])
+        else:
+            raise NotImplementedError
 
     def logp(self, **kwargs):
         pk_intp = self.theory.get_Pk_interpolator()

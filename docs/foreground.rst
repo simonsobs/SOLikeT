@@ -1,4 +1,4 @@
-Foreground
+Foreground (CMB)
 ==========
 
 Foreground computation
