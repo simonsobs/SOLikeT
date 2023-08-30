@@ -295,27 +295,6 @@ class BinnedClusterLikelihood(CashCLikelihood):
             comp[comp < 0.] = 0.
             comp[comp > 1.] = 1.
 
-            ####
-            # Nemo-ish style [for comparison / checking - not in S/N bin though]
-            compMz=np.zeros(y0[0].shape)
-            for i in range(y0.shape[0]):
-                y0Grid=y0[i]
-                y0Lim=self.qcut*noise[i]
-                areaWeights=skyfracs
-                log_y0Lim=np.log(y0Lim)
-                log_y0=np.log(y0Grid)
-                if self.selfunc['bias_handler'] == 'theory':
-                    trueSNR=y0Grid/noise[i]
-                    bias_pars=self.selfunc['bias_model_params']
-                    corrFactors=_opt_bias_func(trueSNR, bias_pars['efold'], bias_pars['ped'], bias_pars['norm'])
-                else:
-                    corrFactors=np.ones(y0Grid.shape)
-                # With intrinsic scatter [may not be quite right, but a good approximation]
-                totalLogErr=np.sqrt((noise[i]/y0Grid)**2 + scatter**2)
-                sfi=stats.norm.sf(y0Lim, loc = y0Grid*corrFactors, scale = totalLogErr*(y0Grid*corrFactors))
-                compMz=compMz+sfi*areaWeights[i]
-            ####
-
         else:
             comp = self._get_completeness_inj(marr, zarr, marr_500c, qbin, **params)
         return comp
