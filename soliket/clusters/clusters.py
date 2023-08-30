@@ -250,28 +250,28 @@ class BinnedClusterLikelihood(CashCLikelihood):
             qmin = qbins[kk]
             qmax = qbins[kk+1]
 
+            opt_bias_corr_factor=np.ones(y0.shape)
+            if self.selfunc['bias_handler'] == 'theory':
+                for i in range(Npatches):
+                    trueSNR=y0[i]/noise[i]
+                    bias_pars=self.selfunc['bias_model_params']
+                    opt_bias_corr_factor[i]=_opt_bias_func(trueSNR, bias_pars['efold'], bias_pars['ped'], bias_pars['norm'])
+
             if scatter == 0.:
 
                 arg = []
                 for i in range(Npatches):
 
                     if compl_mode == 'erf_prod':
-                        arg.append(get_erf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
+                        arg.append(get_erf_prod(y0[i]*opt_bias_corr_factor[i], noise[i], qmin, qmax, qcut, kk, Nq))
                         #arg.append(get_stf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
                     elif compl_mode == 'erf_diff':
-                        arg.append(get_erf_diff(y0[i], noise[i], qmin, qmax, qcut))
+                        arg.append(get_erf_diff(y0[i]*opt_bias_corr_factor[i], noise[i], qmin, qmax, qcut))
                         #arg.append(get_stf_diff(y0[i], noise[i], qmin, qmax, qcut))
 
                 comp = np.einsum('ijk,i->jk', np.nan_to_num(arg), skyfracs)
 
             else:
-
-                opt_bias_corr_factor=np.ones(y0.shape)
-                if self.selfunc['bias_handler'] == 'theory':
-                    for i in range(Npatches):
-                        trueSNR=y0[i]/noise[i]
-                        bias_pars=self.selfunc['bias_model_params']
-                        opt_bias_corr_factor[i]=_opt_bias_func(trueSNR, bias_pars['efold'], bias_pars['ped'], bias_pars['norm'])
 
                 lnyy = np.float32(self.lny)
                 yy0 = np.exp(lnyy)
