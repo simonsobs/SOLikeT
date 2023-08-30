@@ -13,7 +13,7 @@ from .cosmopower import CosmoPower, CosmoPowerDerived
 from .ccl import CCL  # noqa: F401
 
 try:
-    from .clusters import ClusterLikelihood  # noqa: F401
+    from .clusters import BinnedClusterLikelihood, UnbinnedClusterLikelihood  # noqa: F401
 except ImportError:
     print('Skipping cluster likelihood (is pyCCL installed?)')
     pass

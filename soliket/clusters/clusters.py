@@ -104,26 +104,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
         super().initialize()
 
     def get_requirements(self):
-        """
-        This likelihood require :math:`P(k,z)`, :math:`H(z)`, :math:`d_A(z)`, 
-        :math:`r(z)` (co-moving radial distance) from Theory codes.
-
-        :return: Dictionary of requirements 
-        """
-        return {
-            "Pk_interpolator": {
-                "z": self.zarr,
-                "k_max": 5.0,
-                "nonlinear": False,
-                "hubble_units": False,  # cobaya told me to
-                "k_hunit": False,  # cobaya told me to
-                "vars_pairs": [["delta_nonu", "delta_nonu"]],
-            },
-            "Hubble": {"z": self.zarr},
-            "angular_diameter_distance": {"z": self.zarr},
-            "comoving_radial_distance": {"z": self.zarr}
-            # "CCL": {"methods": {"sz_model": self._get_sz_model}, "kmax": 10},
-        }
+        return get_requirements(self)
 
     def _get_hres_z(self, zi):
         # bins in redshifts are defined with higher resolution for low redshift
