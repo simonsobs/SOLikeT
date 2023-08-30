@@ -218,9 +218,25 @@ class BinnedClusterLikelihood(CashCLikelihood):
         return comp
 
 
-    # completeness 2D
     def _get_completeness(self, marr, zarr, y0, qbin, marr_500c=None, **params):
+        """Calculate completeness on (mass, z) grid for given signal-to-noise-bin.
+
+        Args:
+            marr (array): Masses defining the (mass, z) grid
+            zarr (array): Redshifts defining the (mass, z) grid
+            y0 (array): Cube of predicted y0 values on the (mass, z) grid - each
+                plane corresponds to a different patch.
+            qbin (int): Index of the signal-to-noise (q) bin for which completeness
+                will be calculated.
+
+        Returns:
+            Completeness on (mass, z) grid for given signal to noise bin, averaged
+            over all patches.
+
+        """
+
         if self.selfunc['method'] == 'SNRbased':
+
             scatter = params["scatter_sz"]
             noise = self.noise
             qcut = self.qcut
@@ -250,13 +266,20 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
             else:
 
+                opt_bias_corr_factor=np.ones(y0.shape)
+                if self.selfunc['bias_handler'] == 'theory':
+                    for i in range(Npatches):
+                        trueSNR=y0[i]/noise[i]
+                        bias_pars=self.selfunc['bias_model_params']
+                        opt_bias_corr_factor[i]=_opt_bias_func(trueSNR, bias_pars['efold'], bias_pars['ped'], bias_pars['norm'])
+
                 lnyy = np.float32(self.lny)
                 yy0 = np.exp(lnyy)
-                mu = np.float32(np.log(y0))
+                mu = np.float32(np.log(y0*opt_bias_corr_factor))
                 fac = np.float32(1./np.sqrt(2.*np.pi*scatter**2))
-
                 comp = 0.
                 for i in range(Npatches):
+
                     if compl_mode == 'erf_prod':
                         arg = get_erf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq)
                         #arg = get_stf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq)
@@ -272,9 +295,37 @@ class BinnedClusterLikelihood(CashCLikelihood):
             comp[comp < 0.] = 0.
             comp[comp > 1.] = 1.
 
+            ####
+            # Nemo-ish style [for comparison / checking - not in S/N bin though]
+            compMz=np.zeros(y0[0].shape)
+            for i in range(y0.shape[0]):
+                y0Grid=y0[i]
+                y0Lim=self.qcut*noise[i]
+                areaWeights=skyfracs
+                log_y0Lim=np.log(y0Lim)
+                log_y0=np.log(y0Grid)
+                if self.selfunc['bias_handler'] == 'theory':
+                    trueSNR=y0Grid/noise[i]
+                    bias_pars=self.selfunc['bias_model_params']
+                    corrFactors=_opt_bias_func(trueSNR, bias_pars['efold'], bias_pars['ped'], bias_pars['norm'])
+                else:
+                    corrFactors=np.ones(y0Grid.shape)
+                # With intrinsic scatter [may not be quite right, but a good approximation]
+                totalLogErr=np.sqrt((noise[i]/y0Grid)**2 + scatter**2)
+                sfi=stats.norm.sf(y0Lim, loc = y0Grid*corrFactors, scale = totalLogErr*(y0Grid*corrFactors))
+                compMz=compMz+sfi*areaWeights[i]
+            ####
+
         else:
             comp = self._get_completeness_inj(marr, zarr, marr_500c, qbin, **params)
         return comp
+
+
+def _opt_bias_func(snr, snrFold, pedestal, norm):
+    """Return optimization bias correction factor - multiply true y0 by this to get what the cluster finder recovers
+
+    """
+    return norm*np.exp(-snr/snrFold)+pedestal
 
 
 class UnbinnedClusterLikelihood(PoissonLikelihood):
@@ -639,9 +690,12 @@ def initialize_common(self):
     cat_tsz_signal_err = cat_tab['fixed_err_y_c'].data
     cat_tile_name = np.array(cat_tab['tileName'].data, dtype = str)
 
-    # SPT-style SNR bias correction, this should be applied before applying SNR cut
-    debiasDOF = self.selfunc['debiasDOF']
-    qcat = np.sqrt(np.power(qcat, 2) - debiasDOF)
+    # Optimization bias handler
+    if self.selfunc['bias_handler'] not in ['theory', 'catalog']:
+        raise NotImplementedError('bias_handler should be either "theory" or "catalog"')
+    if self.selfunc['bias_handler'] == 'catalog':
+        debiasDOF = self.selfunc['debiasDOF']
+        qcat = np.sqrt(np.power(qcat, 2) - debiasDOF)
 
     # only above given SNR cut
     ind = np.where(qcat >= self.qcut)[0]
