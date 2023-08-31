@@ -1168,7 +1168,7 @@ def get_dndlnm(self, z, pk_intp):
         h = self.theory.get_param("H0") / 100.0
         a = 1./(1+z)
         marr = np.exp(marr)
-        dn_dlog10M = np.array([mf.get_mass_function(cosmo, marr/h, ai) for ai in a])
+        dn_dlog10M = np.array([mf(cosmo, marr/h, ai) for ai in a])
         # For consistency with internal mass function computation
         dn_dlog10M /= h**3 * np.log(10.)
 
@@ -1246,17 +1246,17 @@ def convert_masses(both, marr, zz):
         md_hmf = mf_data['md']
 
         if both.theorypred['md_ym'] == '200m':
-            md_ym = ccl.halos.MassDef200m(c_m='Bhattacharya13')
+            md_ym = ccl.halos.MassDef(200, 'matter')
         elif both.theorypred['md_ym'] == '200c':
-            md_ym = ccl.halos.MassDef200c(c_m='Bhattacharya13')
+            md_ym = ccl.halos.MassDef(200, 'critical')
         elif both.theorypred['md_ym'] == '500c':
             md_ym = ccl.halos.MassDef(500, 'critical')
         else:
             raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
-
         cosmo = both.theory.get_CCL()['cosmo']
         a = 1. / (1. + zz)
-        marr_ymmd = np.array([md_hmf.translate_mass(cosmo, marr / h, ai, md_ym) for ai in a]) * h
+        mass_trans=ccl.halos.mass_translator(mass_in = md_hmf, mass_out = md_ym, concentration = 'Bhattacharya13')
+        marr_ymmd = np.array([mass_trans(cosmo, marr / h, ai) for ai in a]) * h
     else:
         if both.theorypred['md_hmf'] == '200m' and both.theorypred['md_ym'] == '500c':
             marr_ymmd = both._get_M500c_from_M200m(marr, zz).T
@@ -1273,10 +1273,11 @@ def get_m500c(both, marr, zz):
     cosmo = both.theory.get_CCL()['cosmo']
     a = 1. / (1. + zz)
 
+    mass_trans=ccl.halos.mass_translator(mass_in = md_hmf, mass_out = md_500c, concentration = 'Bhattacharya13')
     if a.ndim == 1:
-        marr_500c = np.array([md_hmf.translate_mass(cosmo, marr/h, ai, md_500c) for ai in a]) * h
+        marr_500c = np.array([mass_trans(cosmo, marr/h, ai) for ai in a]) * h
     else:
-        marr_500c = md_hmf.translate_mass(cosmo, marr/h, a, md_500c) * h
+        marr_500c = mass_trans(cosmo, marr/h, a) * h
 
     return marr_500c
 

@@ -65,7 +65,7 @@ class CCL(Theory):
     # CCL options
     transfer_function: str = 'boltzmann_camb'
     matter_pk: str = 'halofit'
-    baryons_pk: str = 'nobaryons'
+    baryons_pk: None # CCL v3
     md_hmf: str = '200m'
     # Params it can accept
     params = {'Omega_c': None,
@@ -126,6 +126,8 @@ class CCL(Theory):
 
     def calculate(self, state, want_derived=True, **params_values_dict):
         # Generate the CCL cosmology object which can then be used downstream
+        if self.baryons_pk == 'nobaryons': # For CCL v3, in case people don't want to update SOLikeT .yml configs
+            self.baryons_pk=None
         cosmo = ccl.Cosmology(Omega_c=self.provider.get_param('Omega_c'),
                               Omega_b=self.provider.get_param('Omega_b'),
                               h=self.provider.get_param('h'),
@@ -135,7 +137,7 @@ class CCL(Theory):
                               m_nu=self.provider.get_param('m_nu'),
                               transfer_function=self.transfer_function,
                               matter_power_spectrum=self.matter_pk,
-                              baryons_power_spectrum=self.baryons_pk)
+                              baryonic_effects=self.baryons_pk) # baryonic_effects is CCL v3
 
         state['derived'] = {'H0': cosmo.cosmo.params.H0}
         for req_res, attrs in self._required_results.items():
@@ -149,14 +151,14 @@ class CCL(Theory):
                 state[req_res] = None
             elif req_res == 'nc_data':
                 if self.md_hmf == '200m':
-                    md = ccl.halos.MassDef200m(c_m='Bhattacharya13')
+                    md = ccl.halos.MassDef(200, 'matter')
                 elif self.md_hmf == '200c':
-                    md = ccl.halos.MassDef200c(c_m='Bhattacharya13')
+                    md = ccl.halos.MassDef(200, 'critical')
                 elif self.md_hmf == '500c':
                     md = ccl.halos.MassDef(500, 'critical')
                 else:
                     raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
-                mf = ccl.halos.MassFuncTinker08(cosmo, mass_def=md)
+                mf = ccl.halos.MassFuncTinker08(mass_def=md)
                 state[req_res] = {'HMF': mf,
                                   'md': md}
             elif req_res == 'CCL':
