@@ -1,10 +1,13 @@
 debug: true
 
+<<<<<<< HEAD
+=======
 likelihood:
   soliket.ClusterLikelihood:
     
 
 
+>>>>>>> master
 params:
 
   # fixed
@@ -82,4 +85,8 @@ theory:
     stop_at_error: true
 
 sampler:
+<<<<<<< HEAD
   evaluate:
+=======
+  evaluate:
+>>>>>>> master

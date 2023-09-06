@@ -1,25 +1,47 @@
 import numpy as np
 from scipy.special import factorial
-import math as m
 
 
-def cash_c_logpdf(theory, data, usestirling=True):
+def cash_c_logpdf(theory, data, usestirling=True, name="binned"):
 
-    data = np.asarray(data, dtype=int)
+    __, __, delN2Dcat, zcut = data
 
-    ln_fac = np.zeros_like(data, dtype=float)
+    obs = np.asarray(delN2Dcat, dtype=int)
+    ln_fac = np.zeros_like(obs, dtype=float)
+    zcut_arr = np.arange(zcut)
+
+    if zcut > 0:
+        theory = np.delete(theory, zcut_arr, 0)
+        obs = np.delete(obs, zcut_arr, 0)
+        ln_fac = np.delete(ln_fac, zcut_arr, 0)
+        print("\r ::: Excluding first {} redshift bins in likelihood.".format(zcut))
+
+        for i in range(theory.shape[0]):
+            print('\r Number of clusters in redshift bin {}: {}.'.format(i, theory[i,:].sum()))
+        print('------------')
+        for i in range(theory.shape[1]):
+            print('\r Number of clusters in SNR bin {}: {}.'.format(i, theory[:,i].sum()))
+        print('------------')
+        print('\r Total predicted N = {}'.format(theory.sum()))
+        print('\r Total observed N = {}'.format(obs.sum()))
 
     if usestirling: # use Stirling's approximation for N > 10
-        ln_fac[data > 10] = 0.918939 + (data[data > 10] + 0.5) \
-                                    * np.log(data[data > 10]) - data[data > 10]
-        ln_fac[data <= 10] = np.log(factorial(data[data <= 10]))
-    else:
-        ln_fac[data > 0] = np.log(factorial(data[data > 0]))
-    ln_fac[data == 0] = 0.
+        ln_fac[obs > 10] = 0.918939 + (obs[obs > 10] + 0.5) * np.log(obs[obs > 10]) - obs[obs > 10]
+        ln_fac[obs <= 10] = np.log(factorial(obs[obs <= 10]))
+    else: # direct compuation of factorial
+        ln_fac[obs > 0] = np.log(factorial(obs[obs > 0]))
+    ln_fac[obs == 0] = 0.
 
-    loglike = data * np.log(theory) - theory - ln_fac
+    log_theory = np.zeros_like(theory, dtype=float)
+    log_theory[theory > 0] = np.log(theory[theory > 0])
+    log_theory[theory == 0] = 0.
+
+    loglike = obs * log_theory - theory - ln_fac
+
+    print("\r ::: 2D ln likelihood = ", np.nansum(loglike[np.isfinite(loglike)]))
 
     return np.nansum(loglike[np.isfinite(loglike)])
+
 
 
 class CashCData:
@@ -27,13 +49,9 @@ class CashCData:
     """
 
     def __init__(self, name, N, usestirling=True):
-
         self.name = str(name)
         self.data = N
         self.usestirling = usestirling
 
-    def __len__(self):
-        return len(self.data)
-
     def loglike(self, theory):
-        return cash_c_logpdf(theory, self.data)
+        return cash_c_logpdf(theory, self.data, name=self.name)

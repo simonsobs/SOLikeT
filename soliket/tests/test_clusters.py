@@ -1,59 +1,150 @@
+# pytest -k clusters -v tests
+
 import numpy as np
 import pytest
 
 from cobaya.model import get_model
 
-fiducial_params = {
-    "ombh2": 0.02225,
-    "omch2": 0.1198,
-    "H0": 67.3,
-    "tau": 0.06,
-    "As": 2.2e-9,
-    "ns": 0.96,
-    "mnu": 0.06,
-    "nnu": 3.046,
+
+params = {
+    'h': 0.68,
+    'n_s': 0.965,
+    'Omega_b': 0.049,
+    'Omega_c': 0.261,
+    'sigma8': 0.81,
+    'm_nu': 0.,
+    'tenToA0': 4.0e-05,
+    'B0': 0.08,
+    'C0': 2.,
+    'scatter_sz': 0.,
+    'bias_sz': 1.
 }
 
-info_fiducial = {
-    "params": fiducial_params,
-    "likelihood": {"soliket.ClusterLikelihood": {"stop_at_error": True}},
-    "theory": {
-        "camb": {
-            "extra_args": {
-                "accurate_massive_neutrino_transfers": True,
-                "num_massive_neutrinos": 1,
-                "redshifts": np.linspace(0, 2, 41),
-                "nonlinear": False,
-                "kmax": 10.0,
-                "dark_energy_model": "ppf",
-                "bbn_predictor": "PArthENoPE_880.2_standard.dat"
-            }
-        },
+path = './clusters/data/advact/DR5CosmoSims/sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5/NemoCCL_A10tSZ_DR5White_ACT-DR5/'
+
+lkl_common = {
+    'verbose': True,
+    'stop_at_error': True,
+    'data': {
+        'data_path': path,
+        'cat_file': 'NemoCCL_A10tSZ_DR5White_ACT-DR5_mass.fits',
+        'Q_file': 'selFn/QFit.fits',
+        'tile_file': 'selFn/tileAreas.txt',
+        'rms_file': 'selFn/RMSTab.fits'
     },
+    'theorypred': {
+        'choose_theory': 'CCL',
+        'massfunc_mode': 'ccl',
+        'compl_mode': 'erf_diff',
+        'md_hmf': '200c',
+        'md_ym': '200c'
+    },
+    'YM': {
+        'Mpivot': 4.25e14
+    },
+    'selfunc': {
+        'SNRcut': 5.,
+        'method': 'SNRbased',
+        'whichQ': 'injection',
+        'resolution': 'downsample',
+        'dwnsmpl_bins': 50,
+        'save_dwsmpld': False,
+    },
+    'binning': {
+        'z': {
+            'zmin': 0.,
+            'zmax': 2.6,
+            'dz': 0.1
+        },
+        'q': {
+            'log10qmin': 0.6,
+            'log10qmax': 2.0,
+            'dlog10q': 0.25
+        },
+        'M': {
+            'Mmin': 5e13,
+            'Mmax': 1e16,
+            'dlogM': 0.05
+        },
+        'exclude_zbin': 0,
+    }
 }
+
+ccl_baseline = {
+    'transfer_function': 'boltzmann_camb',
+    'matter_pk': 'halofit',
+    'baryons_pk': 'nobaryons',
+    'md_hmf': '200c'
+}
+
+
+
+
+info_binned = {
+    'params': params,
+    'likelihood': {'soliket.BinnedClusterLikelihood': lkl_common},
+    'theory': {'soliket.clusters.CCL': ccl_baseline}
+}
+
+info_unbinned = {
+    'params': params,
+    'likelihood': {'soliket.UnbinnedClusterLikelihood': lkl_common},
+    'theory': {'soliket.clusters.CCL': ccl_baseline}
+}
+
+
+def test_clusters_import():
+
+    from soliket.clusters import BinnedClusterLikelihood
+    from soliket.clusters import UnbinnedClusterLikelihood
 
 
 def test_clusters_model():
 
-    model_fiducial = get_model(info_fiducial) # noqa F841
+    binned_model = get_model(info_binned)
+    unbinned_model = get_model(info_unbinned)
 
 
 def test_clusters_loglike():
 
-    model_fiducial = get_model(info_fiducial)
+    binned_model = get_model(info_binned)
+    unbinned_model = get_model(info_unbinned)
 
-    lnl = model_fiducial.loglikes({})[0]
+    binned_lnl = binned_model.loglikes({})[0]
+    unbinned_lnl = unbinned_model.loglikes({})[0]
 
-    assert np.isclose(lnl, -854.89406321, rtol=1.e-3, atol=1.e-5)
+    assert np.isfinite(binned_lnl)
+    assert np.isfinite(unbinned_lnl)
 
 
-def test_clusters_n_expected():
+def test_clusters_prediction():
 
-    model_fiducial = get_model(info_fiducial)
+    binned_model = get_model(info_binned)
+    unbinned_model = get_model(info_unbinned)
 
-    lnl = model_fiducial.loglikes({})[0]
+    binned_model.loglikes({})[0]
+    unbinned_model.loglikes({})[0]
 
-    like = model_fiducial.likelihood["soliket.ClusterLikelihood"]
+    binned_like = binned_model.likelihood['soliket.BinnedClusterLikelihood']
+    unbinned_like = unbinned_model.likelihood['soliket.UnbinnedClusterLikelihood']
 
-    assert np.isfinite(lnl)
-    assert like._get_n_expected() > 40
+    binned_pk_intp = binned_like.theory.get_Pk_interpolator()
+    unbinned_pk_intp = unbinned_like.theory.get_Pk_interpolator()
+    SZparams = {
+        'tenToA0': 4.0e-05,
+        'B0': 0.08,
+        'C0': 2.,
+        'scatter_sz': 0.,
+        'bias_sz': 1.
+    }
+
+    Nzq = binned_like._get_theory(binned_pk_intp, **SZparams)
+    Ntot = unbinned_like._get_n_expected(unbinned_pk_intp, **SZparams)
+
+    assert np.isclose(Nzq.sum(), Ntot)
+
+
+# test_clusters_import()
+# test_clusters_model()
+# test_clusters_loglike()
+# test_clusters_prediction()
