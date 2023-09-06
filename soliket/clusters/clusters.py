@@ -53,7 +53,8 @@ class BinnedClusterLikelihood(CashCLikelihood):
     binning: dict = {}
     verbose: bool = False
 
-    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
+    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None,
+              "opt_bias_efold":None, "opt_bias_ped":None, "opt_bias_norm":None}
 
     def initialize(self):
 
@@ -254,7 +255,8 @@ class BinnedClusterLikelihood(CashCLikelihood):
             if self.selfunc['bias_handler'] == 'theory':
                 for i in range(Npatches):
                     trueSNR=y0[i]/noise[i]
-                    bias_pars=self.selfunc['bias_model_params']
+                    # bias_pars=self.selfunc['bias_model_params']
+                    bias_pars={'efold': params['opt_bias_efold'], 'ped': params['opt_bias_ped'], 'norm': params['opt_bias_norm']}
                     opt_bias_corr_factor[i]=_opt_bias_func(trueSNR, bias_pars['efold'], bias_pars['ped'], bias_pars['norm'])
 
             if scatter == 0.:
@@ -546,7 +548,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             if self.selfunc['bias_handler'] == 'theory':
                 trueSNR=Ytilde/Ynoise_a
-                bias_pars=self.selfunc['bias_model_params']
+                # bias_pars=self.selfunc['bias_model_params']
+                bias_pars={'efold': params['opt_bias_efold'], 'ped': params['opt_bias_ped'], 'norm': params['opt_bias_norm']}
                 opt_bias_corr_factor=_opt_bias_func(trueSNR, bias_pars['efold'], bias_pars['ped'], bias_pars['norm'])
                 Ytilde=Ytilde*opt_bias_corr_factor
 
@@ -554,6 +557,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             #ans = np.nan_to_num(get_stf(Ytilde, Ynoise_a, qcut_a)).T
 
         else:
+
             Y = np.exp(LgY)
 
             Y_a = np.repeat(Y[:, np.newaxis], np.shape(Ynoise), axis=1)
@@ -561,6 +565,13 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             qcut = np.outer(np.ones(np.shape(Y_a)), self.qcut)
             qcut_a = np.reshape(qcut, (Y_a.shape[0], Y_a.shape[1]))
+
+            if self.selfunc['bias_handler'] == 'theory':
+                trueSNR=Y_a/Ynoise_a
+                # bias_pars=self.selfunc['bias_model_params']
+                bias_pars={'efold': params['opt_bias_efold'], 'ped': params['opt_bias_ped'], 'norm': params['opt_bias_norm']}
+                opt_bias_corr_factor=_opt_bias_func(trueSNR, bias_pars['efold'], bias_pars['ped'], bias_pars['norm'])
+                Y_a=Y_a*opt_bias_corr_factor
 
             Yerf = get_erf(Y_a, Ynoise_a, qcut_a)
             #Yerf = get_stf(Y_a, Ynoise_a, qcut_a)
