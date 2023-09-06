@@ -544,6 +544,12 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             Ynoise = np.outer(Ynoise, np.ones(np.shape(Ytilde[0,:,:])))
             Ynoise_a = np.reshape(Ynoise, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
 
+            if self.selfunc['bias_handler'] == 'theory':
+                trueSNR=Ytilde/Ynoise_a
+                bias_pars=self.selfunc['bias_model_params']
+                opt_bias_corr_factor=_opt_bias_func(trueSNR, bias_pars['efold'], bias_pars['ped'], bias_pars['norm'])
+                Ytilde=Ytilde*opt_bias_corr_factor
+
             ans = np.nan_to_num(get_erf(Ytilde, Ynoise_a, qcut_a)).T
             #ans = np.nan_to_num(get_stf(Ytilde, Ynoise_a, qcut_a)).T
 
