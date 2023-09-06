@@ -334,10 +334,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         self.catalog = pd.DataFrame(
             {
-                "z": self.z_cat.byteswap().newbyteorder(),
-                "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(),
-                "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),
-                "tile_name": self.cat_tile_name.byteswap().newbyteorder()
+                "z": self.z_cat,#.byteswap().newbyteorder(),
+                "tsz_signal": self.cat_tsz_signal,#.byteswap().newbyteorder(),
+                "tsz_signal_err": self.cat_tsz_signal_err,#.byteswap().newbyteorder(),
+                "tile_name": self.cat_tile_name#.byteswap().newbyteorder()
             }
         )
 
@@ -663,10 +663,10 @@ def initialize_common(self):
     cat_tab = atpy.Table().read(self.datafile)
     if self.footprint is not None:
         cat_tab = cat_tab[cat_tab['footprint_{}'.format(self.footprint)] == True]
-    zcat = cat_tab['redshift'].data
-    qcat = cat_tab['fixed_SNR'].data
-    cat_tsz_signal = cat_tab['fixed_y_c'].data
-    cat_tsz_signal_err = cat_tab['fixed_err_y_c'].data
+    zcat = cat_tab['redshift'].data.astype(float)
+    qcat = cat_tab['fixed_SNR'].data.astype(float)
+    cat_tsz_signal = cat_tab['fixed_y_c'].data.astype(float)
+    cat_tsz_signal_err = cat_tab['fixed_err_y_c'].data.astype(float)
     cat_tile_name = np.array(cat_tab['tileName'].data, dtype = str)
 
     # Optimization bias handler
