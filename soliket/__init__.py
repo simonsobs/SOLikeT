@@ -7,3 +7,5 @@ from .gaussian import GaussianLikelihood, MultiGaussianLikelihood
 from .ymap.ymap_ps import SZLikelihood, SZForegroundTheory
 #from .ymap.classy_sz import classy_sz
 from .sz_binned_cluster_counts.binned_cc import binned_cc_likelihood
+from .yg.galaxy_x_galaxy import GXG_Likelihood
+from .yg.y_x_galaxy import YXG_Likelihood
