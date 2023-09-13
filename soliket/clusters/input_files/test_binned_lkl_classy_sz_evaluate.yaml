@@ -12,6 +12,7 @@ likelihood:
   soliket.BinnedClusterLikelihood:
     stop_at_error: True
     verbose: True
+    debug: True
 
     # Data
     data:
@@ -25,7 +26,7 @@ likelihood:
 
     # Theory
     theorypred:
-      choose_theory: "CCL"
+      choose_theory: "classy_sz"
       massfunc_mode: 'ccl'
       md_hmf: '200c'
       md_ym: '200c'
@@ -79,13 +80,14 @@ params:
   h : 0.68
   n_s : 0.965
   Omega_b : 0.049
-  Omega_c : 0.261
+  Omega_cdm : 0.261
+  tau_reio : 0.06
   # sigma8 : 0.81
   tenToA0 : 1.9e-5 #4.0e-5
   B0 : 0.08
   scatter_sz : 0.2
   bias_sz : 1
-  m_nu : 0.
+  # m_nu : 0.
   C0: 0.
 
   sigma8:
@@ -137,7 +139,7 @@ theory:
         M_max: 1e16
         mass_epsrel: 1e-6
         mass_epsabs: 1e-100
-        ndim_redshifts: 200
+        ndim_redshifts: 50
         # 'ndim_masses' : 100,
 
 
@@ -166,10 +168,10 @@ theory:
 
 
 
-        dlny : 0.006
+        dlny : 0.01
         lnymin : -15. # planck  -11.5 so/act -11
-        lnymax : -3.  # planck 10. so/act -5
-        dlnM_cluster_count_completeness_grid : 0.005
+        lnymax : -5.  # planck 10. so/act -5
+        dlnM_cluster_count_completeness_grid : 0.01
 
 
         cluster_count_completeness_grid_z_cutoff_low : 0.4
@@ -188,18 +190,18 @@ theory:
         redshift_epsabs_cluster_counts : 1e-40
 
 
-        A_ym'  : 1.9e-05,
-        B_ym'  : 0.08,
-        C_ym' : 0.,
-        sigmaM_ym' : 0.173,
-        m_pivot_ym_[Msun]' : 4.25e14,
+        # A_ym  : 1.9e-05
+        # B_ym  : 0.08
+        # C_ym : 0.
+        # sigmaM_ym : 0.173
+        m_pivot_ym_[Msun] : 4.25e14
 
-        use_m500c_in_ym_relation' : 0,
-        use_planck_binned_proba' : 0, #use diff of erfs
-        use_skyaveraged_noise': 0, # this will speed-up everything
+        use_m500c_in_ym_relation : 0
+        use_planck_binned_proba : 0 #use diff of erfs
+        use_skyaveraged_noise: 0 # this will speed-up everything
 
-        szcc_dof': 0.,
-        szcc_qtrunc': 0.,
+        szcc_dof : 0.
+        szcc_qtrunc : 0.
 
 
 stop_at_error: True

@@ -34,9 +34,12 @@ class BinnedClusterLikelihood(CashCLikelihood):
     binning: dict = {}
     verbose: bool = False
 
+    debug: bool = False
+
     params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
 
     def initialize(self):
+
 
         # constant binning in log10
         qbins = np.arange(self.binning['q']['log10qmin'], self.binning['q']['log10qmax']+self.binning['q']['dlog10q'], self.binning['q']['dlog10q'])
@@ -48,44 +51,48 @@ class BinnedClusterLikelihood(CashCLikelihood):
         self.zcut = self.binning['exclude_zbin']
 
         initialize_common(self)
-
         delNcat, _ = np.histogram(self.z_cat, bins=self.zbins)
         self.delNcat = self.zarr, delNcat
-
         self.log.info("Number of redshift bins = {}.".format(len(self.zarr)))
         self.log.info('Number of SNR bins = {}.'.format(self.Nq))
 
         delN2Dcat, _, _ = np.histogram2d(self.z_cat, self.q_cat, bins=[self.zbins, self.qbins])
         self.delN2Dcat = self.zarr, self.qarr, delN2Dcat, self.zcut
 
-        # finner binning for low redshift
-        minz = self.zbins[0]
-        maxz = self.zbins[-1]
-        if minz < 0: minz = 0.0
-        zi = minz
+        if self.theorypred['choose_theory'] == 'classy_sz':
+            self.params = {}
+        else:
+            # finner binning for low redshift
+            minz = self.zbins[0]
+            maxz = self.zbins[-1]
+            if minz < 0: minz = 0.0
+            zi = minz
 
-        # counting redshift bins
-        Nzz = 0
-        while zi <= maxz :
-            zi = self._get_hres_z(zi)
-            Nzz += 1
+            # counting redshift bins
+            Nzz = 0
+            while zi <= maxz :
+                zi = self._get_hres_z(zi)
+                Nzz += 1
 
-        zi = minz
-        zz = np.zeros(Nzz)
-        for i in range(Nzz):
-            zz[i] = zi
-            zi = self._get_hres_z(zi)
-        if zz[0] == 0. : zz[0] = 1e-5
-        self.zz = zz
+            zi = minz
+            zz = np.zeros(Nzz)
+            for i in range(Nzz):
+                zz[i] = zi
+                zi = self._get_hres_z(zi)
+            if zz[0] == 0. : zz[0] = 1e-5
+            self.zz = zz
 
-        self.log.info('Number of redshift points for theory calculation = {}.'.format(len(self.zz)))
-        self.log.info('Number of mass points for theory calculation = {}.'.format(len(self.lnmarr)))
-        self.log.info('Number of y0 points for theory calculation = {}.'.format(len(self.lny)))
+            self.log.info('Number of redshift points for theory calculation = {}.'.format(len(self.zz)))
+            self.log.info('Number of mass points for theory calculation = {}.'.format(len(self.lnmarr)))
+            self.log.info('Number of y0 points for theory calculation = {}.'.format(len(self.lny)))
 
         super().initialize()
 
     def get_requirements(self):
-        return get_requirements(self)
+        if self.theorypred['choose_theory'] == 'classy_sz':
+            return {"sz_binned_cluster_counts": {}}
+        else:
+            return get_requirements(self)
 
     def _get_hres_z(self, zi):
         # bins in redshifts are defined with higher resolution for low redshift
@@ -104,13 +111,18 @@ class BinnedClusterLikelihood(CashCLikelihood):
         return self.delN2Dcat
 
     def _get_theory(self, pk_intp, **kwargs):
-
-        start = time.time()
-        delN = self._get_integrated(pk_intp, **kwargs)
-        elapsed = time.time() - start
-        self.log.info("Theory N calculation took {:.3f} seconds.".format(elapsed))
-
-        return delN
+        if self.theorypred['choose_theory'] == 'classy_sz':
+            theory = self.theory.get_sz_binned_cluster_counts()
+            dNdzdy_theoretical = theory['dndzdy']
+            z_edges = theory['z_edges']
+            log10y_edges = theory['log10y_edges']
+            return dNdzdy_theoretical,z_edges,log10y_edges
+        else:
+            start = time.time()
+            delN = self._get_integrated(pk_intp, **kwargs)
+            elapsed = time.time() - start
+            self.log.info("Theory N calculation took {:.3f} seconds.".format(elapsed))
+            return delN
 
     def _get_integrated(self, pk_intp, **kwargs):
 
@@ -256,6 +268,41 @@ class BinnedClusterLikelihood(CashCLikelihood):
         else:
             comp = self._get_completeness_inj(marr, zarr, marr_500c, qbin, **params)
         return comp
+
+    def logp(self, **params_values):
+        if self.theorypred['choose_theory'] == 'classy_sz':
+            pk_intp = None
+            theory = self._get_theory(pk_intp,**params_values)
+            dNdzdy_theoretical,z_edges,log10y_edges = theory
+            dNdzdy_catalog, zedges, yedges = np.histogram2d(self.z_cat,np.log10(self.q_cat), bins=[z_edges,log10y_edges])
+            SZCC_Cash = 0.
+            N_z,N_y = np.shape(dNdzdy_theoretical)
+            # if self.debug == True:
+            #     print('N_z,N_y',N_z,N_y)
+            for index_z in range(N_z):
+                for index_y in range(N_y):
+                    if not dNdzdy_theoretical[index_z][index_y] == 0.:
+                        ln_factorial = 0.
+                        if not dNdzdy_catalog[index_z,index_y] == 0.:
+                            if dNdzdy_catalog[index_z,index_y] > 10.:
+                                # Stirling approximation only for more than 10 elements
+                                ln_factorial = 0.918939 + (dNdzdy_catalog[index_z,index_y] + 0.5) * np.log(dNdzdy_catalog[index_z,index_y]) - dNdzdy_catalog[index_z,index_y]
+                            else:
+                                # Direct computation of factorial
+                                ln_factorial = np.log(np.math.factorial(int(dNdzdy_catalog[index_z,index_y])))
+                        SZCC_Cash += (dNdzdy_catalog[index_z,index_y] * np.log(dNdzdy_theoretical[index_z][index_y]) - dNdzdy_theoretical[index_z][index_y] - ln_factorial)
+                        # if self.debug == True:
+                        #     print("theory: %.5e, catalogue: %.5e"%(dNdzdy_theoretical[index_z][index_y],dNdzdy_catalog[index_z,index_y]))
+            if self.debug == True:
+                print("Ntot cat:",np.sum(dNdzdy_catalog[:,:]))
+                print("Ntot theory:",np.sum(dNdzdy_theoretical[:][:]))
+            # return ln(L)
+            loglkl = SZCC_Cash
+            return loglkl
+        else:
+            pk_intp = self.theory.get_Pk_interpolator()
+            theory = self._get_theory(pk_intp, **params_values)
+            return self.data.loglike(theory)
 
 
 class UnbinnedClusterLikelihood(PoissonLikelihood):
@@ -921,6 +968,8 @@ def get_requirements(self):
                 'Pk_interpolator': {},
                 'H0': None  #NB H0 is derived
                 }
+    elif self.theorypred['choose_theory'] == 'classy_sz':
+        req = {}
     else:
         raise NotImplementedError('Only theory modules camb, class and CCL implemented so far.')
     return req
