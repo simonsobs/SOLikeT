@@ -14,19 +14,19 @@ setup(
             "*.yaml",
             "*.bibtex",
             # "data/simulated*/*.txt",
-            "clusters/data/*",
-            "clusters/data/selFn_equD56/*",
-            "lensing/data/*.txt",
+            # "clusters/data/*",
+            # "clusters/data/selFn_equD56/*",
+            # "lensing/data/*.txt",
         ]
     },
     install_requires=[
         "astropy",
         "scikit-learn",
-        "cobaya",
+        #"cobaya",
         "sacc",
         "pyccl",
-        "fgspectra @ git+https://github.com/simonsobs/fgspectra@act_sz_x_cib#egg=fgspectra", # noqa E501
-        "mflike @ git+https://github.com/simonsobs/lat_mflike@master"
+        #"fgspectra @ git+https://github.com/simonsobs/fgspectra@act_sz_x_cib#egg=fgspectra", # noqa E501
+        #"mflike @ git+https://github.com/simonsobs/lat_mflike@master"
     ],
     test_suite="soliket.tests",
     include_package_data=True,
