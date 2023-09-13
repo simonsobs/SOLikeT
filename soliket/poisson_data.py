@@ -22,6 +22,7 @@ def poisson_logpdf(n_expected, catalog, columns, rate_fn, name="unbinned"):
     loglike = -n_expected + np.nansum(np.log(rate_densities[np.nonzero(rate_densities)]))
 
     print("\r ::: 2D ln likelihood = ", loglike)
+    # print("rates:",np.shape(rate_densities),rate_densities)
 
     return loglike
 

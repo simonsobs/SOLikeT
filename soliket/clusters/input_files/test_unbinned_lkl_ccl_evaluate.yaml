@@ -7,7 +7,7 @@
 # command:
 # $ cobaya-run input_files/test_unbinned_lkl_camb.yaml -f
 
-output: chains/test_unbinned
+output: chains/test_unbinned_ccl_evaluate
 
 likelihood:
   soliket.UnbinnedClusterLikelihood:
@@ -44,7 +44,7 @@ likelihood:
       # method: SNRbased / injection
       #   SNRbased: completeness based in SNR estimates
       #   injection: estimate completeness using source injection method from nemo (i.e. no Q)
-      whichQ: 'injection'
+      whichQ: 'fit'
       # whichQ: fit / injection
       #   fit : using Q fit data
       #   injection : using Q source injection data
@@ -52,8 +52,11 @@ likelihood:
       # resolution: full / downsample
       #   downsample: average rms map, Q into n dwnsmpl_bins
       #   full: consider full map, Q function, no downsampling
-      dwnsmpl_bins : 2 # If resolution=downsample, number of bins to use
+      dwnsmpl_bins : 30 # If resolution=downsample, number of bins to use
       save_dwsmpld : False # Save downsampled Q and rms to npz file and once it exists read those
+
+      debiasDOF : 0.
+      debias_cutoff : 0.
 
     binning:
       z:
@@ -64,6 +67,8 @@ likelihood:
         Mmin: 5e13
         Mmax: 1e16
         dlogM: 0.01
+      # when excluding low redshift bins for lkl, otherwise should be 0
+      exclude_zbin: 0
 
 params:
   h : 0.68
@@ -102,3 +107,4 @@ theory:
       md_hmf : '200c'
 
 stop_at_error: True
+timing: True

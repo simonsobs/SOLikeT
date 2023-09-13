@@ -56,6 +56,7 @@ likelihood:
       save_dwsmpld : False # Save downsampled Q and rms to npz file and once it exists read those
 
       debiasDOF : 0.
+      debias_cutoff: 0.
     binning:
       # redshift bins for number counts
       z:
@@ -152,6 +153,7 @@ theory:
         sz_selection_function_skyfracs_file : '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class_sz_auxiliary_files/nemo_sim_skyfracs_120923_30bins.txt'
         sz_selection_function_ylims_file : '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class_sz_auxiliary_files/nemo_sim_ylims_120923_30bins.txt'
 
+        SZ_cat_file: '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class_sz_auxiliary_files/SZ_cat_nemosimkit_130923.txt'
 
 
         bin_z_min_cluster_counts : 0.
@@ -178,7 +180,7 @@ theory:
         N_samp_fftw  : 2048
         szcounts_fft_nz  : 80
         szcounts_fft_z_min  : 0.0
-        szcounts_fft_z_max  : 2.0
+        szcounts_fft_z_max  : 2.5
         tol_dlnm_dlnq : 0.01
         ntab_dlnm_dlnq : 500
         szcounts_qmax_fft_padded : 200.

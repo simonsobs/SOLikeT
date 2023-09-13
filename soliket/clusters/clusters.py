@@ -472,7 +472,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             Pfunc_ind = self.Pfunc_per(tile_index, marr, c_z, c_y, c_yerr, kwargs).T
             dn_dlnm = np.squeeze(dndlnm_intp(c_z, self.lnmarr))
-            dVdz = get_dVdz(self, c_z, dVdz_interp=True)
+            dVdz = get_dVdz(self, c_z, dVdz_interp=True)*self.skyfracs[tile_index] ## added skyfrac dependence here.
             ans = np.trapz(dn_dlnm * Pfunc_ind * dVdz[None,:], x=self.lnmarr[:,None], axis=0)
             #ans = np.trapz(dn_dlnm * Pfunc_ind * dVdz[None,:] * self.skyfracs.sum(), x=self.lnmarr[:,None], axis=0)
 
@@ -627,7 +627,9 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     def logp(self, **kwargs):
         if self.theorypred['choose_theory'] == 'classy_sz':
-            return self.theory.get_sz_unbinned_cluster_counts()
+            szcounts = self.theory.get_sz_unbinned_cluster_counts()
+            # print('Ntot,lnlik,rates:',szcounts[1],szcounts[0],np.shape(szcounts[2]),szcounts[2])
+            return szcounts[0]
         else:
             pk_intp = self.theory.get_Pk_interpolator()
             rate_densities = self._get_rate_fn(pk_intp, **kwargs)
