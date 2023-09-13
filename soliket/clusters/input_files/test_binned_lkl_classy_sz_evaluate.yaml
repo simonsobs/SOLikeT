@@ -6,7 +6,7 @@
 # run from SOLikeT/soliket/clusters
 # command:
 # $ cobaya-run input_files/test_binned_lkl_ccl.yaml -f
-output: chains/test_binned_ccl_evaluate
+output: chains/test_binned_classy_sz_evaluate
 
 likelihood:
   soliket.BinnedClusterLikelihood:
@@ -130,14 +130,14 @@ theory:
 
         z_min: 0.
         z_max: 2.
-        redshift_epsrel: 1e-6
+        redshift_epsrel: 1e-4
         redshift_epsabs: 1e-100
 
 
 
         M_min: 5e13
         M_max: 1e16
-        mass_epsrel: 1e-6
+        mass_epsrel: 1e-4
         mass_epsabs: 1e-100
         ndim_redshifts: 50
         # 'ndim_masses' : 100,
@@ -181,15 +181,6 @@ theory:
         dz_cluster_count_completeness_grid_mid_z : 1e-2
         dz_cluster_count_completeness_grid_high_z : 1e-1
 
-
-
-        mass_epsrel_cluster_counts : 1e-6
-        mass_epsabs_cluster_counts : 1e-40
-
-        redshift_epsrel_cluster_counts : 1e-6
-        redshift_epsabs_cluster_counts : 1e-40
-
-
         # A_ym  : 1.9e-05
         # B_ym  : 0.08
         # C_ym : 0.
@@ -205,3 +196,4 @@ theory:
 
 
 stop_at_error: True
+timing: True

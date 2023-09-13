@@ -6,12 +6,12 @@
 # run from SOLikeT/soliket/clusters
 # command:
 # $ cobaya-run input_files/test_binned_lkl_ccl.yaml -f
-output: chains/test_binned_ccl_evaluate
+output: chains/test_unbinned_classy_sz_evaluate
 
 likelihood:
-  soliket.BinnedClusterLikelihood:
+  soliket.UnbinnedClusterLikelihood:
     stop_at_error: True
-    verbose: True
+    verbose: False
 
     # Data
     data:
@@ -25,7 +25,7 @@ likelihood:
 
     # Theory
     theorypred:
-      choose_theory: "CCL"
+      choose_theory: "classy_sz"
       massfunc_mode: 'ccl'
       md_hmf: '200c'
       md_ym: '200c'
@@ -79,13 +79,14 @@ params:
   h : 0.68
   n_s : 0.965
   Omega_b : 0.049
-  Omega_c : 0.261
+  Omega_cdm : 0.261
+  tau_reio : 0.06
   # sigma8 : 0.81
   tenToA0 : 1.9e-5 #4.0e-5
   B0 : 0.08
   scatter_sz : 0.2
   bias_sz : 1
-  m_nu : 0.
+  # m_nu : 0.
   C0: 0.
 
   sigma8:
@@ -105,11 +106,81 @@ sampler:
         sigma8: 0.81
 
 theory:
-  soliket.clusters.CCL :
-      transfer_function : 'boltzmann_camb'
-      matter_pk : 'halofit'
-      baryons_pk : 'nobaryons'
-      md_hmf : '200c'
+  # soliket.clusters.CCL :
+  #     transfer_function : 'boltzmann_camb'
+  #     matter_pk : 'halofit'
+  #     baryons_pk : 'nobaryons'
+  #     md_hmf : '200c'
+  classy_szfast.classy_sz.classy_sz:
+    use_class_sz_fast_mode : 1
+    stop_at_error: True
+    extra_args:
+        output: 'sz_cluster_counts_fft'
+        mass function  : 'T08M200c'
+        concentration parameter : 'B13'
+
+        # h': 0.68,
+        # n_s': 0.965,
+        # Omega_b': 0.049,
+        # Omega_cdm': 0.261,
+        # sigma8': 0.81,
+        # tau_reio' : 0.06,
+
+
+        z_min: 0.
+        z_max: 2.
+        redshift_epsrel: 1e-6
+        redshift_epsabs: 1e-100
+
+
+
+        M_min: 5e13
+        M_max: 1e16
+        mass_epsrel: 1e-6
+        mass_epsabs: 1e-100
+        ndim_redshifts: 50
+        # 'ndim_masses' : 100,
+
+
+
+        has_selection_function : 1
+        experiment : 1 # Planck: 0 / ACT or SO: 1
+        y_m_relation : 1 # ycenter : 1, # y500 : 0
+        signal-to-noise_cut-off_for_survey_cluster_completeness : 5.
+
+        sz_selection_function_thetas_file : '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class_sz_auxiliary_files/nemo_sim_thetas_120923_30bins.txt'
+        sz_selection_function_skyfracs_file : '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class_sz_auxiliary_files/nemo_sim_skyfracs_120923_30bins.txt'
+        sz_selection_function_ylims_file : '/Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class_sz_auxiliary_files/nemo_sim_ylims_120923_30bins.txt'
+
+
+
+        bin_z_min_cluster_counts : 0.
+        bin_z_max_cluster_counts : 2.
+        bin_dz_cluster_counts : 0.1
+
+        bin_dlog10_snr : 0.25
+        log10_snr_min : 0.6
+        log10_snr_max : 2.
+
+
+        # A_ym  : 1.9e-05
+        # B_ym  : 0.08
+        # C_ym : 0.
+        # sigmaM_ym : 0.173
+        m_pivot_ym_[Msun] : 4.25e14
+
+        use_m500c_in_ym_relation : 0
+        use_skyaveraged_noise: 0 # this will speed-up everything
+
+        szcc_dof : 0.
+        szcc_qtrunc : 0.
+
+        N_samp_fftw  : 2048
+        szcounts_fft_nz  : 80
+        szcounts_fft_z_min  : 0.0
+        szcounts_fft_z_max  : 2.0
+        tol_dlnm_dlnq : 0.01
+        ntab_dlnm_dlnq : 500
+        szcounts_qmax_fft_padded : 200.
 
 stop_at_error: True
-timing: True

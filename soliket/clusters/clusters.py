@@ -318,7 +318,6 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
 
     def initialize(self):
-
         initialize_common(self)
 
         zmax = self.binning['z']['zmax']
@@ -341,11 +340,15 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         # this is for liklihood computation
         self.zcut = self.binning['exclude_zbin']
-
+        if self.theorypred['choose_theory'] == 'classy_sz':
+            self.params = {}
         super().initialize()
 
     def get_requirements(self):
-        return get_requirements(self)
+        if self.theorypred['choose_theory'] == 'classy_sz':
+            return {"sz_unbinned_cluster_counts": {}}
+        else:
+            return get_requirements(self)
 
     def _get_catalog(self):
         return self.catalog, self.columns
@@ -614,6 +617,15 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         return ans
 
+
+    def logp(self, **kwargs):
+        if self.theorypred['choose_theory'] == 'classy_sz':
+            return self.theory.get_sz_unbinned_cluster_counts()
+        else:
+            pk_intp = self.theory.get_Pk_interpolator()
+            rate_densities = self._get_rate_fn(pk_intp, **kwargs)
+            n_expected = self._get_n_expected(pk_intp, **kwargs)
+            return self.data.loglike(rate_densities, n_expected)
 
 def initialize_common(self):
     self.log = logging.getLogger(self.name)
