@@ -57,6 +57,7 @@ likelihood:
       save_dwsmpld : False # Save downsampled Q and rms to npz file and once it exists read those
 
       debiasDOF : 0.
+      debias_cutoff: 0.
     binning:
       # redshift bins for number counts
       z:
@@ -191,8 +192,8 @@ theory:
         use_planck_binned_proba : 0 #use diff of erfs
         use_skyaveraged_noise: 0 # this will speed-up everything
 
-        szcc_dof : 0.
-        szcc_qtrunc : 0.
+        szcc_dof : 3.
+        szcc_qtrunc : 2.
 
 
 stop_at_error: True

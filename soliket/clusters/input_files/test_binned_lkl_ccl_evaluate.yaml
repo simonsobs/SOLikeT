@@ -55,7 +55,8 @@ likelihood:
       dwnsmpl_bins : 30 # If resolution=downsample, number of bins to use
       save_dwsmpld : False # Save downsampled Q and rms to npz file and once it exists read those
 
-      debiasDOF : 0.
+      debiasDOF : 3.
+      debias_cutoff : 2.
     binning:
       # redshift bins for number counts
       z:

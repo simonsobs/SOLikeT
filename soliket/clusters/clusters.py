@@ -233,10 +233,10 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 for i in range(Npatches):
 
                     if compl_mode == 'erf_prod':
-                        arg.append(get_erf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
+                        arg.append(get_erf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq, dof = self.debiasDOF))
                         #arg.append(get_stf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
                     elif compl_mode == 'erf_diff':
-                        arg.append(get_erf_diff(y0[i], noise[i], qmin, qmax, qcut))
+                        arg.append(get_erf_diff(y0[i], noise[i], qmin, qmax, qcut, dof = self.debiasDOF))
                         #arg.append(get_stf_diff(y0[i], noise[i], qmin, qmax, qcut))
 
                 comp = np.einsum('ijk,i->jk', np.nan_to_num(arg), skyfracs)
@@ -251,16 +251,23 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 comp = 0.
                 for i in range(Npatches):
                     if compl_mode == 'erf_prod':
-                        arg = get_erf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq)
+                        arg = get_erf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq, dof = self.debiasDOF)
                         #arg = get_stf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq)
                     elif compl_mode == 'erf_diff':
-                        arg = get_erf_diff(yy0, noise[i], qmin, qmax, qcut)
+                        arg = get_erf_diff(yy0, noise[i], qmin, qmax, qcut, dof = self.debiasDOF)
                         #arg = get_stf_diff(yy0, noise[i], qmin, qmax, qcut)
 
                     cc = np.float32(arg * skyfracs[i])
                     arg0 = np.float32((lnyy[:, None,None] - mu[i])/(np.sqrt(2.)*scatter))
                     args = fac * np.exp(np.float32(-arg0**2.)) * cc[:, None,None]
-                    comp += np.trapz(np.float32(args), x=lnyy, axis=0)
+
+                    # truncation for debiasing:
+                    qtab_filter = yy0/noise[i]
+                    qtab_filter[qtab_filter<self.debias_cutoff] = 0.
+                    qtab_filter[qtab_filter>=self.debias_cutoff] = 1.
+                    # end truncation for debiasing.
+
+                    comp += np.trapz(np.float32(args)*qtab_filter[:,None,None], x=lnyy, axis=0)
 
             comp[comp < 0.] = 0.
             comp[comp > 1.] = 1.
@@ -675,8 +682,9 @@ def initialize_common(self):
     # to print all columns: print(catf[1].columns)
 
     # SPT-style SNR bias correction, this should be applied before applying SNR cut
-    debiasDOF = self.selfunc['debiasDOF']
-    qcat = np.sqrt(np.power(qcat, 2) - debiasDOF)
+    self.debiasDOF = self.selfunc['debiasDOF']
+    self.debias_cutoff = self.selfunc['debias_cutoff']
+    #qcat = np.sqrt(np.power(qcat, 2) - debiasDOF) # dont debias catalog q!
 
     # only above given SNR cut
     ind = np.where(qcat >= self.qcut)[0]
@@ -1195,57 +1203,57 @@ def get_dndlnm(self, z, pk_intp):
         # return self.get_dndlnM_at_z_and_M(z,marr)
 
 
-def get_erf(y, noise, cut):
+def get_erf(y, noise, cut, dof = 0):
     #arg = (y - cut*noise)/np.sqrt(2.)/noise
-    arg = (y/noise - cut)/np.sqrt(2.)
+    arg = (np.sqrt((y/noise)**2.+dof) - cut)/np.sqrt(2.)
     erfc = (special.erf(arg) + 1.)/2.
     return erfc
 
-def get_stf(y, noise, qcut):
-    ans = y * 0.0
-    ans[y - qcut*noise > 0] = 1.0
-    return ans
+# def get_stf(y, noise, qcut):
+#     ans = y * 0.0
+#     ans[y - qcut*noise > 0] = 1.0
+#     return ans
 
-def get_erf_diff(y, noise, qmin, qmax, qcut):
-    arg1 = (y/noise - qmax)/np.sqrt(2.)
+def get_erf_diff(y, noise, qmin, qmax, qcut, dof = 0):
+    arg1 = (np.sqrt((y/noise)**2.+dof) - qmax)/np.sqrt(2.)
     if qmin > qcut:
         qlim = qmin
     else:
         qlim = qcut
-    arg2 = (y/noise - qlim)/np.sqrt(2.)
+    arg2 = (np.sqrt((y/noise)**2.+dof) - qlim)/np.sqrt(2.)
     erf_compl = (special.erf(arg2) - special.erf(arg1)) / 2.
     return erf_compl
 
-def get_stf_diff(y, noise, qmin, qmax, qcut):
-    if qmin > qcut:
-        qmin = qmin
-    else:
-        qmin = qcut
-    ans = y * 0.0
-    ans[(y - qmin*noise > 0) & (y - qmax*noise < 0)] = 1.0
-    return ans
+# def get_stf_diff(y, noise, qmin, qmax, qcut):
+#     if qmin > qcut:
+#         qmin = qmin
+#     else:
+#         qmin = qcut
+#     ans = y * 0.0
+#     ans[(y - qmin*noise > 0) & (y - qmax*noise < 0)] = 1.0
+#     return ans
 
-def get_erf_prod(y, noise, qmin, qmax, qcut, k, Nq):
+def get_erf_prod(y, noise, qmin, qmax, qcut, k, Nq, dof = 0):
 
-    arg0 = get_erf(y, noise, qcut)
-    arg1 = get_erf(y, noise, qmin)
-    arg2 = 1. - get_erf(y, noise, qmax)
-
-    if k == 0: arg1 = 1
-    if k == Nq-1: arg2 = 1
-
-    return arg0 * arg1 * arg2
-
-def get_stf_prod(y, noise, qmin, qmax, qcut, k, Nq):
-
-    arg0 = get_stf(y, noise, qcut)
-    arg1 = get_stf(y, noise, qmin)
-    arg2 = 1. - get_stf(y, noise, qmax)
+    arg0 = get_erf(y, noise, qcut, dof)
+    arg1 = get_erf(y, noise, qmin, dof)
+    arg2 = 1. - get_erf(y, noise, qmax, dof)
 
     if k == 0: arg1 = 1
     if k == Nq-1: arg2 = 1
 
     return arg0 * arg1 * arg2
+#
+# def get_stf_prod(y, noise, qmin, qmax, qcut, k, Nq):
+#
+#     arg0 = get_stf(y, noise, qcut)
+#     arg1 = get_stf(y, noise, qmin)
+#     arg2 = 1. - get_stf(y, noise, qmax)
+#
+#     if k == 0: arg1 = 1
+#     if k == Nq-1: arg2 = 1
+#
+#     return arg0 * arg1 * arg2
 
 def gaussian(xx, mu, sig, noNorm=False):
     if noNorm:
