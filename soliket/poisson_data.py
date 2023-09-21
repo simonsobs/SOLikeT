@@ -17,11 +17,11 @@ def poisson_logpdf(n_expected, catalog, columns, rate_fn, name="unbinned"):
     assert np.all(np.isfinite(rate_densities))
 
     elapsed = time.time() - start
-    print("\r ::: rate density calculation took {:.3f} seconds.".format(elapsed))
+    # print("\r ::: rate density calculation took {:.3f} seconds.".format(elapsed))
 
     loglike = -n_expected + np.nansum(np.log(rate_densities[np.nonzero(rate_densities)]))
 
-    print("\r ::: 2D ln likelihood = ", loglike)
+    # print("\r ::: 2D ln likelihood = ", loglike)
     # print("rates:",np.shape(rate_densities),rate_densities)
 
     return loglike

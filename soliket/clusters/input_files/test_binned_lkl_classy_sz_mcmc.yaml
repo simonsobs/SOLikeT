@@ -6,13 +6,13 @@
 # run from SOLikeT/soliket/clusters
 # command:
 # $ cobaya-run input_files/test_binned_lkl_ccl.yaml -f
-output: chains/test_binned_classy_sz_evaluate
+output: chains/test_binned_classy_sz_mcmc
 
 likelihood:
   soliket.BinnedClusterLikelihood:
     stop_at_error: True
-    verbose: True
-    debug: True
+    verbose: False
+    debug: False
 
     # Data
     data:
@@ -78,13 +78,51 @@ likelihood:
       exclude_zbin: 0
 
 params:
-  h : 0.68
-  n_s : 0.965
-  Omega_b : 0.049
-  Omega_cdm : 0.261
-  tau_reio : 0.06
-  # sigma8 : 0.81
-  tenToA0 : 1.9e-5 #4.0e-5
+  logA:
+    latex: ln10^{10}A_s
+    prior:
+      max: 3.4999
+      min: 2.5111
+    proposal: 0.12892144
+    ref:
+      dist: norm
+      loc: 2.9939341
+      scale: 0.12892144
+  n_s: 0.965
+  omega_b:  0.0224
+  omega_cdm:
+    latex: \Omega_\mathrm{c} h^2
+    prior:
+      max: 0.199
+      min: 0.0811
+    proposal: 0.0005
+    ref:
+      dist: norm
+      loc: 0.12
+      scale: 0.001
+  H0:
+    latex: H_0
+    prior:
+      max: 90.0
+      min: 50.0
+    proposal: 2.0
+    ref:
+      dist: norm
+      loc: 69.351243
+      scale: 2.0
+  tau_reio: 0.055
+
+  tenToA0 :
+    latex: A_{ym}
+    prior:
+      max: 5e-5
+      min: 0.5e-5
+    proposal: 0.1e-5
+    ref:
+      dist: norm
+      loc: 1.9e-5
+      scale: 0.1e-5
+
   B0 : 0.08
   scatter_sz : 0.2
   bias_sz : 1
@@ -92,27 +130,45 @@ params:
   C0: 0.
 
   sigma8:
-    prior:
-      min: 0.
-      max: 4.
-    ref:
-      dist: norm
-      loc: 0.8
-      scale: 0.001
-    proposal: 0.001
     latex: \sigma_8
+    derived: true
+  omegam:
+    latex: \Omega_\mathrm{m}
+    derived: true
 
 sampler:
-  evaluate:
-      override:
-        sigma8: 0.81
-
+  # evaluate:
+  #     override:
+  #       H0: 70.
+  mcmc:
+    burn_in: 0
+    max_tries: 10000
+    # covmat: auto
+    # covmat_params: null
+    proposal_scale: 1.9
+    output_every: 60s
+    learn_every: 40d
+    learn_proposal: true
+    learn_proposal_Rminus1_max: 100.0
+    learn_proposal_Rminus1_max_early: 100.0
+    learn_proposal_Rminus1_min: 0.0
+    max_samples: .inf
+    Rminus1_stop: 0.01
+    Rminus1_cl_stop: 0.2
+    Rminus1_cl_level: 0.95
+    Rminus1_single_split: 4
+    measure_speeds: true
+    oversample_power: 0.4
+    oversample_thin: true
+    drag: false
+    callback_function: null
+    callback_every: null
+    seed: null
+    check_every: null
+    oversample: null
+    drag_limits: null
+    fallback_covmat_scale: 4
 theory:
-  # soliket.clusters.CCL :
-  #     transfer_function : 'boltzmann_camb'
-  #     matter_pk : 'halofit'
-  #     baryons_pk : 'nobaryons'
-  #     md_hmf : '200c'
   classy_szfast.classy_sz.classy_sz:
     use_class_sz_fast_mode : 1
     stop_at_error: True
@@ -121,15 +177,8 @@ theory:
 
       mass function  : 'T08M200c'
       concentration parameter : 'B13'
+      skip_background_and_thermo: 0
 
-
-      #
-      # omega_b': 0.0224178568132,
-      # omega_cdm':  0.11933148326520002,
-      # H0': 67.66,
-      # ln10^{10}A_s': 2.9799585,
-      # tau_reio':  0.0561,
-      # n_s': 0.96,
 
 
       B : 1.
@@ -198,11 +247,8 @@ theory:
       redshift_epsrel_cluster_counts : 1e-6
       redshift_epsabs_cluster_counts : 1e-40
 
-
-      A_ym  : 1.9e-05
       B_ym  : 0.08
       C_ym : 0.
-      sigmaM_ym : 0.173
       m_pivot_ym_[Msun] : 4.25e14
 
       use_m500c_in_ym_relation : 0
@@ -216,6 +262,8 @@ theory:
       HMF_prescription_NCDM: 1
       no_spline_in_tinker: 1
 
+prior:
+  tenToA0_prior: 'lambda tenToA0: stats.norm.logpdf(tenToA0, loc=1.9e-5, scale=9.5e-7)'
 
 stop_at_error: True
 timing: True

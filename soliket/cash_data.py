@@ -14,16 +14,16 @@ def cash_c_logpdf(theory, data, usestirling=True, name="binned"):
         theory = np.delete(theory, zcut_arr, 0)
         obs = np.delete(obs, zcut_arr, 0)
         ln_fac = np.delete(ln_fac, zcut_arr, 0)
-        print("\r ::: Excluding first {} redshift bins in likelihood.".format(zcut))
-
-        for i in range(theory.shape[0]):
-            print('\r Number of clusters in redshift bin {}: {}.'.format(i, theory[i,:].sum()))
-        print('------------')
-        for i in range(theory.shape[1]):
-            print('\r Number of clusters in SNR bin {}: {}.'.format(i, theory[:,i].sum()))
-        print('------------')
-        print('\r Total predicted N = {}'.format(theory.sum()))
-        print('\r Total observed N = {}'.format(obs.sum()))
+        # print("\r ::: Excluding first {} redshift bins in likelihood.".format(zcut))
+        #
+        # for i in range(theory.shape[0]):
+        #     print('\r Number of clusters in redshift bin {}: {}.'.format(i, theory[i,:].sum()))
+        # print('------------')
+        # for i in range(theory.shape[1]):
+        #     print('\r Number of clusters in SNR bin {}: {}.'.format(i, theory[:,i].sum()))
+        # print('------------')
+        # print('\r Total predicted N = {}'.format(theory.sum()))
+        # print('\r Total observed N = {}'.format(obs.sum()))
 
     if usestirling: # use Stirling's approximation for N > 10
         ln_fac[obs > 10] = 0.918939 + (obs[obs > 10] + 0.5) * np.log(obs[obs > 10]) - obs[obs > 10]
@@ -38,7 +38,7 @@ def cash_c_logpdf(theory, data, usestirling=True, name="binned"):
 
     loglike = obs * log_theory - theory - ln_fac
 
-    print("\r ::: 2D ln likelihood = ", np.nansum(loglike[np.isfinite(loglike)]))
+    # print("\r ::: 2D ln likelihood = ", np.nansum(loglike[np.isfinite(loglike)]))
 
     return np.nansum(loglike[np.isfinite(loglike)])
 

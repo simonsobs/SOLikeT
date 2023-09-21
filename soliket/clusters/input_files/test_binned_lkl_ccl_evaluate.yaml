@@ -27,7 +27,7 @@ likelihood:
     theorypred:
       choose_theory: "CCL"
       massfunc_mode: 'ccl'
-      md_hmf: '200c'
+      md_hmf: '200c' ### this dosnt work
       md_ym: '200c'
       compl_mode: 'erf_diff'
       rel_correction: False # Relativistic corrections for tSZ
