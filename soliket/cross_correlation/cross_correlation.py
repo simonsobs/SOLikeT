@@ -112,8 +112,8 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
                                           )
         tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
 
-        cl_gg = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto)  # + 1e-7
-        cl_kg = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)
+        cl_gg = ccl.cells.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto)  # + 1e-7
+        cl_kg = ccl.cells.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)
 
         return np.concatenate([cl_gg, cl_kg])
 
@@ -225,7 +225,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
             ells_theory = np.asarray(ells_theory, dtype=int)
             w_bins = bpw.weight.T
 
-            cl_unbinned = ccl.cls.angular_cl(cosmo, tracer1, tracer2, ells_theory)
+            cl_unbinned = ccl.cells.angular_cl(cosmo, tracer1, tracer2, ells_theory)
 
 
             if self.m_nuisance_mode is not None:
