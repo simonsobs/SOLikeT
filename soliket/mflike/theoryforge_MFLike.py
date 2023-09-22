@@ -80,11 +80,11 @@ class TheoryForge_MFLike(Theory):
         # State requisites to the theory code
         # Which lmax for theory CMB
         # Note this must be greater than lmax above to avoid approx errors
-        self.lmax_boltzmann = 9000
+        self.lmax_boltzmann = self.lmax + 50
 
         # Which lmax for theory FG
         # This can be larger than lmax boltzmann
-        self.lmax_fg = 9000
+        self.lmax_fg = max(9000, self.lmax_boltzmann)
 
         # Which spectra to consider
         self.requested_cls = self.spectra["polarizations"]
