@@ -159,14 +159,14 @@ def test_xcorr(theory):
 
     tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1100)
 
-    cl_gg_ccl = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, xcorr_lhood.ell_range)
-    cl_kappag_ccl = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, xcorr_lhood.ell_range)
+    cl_gg_ccl = ccl.cells.angular_cl(cosmo, tracer_g, tracer_g, xcorr_lhood.ell_range)
+    cl_kappag_ccl = ccl.cells.angular_cl(cosmo, tracer_k, tracer_g, xcorr_lhood.ell_range)
 
     assert np.allclose(cl_gg_ccl, cl_gg)
     assert np.allclose(cl_kappag_ccl, cl_kappag)
 
-    cl_obs_gg_ccl = ccl.cls.angular_cl(cosmo, tracer_g, tracer_g, ell_obs_gg)
-    cl_obs_kappag_ccl = ccl.cls.angular_cl(cosmo, tracer_k, tracer_g, ell_obs_kappag)
+    cl_obs_gg_ccl = ccl.cells.angular_cl(cosmo, tracer_g, tracer_g, ell_obs_gg)
+    cl_obs_kappag_ccl = ccl.cells.angular_cl(cosmo, tracer_k, tracer_g, ell_obs_kappag)
 
     assert np.allclose(cl_obs_gg_ccl + Nell_obs_unwise_g, cl_obs_gg)
     assert np.allclose(cl_obs_kappag_ccl, cl_obs_kappag)
