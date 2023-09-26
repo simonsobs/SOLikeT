@@ -8,11 +8,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ubuntu-latest
-        python-version: '3.10'
-        toxenv: py310-test-all-latest
+        os: [ubuntu-latest]
+        python-version: ['3.10']
+        toxenv: [py310-test-all-latest]
         # release: [main, latest] # there are no releases yet so this would break
-        release: main
+        release: [main]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
