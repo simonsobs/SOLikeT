@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, "..")
 
 # Create some mock imports
-import mock
+from unittest import mock
 MOCK_MODULES = ["cosmopower", "tensorflow", "pyccl", "camb"]
 for module in MOCK_MODULES:
     sys.modules[module] = mock.Mock()
