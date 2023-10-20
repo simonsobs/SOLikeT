@@ -15,6 +15,6 @@ conda:
   environment: soliket-tests.yml
 
 build:
-  image: latest
+  os: ubuntu-latest
 
 formats: all
