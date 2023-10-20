@@ -115,7 +115,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         return self._get_power_spectra(cmbfg_dict)
 
     def logp(self, **params_values):
-        cmbfg_dict = self.theory.get_cmbfg_dict()
+        cmbfg_dict = self.provider.get_cmbfg_dict()
         return self.loglike(cmbfg_dict)
 
     def loglike(self, cmbfg_dict):

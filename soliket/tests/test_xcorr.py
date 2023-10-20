@@ -95,7 +95,7 @@ def test_xcorr(theory):
 
     setup_chi_out = xcorr_lhood._setup_chi()
 
-    Pk_interpolator = xcorr_lhood.theory.get_Pk_interpolator(("delta_nonu", "delta_nonu"),
+    Pk_interpolator = xcorr_lhood.provider.get_Pk_interpolator(("delta_nonu", "delta_nonu"),
                                                              extrap_kmax=1.e8,
                                                              nonlinear=False).P
 
