@@ -5,7 +5,6 @@ sphinx:
   fail_on_warning: false
 
 python:
-  version: 3.8
   install:
     - requirements: docs/requirements.txt
     - method: pip
@@ -17,9 +16,6 @@ conda:
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.12"
-    nodejs: "18"
-    rust: "1.64"
-    golang: "1.19"
+    python: "3.8"
 
 formats: all
