@@ -5,5 +5,15 @@ channels:
 dependencies:
   - python>=3.8,<3.11
   - pip
+  - pytest-cov
+  - compilers
+  - make
+  - cmake
+  - swig
+  - gsl
+  - fftw
+  - cython
+  - mpi4py
+  - camb
   - pip:
       - -r requirements.txt
