@@ -70,7 +70,7 @@ following additional reqs:
 * ``fsigma8``
 * ``sigma8_z``
 
-Then, to obtain the results, evaluate the contents of ``self.theory.get_CCL()`` in
+Then, to obtain the results, evaluate the contents of ``self.provider.get_CCL()`` in
 the likelihood.
 """
 

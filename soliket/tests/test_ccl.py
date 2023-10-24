@@ -13,7 +13,7 @@ class CheckLike(Likelihood):
     a CCL object.
     """
     def logp(self, **params_values):
-        ccl = self.theory.get_CCL() # noqa F841
+        ccl = self.provider.get_CCL() # noqa F841
         return -1.0
 
     def get_requirements(self):
