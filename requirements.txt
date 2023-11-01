@@ -6,6 +6,7 @@ pyyaml
 py-bobyqa
 packaging
 tqdm
+tensorflow<2.14
 portalocker
 dill
 fuzzywuzzy
