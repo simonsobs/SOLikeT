@@ -27,11 +27,15 @@ params:
       min: 0.
       max: 10.
     latex: b_1
-  s1: 0.4 
+  s1: 
+    value: 0.4
+    latex: s_1 
   sigma8: 
 likelihood:
   soliket.cross_correlation.GalaxyKappaLikelihood:
-    datapath: null
+    datapath: soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits
+    use_spectra: all
+    ncovsims: null
 theory:
   camb: 
     extra_args:
@@ -42,4 +46,4 @@ stop_at_error: true
 sampler:
   evaluate:
 
-output: chains/test_cross_correlation
+output: chains/test_galaxykappa
