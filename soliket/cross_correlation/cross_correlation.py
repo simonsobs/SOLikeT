@@ -9,6 +9,7 @@ import numpy as np
 from ..gaussian import GaussianData, GaussianLikelihood
 import pyccl as ccl
 from cobaya.log import LoggedError
+import pyccl.nl_pt as pt
 
 import sacc
 
@@ -71,6 +72,8 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
                 if tracer_comb not in self.use_spectra:
                     self.sacc_data.remove_selection(tracers=tracer_comb)
 
+        self.twopoints = self.sacc_data.get_tracer_combinations()
+
         self.x = self._construct_ell_bins()
         self.y = self.sacc_data.mean
         self.cov = self.sacc_data.covariance.covmat
@@ -128,42 +131,140 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
     """
     _allowable_tracers = ['cmb_convergence', 'galaxy_density']
 
+    def initialize(self):
+
+        self.PT_bias = self.bz_model in ['LagrangianPT', 'EulerianPT', 'BACCO', 'anzu']
+
+        self._get_sacc_data()
+        self._check_tracers()
+        self._initialize_pt()
+
+    def _get_sacc_data(self, **params_values):
+
+        self.sacc_data = sacc.Sacc.load_fits(self.datapath)
+
+        if self.use_spectra == 'all':
+            pass
+        else:
+            for tracer_comb in self.sacc_data.get_tracer_combinations():
+                if tracer_comb not in self.use_spectra:
+                    self.sacc_data.remove_selection(tracers=tracer_comb)
+
+        self.twopoints = self.sacc_data.get_tracer_combinations()
+        self.bin_properties = {}
+        for b in self.bins:
+            if b not in self.sacc_data.tracers:
+                raise LoggedError(self.log, "Unknown tracer %s" % b)
+            t = self.sacc_data.tracers[b]
+            if t.quantity != 'cmb_convergence':
+                zmean = np.average(t.z, weights=t.nz)
+                self.bin_properties[b] = {'z_fid': t.z,
+                                          'nz_fid': t.nz,
+                                          'zmean_fid': zmean}
+
+        self.x = self._construct_ell_bins()
+        self.y = self.sacc_data.mean
+        self.cov = self.sacc_data.covariance.covmat
+
+        self.data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
+
+    def _initialize_pt(self):
+
+        if self.bz_model == 'LagrangianPT':
+            self.ptc = pt.LagrangianPTCalculator(log10k_min=-4, log10k_max=2, nk_per_decade=20)
+        elif self.bz_model == 'EulerianPT':
+            self.ptc = pt.EulerianPTCalculator(with_NC=True, with_IA=True, log10k_min=-4,
+                                               log10k_max=2, nk_per_decade=20)
+
+    def _get_nz(self, tr_name, **pars):
+        z = self.bin_properties[tr_name]['z_fid']
+        nz = self.bin_properties[tr_name]['nz_fid']
+        if self.nz_model == 'NzShift':
+            z = z + pars[self.input_params_prefix + '_' + tr_name + '_dz']
+            msk = z >= 0
+            z = z[msk]
+            nz = nz[msk]
+        elif self.nz_model != 'NzNone':
+            raise LoggedError(self.log, "Unknown Nz model %s" % self.nz_model)
+        return (z, nz)
+
+    def _get_bz(self, tr_name, **pars):
+        """ Get linear galaxy bias. Unless we're using a linear bias,
+        this should be just 1."""
+        z = self.bin_properties[tr_name]['z_fid']
+        zmean = self.bin_properties[tr_name]['zmean_fid']
+        bz = np.ones_like(z)
+
+        if self.bz_model == 'linear':
+            b1 = pars[self.input_params_prefix + '_' + tr_name + '_b1']
+            b1p = pars[self.input_params_prefix + '_' + tr_name + '_b1p']
+            bz = b1 + b1p * (z - zmean)
+        return (z, bz)
+
+    def _get_tracers(self, cosmo, **params_values):
+
+        trs = {}
+
+        for tr_name in np.unique(self.twopoints):
+            q = self.sacc_data[tr_name].quantity
+            trs[tr_name] = {}
+            if q == 'galaxy_density':
+                nz = self._get_nz(tr_name, **params_values)
+                bz = self._get_bz(tr_name, **params_values)
+                t = ccl.NumberCountsTracer(cosmo, dndz=nz, bias=bz, has_rsd=False)
+                if self.PT_bias:
+                    z = self.bin_properties[tr_name]['z_fid']
+                    zmean = self.bin_properties[tr_name]['zmean_fid']
+
+                    pref = self.input_params_prefix + '_' + tr_name
+
+                    b1 = params_values[pref + '_b1']
+                    b1p = params_values.get(pref + '_b1p', None)
+                    if b1p is not None and b1p != 0.:
+                        b1z = b1 + b1p * (z - zmean)
+                        b1 = (z, b1z)
+                    b2 = params_values[pref + '_b2']
+                    bs = params_values.get(pref + '_bs', None)
+                    bk2 = params_values.get(pref + '_bk2', None)
+                    b3nl = params_values.get(pref + '_b3nl', None)
+
+                    ptt = pt.PTNumberCountsTracer(b1=b1, b2=b2, bs=bs, bk2=bk2, b3nl=b3nl)
+            elif q == 'cmb_convergence':
+                t = ccl.CMBLensingTracer(cosmo, z_source=self.z_cmb)
+                if self.PT_bias:
+                    ptt = pt.PTMatterTracer()
+            trs[tr_name]['ccl_tracer'] = t
+            if self.PT_bias:
+                trs[tr_name]['PT_tracer'] = ptt
+
+        return trs
+
     def _get_theory(self, **params_values):
 
         cosmo = self.provider.get_CCL()["cosmo"]
+        self.ptc.update_ingredients(cosmo)
+        tracers = self._get_tracers(cosmo, **params_values)
 
-        tracer_comb = self.sacc_data.get_tracer_combinations()
+        cls = []
 
-        for tracer in np.unique(tracer_comb):
+        for tr_pair in self.twopoints:
+            tr_x, tr_y = tr_pair
 
-            if self.sacc_data.tracers[tracer].quantity == "cmb_convergence":
-                cmbk_tracer = tracer
-            elif self.sacc_data.tracers[tracer].quantity == "galaxy_density":
-                gal_tracer = tracer
+            ells_theory, w_bins = self.get_binning((tr_x, tr_y))
 
-        z_gal_tracer = self.sacc_data.tracers[gal_tracer].z
-        nz_gal_tracer = self.sacc_data.tracers[gal_tracer].nz
+            if self.PT_bias:
+                pk_xy = self.ptc.get_biased_pk2d(tracers[tr_x]['PT_tracer'], tracer2=tracers[tr_y]['PT_tracer'])
+                cl_unbinned = ccl.cells.angular_cl(cosmo, tracers[tr_x]['CCL_tracer'], tracers[tr_y]['CCL_tracer'],
+                                                      ells_theory, p_of_k_a=pk_xy)
+            else:
+                cl_unbinned = ccl.cells.angular_cl(cosmo, tracers[tr_x]['CCL_tracer'], tracers[tr_y]['CCL_tracer'],
+                                                   ells_theory)
 
-        # this should use the bias theory!
-        tracer_g = ccl.NumberCountsTracer(cosmo,
-                                          has_rsd=False,
-                                          dndz=(z_gal_tracer, nz_gal_tracer),
-                                          bias=(z_gal_tracer,
-                                                params_values["b1"] *
-                                                    np.ones(len(z_gal_tracer))),
-                                          mag_bias=(z_gal_tracer,
-                                                    params_values["s1"] *
-                                                        np.ones(len(z_gal_tracer)))
-                                          )
-        tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
+            cl_binned = np.dot(w_bins, cl_unbinned)
 
-        ells_theory_gk, w_bins_gk = self.get_binning((gal_tracer, cmbk_tracer))
+            cls.append(cl_binned)
 
-        cl_gk_unbinned = ccl.cells.angular_cl(cosmo, tracer_k, tracer_g, ells_theory_gk)
-
-        cl_gk_binned = np.dot(w_bins_gk, cl_gk_unbinned)
-
-        return cl_gk_binned
+        return cls
 
 
 class ShearKappaLikelihood(CrossCorrelationLikelihood):

@@ -1,0 +1,107 @@
+# A simple cobaya likelihood for SO
+
+debug: True
+stop_at_error: true
+
+likelihood:
+  soliket.cross_correlation.CrossCorrelationLikelihood:
+    datapath: ../tests/data/gc_cmass-actdr4_kappa.sacc.fits
+    use_spectra: all
+    bins: gc_cmass
+    bz_model: LagrangianPT
+    nz_model: NzShift
+
+params:
+  m_nu: 0.06
+  sigma8:
+    prior:
+      min: 0.1
+      max: 1.2
+    ref:
+      dist: norm
+      loc: 0.8072376102
+      scale: 0.01
+    latex: \sigma_8
+    proposal: 0.001
+  Omega_c:
+    prior:
+      min: 0.05
+      max: 0.7
+    ref:
+      dist: norm
+      loc: 0.265512666
+      scale: 0.01
+    latex: \Omega_c
+    proposal: 0.001
+  Omega_b: 0.049301692328524445
+  h: 0.6736
+  n_s: 0.9649
+  gc_cmass_b1:
+    latex: b_1\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 1.56335764
+      scale: 0.01
+  gc_cmass_b1p:
+    latex: b_1p\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 1.34552581
+      scale: 0.01
+  gc_cmass_b2:
+    latex: b_2\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 0.1934235
+      scale: 0.01
+  gc_cmass_b3nl: 0.0
+  gc_cmass_bk2:
+    latex: b_k2\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: -0.22069886
+      scale: 0.01
+  gc_cmass_bs:
+    latex: b_s\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: -0.3856291
+      scale: 0.01
+#  gc_cmass_bsn:
+#    latex: b_sn\,\text{for}\,C_{l,1}
+#    prior:
+#      max: 100000.0
+#      min: 0.0
+
+theory:
+  camb:
+    extra_args:
+      num_massive_neutrinos: 0
+  soliket.ccl.CCL:
+    kmax: 10.0,
+    nonlinear: True
+
+sampler:
+  evaluate:
+
+output: chains/test_galaxykappalike
