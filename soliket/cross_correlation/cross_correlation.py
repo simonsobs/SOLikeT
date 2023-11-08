@@ -139,15 +139,19 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         self._check_tracers()
         self._initialize_pt()
 
-    def _get_sacc_data(self, **params_values):
+    def _get_sacc_data(self):
 
         self.sacc_data = sacc.Sacc.load_fits(self.datapath)
+
+        # Convert to list of tuples
+        if self.use_spectra != 'all':
+            spec_combs = [(spec['bins'][0], spec['bins'][1]) for spec in self.use_spectra]
 
         if self.use_spectra == 'all':
             pass
         else:
             for tracer_comb in self.sacc_data.get_tracer_combinations():
-                if tracer_comb not in self.use_spectra:
+                if tracer_comb not in spec_combs:
                     self.sacc_data.remove_selection(tracers=tracer_comb)
 
         self.twopoints = self.sacc_data.get_tracer_combinations()
@@ -170,11 +174,16 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
 
     def _initialize_pt(self):
 
+        #TODO: Need to decide what we want to expose
         if self.bz_model == 'LagrangianPT':
-            self.ptc = pt.LagrangianPTCalculator(log10k_min=-4, log10k_max=2, nk_per_decade=20)
+            self.ptc = pt.LagrangianPTCalculator(log10k_min=self.log10k_min, log10k_max=self.log10k_max,
+                                                 nk_per_decade=self.nk_per_decade)
         elif self.bz_model == 'EulerianPT':
-            self.ptc = pt.EulerianPTCalculator(with_NC=True, with_IA=True, log10k_min=-4,
-                                               log10k_max=2, nk_per_decade=20)
+            self.ptc = pt.EulerianPTCalculator(with_NC=True, with_IA=True, log10k_min=self.log10k_min, 
+                                                log10k_max=self.log10k_max,
+                                                nk_per_decade=self.nk_per_decade)
+        else:
+            raise LoggedError(self.log, "Bias model {} not implemented yet.".format(self.bz_model))
 
     def _get_nz(self, tr_name, **pars):
         z = self.bin_properties[tr_name]['z_fid']
@@ -196,8 +205,9 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         bz = np.ones_like(z)
 
         if self.bz_model == 'linear':
-            b1 = pars[self.input_params_prefix + '_' + tr_name + '_b1']
-            b1p = pars[self.input_params_prefix + '_' + tr_name + '_b1p']
+            pref = self.input_params_prefix + '_' + tr_name
+            b1 = pars[pref + '_b1']
+            b1p = pars[pref + '_b1p']
             bz = b1 + b1p * (z - zmean)
         return (z, bz)
 
@@ -206,7 +216,7 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         trs = {}
 
         for tr_name in np.unique(self.twopoints):
-            q = self.sacc_data[tr_name].quantity
+            q = self.sacc_data.tracers[tr_name].quantity
             trs[tr_name] = {}
             if q == 'galaxy_density':
                 nz = self._get_nz(tr_name, **params_values)
@@ -254,15 +264,17 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
 
             if self.PT_bias:
                 pk_xy = self.ptc.get_biased_pk2d(tracers[tr_x]['PT_tracer'], tracer2=tracers[tr_y]['PT_tracer'])
-                cl_unbinned = ccl.cells.angular_cl(cosmo, tracers[tr_x]['CCL_tracer'], tracers[tr_y]['CCL_tracer'],
+                cl_unbinned = ccl.angular_cl(cosmo, tracers[tr_x]['ccl_tracer'], tracers[tr_y]['ccl_tracer'],
                                                       ells_theory, p_of_k_a=pk_xy)
             else:
-                cl_unbinned = ccl.cells.angular_cl(cosmo, tracers[tr_x]['CCL_tracer'], tracers[tr_y]['CCL_tracer'],
+                cl_unbinned = ccl.angular_cl(cosmo, tracers[tr_x]['ccl_tracer'], tracers[tr_y]['ccl_tracer'],
                                                    ells_theory)
 
             cl_binned = np.dot(w_bins, cl_unbinned)
 
             cls.append(cl_binned)
+
+        cls = np.array(cls).flatten()
 
         return cls
 

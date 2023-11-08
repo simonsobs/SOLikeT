@@ -1,18 +1,26 @@
 # A simple cobaya likelihood for SO
 
 debug: True
-stop_at_error: true
+stop_at_error: True
 
 likelihood:
-  soliket.cross_correlation.CrossCorrelationLikelihood:
+  soliket.cross_correlation.GalaxyKappaLikelihood:
+    input_params_prefix: gcl
     datapath: ../tests/data/gc_cmass-actdr4_kappa.sacc.fits
     use_spectra: all
-    bins: gc_cmass
+      # - bins:
+      #   - gc_cmass1
+      #   - gk_actdr4
+      # - bins:
+      #   - gc_cmass2
+      #   - gk_actdr4
+    bins: 
+      - gc_cmass
     bz_model: LagrangianPT
-    nz_model: NzShift
+    nz_model: NzNone
 
 params:
-  m_nu: 0.06
+  mnu: 0.06
   sigma8:
     prior:
       min: 0.1
@@ -23,20 +31,16 @@ params:
       scale: 0.01
     latex: \sigma_8
     proposal: 0.001
-  Omega_c:
+  omch2:
     prior:
-      min: 0.05
-      max: 0.7
-    ref:
-      dist: norm
-      loc: 0.265512666
-      scale: 0.01
-    latex: \Omega_c
-    proposal: 0.001
-  Omega_b: 0.049301692328524445
-  h: 0.6736
-  n_s: 0.9649
-  gc_cmass_b1:
+      min: 0.09
+      max: 0.15
+    proposal: 0.0011
+    latex: \Omega_\mathrm{c}h^2
+  ombh2: 0.0245
+  H0: 70.0
+  ns: 0.965
+  gcl_gc_cmass_b1:
     latex: b_1\,\text{for}\,C_{l,1}
     proposal: 0.01
     prior:
@@ -46,7 +50,7 @@ params:
       dist: norm
       loc: 1.56335764
       scale: 0.01
-  gc_cmass_b1p:
+  gcl_gc_cmass_b1p:
     latex: b_1p\,\text{for}\,C_{l,1}
     proposal: 0.01
     prior:
@@ -56,7 +60,7 @@ params:
       dist: norm
       loc: 1.34552581
       scale: 0.01
-  gc_cmass_b2:
+  gcl_gc_cmass_b2:
     latex: b_2\,\text{for}\,C_{l,1}
     proposal: 0.01
     prior:
@@ -66,8 +70,8 @@ params:
       dist: norm
       loc: 0.1934235
       scale: 0.01
-  gc_cmass_b3nl: 0.0
-  gc_cmass_bk2:
+  gcl_gc_cmass_b3nl: 0.0
+  gcl_gc_cmass_bk2:
     latex: b_k2\,\text{for}\,C_{l,1}
     proposal: 0.01
     prior:
@@ -77,7 +81,7 @@ params:
       dist: norm
       loc: -0.22069886
       scale: 0.01
-  gc_cmass_bs:
+  gcl_gc_cmass_bs:
     latex: b_s\,\text{for}\,C_{l,1}
     proposal: 0.01
     prior:
@@ -95,10 +99,9 @@ params:
 
 theory:
   camb:
-    extra_args:
-      num_massive_neutrinos: 0
+    stop_at_error: True
   soliket.ccl.CCL:
-    kmax: 10.0,
+    kmax: 10.0
     nonlinear: True
 
 sampler:
