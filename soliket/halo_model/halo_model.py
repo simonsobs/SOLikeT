@@ -1,3 +1,38 @@
+"""
+.. module:: soliket.halo_model
+
+:Synopsis: Class to calculate Halo Models for non-linear power spectra as cobaya
+Theory classes.
+:author: Ian Harrison
+
+.. |br| raw:: html
+
+   <br />
+
+
+Usage
+-----
+
+We include a simple halo model for the non-linear matter-matter power spectrum with 
+NFW profiles. This is calculated via the `pyhalomodel
+<https://github.com/alexander-mead/pyhalomodel>`_ code.
+, simply add it as a theory code alongside camb in your run settings, e.g.:
+
+.. code-block:: yaml
+
+  theory:
+    camb:
+    soliket.halo_model.HaloModel_pyhm:
+
+
+Implementing your own bias model
+--------------------------------
+
+If you want to add your own bias model, you can do so by inheriting from the
+``soliket.Bias`` theory class and implementing your own custom ``calculate()``
+function (have a look at the linear bias model for ideas).
+"""
+
 import numpy as np
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
