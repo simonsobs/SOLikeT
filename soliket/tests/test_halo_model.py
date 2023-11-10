@@ -6,10 +6,11 @@ from cobaya.run import run
 
 info = {"params": {
                    "H0": 70.,
-                   "ombh2": 0.0245,
-                   "omch2": 0.1225,
+                   "ombh2": 0.05 * 0.7 * 0.7,
+                   "omch2": 0.25 * 0.7 * 0.7,
                    "ns": 0.96,
-                   "As": 2.2e-9,
+                   "As": 2.e-9,
+                   "mnu": 0.0,
                    "tau": 0.05
                    },
         "likelihood": {"one": None},
@@ -57,6 +58,8 @@ def test_pyhalomodel_compute_mm_grid():
     lhood = model.likelihood['one']
 
     Pk_mm_hm = lhood.provider.get_Pk_mm_grid()
-    k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'), nonlinear=False)
+    # k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'), nonlinear=False)
 
     assert np.all(np.isfinite(Pk_mm_hm))
+    # this number derives from the Pk[m-m] calculated in demo-basic.ipynb of the pyhalomodel repo
+    assert np.isclose(Pk_mm_hm[0,k>1.e-4][0], 3273.591586683341, rtol=1.e-3)
