@@ -28,8 +28,9 @@ def test_pyhalomodel_model():
     from soliket.halo_model import HaloModel_pyhm
 
     info["theory"] = {
-                        "camb": None,
-                        "halo_model" : {"external": HaloModel_pyhm}
+                        "camb": {'stop_at_error': True},
+                        "halo_model" : {"external": HaloModel_pyhm,
+                                        "stop_at_error": True}
     }
 
     model = get_model(info)  # noqa F841
@@ -58,4 +59,4 @@ def test_pyhalomodel_compute_mm_grid():
 
     Pk_mm_hm = lhood.provider.get_Pk_mm_grid()
 
-    assert np.isfinite(Pk_mm_hm)
+    assert np.all(np.isfinite(Pk_mm_hm))
