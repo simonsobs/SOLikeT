@@ -18,8 +18,8 @@ class HaloModel(Theory):
         self._var_pairs = set()
         self._required_results = {}
 
-    def must_provide(self, **requirements):
-        options = requirements.get("halo_model") or {}
+    # def must_provide(self, **requirements):
+    #     options = requirements.get("halo_model") or {}
     
     def _get_Pk_mm_lin(self):
         for pair in self._var_pairs:
@@ -39,6 +39,7 @@ class HaloModel(Theory):
     def get_Pk_gm_grid(self):
 
         return self.current_state["Pk_gm_grid"]
+
 
 class HaloModel_pyhm(HaloModel):
     """Halo Model wrapping the simple pyhalomodel code of Asgari, Mead & Heymans (2023)"""
@@ -94,17 +95,24 @@ class HaloModel_pyhm(HaloModel):
         output_Pk_hm_mm = np.empty([len(self.z), len(self.k)])
 
         # for sure we could avoid the for loop with some thought
-        for iz,zeval in enumerate(self.z):
-            hmod = halo.model(zeval, self.provider.get_param('omegam'), name=self.hmf_name, Dv=self.hmf_Dv)
+        for iz, zeval in enumerate(self.z):
+            hmod = halo.model(zeval, self.provider.get_param('omegam'),
+                              name=self.hmf_name, Dv=self.hmf_Dv)
 
             Rs = hmod.Lagrangian_radius(self.Ms)
             rvs = hmod.virial_radius(self.Ms)
 
-            cs = 7.85*(self.Ms/2e12)**-0.081*(1.+zeval)**-0.71
+            cs = 7.85 * (self.Ms / 2e12)**-0.081 * (1. + zeval)**-0.71
             Uk = self.win_NFW(self.k, rvs, cs)
-            matter_profile = halo.profile.Fourier(self.k, self.Ms, Uk, amplitude=self.Ms, normalisation=hmod.rhom, mass_tracer=True)
+            matter_profile = halo.profile.Fourier(self.k, self.Ms, Uk,
+                                                  amplitude=self.Ms,
+                                                  normalisation=hmod.rhom,
+                                                  mass_tracer=True)
 
-            Pk_2h, Pk_1h, Pk_hm = hmod.power_spectrum(self.k, Pk_mm_lin[iz], self.Ms, sigmaRs(zeval, Rs)[0], {'m': matter_profile}, verbose=False)
+            Pk_2h, Pk_1h, Pk_hm = hmod.power_spectrum(self.k, Pk_mm_lin[iz],
+                                                      self.Ms, sigmaRs(zeval, Rs)[0],
+                                                      {'m': matter_profile},
+                                                      verbose=False)
 
             output_Pk_hm_mm[iz] = Pk_hm['m-m']
 
@@ -114,14 +122,14 @@ class HaloModel_pyhm(HaloModel):
 
     def win_NFW(self, k, rv, c):
         from scipy.special import sici
-        rs = rv/c
+        rs = rv / c
         kv = np.outer(k, rv)
         ks = np.outer(k, rs)
-        Sisv, Cisv = sici(ks+kv)
+        Sisv, Cisv = sici(ks + kv)
         Sis, Cis = sici(ks)
-        f1 = np.cos(ks)*(Cisv-Cis)
-        f2 = np.sin(ks)*(Sisv-Sis)
-        f3 = np.sin(kv)/(ks+kv)
-        f4 = np.log(1.+c)-c/(1.+c)
-        Wk = (f1+f2-f3)/f4
+        f1 = np.cos(ks) * (Cisv - Cis)
+        f2 = np.sin(ks) * (Sisv - Sis)
+        f3 = np.sin(kv) / (ks + kv)
+        f4 = np.log(1. + c) - c / (1. + c)
+        Wk = (f1 + f2 - f3) / f4
         return Wk
