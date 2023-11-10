@@ -35,7 +35,6 @@ def test_pyhalomodel_model():
 
     model = get_model(info)  # noqa F841
 
-
 def test_pyhalomodel_compute_mm_grid():
 
     from soliket.halo_model import HaloModel_pyhm
@@ -58,5 +57,6 @@ def test_pyhalomodel_compute_mm_grid():
     lhood = model.likelihood['one']
 
     Pk_mm_hm = lhood.provider.get_Pk_mm_grid()
+    k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(var_pair=('delta_tot', 'delta_tot'), nonlinear=False)
 
     assert np.all(np.isfinite(Pk_mm_hm))

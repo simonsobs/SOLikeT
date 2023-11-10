@@ -125,34 +125,3 @@ class HaloModel_pyhm(HaloModel):
         f4 = np.log(1.+c)-c/(1.+c)
         Wk = (f1+f2-f3)/f4
         return Wk
-
-
-    def Pk_1h_mm(self):
-
-        return
-
-    def Pk_2h_mm(self):
-
-        Pk_mm_lin = self._get_Pk_mm_lin()
-
-        return Pk_mm_lin * integral
-
-    
-    def Pk_gg(self):
-
-        return self.Pk_cc_gg() + 2. * self.Pk_cs_gg() + self.Pk_ss_gg()
-
-    def Pk_cc_gg(self):
-
-        return integral
-
-    def Pk_cs_gg(self):
-
-        return integral
-
-    def Pk_ss_gg(self):
-
-        return integral
-
-
-
