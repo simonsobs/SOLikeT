@@ -13,7 +13,7 @@ class PSLikelihood(GaussianLikelihood):
         return {"Cl": {self.kind: self.lmax}}
 
     def _get_Cl(self):
-        return self.theory.get_Cl(ell_factor=True)
+        return self.provider.get_Cl(ell_factor=True)
 
     def _get_theory(self, **params_values):
         cl_theory = self._get_Cl()

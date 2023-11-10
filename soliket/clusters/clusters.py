@@ -104,31 +104,31 @@ class ClusterLikelihood(PoissonLikelihood):
         return df
 
     def _get_om(self):
-        return (self.theory.get_param("omch2") + self.theory.get_param("ombh2")) / (
-            (self.theory.get_param("H0") / 100.0) ** 2
+        return (self.provider.get_param("omch2") + self.provider.get_param("ombh2")) / (
+            (self.provider.get_param("H0") / 100.0) ** 2
         )
 
     def _get_ob(self):
-        return (self.theory.get_param("ombh2")) / (
-            (self.theory.get_param("H0") / 100.0) ** 2
+        return (self.provider.get_param("ombh2")) / (
+            (self.provider.get_param("H0") / 100.0) ** 2
         )
 
     def _get_Ez(self):
-        return self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
+        return self.provider.get_Hubble(self.zarr) / self.provider.get_param("H0")
 
     def _get_Ez_interpolator(self):
         return interp1d(self.zarr, self._get_Ez())
 
     def _get_DAz(self):
-        return self.theory.get_angular_diameter_distance(self.zarr)
+        return self.provider.get_angular_diameter_distance(self.zarr)
 
     def _get_DAz_interpolator(self):
         return interp1d(self.zarr, self._get_DAz())
 
     def _get_HMF(self):
-        h = self.theory.get_param("H0") / 100.0
+        h = self.provider.get_param("H0") / 100.0
 
-        Pk_interpolator = self.theory.get_Pk_interpolator(
+        Pk_interpolator = self.provider.get_Pk_interpolator(
             ("delta_nonu", "delta_nonu"), nonlinear=False
         ).P
         pks = Pk_interpolator(self.zarr, self.k)
@@ -137,7 +137,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
         Ez = (
             self._get_Ez()
-        )  # self.theory.get_Hubble(self.zarr) / self.theory.get_param("H0")
+        )  # self.provider.get_Hubble(self.zarr) / self.provider.get_param("H0")
         om = self._get_om()
 
         hmf = mf.HMF(om, Ez, pk=pks * h**3, kh=self.k / h, zarr=self.zarr)
@@ -153,7 +153,7 @@ class ClusterLikelihood(PoissonLikelihood):
         scat = 0.2
         massbias = 1.0
 
-        H0 = self.theory.get_param("H0")
+        H0 = self.provider.get_param("H0")
         ob = self._get_ob()
         om = self._get_om()
         param_vals = {
@@ -179,7 +179,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
         dn_dzdm_interp = HMF.inter_dndmLogm(delta=500)
 
-        h = self.theory.get_param("H0") / 100.0
+        h = self.provider.get_param("H0") / 100.0
 
         def Prob_per_cluster(z, tsz_signal, tsz_signal_err):
             c_y = tsz_signal
@@ -199,15 +199,15 @@ class ClusterLikelihood(PoissonLikelihood):
         # Implement a function that returns a rate function (function of (tsz_signal, z))
 
     def _get_dVdz(self):
-        DA_z = self.theory.get_angular_diameter_distance(self.zarr)
+        DA_z = self.provider.get_angular_diameter_distance(self.zarr)
 
         dV_dz = (
             DA_z**2
             * (1.0 + self.zarr) ** 2
-            / (self.theory.get_Hubble(self.zarr) / C_KM_S)
+            / (self.provider.get_Hubble(self.zarr) / C_KM_S)
         )
 
-        # dV_dz *= (self.theory.get_param("H0") / 100.0) ** 3.0  # was h0
+        # dV_dz *= (self.provider.get_param("H0") / 100.0) ** 3.0  # was h0
         return dV_dz
 
     def _get_n_expected(self, **kwargs):
@@ -223,7 +223,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
         z_arr = self.zarr
 
-        h = self.theory.get_param("H0") / 100.0
+        h = self.provider.get_param("H0") / 100.0
 
         Ntot = 0
         dVdz = self._get_dVdz()
@@ -253,7 +253,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
         z_arr = self.zarr
 
-        h = self.theory.get_param("H0") / 100.0
+        h = self.provider.get_param("H0") / 100.0
 
         Ntot = 0
         dVdz = self._get_dVdz()
