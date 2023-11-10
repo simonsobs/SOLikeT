@@ -1,0 +1,43 @@
+z_nuisance_mode: null
+m_nuisance_mode: null
+ia_mode: null
+
+params:
+  A_IA:
+    value: 0.54
+    latex: A_{IA}
+  gs_des_bin1_A_IA:
+    value: 0.50
+  gs_des_bin2_A_IA:
+    value: 0.52
+  gs_des_bin3_A_IA:
+    value: 0.54
+  gs_des_bin4_A_IA:
+    value: 0.56
+  eta_IA:
+    value: 1.7
+    latex: \eta_{IA}
+  gs_des_bin1_deltaz:
+    value: -0.02
+  gs_des_bin2_deltaz:
+    value: -0.02
+  gs_des_bin3_deltaz:
+    value: -0.02
+  gs_des_bin4_deltaz:
+    value: -0.02
+  gs_des_bin1_m:
+    value: -0.04
+  gs_des_bin2_m:
+    value: -0.04
+  gs_des_bin3_m:
+    value: -0.04
+  gs_des_bin4_m:
+    value: -0.04
+  gs_des_bin1_sigmam:
+    value: 0.01
+  gs_des_bin2_sigmam:
+    value: 0.01
+  gs_des_bin3_sigmam:
+    value: 0.01
+  gs_des_bin4_sigmam:
+    value: 0.01

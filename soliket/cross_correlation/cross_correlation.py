@@ -19,17 +19,35 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     """
     def initialize(self):
 
-        if self.datapath is None:
-            self.dndz = np.loadtxt(self.dndz_file)
-
-            x, y, dy = self._get_data()
-            cov = np.diag(dy**2)
-            self.data = GaussianData("CrossCorrelation", x, y, cov, self.ncovsims)
-        else:
-            self._get_sacc_data()
+        self._get_sacc_data()
+        self._check_tracers()
 
     def get_requirements(self):
         return {"CCL": {"kmax": 10, "nonlinear": True}}
+
+    def _check_tracers(self):
+
+        # check correct tracers
+        for tracer_comb in self.sacc_data.get_tracer_combinations():
+
+            if (self.sacc_data.tracers[tracer_comb[0]].quantity ==
+                    self.sacc_data.tracers[tracer_comb[1]].quantity):
+                raise LoggedError(self.log,
+                                  'You have tried to use {0} to calculate an \
+                                   autocorrelation, but it is a cross-correlation \
+                                   likelihood. Please check your tracer selection in the \
+                                   ini file.'.format(self.__class__.__name__))
+
+            for tracer in tracer_comb:
+                if self.sacc_data.tracers[tracer].quantity not in self._allowable_tracers:
+                    raise LoggedError(self.log,
+                                      'You have tried to use a {0} tracer in \
+                                       {1}, which only allows {2}. Please check your \
+                                       tracer selection in the ini file.\
+                                       '.format(self.sacc_data.tracers[tracer].quantity,
+                                                self.__class__.__name__,
+                                                self._allowable_tracers))
+
 
     def _get_nz(self, z, tracer, tracer_name, **params_values):
 
@@ -46,11 +64,12 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         self.sacc_data = sacc.Sacc.load_fits(self.datapath)
 
-        if self.use_tracers == 'all':
+        if self.use_spectra == 'all':
             pass
         else:
-            raise LoggedError('Tracer selection not implemented yet!')
-            # self.sacc_data.keep_selection(tracers=self.use_tracers.split(','))
+            for tracer_comb in self.sacc_data.get_tracer_combinations():
+                if tracer_comb not in self.use_spectra:
+                    self.sacc_data.remove_selection(tracers=tracer_comb)
 
         self.x = self._construct_ell_bins()
         self.y = self.sacc_data.mean
@@ -88,6 +107,16 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         return x, y, dy
 
+    def get_binning(self, tracer_comb):
+            
+        bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
+        bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
+        ells_theory = bpw.values
+        ells_theory = np.asarray(ells_theory, dtype=int)
+        w_bins = bpw.weight.T
+
+        return ells_theory, w_bins
+
     def logp(self, **params_values):
         theory = self._get_theory(**params_values)
         return self.data.loglike(theory)
@@ -97,31 +126,51 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
     r"""
     Likelihood for cross-correlations of galaxy and CMB lensing data.
     """
+    _allowable_tracers = ['cmb_convergence', 'galaxy_density']
+
     def _get_theory(self, **params_values):
+
         cosmo = self.provider.get_CCL()["cosmo"]
 
+        tracer_comb = self.sacc_data.get_tracer_combinations()
+
+        for tracer in np.unique(tracer_comb):
+
+            if self.sacc_data.tracers[tracer].quantity == "cmb_convergence":
+                cmbk_tracer = tracer
+            elif self.sacc_data.tracers[tracer].quantity == "galaxy_density":
+                gal_tracer = tracer
+
+        z_gal_tracer = self.sacc_data.tracers[gal_tracer].z
+        nz_gal_tracer = self.sacc_data.tracers[gal_tracer].nz
+
+        # this should use the bias theory!
         tracer_g = ccl.NumberCountsTracer(cosmo,
                                           has_rsd=False,
-                                          dndz=self.dndz.T,
-                                          bias=(self.dndz[:, 0],
+                                          dndz=(z_gal_tracer, nz_gal_tracer),
+                                          bias=(z_gal_tracer,
                                                 params_values["b1"] *
-                                                    np.ones(len(self.dndz[:, 0]))),
-                                          mag_bias=(self.dndz[:, 0],
+                                                    np.ones(len(z_gal_tracer))),
+                                          mag_bias=(z_gal_tracer,
                                                     params_values["s1"] *
-                                                        np.ones(len(self.dndz[:, 0])))
+                                                        np.ones(len(z_gal_tracer)))
                                           )
         tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
 
-        cl_gg = ccl.cells.angular_cl(cosmo, tracer_g, tracer_g, self.ell_auto)  # + 1e-7
-        cl_kg = ccl.cells.angular_cl(cosmo, tracer_k, tracer_g, self.ell_cross)
+        ells_theory_gk, w_bins_gk = self.get_binning((gal_tracer, cmbk_tracer))
 
-        return np.concatenate([cl_gg, cl_kg])
+        cl_gk_unbinned = ccl.cells.angular_cl(cosmo, tracer_k, tracer_g, ells_theory_gk)
+
+        cl_gk_binned = np.dot(w_bins_gk, cl_gk_unbinned)
+
+        return cl_gk_binned
 
 
 class ShearKappaLikelihood(CrossCorrelationLikelihood):
     r"""
     Likelihood for cross-correlations of galaxy weak lensing shear and CMB lensing data.
     """
+    _allowable_tracers = ["cmb_convergence", "galaxy_shear"]
 
     def _get_theory(self, **params_values):
 
@@ -130,14 +179,6 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
         cl_binned_list = []
 
         for tracer_comb in self.sacc_data.get_tracer_combinations():
-
-            if (self.sacc_data.tracers[tracer_comb[0]].quantity
-                    == self.sacc_data.tracers[tracer_comb[1]].quantity):
-                self.log.warning('You requested auto-correlation in '\
-                                 'ShearKappaLikelihood but it is only implemented for '\
-                                 'cross-correlations and resulting bias calculations '\
-                                 'will be incorrect. Please check your tracer '\
-                                 'combinations in the sacc file.')
 
             if self.sacc_data.tracers[tracer_comb[0]].quantity == "cmb_convergence":
                 tracer1 = ccl.CMBLensingTracer(cosmo, z_source=1060)
