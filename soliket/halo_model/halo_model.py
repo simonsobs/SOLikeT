@@ -1,7 +1,7 @@
 """
 .. module:: soliket.halo_model
 
-:Synopsis: Class to calculate Halo Models for non-linear power spectra as cobaya Theory classes.
+:Synopsis: Class to calculate Halo Models for non-linear power spectra.
 :Author: Ian Harrison
 
 .. |br| raw:: html
