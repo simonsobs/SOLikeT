@@ -115,7 +115,7 @@ class HaloModel_pyhm(HaloModel):
         needs["sigma_R"] = {"vars_pairs": self._var_pairs,
                            "z": self.z,
                            "k_max": self.kmax,
-                           "R": np.linspace(0.14, 66, 256)
+                           "R": np.linspace(0.14, 66, 256) # list of radii required
                            }
 
 
@@ -142,7 +142,7 @@ class HaloModel_pyhm(HaloModel):
             rvs = hmod.virial_radius(self.Ms)
 
             cs = 7.85 * (self.Ms / 2e12)**-0.081 * (1. + zeval)**-0.71
-            Uk = self.win_NFW(self.k, rvs, cs)
+            Uk = self._win_NFW(self.k, rvs, cs)
             matter_profile = halo.profile.Fourier(self.k, self.Ms, Uk,
                                                   amplitude=self.Ms,
                                                   normalisation=hmod.rhom,
@@ -159,7 +159,7 @@ class HaloModel_pyhm(HaloModel):
         # state['Pk_gm_grid'] = Pk_hm['g-m']
         # state['Pk_gg_grid'] = Pk_hm['g-g']
 
-    def win_NFW(self, k, rv, c):
+    def _win_NFW(self, k, rv, c):
         from scipy.special import sici
         rs = rv / c
         kv = np.outer(k, rv)
