@@ -34,7 +34,12 @@ fgmarge = ForegroundMarginalizer({
     "data_folder" : "ForegroundMarginalizer/v0.8",
     "bandpass" : bandpass,
     "foregrounds" : fgmodel,
-    "theoryforge" : thfo
+    "theoryforge" : thfo,
+    "lmax_extract" : {
+        "tt" : 7000,
+        "te" : 7000,
+        "ee" : 7000
+    }
 })
 
 # Hard prior bounds for the parameters.
