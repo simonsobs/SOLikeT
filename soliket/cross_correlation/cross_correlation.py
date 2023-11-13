@@ -27,7 +27,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
     def _get_CCL_results(self):
         cosmo_dict = self.provider.get_CCL()
-        return cosmo_dict["cosmo"], cosmo_dict["ccl"]
+        return cosmo_dict["ccl"], cosmo_dict["cosmo"]
 
     def _check_tracers(self):
 
