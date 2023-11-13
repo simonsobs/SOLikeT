@@ -1,6 +1,6 @@
 """
 .. module:: soliket.cosmopower
-p
+
 :Synopsis: Simple CosmoPower theory wrapper for Cobaya.
 :Author: Hidde T. Jense
 
