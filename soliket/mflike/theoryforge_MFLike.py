@@ -54,7 +54,6 @@ They have to be named as ``cal/calT/calE/alpha`` + ``_``  + experiment_channel s
 """
 
 import numpy as np
-import os
 from typing import Optional
 
 from cobaya.theory import Theory

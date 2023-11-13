@@ -79,7 +79,7 @@ the likelihood.
 # https://cobaya.readthedocs.io/en/devel/theories_and_dependencies.html
 
 import numpy as np
-from typing import Sequence, Union
+from typing import Sequence
 from cobaya.theory import Theory
 from cobaya.tools import LoggedError
 

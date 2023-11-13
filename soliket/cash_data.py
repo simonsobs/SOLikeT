@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.special import factorial
-import math as m
 
 
 def cash_c_logpdf(theory, data, usestirling=True):

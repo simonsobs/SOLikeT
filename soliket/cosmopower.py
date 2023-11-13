@@ -99,12 +99,11 @@ else:
     HAS_COSMOPOWER = True
 import numpy as np
 
-from typing import Dict, Iterable, Tuple
+from typing import Iterable, Tuple
 
 from cobaya.log import LoggedError
 from cobaya.theory import Theory
 from cobaya.theories.cosmo import BoltzmannBase
-from cobaya.typing import InfoDict
 
 
 class CosmoPower(BoltzmannBase):

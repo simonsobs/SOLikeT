@@ -29,7 +29,6 @@ function (have a look at the linear bias model for ideas).
 import numpy as np
 from typing import Optional
 from cobaya.theory import Theory
-from cobaya.typing import InfoDict
 
 
 class Bias(Theory):

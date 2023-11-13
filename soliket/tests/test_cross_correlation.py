@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import pytest
 from soliket.ccl import CCL
 from cobaya.model import get_model
 
@@ -28,12 +27,12 @@ info = {
 
 def test_galaxykappa_import(request):
 
-    from soliket.cross_correlation import GalaxyKappaLikelihood
+    from soliket.cross_correlation import GalaxyKappaLikelihood # noqa F401
 
 
 def test_shearkappa_import(request):
 
-    from soliket.cross_correlation import ShearKappaLikelihood
+    from soliket.cross_correlation import ShearKappaLikelihood # noqa F401
 
 
 def test_galaxykappa_model(request):

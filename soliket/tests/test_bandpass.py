@@ -1,10 +1,6 @@
-# pytest -k bandpass -v .
-
-import pytest
 import numpy as np
 
 from cobaya.model import get_model
-from cobaya.run import run
 from ..constants import T_CMB, h_Planck, k_Boltzmann
 
 info = {"params": {
@@ -31,7 +27,7 @@ def _cmb2bb(nu):
 
 
 def test_bandpass_import():
-    from soliket.bandpass import BandPass
+    from soliket.bandpass import BandPass # noqa F401
 
 
 def test_bandpass_model():
