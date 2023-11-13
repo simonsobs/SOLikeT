@@ -178,7 +178,7 @@ Tests run a set of SOLikeT calculations with known expected results. There are (
 
 Checking code in development
 ----------------------------
-To see if codes you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
+To see if codes you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github. Tests will be run whenever you open a Pull Request , convert a PR from draft to ready-to-review or request a review or re-review of an existing PR.
 
 If you are using conda, the easiest way to run tests (and the way we run them) is to use tox-conda::
 
