@@ -6,6 +6,8 @@ from cobaya.model import get_model
 
 gammakappa_sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
 gkappa_sacc_file = 'soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits'
+galaxykappa_yaml_file = 'soliket/tests/test_galaxykappalike.yaml'
+galaxykappa_sacc_file = 'soliket/tests/data/abacus_red-sn+cmbk_cov=sim-noise+theor-err_abacus.fits'
 
 cosmo_params = {"Omega_c": 0.25, "Omega_b": 0.05, "h": 0.67, "n_s": 0.96}
 
@@ -319,7 +321,9 @@ def test_galaxykappa_pred(request):
     import yaml
     import sacc
 
-    info = yaml.load('test_galaxykappalike.yaml', Loader=yaml.FullLoader)
+    rootdir = request.config.rootdir
+
+    info = yaml.load(os.path.join(rootdir, galaxykappa_yaml_file), Loader=yaml.FullLoader)
 
     params_dict =  {'sigma8': 0.8069016507, 
                     'omch2': 0.1206, 
@@ -356,7 +360,7 @@ def test_galaxykappa_pred(request):
     cosmo = ccl.Cosmology(Omega_c=Omega_c, Omega_b=Omega_b, h=params_dict['H0']/100., sigma8=params_dict['sigma8'], 
                             n_s=params_dict['ns'], m_nu=params_dict['mnu'], matter_power_spectrum='camb', 
                             extra_parameters={"camb": {"halofit_version": "mead2020"}})
-    s = sacc.Sacc.load_fits('data/abacus_red-sn+cmbk_cov=sim-noise+theor-err_abacus.fits')
+    s = sacc.Sacc.load_fits(os.path.join(rootdir, galaxykappa_sacc_file))
     sacc_tr = s.tracers['cl1']
     z_arr = sacc_tr.z
     nz_arr = sacc_tr.nz
