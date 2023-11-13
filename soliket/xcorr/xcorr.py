@@ -10,7 +10,6 @@ Based on the original xcorr code [1]_ used in Krolewski et al (2021) [2]_.
 
 import numpy as np
 import sacc
-import pdb
 
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
@@ -161,7 +160,7 @@ class XcorrLikelihood(GaussianLikelihood):
                                                  self.gc_tracer_name)
         ell_cross, cl_cross = data_sacc.get_ell_cl('cl_00',
                                                    self.gc_tracer_name,
-                                                   self.k_tracer_name) #TODO: check order
+                                                   self.k_tracer_name) # TODO: check order
         cov = data_sacc.covariance.covmat
 
         x = np.concatenate([ell_auto, ell_cross])

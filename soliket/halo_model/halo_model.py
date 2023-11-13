@@ -24,10 +24,10 @@ in your run settings. e.g.:
     soliket.halo_model.HaloModel_pyhm:
 
 
-Implementing your own bias model
+Implementing your own halo model
 --------------------------------
 
-If you want to add your own bias model, you can do so by inheriting from the
+If you want to add your own halo model, you can do so by inheriting from the
 ``soliket.HaloModel`` theory class and implementing your own custom ``calculate()``
 function (have a look at the simple pyhalomodel model for ideas).
 """
