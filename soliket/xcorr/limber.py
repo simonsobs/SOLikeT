@@ -1,12 +1,11 @@
 """
 .. module:: limber
 
-Used internally by the xcorr likelihood to compute angular power spectra of different 
-probes under the Limber approximation.
+Used internally by the xcorr likelihood to compute angular power spectra of different
+ probes under the Limber approximation.
 """
 
 import numpy as np
-import pdb
 from ..constants import C_HMPC
 
 
@@ -19,7 +18,7 @@ def mag_bias_kernel(provider, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_ar
     '''
     dndzprime = np.interp(zprime_arr, dndz[:, 0], dndz[:, 1], left=0, right=0)
     norm = np.trapz(dndz[:, 1], x=dndz[:, 0])
-    dndzprime = dndzprime / norm #TODO check this norm is right
+    dndzprime = dndzprime / norm # TODO check this norm is right
 
     g_integrand = (chiprime_arr - chi_arr[np.newaxis, :]) / chiprime_arr \
                     * (oneover_chmpc * provider.get_param('H0') / 100) \
@@ -125,4 +124,4 @@ def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
     clobs_kappag = c_ell_g1kappa + c_ell_mu1kappa
     # clobs_kappakappa = c_ell_kappakappa
 
-    return clobs_gg.flatten(), clobs_kappag.flatten()#, clobs_kappakappa.flatten()
+    return clobs_gg.flatten(), clobs_kappag.flatten()# , clobs_kappakappa.flatten()

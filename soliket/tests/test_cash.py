@@ -23,7 +23,7 @@ def toy_data():
 
 
 def test_cash_import():
-    from soliket.cash import CashCLikelihood
+    from soliket.cash import CashCLikelihood # noqa F401
 
 
 def test_cash_read_data(request):

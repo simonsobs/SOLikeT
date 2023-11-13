@@ -1,11 +1,7 @@
-# pytest -k bandpass -v .
-
-import pytest
 import numpy as np
 import os
 
 from cobaya.model import get_model
-from cobaya.run import run
 
 info = {"params": {
                    "a_tSZ": 3.3044404448917724,
@@ -30,7 +26,7 @@ info = {"params": {
 
 
 def test_foreground_import():
-    from soliket.foreground import Foreground
+    from soliket.foreground import Foreground # noqa F401
 
 
 def test_foreground_model():

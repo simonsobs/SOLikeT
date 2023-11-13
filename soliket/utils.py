@@ -60,7 +60,7 @@ class OneWithCls(one):
     `cobaya.likelihoods.one 
     <https://cobaya.readthedocs.io/en/latest/likelihood_one.html>`_
     which creates a dummy :math:`C_\ell` requirements dictionary with an
-    :math:`\ell_{\rm max}` of 1000 to force computation of ``pp``, ``tt``, ``te``, ``ee`` 
+    :math:`\ell_{\rm max}` of 1000 to force computation of ``pp``, ``tt``, ``te``, ``ee``
     and ``bb`` :math:`C_\ell` s.
     """
     lmax = 10000

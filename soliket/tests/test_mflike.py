@@ -4,7 +4,6 @@ Make sure that this returns the same result as original mflike.MFLike from LAT_M
 import os
 import tempfile
 import unittest
-import pytest
 from packaging.version import Version
 
 import camb
