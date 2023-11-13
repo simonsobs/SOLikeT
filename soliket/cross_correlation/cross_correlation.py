@@ -187,7 +187,6 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
             tr1, tr2 = tr
             lmin = np.max([self.defaults[tr1]['lmin'], self.defaults[tr2]['lmin']])
             lmax = np.min([self.defaults[tr1]['lmax'], self.defaults[tr2]['lmax']]) 
-            print(tr, lmin, lmax)
             self.sacc_data.remove_selection(tracers=tr, ell__gt=lmax)
             self.sacc_data.remove_selection(tracers=tr, ell__lt=lmin)
 
@@ -316,6 +315,7 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
             tr_x, tr_y = tr_pair
 
             ells_theory, w_bins = self.get_binning((tr_x, tr_y))
+            print(ells_theory)
 
             if self.PT_bias:
                 pk_xy = self.ptc.get_biased_pk2d(tracers[tr_x]['PT_tracer'], tracer2=tracers[tr_y]['PT_tracer'])
@@ -326,6 +326,7 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
                                                    ells_theory)
 
             cl_binned = np.dot(w_bins, cl_unbinned)
+            print(cl_unbinned)
 
             cls.append(cl_binned)
 

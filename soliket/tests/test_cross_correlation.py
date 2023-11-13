@@ -308,3 +308,77 @@ def test_shearkappa_hmcode(request):
     loglikes, derived = model.loglikes()
 
     assert np.isfinite(loglikes)
+
+def test_galaxykappa_pred(request):
+    """
+    Test that the prediction from the likelihood is the same as the one from CCL.
+    """
+
+    import pyccl as ccl
+    import pyccl.nl_pt as pt
+    import yaml
+    import sacc
+
+    info = yaml.load('test_galaxykappalike.yaml', Loader=yaml.FullLoader)
+
+    params_dict =  {'sigma8': 0.8069016507, 
+                    'omch2': 0.1206, 
+                    'gcl_cl1_b1': 1.585740073, 
+                    'gcl_cl2_b1': 1.813064786, 
+                    'gcl_cl3_b1': 2.119892852, 
+                    'gcl_cl1_b1p': 1.369028161, 
+                    'gcl_cl2_b1p': 1.855865645, 
+                    'gcl_cl3_b1p': 2.263006087, 
+                    'gcl_cl1_b2': 0.2903571048, 
+                    'gcl_cl2_b2': 0.4639643153, 
+                    'gcl_cl3_b2': 0.8976356733, 
+                    'gcl_cl1_bs': -0.5728063156, 
+                    'gcl_cl2_bs': -1.084741786, 
+                    'gcl_cl3_bs': -1.709779746, 
+                    'gcl_cl1_bk2': 1.557112084, 
+                    'gcl_cl2_bk2': 2.356926746, 
+                    'gcl_cl3_bk2': 4.006592607, 
+                    'mnu': 0.0, 
+                    'ombh2': 0.02237,
+                    'H0': 67.36,
+                    'ns': 0.9649,
+                    }
+
+    model = get_model(info) # noqa F841
+    loglikes, derived = model.loglikes(params_dict)
+    cl_th = model.likelihood['soliket.cross_correlation.GalaxyKappaLikelihood']._get_theory(**params_dict)
+
+    ells_theory, w_bins = model.likelihood['soliket.cross_correlation.GalaxyKappaLikelihood'].get_binning(('cl1', 'cmbk'))
+
+    # Get the theory prediction from CCL
+    Omega_c = params_dict['omch2'] / (params_dict['H0']/100.) ** 2.0
+    Omega_b = params_dict['ombh2'] / (params_dict['H0']/100.) ** 2.0
+    cosmo = ccl.Cosmology(Omega_c=Omega_c, Omega_b=Omega_b, h=params_dict['H0']/100., sigma8=params_dict['sigma8'], 
+                            n_s=params_dict['ns'], m_nu=params_dict['mnu'], matter_power_spectrum='camb', 
+                            extra_parameters={"camb": {"halofit_version": "mead2020"}})
+    s = sacc.Sacc.load_fits('data/abacus_red-sn+cmbk_cov=sim-noise+theor-err_abacus.fits')
+    sacc_tr = s.tracers['cl1']
+    z_arr = sacc_tr.z
+    nz_arr = sacc_tr.nz
+    zmean = np.average(z_arr, weights=nz_arr)
+    b1z = params_dict['gcl_cl1_b1'] + params_dict['gcl_cl1_b1p']*(z_arr-zmean)
+    # Number counts
+    ptt_g = pt.PTNumberCountsTracer(b1=(z_arr, b1z), b2=params_dict['gcl_cl1_b2'], 
+                                    bs=params_dict['gcl_cl1_bs'], bk2=params_dict['gcl_cl1_bk2'])
+    # Matter
+    ptt_m = pt.PTMatterTracer()
+    # Number counts
+    t_g = ccl.NumberCountsTracer(cosmo, has_rsd=False, dndz=(z_arr, nz_arr), 
+                                bias=(z_arr, np.ones_like(z_arr)), mag_bias=None)
+    # Lensing
+    t_l = ccl.CMBLensingTracer(cosmo, z_source=1030)
+    ptc = pt.LagrangianPTCalculator(log10k_min=-4, log10k_max=2, nk_per_decade=20)
+    ptc.update_ingredients(cosmo)
+    # Galaxies x matter
+    pk_gm = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_m)
+    ell = np.arange(5287)
+    cls_ccl = ccl.angular_cl(cosmo, t_g, t_l, ells_theory, p_of_k_a=pk_gm)
+    cls_ccl_binned = np.dot(w_bins, cls_ccl)
+
+    assert np.allclose(cls_ccl_binned, cl_th[:10], rtol=4.e-4, atol=1.e-8)
+
