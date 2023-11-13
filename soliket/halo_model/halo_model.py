@@ -1,9 +1,8 @@
 """
 .. module:: soliket.halo_model
 
-:Synopsis: Class to calculate Halo Models for non-linear power spectra as cobaya
-Theory classes.
-:author: Ian Harrison
+:Synopsis: Class to calculate Halo Models for non-linear power spectra as cobaya Theory classes.
+:Author: Ian Harrison
 
 .. |br| raw:: html
 
@@ -13,10 +12,10 @@ Theory classes.
 Usage
 -----
 
-We include a simple halo model for the non-linear matter-matter power spectrum with 
-NFW profiles. This is calculated via the `pyhalomodel
-<https://github.com/alexander-mead/pyhalomodel>`_ code.
-, simply add it as a theory code alongside camb in your run settings, e.g.:
+Halo Models for calculating non-linear power spectra for use in large scale structure 
+and lensing likelihoods. The abstract HaloModel base class should be built on with 
+specific model implementations. HaloModels can be added as theory codes alongside others 
+in your run settings. e.g.:
 
 .. code-block:: yaml
 
@@ -29,8 +28,8 @@ Implementing your own bias model
 --------------------------------
 
 If you want to add your own bias model, you can do so by inheriting from the
-``soliket.Bias`` theory class and implementing your own custom ``calculate()``
-function (have a look at the linear bias model for ideas).
+``soliket.HaloModel`` theory class and implementing your own custom ``calculate()``
+function (have a look at the simple pyhalomodel model for ideas).
 """
 
 import numpy as np
@@ -43,7 +42,7 @@ import pyhalomodel as halo
 
 
 class HaloModel(Theory):
-    """Parent class for Halo Models."""
+    """Abstract parent class for implementing Halo Models."""
 
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10**_logz
@@ -77,7 +76,12 @@ class HaloModel(Theory):
 
 
 class HaloModel_pyhm(HaloModel):
-    """Halo Model wrapping the simple pyhalomodel code of Asgari, Mead & Heymans (2023)"""
+    """Halo Model wrapping the simple pyhalomodel code of Asgari, Mead & Heymans (2023)
+
+    We include this simple halo model for the non-linear matter-matter power spectrum with 
+    NFW profiles. This is calculated via the `pyhalomodel
+    <https://github.com/alexander-mead/pyhalomodel>`_ code.
+    """
     
     def initialize(self):
         super().initialize()
