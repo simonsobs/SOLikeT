@@ -9,8 +9,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ['3.12']
-        toxenv: [py312-test-all-latest]
+        python-version: ['3.11']
+        toxenv: [py311-test-all-latest]
         # release: [main, latest] # there are no releases yet so this would break
         release: [main]
     steps:

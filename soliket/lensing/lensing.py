@@ -12,8 +12,6 @@ data download.
 """
 
 import os
-from importlib import resources
-
 import numpy as np
 import sacc
 from cobaya.likelihoods.base_classes import InstallableLikelihood
@@ -22,6 +20,7 @@ from cobaya.log import LoggedError
 # from cobaya.install import NotInstalledError
 
 from ..ps import BinnedPSLikelihood
+from ..utils import package_data_file
 
 
 class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
@@ -237,6 +236,6 @@ class LensingLiteLikelihood(BinnedPSLikelihood):
     """
     kind: str = "pp"
     lmax: int = 3000
-    datapath: str = str(resources.path('soliket.lensing.data', 'binnedauto.txt'))
-    covpath: str = str(resources.path('soliket.lensing.data', 'binnedcov.txt'))
-    binning_matrix_path: str = str(resources.path('soliket.lensing.data', 'binningmatrix.txt'))
+    datapath: str = package_data_file('soliket.lensing.data', 'binnedauto.txt')
+    covpath: str = package_data_file('soliket.lensing.data', 'binnedcov.txt')
+    binning_matrix_path: str = package_data_file('soliket.lensing.data', 'binningmatrix.txt')

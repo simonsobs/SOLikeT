@@ -20,11 +20,11 @@ p
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
-from importlib import resources
 
 import pyccl as ccl
 
 from ..poisson import PoissonLikelihood
+from ..utils import package_data_file
 from . import massfunc as mf
 from .survey import SurveyData
 from .sz_utils import szutils
@@ -43,10 +43,10 @@ class ClusterLikelihood(PoissonLikelihood):
     name = "Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err"]
 
-    data_path = str(resources.path('soliket.clusters.data', 'selFn_equD56'))
+    data_path = package_data_file('soliket.clusters.data', 'selFn_equD56')
 
     # data_path = resource_filename("soliket", "clusters/data/selFn_SO")
-    data_name = str(resources.path('soliket.clusters.data', 'E-D56Clusters.fits'))
+    data_name = package_data_file('soliket.clusters.data', 'E-D56Clusters.fits')
 
     # data_name = resource_filename("soliket",
     #                   "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")

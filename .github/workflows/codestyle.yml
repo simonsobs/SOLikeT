@@ -10,11 +10,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Install Conda w/ Python 3.12
+      - name: Install Conda w/ Python 3.11
         uses: conda-incubator/setup-miniconda@v2
         with:
           auto-activate-base: false
-          python-version: '3.12'
+          python-version: '3.11'
           channels: conda-forge
       - name: Install Dependencies
         shell: bash -el {0}

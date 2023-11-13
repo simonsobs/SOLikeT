@@ -5,7 +5,7 @@ r"""
 
 """
 
-from importlib import import_module
+from importlib import import_module, resources
 
 from scipy.stats import binned_statistic as binnedstat
 import numpy as np
@@ -20,15 +20,15 @@ def binner(ls, cls, bin_edges):
     band powers with a top hat window function.
 
     Note that the centers are computed as :math:`0.5({\rm LHE}+{\rm RHE})`,
-    where :math:`{\rm LHE}` and :math:`{\rm RHE}` are the bin edges. 
-    While this is ok for plotting purposes, the user may need 
-    to recompute the bin center in case of integer ``ls`` 
+    where :math:`{\rm LHE}` and :math:`{\rm RHE}` are the bin edges.
+    While this is ok for plotting purposes, the user may need
+    to recompute the bin center in case of integer ``ls``
     if the correct baricenter is needed.
 
     :param ls: Axis along which to bin
     :param cls: Values to be binned
     :param bin_edges: The edges of the bins. Note that all but the last bin
-                      are open to the right. The last bin is closed. 
+                      are open to the right. The last bin is closed.
 
     :return: The centers of the bins and the average of ``cls`` within the bins.
     """
@@ -54,13 +54,18 @@ def get_likelihood(name, options=None):
     return t(options)
 
 
+def package_data_file(package, fname):
+    with resources.path(package, fname) as path:
+        return str(path)
+
+
 class OneWithCls(one):
     r"""
     Extension of
-    `cobaya.likelihoods.one 
+    `cobaya.likelihoods.one
     <https://cobaya.readthedocs.io/en/latest/likelihood_one.html>`_
     which creates a dummy :math:`C_\ell` requirements dictionary with an
-    :math:`\ell_{\rm max}` of 1000 to force computation of ``pp``, ``tt``, ``te``, ``ee`` 
+    :math:`\ell_{\rm max}` of 1000 to force computation of ``pp``, ``tt``, ``te``, ``ee``
     and ``bb`` :math:`C_\ell` s.
     """
     lmax = 10000

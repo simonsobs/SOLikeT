@@ -13,8 +13,8 @@ jobs:
 
           - name: latest supported versions
             os: ubuntu-latest
-            python-version: '3.12'
-            toxenv: py312-test-all-latest-cov
+            python-version: '3.11'
+            toxenv: py311-test-all-latest-cov
 
           - name: oldest supported versions
             os: ubuntu-latest
@@ -23,8 +23,8 @@ jobs:
 
           - name: macOS 11
             os: macos-11
-            python-version: '3.12'
-            toxenv: py312-test-latest
+            python-version: '3.11'
+            toxenv: py311-test-latest
 
     steps:
       - name: Checkout repository
