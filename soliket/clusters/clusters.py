@@ -1,21 +1,21 @@
 """
 .. module:: clusters
 
-:Synopsis: Poisson likelihood for SZ clusters for Simons Osbervatory 
+:Synopsis: Poisson likelihood for SZ clusters for Simons Osbervatory
 :Authors: Nick Battaglia, Eunseong Lee
 
 Likelihood for unbinned tSZ galaxy cluster number counts. Currently under development and
-should be used only with caution and advice. Uses the SZ scaling relations from 
-Hasselfield et al (2013) [1]_ to compare observed number of :math:`y`-map detections 
+should be used only with caution and advice. Uses the SZ scaling relations from
+Hasselfield et al (2013) [1]_ to compare observed number of :math:`y`-map detections
 with the prediction from a Tinker [2]_ Halo Mass Function.
 
 References
 ----------
-.. [1] Hasselfield et al, JCAP 07, 008 (2013) `arXiv:1301.0816 
+.. [1] Hasselfield et al, JCAP 07, 008 (2013) `arXiv:1301.0816
                                                 <https://arxiv.org/abs/1301.0816>`_
-.. [2] Tinker et al, Astrophys. J. 688, 2, 709 (2008) `arXiv:0803.2706 
+.. [2] Tinker et al, Astrophys. J. 688, 2, 709 (2008) `arXiv:0803.2706
                                                     <https://arxiv.org/abs/0803.2706>`_
-
+p
 """
 import numpy as np
 import pandas as pd
@@ -57,10 +57,10 @@ class ClusterLikelihood(PoissonLikelihood):
 
     def get_requirements(self):
         """
-        This likelihood require :math:`P(k,z)`, :math:`H(z)`, :math:`d_A(z)`, 
+        This likelihood require :math:`P(k,z)`, :math:`H(z)`, :math:`d_A(z)`,
         :math:`r(z)` (co-moving radial distance) from Theory codes.
 
-        :return: Dictionary of requirements 
+        :return: Dictionary of requirements
         """
         return {
             "Pk_interpolator": {
