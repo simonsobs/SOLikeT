@@ -1,8 +1,8 @@
 """
 .. module:: limber
 
-Used internally by the xcorr likelihood to compute angular power spectra of different 
-probes under the Limber approximation.
+Used internally by the xcorr likelihood to compute angular power spectra of different
+ probes under the Limber approximation.
 """
 
 import numpy as np
