@@ -20,7 +20,6 @@ from cobaya.log import LoggedError
 # from cobaya.install import NotInstalledError
 
 from ..ps import BinnedPSLikelihood
-from ..utils import package_data_file
 
 
 class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
@@ -88,7 +87,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             else:
                 raise LoggedError(
                     self.log,
-                    "The 'data_folder' directory does not exist. " \
+                    "The 'data_folder' directory does not exist. "
                     "Check the given path [%s].",
                     self.data_folder,
                 )
@@ -97,7 +96,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         self.datapath = os.path.join(self.data_folder, self.data_filename)
         self.sacc = sacc.Sacc.load_fits(self.datapath)
 
-        x, y = self._get_data()
+        # x, y = self._get_data()
         self.cov = self._get_cov()
         self.binning_matrix = self._get_binning_matrix()
 
@@ -236,6 +235,10 @@ class LensingLiteLikelihood(BinnedPSLikelihood):
     """
     kind: str = "pp"
     lmax: int = 3000
-    datapath: str = package_data_file('soliket.lensing.data', 'binnedauto.txt')
-    covpath: str = package_data_file('soliket.lensing.data', 'binnedcov.txt')
-    binning_matrix_path: str = package_data_file('soliket.lensing.data', 'binningmatrix.txt')
+
+    def initialize(self):
+        data = os.path.join(self.get_class_path(), 'data')
+        self.datapath |= os.path.join(data, 'binnedauto.txt')
+        self.covpath |= os.path.join(data, 'binnedcov.txt')
+        self.binning_matrix_path |= os.path.join(data, 'binningmatrix.txt')
+        super().initialize()

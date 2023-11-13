@@ -5,7 +5,7 @@ r"""
 
 """
 
-from importlib import import_module, resources
+from importlib import import_module
 
 from scipy.stats import binned_statistic as binnedstat
 import numpy as np
@@ -52,11 +52,6 @@ def get_likelihood(name, options=None):
     if options is None:
         options = {}
     return t(options)
-
-
-def package_data_file(package, fname):
-    with resources.path(package, fname) as path:
-        return str(path)
 
 
 class OneWithCls(one):
