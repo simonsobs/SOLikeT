@@ -132,6 +132,9 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
     _allowable_tracers = ['cmb_convergence', 'galaxy_density']
 
     def initialize(self):
+        """
+        Initialize likelihood.
+        """
 
         self.PT_bias = self.bz_model in ['LagrangianPT', 'EulerianPT', 'BACCO', 'anzu']
 
@@ -140,6 +143,9 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         self._initialize_pt()
 
     def _get_sacc_data(self):
+        """
+        Get sacc data and initialize GaussianData object.
+        """
 
         self.sacc_data = sacc.Sacc.load_fits(self.datapath)
 
@@ -153,8 +159,9 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
             for tracer_comb in self.sacc_data.get_tracer_combinations():
                 if tracer_comb not in spec_combs:
                     self.sacc_data.remove_selection(tracers=tracer_comb)
-
+   
         self.twopoints = self.sacc_data.get_tracer_combinations()
+
         self.bin_properties = {}
         for b in self.bins:
             if b not in self.sacc_data.tracers:
@@ -165,6 +172,24 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
                 self.bin_properties[b] = {'z_fid': t.z,
                                           'nz_fid': t.nz,
                                           'zmean_fid': zmean}
+            if b not in self.defaults:
+                self.defaults[b] = {}
+                self.defaults[b]['lmin'] = self.defaults['lmin']
+                self.defaults[b]['lmax'] = self.defaults['lmax']
+            else:
+                if 'lmin' not in self.defaults[b]:
+                    self.defaults[b]['lmin'] = self.defaults['lmin']
+                if 'lmax' not in self.defaults[b]:
+                    self.defaults[b]['lmax'] = self.defaults['lmax']
+
+        # Trim ell ranges
+        for tr in self.twopoints:
+            tr1, tr2 = tr
+            lmin = np.max([self.defaults[tr1]['lmin'], self.defaults[tr2]['lmin']])
+            lmax = np.min([self.defaults[tr1]['lmax'], self.defaults[tr2]['lmax']]) 
+            print(tr, lmin, lmax)
+            self.sacc_data.remove_selection(tracers=tr, ell__gt=lmax)
+            self.sacc_data.remove_selection(tracers=tr, ell__lt=lmin)
 
         self.x = self._construct_ell_bins()
         self.y = self.sacc_data.mean
@@ -173,11 +198,15 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         self.data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
 
     def _initialize_pt(self):
+        """
+        Initialize CCL PT calculators.
+        """
 
         #TODO: Need to decide what we want to expose
         if self.bz_model == 'LagrangianPT':
             self.ptc = pt.LagrangianPTCalculator(log10k_min=self.log10k_min, log10k_max=self.log10k_max,
                                                  nk_per_decade=self.nk_per_decade)
+                #  b1_pk_kind='pt', bk2_pk_kind='pt')
         elif self.bz_model == 'EulerianPT':
             self.ptc = pt.EulerianPTCalculator(with_NC=True, with_IA=True, log10k_min=self.log10k_min, 
                                                 log10k_max=self.log10k_max,
@@ -186,6 +215,13 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
             raise LoggedError(self.log, "Bias model {} not implemented yet.".format(self.bz_model))
 
     def _get_nz(self, tr_name, **pars):
+        """
+        Get nz for given tracer.
+        :param tr_name: name of the tracer considered
+        :param pars: dictionary of parameters
+
+        :return: tuple of arrays (z, nz)
+        """
         z = self.bin_properties[tr_name]['z_fid']
         nz = self.bin_properties[tr_name]['nz_fid']
         if self.nz_model == 'NzShift':
@@ -198,8 +234,14 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         return (z, nz)
 
     def _get_bz(self, tr_name, **pars):
-        """ Get linear galaxy bias. Unless we're using a linear bias,
-        this should be just 1."""
+        """ 
+        Get linear galaxy bias for tracer. Unless we're using a linear bias,
+        this is just 1.
+        :param tr_name: name of the tracer considered
+        :param pars: dictionary of parameters
+
+        :return: tuple of arrays (z, bz)
+        """
         z = self.bin_properties[tr_name]['z_fid']
         zmean = self.bin_properties[tr_name]['zmean_fid']
         bz = np.ones_like(z)
@@ -212,6 +254,13 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         return (z, bz)
 
     def _get_tracers(self, cosmo, **params_values):
+        """
+        Get CCL and PT tracers for each tracer considered.
+        :param cosmo: CCL cosmology object
+        :param params_values: dictionary of parameters
+
+        :return: dictionary of tracers
+        """
 
         trs = {}
 
@@ -250,6 +299,12 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         return trs
 
     def _get_theory(self, **params_values):
+        """
+        Get theory prediction for all spectra.
+        :param params_values: dictionary of parameters
+
+        :return: array of theory predictions
+        """
 
         cosmo = self.provider.get_CCL()["cosmo"]
         self.ptc.update_ingredients(cosmo)
@@ -274,7 +329,7 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
 
             cls.append(cl_binned)
 
-        cls = np.array(cls).flatten()
+        cls = np.concatenate(cls)
 
         return cls
 

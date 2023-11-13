@@ -10,4 +10,6 @@ input_params_prefix: '_'
 log10k_min: -4
 log10k_max: 2
 nk_per_decade: 20
-
+defaults:
+  lmin: 30
+  lmax: 3000
