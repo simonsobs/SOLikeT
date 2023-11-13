@@ -237,6 +237,6 @@ class LensingLiteLikelihood(BinnedPSLikelihood):
     """
     kind: str = "pp"
     lmax: int = 3000
-    datapath: str = resources.path('soliket.lensing.data', 'binnedauto.txt')
-    covpath: str = resources.path('soliket.lensing.data', 'binnedcov.txt')
-    binning_matrix_path: str = resources.path('soliket.lensing.data', 'binningmatrix.txt')
+    datapath: str = str(resources.path('soliket.lensing.data', 'binnedauto.txt'))
+    covpath: str = str(resources.path('soliket.lensing.data', 'binnedcov.txt'))
+    binning_matrix_path: str = str(resources.path('soliket.lensing.data', 'binningmatrix.txt'))

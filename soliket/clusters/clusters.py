@@ -43,10 +43,10 @@ class ClusterLikelihood(PoissonLikelihood):
     name = "Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err"]
 
-    data_path = resources.path('soliket.clusters.data', 'selFn_equD56')
+    data_path = str(resources.path('soliket.clusters.data', 'selFn_equD56'))
 
     # data_path = resource_filename("soliket", "clusters/data/selFn_SO")
-    data_name = resources.path('soliket.clusters.data', 'E-D56Clusters.fits')
+    data_name = str(resources.path('soliket.clusters.data', 'E-D56Clusters.fits'))
 
     # data_name = resource_filename("soliket",
     #                   "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
