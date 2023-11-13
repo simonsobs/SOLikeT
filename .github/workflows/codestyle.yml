@@ -1,9 +1,7 @@
 name: Code Style
-on:
-  push:
-    branches: [ master ]
+on: 
   pull_request:
-    branches: [ master ]
+    types: [opened, reopened, ready_for_review, review_requested]
 jobs:
   flake8:
     runs-on: ubuntu-latest
