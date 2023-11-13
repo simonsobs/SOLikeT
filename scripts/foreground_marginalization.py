@@ -49,8 +49,8 @@ param_ranges = {
     "a_kSZ" : [ 0.0, 10.0 ],
     "a_p" : [ 0.0, 50.0 ],
     "a_c" : [ 0.0, 50.0 ],
-    "beta_p" : [ 1.8, 2.2 ],
-    "beta_c" : [ 2.0, 2.4 ],
+    "beta_p" : [ 1.0, 5.0 ],
+    "beta_c" : [ 1.0, 5.0 ],
     "a_s" : [ 0.0, 10.0 ],
     "a_gtt" : [ 0.0, 50.0 ],
     "a_gte" : [ 0.0, 1.0 ],
@@ -81,9 +81,9 @@ fixed_params = {
 }
 
 # The starting point, initial covmat proposal, and names of all parameters.
-starting_point = np.array([ 3.3, 1.6, 6.9, 2.1, 4.9, 2.1, 3.1, 8.7, 0.1, 0.01, 0.01, 0.0, 0.1 ])
-proposal = np.diag([ 0.7, 1.0, 0.2, 0.1, 0.5, 0.1, 0.5, 0.45, 0.07, 0.06, 0.05, 0.05, 0.05 ]) / 100.0
-param_names = [ "a_tSZ", "a_kSZ", "a_p", "beta_p", "a_c", "beta_c", "a_s", "a_gtt", "a_gte", "a_gee", "a_psee", "a_pste", "xi" ]
+starting_point = np.array([ 3.3, 1.6, 6.9, 2.1, 4.9, 3.1, 8.7, 0.1, 0.01, 0.01, 0.0, 0.1 ])
+proposal = np.diag([ 0.7, 1.0, 0.2, 0.1, 0.5, 0.5, 0.45, 0.07, 0.06, 0.05, 0.05, 0.05 ]) / 100.0
+param_names = [ "a_tSZ", "a_kSZ", "a_p", "beta_p", "a_c", "a_s", "a_gtt", "a_gte", "a_gee", "a_psee", "a_pste", "xi" ]
 
 update_proposal_every = 100
 
@@ -179,6 +179,7 @@ current_point = starting_point.copy()
 pbar = tqdm.tqdm(range(300000))
 
 param_dict = { k : v for k, v in zip(param_names, current_point) }
+param_dict["beta_c"] = param_dict["beta_p"]
 
 fgmarge.make_mapping_matrix(**param_dict, **fixed_params)
 
@@ -199,6 +200,7 @@ np.savetxt(f"{outdir}/covmat.txt", proposal @ proposal.T, header = "#" + " ".joi
 
 for n in pbar:
     param_dict = { k : v for k, v in zip(param_names, current_point) }
+    param_dict["beta_c"] = param_dict["beta_p"]
     
     # If calibration is fixed, you can comment out this line to speed up the code.
     fgmarge.make_mapping_matrix(**param_dict, **fixed_params)
@@ -217,6 +219,7 @@ for n in pbar:
     
     new_point = current_point + proposal @ np.random.normal(loc = 0.0, scale = 1.0, size = current_point.shape)
     newparams = { k : v for k, v in zip(param_names, new_point) }
+    newparams["beta_c"] = newparams["beta_p"]
     newprior = logprior(**newparams)
     newlike = 0.0
     newpost = newprior
