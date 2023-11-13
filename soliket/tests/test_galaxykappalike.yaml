@@ -6,7 +6,7 @@ stop_at_error: True
 likelihood:
   soliket.cross_correlation.GalaxyKappaLikelihood:
     input_params_prefix: gcl
-    datapath: /users/anicola/Work/projects/so_dev/abacus_red-sn+cmbk_cov=sim-noise+theor-err_abacus.fits
+    datapath: soliket/tests/data/abacus_red-sn+cmbk_cov=sim-noise+theor-err_abacus.fits
     use_spectra: 
       - bins:
         - cl1
