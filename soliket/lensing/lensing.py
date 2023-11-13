@@ -238,7 +238,8 @@ class LensingLiteLikelihood(BinnedPSLikelihood):
 
     def initialize(self):
         data = os.path.join(self.get_class_path(), 'data')
-        self.datapath |= os.path.join(data, 'binnedauto.txt')
-        self.covpath |= os.path.join(data, 'binnedcov.txt')
-        self.binning_matrix_path |= os.path.join(data, 'binningmatrix.txt')
+        self.datapath = self.datapath or os.path.join(data, 'binnedauto.txt')
+        self.covpath = self.covpath or os.path.join(data, 'binnedcov.txt')
+        self.binning_matrix_path = self.binning_matrix_path or \
+                                   os.path.join(data, 'binningmatrix.txt')
         super().initialize()

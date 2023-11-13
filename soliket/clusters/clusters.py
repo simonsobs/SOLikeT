@@ -47,7 +47,8 @@ class ClusterLikelihood(PoissonLikelihood):
     #                   "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
 
     def initialize(self):
-        self.data_path |= os.path.join(self.get_class_path(), 'data', 'selFn_equD56')
+        self.data_path = self.data_path or os.path.join(
+            self.get_class_path(), 'data', 'selFn_equD56')
         self.data_name = os.path.join(self.get_class_path(), 'data', 'E-D56Clusters.fits')
 
         self.zarr = np.arange(0, 2, 0.05)
