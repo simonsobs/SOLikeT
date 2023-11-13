@@ -1,9 +1,9 @@
 r"""
 .. module:: bandpass
 
-This module computes the bandpass transmission based on the inputs from 
+This module computes the bandpass transmission based on the inputs from
 the parameter file ``BandPass.yaml``. There are three possibilities:
-    * reading the passband :math:`\tau(\nu)` stored in a sacc file 
+    * reading the passband :math:`\tau(\nu)` stored in a sacc file
       (which is the default now, being the mflike default)
     * building the passbands :math:`\tau(\nu)`, either as Dirac delta or as top-hat
     * reading the passbands :math:`\tau(\nu)` from an external file.
@@ -12,10 +12,10 @@ Fore the first option, the ``read_from_sacc`` option in ``BandPass.yaml``
 has to be set to ``True``:
 
 .. code-block:: yaml
-  
+
   read_from_sacc: True
 
-Otherwise, it has to be left empty. The frequencies and passbands are passed in a 
+Otherwise, it has to be left empty. The frequencies and passbands are passed in a
 ``bands`` dictionary, which is passed from ``Foregrounds`` through ``TheoryForge``.
 
 
@@ -25,11 +25,11 @@ has to be filled with two keys:
     * ``nsteps``: setting the number of frequencies used in the band integration
       (either 1 for a Dirac delta or > 1)
     * ``bandwidth``: setting the relative width :math:`\delta` of the band with respect to
-      the central frequency, such that the frequency extrems are 
-      :math:`\nu_{\rm{low/high}} = \nu_{\rm{center}}(1 \mp \delta/2) + 
-      \Delta^{\nu}_{\rm band}` (with :math:`\Delta^{\nu}_{\rm band}` 
+      the central frequency, such that the frequency extrems are
+      :math:`\nu_{\rm{low/high}} = \nu_{\rm{center}}(1 \mp \delta/2) +
+      \Delta^{\nu}_{\rm band}` (with :math:`\Delta^{\nu}_{\rm band}`
        being the possible bandpass shift). ``bandwidth`` has to be 0
-       if ``nstep`` = 1, > 0 otherwise. ``bandwidth`` can be a list 
+       if ``nstep`` = 1, > 0 otherwise. ``bandwidth`` can be a list
        if you want a different width for each band
        e.g. ``bandwidth: [0.3,0.2,0.3]`` for 3 bands.
 
@@ -38,7 +38,7 @@ using passbands from a sacc file, ``bands`` is filled in ``Foreground`` using th
 ``eff_freqs`` in ``Foreground.yaml``. In this case it is filled assuming a Dirac delta.
 
 .. code-block:: yaml
-  
+
   top_hat_band:
     nsteps: 1
     bandwidth: 0
@@ -46,30 +46,30 @@ using passbands from a sacc file, ``bands`` is filled in ``Foreground`` using th
 
 For the third option, the ``external_bandpass`` dictionary in ``BandPass.yaml``
 has to have the the ``path`` key, representing the path to the folder with all the
-passbands. 
+passbands.
 
 .. code-block:: yaml
-  
+
   external_bandpass:
     path: "path_of_passband_folder"
 
 
-The path has to be relative to the ``data_folder`` in ``BandPass.yaml``. 
-This folder has to have text files with the names of the experiment or array and the 
-nominal frequency of the channel, e.g. ``LAT_93`` or ``dr6_pa4_f150``. No other extensions 
-to be added to the name! These files will contain the frequencies as first column and 
+The path has to be relative to the ``data_folder`` in ``BandPass.yaml``.
+This folder has to have text files with the names of the experiment or array and the
+nominal frequency of the channel, e.g. ``LAT_93`` or ``dr6_pa4_f150``. No other extensions
+to be added to the name! These files will contain the frequencies as first column and
 the passband as second column.
 
-To avoid the options you don't want to select, the corresponding dictionary has to be 
+To avoid the options you don't want to select, the corresponding dictionary has to be
 ``null``.
 If all dictionaries are ``null``, there will be an error message inviting to choose
 one of the three options.
 
-The bandpass transmission is built as 
+The bandpass transmission is built as
 
 .. math::
   \frac{\frac{\partial B_{\nu+\Delta \nu}}
-  {\partial T} \tau(\nu+\Delta \nu)}{\int d\nu\frac{\partial 
+  {\partial T} \tau(\nu+\Delta \nu)}{\int d\nu\frac{\partial
   B_{\nu+\Delta \nu}}{\partial T} \tau(\nu+\Delta \nu)}
 
 where
@@ -80,8 +80,8 @@ where
 
 which converts from CMB thermodynamic temperature to differential source intensity
 (see eq.8 of https://arxiv.org/abs/1303.5070).
-The passband :math:`\tau(\nu)` has to be divided by :math:`\nu^2` if it has been 
-measured with respect to a Rayleigh-Jeans (RJ) source and :math:`\Delta \nu` is the 
+The passband :math:`\tau(\nu)` has to be divided by :math:`\nu^2` if it has been
+measured with respect to a Rayleigh-Jeans (RJ) source and :math:`\Delta \nu` is the
 possible bandpass shift for that channel.
 
 """
@@ -96,6 +96,7 @@ from cobaya.log import LoggedError
 
 from .constants import T_CMB, h_Planck, k_Boltzmann
 
+
 # Converts from cmb units to brightness.
 # Numerical factors not included, it needs proper normalization when used.
 
@@ -104,10 +105,10 @@ def _cmb2bb(nu):
     r"""
     Computes the conversion factor :math:`\frac{\partial B_{\nu}}{\partial T}`
     from CMB thermodynamic units to differential source intensity.
-    Passbands measured with respect to a RJ source have to be divided by a 
+    Passbands measured with respect to a RJ source have to be divided by a
     :math:`\nu^2` factor.
 
-    Numerical constants are not included, which is not a problem when using this 
+    Numerical constants are not included, which is not a problem when using this
     conversion both at numerator and denominator.
 
     :param nu: frequency array
@@ -116,11 +117,10 @@ def _cmb2bb(nu):
     """
     # NB: numerical factors not included
     x = nu * h_Planck * 1e9 / k_Boltzmann / T_CMB
-    return np.exp(x) * (nu * x / np.expm1(x))**2
+    return np.exp(x) * (nu * x / np.expm1(x)) ** 2
 
 
 class BandPass(Theory):
-
     # attributes set from .yaml
     data_folder: Optional[str]
     read_from_sacc: dict
@@ -134,7 +134,7 @@ class BandPass(Theory):
                                    "bandint_shift_LAT_225"]
 
         self.exp_ch = None
-        #self.eff_freqs = None
+        # self.eff_freqs = None
         self.bands = None
 
         # To read passbands stored in the sacc files
@@ -147,23 +147,20 @@ class BandPass(Theory):
             self.bandint_nsteps = self.top_hat_band["nsteps"]
             self.bandint_width = self.top_hat_band["bandwidth"]
 
-
         self.bandint_external_bandpass = bool(self.external_bandpass)
         if self.bandint_external_bandpass:
             path = os.path.normpath(os.path.join(self.data_folder,
-                                    self.external_bandpass["path"]))
+                                                 self.external_bandpass["path"]))
             arrays = os.listdir(path)
             self._init_external_bandpass_construction(path, arrays)
 
-
-        if (not self.read_from_sacc and not self.use_top_hat_band 
-                   and not self.bandint_external_bandpass):
+        if (not self.read_from_sacc and not self.use_top_hat_band
+                and not self.bandint_external_bandpass):
             raise LoggedError(
-                    self.log, "fill the dictionaries in the yaml file for" \
-                "either reading the passband from sacc file (mflike default)" \
-                "or an external passband or building a top-hat one!"
-                )
-
+                self.log, "fill the dictionaries in the yaml file for"
+                          "either reading the passband from sacc file (mflike default)"
+                          "or an external passband or building a top-hat one!"
+            )
 
     def initialize_with_params(self):
         # Check that the parameters are the right ones
@@ -181,8 +178,8 @@ class BandPass(Theory):
         # Assign those from Foreground
         if "bandint_freqs" in requirements:
             self.bands = requirements["bandint_freqs"]["bands"]
-            self.exp_ch = [k.replace("_s0", "") for k in self.bands.keys() 
-                    if "_s0" in k]
+            self.exp_ch = [k.replace("_s0", "") for k in self.bands.keys()
+                           if "_s0" in k]
 
     def calculate(self, state, want_derived=False, **params_values_dict):
         r"""
@@ -212,23 +209,23 @@ class BandPass(Theory):
     # each frequency or an array with the effective freqs.
     def _bandpass_construction(self, **params):
         r"""
-        Builds the bandpass transmission 
-        :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T} 
-        \tau(\nu+\Delta \nu)}{\int d\nu 
-        \frac{\partial B_{\nu+\Delta \nu}}{\partial T} \tau(\nu+\Delta \nu)}`  
-        using passbands :math:`\tau(\nu)` (divided by :math:`\nu^2` if 
+        Builds the bandpass transmission
+        :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T}
+        \tau(\nu+\Delta \nu)}{\int d\nu
+        \frac{\partial B_{\nu+\Delta \nu}}{\partial T} \tau(\nu+\Delta \nu)}`
+        using passbands :math:`\tau(\nu)` (divided by :math:`\nu^2` if
         measured with respect to a RJ source, not read from a txt
         file) and bandpass shift :math:`\Delta \nu`. If ``read_from_sacc = True``
         (the default), :math:`\tau(\nu)` has been read from the sacc file
         and passed through ``Foreground`` from ``TheoryForge``.
         If ``use_top_hat_band``, :math:`\tau(\nu)` is built as a top-hat
-        with width ``bandint_width`` and number of samples ``nsteps``, 
+        with width ``bandint_width`` and number of samples ``nsteps``,
         read from the ``BandPass.yaml``.
         If ``nstep = 1`` and ``bandint_width = 0``, the passband is a Dirac delta
         centered at :math:`\nu+\Delta \nu`.
 
-        :param *params: dictionary of nuisance parameters 
-        :return: the list of [nu, transmission] in the multifrequency case  
+        :param *params: dictionary of nuisance parameters
+        :return: the list of [nu, transmission] in the multifrequency case
                  or just an array of frequencies in the single frequency one
         """
 
@@ -242,20 +239,20 @@ class BandPass(Theory):
                 # checks on the bandpass input params
                 if not hasattr(self.bandint_width, "__len__"):
                     self.bandint_width = np.full_like(
-                    self.exp_ch, self.bandint_width, dtype=float
+                        self.exp_ch, self.bandint_width, dtype=float
                     )
                 if self.bandint_nsteps > 1 and np.any(np.array(self.bandint_width) == 0):
                     raise LoggedError(
-                    self.log, "One band has width = 0, set a positive width and run again"
+                        self.log, "One band has width = 0, set a positive width and run again"
                     )
                 # Compute central frequency given bandpass
                 fr = nu_ghz @ bp / bp.sum()
                 if self.bandint_nsteps > 1:
                     bandlow = fr * (1 - self.bandint_width[ifr] * .5)
                     bandhigh = fr * (1 + self.bandint_width[ifr] * .5)
-                    nub = np.linspace(bandlow + params[bandpar], 
-                            bandhigh + params[bandpar],
-                                  self.bandint_nsteps, dtype=float)
+                    nub = np.linspace(bandlow + params[bandpar],
+                                      bandhigh + params[bandpar],
+                                      self.bandint_nsteps, dtype=float)
                     tranb = _cmb2bb(nub)
                     tranb_norm = np.trapz(_cmb2bb(nub), nub)
                     bandint_freqs.append([nub, tranb / tranb_norm])
@@ -295,13 +292,13 @@ class BandPass(Theory):
 
     def _external_bandpass_construction(self, **params):
         r"""
-        Builds bandpass transmission 
-        :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T} 
-        \tau(\nu+\Delta \nu)}{\int d\nu 
-        \frac{\partial B_{\nu+\Delta \nu}}{\partial T} \tau(\nu+\Delta \nu)}`   
+        Builds bandpass transmission
+        :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T}
+        \tau(\nu+\Delta \nu)}{\int d\nu
+        \frac{\partial B_{\nu+\Delta \nu}}{\partial T} \tau(\nu+\Delta \nu)}`
         using passbands :math:`\tau(\nu)` (divided by :math:`\nu^2` if measured
-        with respect to a RJ source) read from 
-        an external txt file and 
+        with respect to a RJ source) read from
+        an external txt file and
         possible bandpass shift parameters :math:`\Delta \nu`.
 
         :param *params: dictionary of nuisance parameters
@@ -321,5 +318,5 @@ class BandPass(Theory):
                 trans_norm = np.trapz(bp * _cmb2bb(nub), nub)
                 trans = bp / trans_norm * _cmb2bb(nub)
                 bandint_freqs.append([nub, trans])
-        
+
         return bandint_freqs

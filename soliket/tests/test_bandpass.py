@@ -1,10 +1,8 @@
 # pytest -k bandpass -v .
 
-import pytest
 import numpy as np
 
 from cobaya.model import get_model
-from cobaya.run import run
 from ..constants import T_CMB, h_Planck, k_Boltzmann
 
 info = {"params": {
@@ -18,7 +16,7 @@ info = {"params": {
        }
 
 bands = {"LAT_93_s0": {"nu": [93], "bandpass": [1.]},
-        "LAT_145_s0": {"nu": [145], "bandpass": [1.]}, 
+        "LAT_145_s0": {"nu": [145], "bandpass": [1.]},
         "LAT_225_s0": {"nu": [225], "bandpass": [1.]}}
 exp_ch = [k.replace("_s0", "") for k in bands.keys()]
 
@@ -29,7 +27,7 @@ def _cmb2bb(nu):
     return np.exp(x) * (nu * x / np.expm1(x))**2
 
 
-
+# noinspection PyUnresolvedReferences
 def test_bandpass_import():
     from soliket.bandpass import BandPass
 
@@ -47,7 +45,7 @@ def test_bandpass_model():
 def test_bandpass_read_from_sacc():
 
     from soliket.bandpass import BandPass
-    
+
     # testing the default read_from_sacc
     info["theory"] = {
                "bandpass": {"external": BandPass},
@@ -78,7 +76,7 @@ def test_bandpass_top_hat():
     info["theory"].update({
                "bandpass": {"external": BandPass,
                    "top_hat_band": {
-                       "nsteps": 3, 
+                       "nsteps": 3,
                        "bandwidth": 0.5},
                    "external_bandpass": {},
                    "read_from_sacc": {},
@@ -115,9 +113,9 @@ def test_bandpass_top_hat():
 
 
 def test_bandpass_external_file(request):
- 
+
     from soliket.bandpass import BandPass
-    import os 
+    import os
 
     filepath = os.path.join(request.config.rootdir,
             "soliket/tests/data/")
