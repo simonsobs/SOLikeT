@@ -27,7 +27,7 @@ def mag_bias_kernel(provider, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_ar
     g = chi_arr * np.trapz(g_integrand, x=chiprime_arr, axis=0)
 
     W_mu = (5. * s1 - 2.) * 1.5 * provider.get_param('omegam') \
-           * (provider.get_param('H0') / 100) ** 2 * (oneover_chmpc) ** 2 \
+           * (provider.get_param('H0') / 100) ** 2 * oneover_chmpc ** 2 \
            * (1. + zatchi(chi_arr)) * g
 
     return W_mu
@@ -58,7 +58,7 @@ def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
     if not normed:
         W_g2 /= np.trapz(W_g2, x=chi_arr)
 
-    W_kappa = (oneover_chmpc) ** 2. * 1.5 * provider.get_param('omegam') \
+    W_kappa = oneover_chmpc ** 2. * 1.5 * provider.get_param('omegam') \
               * (provider.get_param('H0') / 100) ** 2. * (1. + zatchi(chi_arr)) \
               * chi_arr * (chistar - chi_arr) / chistar
 
