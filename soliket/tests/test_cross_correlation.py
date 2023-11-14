@@ -323,7 +323,9 @@ def test_galaxykappa_pred(request):
 
     rootdir = request.config.rootdir
 
-    info = yaml.load(os.path.join(rootdir, galaxykappa_yaml_file), Loader=yaml.FullLoader)
+    with open(os.path.join(rootdir, galaxykappa_yaml_file), 'r') as f:
+        info = yaml.load(f, Loader=yaml.FullLoader)
+    info['datapath'] = os.path.join(rootdir, galaxykappa_sacc_file)
 
     params_dict =  {'sigma8': 0.8069016507, 
                     'omch2': 0.1206, 
