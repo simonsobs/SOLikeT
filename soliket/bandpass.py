@@ -12,7 +12,7 @@ Fore the first option, the ``read_from_sacc`` option in ``BandPass.yaml``
 has to be set to ``True``:
 
 .. code-block:: yaml
-  
+
   read_from_sacc: True
 
 Otherwise, it has to be left empty. The frequencies and passbands are passed in a 
@@ -38,7 +38,7 @@ using passbands from a sacc file, ``bands`` is filled in ``Foreground`` using th
 ``eff_freqs`` in ``Foreground.yaml``. In this case it is filled assuming a Dirac delta.
 
 .. code-block:: yaml
-  
+
   top_hat_band:
     nsteps: 1
     bandwidth: 0
@@ -49,7 +49,7 @@ has to have the the ``path`` key, representing the path to the folder with all t
 passbands. 
 
 .. code-block:: yaml
-  
+
   external_bandpass:
     path: "path_of_passband_folder"
 
@@ -321,5 +321,5 @@ class BandPass(Theory):
                 trans_norm = np.trapz(bp * _cmb2bb(nub), nub)
                 trans = bp / trans_norm * _cmb2bb(nub)
                 bandint_freqs.append([nub, trans])
-        
+
         return bandint_freqs

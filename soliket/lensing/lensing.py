@@ -102,7 +102,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         self.cov = self._get_cov()
         self.binning_matrix = self._get_binning_matrix()
 
-       
+
 
 
         # Initialize fiducial PS
@@ -167,22 +167,22 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         }
 
 
-    
+
     def _get_data(self):
         bin_centers, bandpowers, cov = \
         self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
         self.x = bin_centers
         self.y = bandpowers
         return bin_centers, self.y
-    
+
     def _get_cov(self):
         bin_centers, bandpowers, cov = \
         self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
         self.cov = cov
         return cov
-    
+
     def _get_binning_matrix(self):
-        
+
         bin_centers, bandpowers, cov, ind = \
         self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True, return_ind=True)
         bpw = self.sacc.get_bandpower_windows(ind)

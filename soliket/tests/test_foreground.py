@@ -52,7 +52,7 @@ def test_foreground_compute():
                                              "ell_0": 3000,
                                              "T_CMB": 2.725
                                              },
-    
+
                            "components": {"tt": ["kSZ", "tSZ_and_CIB", 
                                                  "cibp", "dust", "radio"], 
                                           "te": ["radio", "dust"],
@@ -95,7 +95,7 @@ def test_foreground_compute():
 
     for k in fg_model_test.keys():
         assert np.allclose(fg_model[k], fg_model_test[k])
-        
+
 
 def get_fg(freqs, bandint_freqs, ell, ell_0, nu_0, requested_cls, components):
 

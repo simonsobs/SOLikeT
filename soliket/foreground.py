@@ -7,7 +7,7 @@ on the arrays to use come from the ``TheoryForge`` class by default, through
 the dictionary ``bands``. This is a dictionary 
 
 .. code-block:: python
-   
+
    {"experiment_channel": {{"nu": [freqs...], 
      "bandpass": [...]}}, ...}
 
@@ -32,7 +32,7 @@ The foreground spectra in this case can be computed by calling the
 function
 
 .. code-block:: python
-   
+
    Foreground._get_foreground_model(requested_cls,
                               ell,
                               exp_ch,
@@ -97,7 +97,7 @@ class Foreground(Theory):
         # if mflike is used
         self.bands = {f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]} 
                 for iexpc, expc in enumerate(self.exp_ch)}
-        
+
         template_path = os.path.join(os.path.dirname(os.path.abspath(fgp.__file__)),
                                      'data')
         cibc_file = os.path.join(template_path, 'cl_cib_Choi2020.dat')

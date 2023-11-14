@@ -85,7 +85,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         self.prepare_data()
         self.lmax_theory = self.lmax_theory or 9000
         self.log.debug(f"Maximum multipole value: {self.lmax_theory}")
-        
+
         self.log.info("Initialized!")
 
 
@@ -278,9 +278,9 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                 else:
                     len_compressed += ind.size
 
-                
+
                 self.log.debug(f"{tname_1} {tname_2} {dtype} {ind.shape} {lmin} {lmax}")
-            
+
 
         # Get rid of all the unselected power spectra.
         # Sacc takes care of performing the same cuts in the
@@ -297,7 +297,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         # symmetrization option, for which SACC doesn't have native support.
         mat_compress = np.zeros([len_compressed, len_full])
         mat_compress_b = np.zeros([len_compressed, len_full])
-        
+
         self.lcuts = {k: c[1] for k, c in default_cuts["scales"].items()}
         index_sofar = 0
 

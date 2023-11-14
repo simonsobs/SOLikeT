@@ -43,7 +43,7 @@ def test_bandpass_model():
 def test_bandpass_read_from_sacc():
 
     from soliket.bandpass import BandPass
-    
+
     # testing the default read_from_sacc
     info["theory"] = {
                "bandpass": {"external": BandPass},
@@ -111,7 +111,7 @@ def test_bandpass_top_hat():
 
 
 def test_bandpass_external_file(request):
- 
+
     from soliket.bandpass import BandPass
     import os 
 

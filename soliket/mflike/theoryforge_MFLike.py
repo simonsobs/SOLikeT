@@ -8,7 +8,7 @@ requested temperature/polarization fields, the
 :math:`\ell` ranges and a dictionary of the passbands read from the ``sacc`` file:
 
 .. code-block:: python
-   
+
    bands = {"experiment_channel": {{"nu": [freqs...], 
      "bandpass": [...]}}, ...}
 
@@ -38,10 +38,10 @@ power spectrum:
       ``rootname``:
 
       .. code-block:: yaml
-      
+
         systematics_template:
           rootname: "test_template"
-      
+
       If left ``null``, no systematic template is applied.
 
 
@@ -220,7 +220,7 @@ class TheoryForge_MFLike(Theory):
         the map level:
 
         .. math::
-        
+
            D^{{\rm cal}, TT, \nu_1 \nu_2}_{\ell} &= \frac{1}{
            {\rm cal}_{G}\, {\rm cal}^{\nu_1} \, {\rm cal}^{\nu_2}\,
            {\rm cal}^{\nu_1}_{\rm T}\,
@@ -230,7 +230,7 @@ class TheoryForge_MFLike(Theory):
            {\rm cal}_{G}\,{\rm cal}^{\nu_1} \, {\rm cal}^{\nu_2}\,
            {\rm cal}^{\nu_1}_{\rm T}\,
            {\rm cal}^{\nu_2}_{\rm E}}\, D^{TT, \nu_1 \nu_2}_{\ell} 
-        
+
            D^{{\rm cal}, EE, \nu_1 \nu_2}_{\ell} &= \frac{1}{
            {\rm cal}_{G}\,{\rm cal}^{\nu_1} \, {\rm cal}^{\nu_2}\,
            {\rm cal}^{\nu_1}_{\rm E}\,
@@ -271,9 +271,9 @@ class TheoryForge_MFLike(Theory):
     def _get_rotated_spectra(self, dls_dict, **nuis_params):
         r"""
         Rotates the polarization spectra through polarization angles:
-        
+
         .. math::
-        
+
            D^{{\rm rot}, TE, \nu_1 \nu_2}_{\ell} &= \cos(\alpha^{\nu_2})
            D^{TE, \nu_1 \nu_2}_{\ell} 
 
