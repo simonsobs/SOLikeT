@@ -55,14 +55,12 @@ from typing import Optional
 from cobaya.theory import Theory
 from cobaya.tools import are_different_params_lists
 from cobaya.log import LoggedError
-
+from cobaya.typing import InfoDict
 
 class Foreground(Theory):
 
-    spectra: dict
-    foregrounds: dict
-    eff_freqs: Optional[list]
-    exp_ch: Optional[list]
+    spectra: InfoDict
+    foregrounds: InfoDict
 
     # Initializes the foreground model. It sets the SED and reads the templates
     def initialize(self):

@@ -35,7 +35,7 @@ function (have a look at the simple pyhalomodel model for ideas).
 import numpy as np
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
-from typing import Optional, Sequence
+from typing import Optional, Sequence, List
 from cobaya.theory import Theory
 from cobaya.typing import InfoDict
 import pyhalomodel as halo
@@ -43,6 +43,10 @@ import pyhalomodel as halo
 
 class HaloModel(Theory):
     """Abstract parent class for implementing Halo Models."""
+
+    kmax: float
+    z: List[float]
+    extra_args: InfoDict
 
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10**_logz
@@ -82,6 +86,12 @@ class HaloModel_pyhm(HaloModel):
     NFW profiles. This is calculated via the `pyhalomodel
     <https://github.com/alexander-mead/pyhalomodel>`_ code.
     """
+
+    hmf_name: str
+    hmf_Dv: float
+    Mmin: float
+    Mmax: float
+    nM: int
     
     def initialize(self):
         super().initialize()

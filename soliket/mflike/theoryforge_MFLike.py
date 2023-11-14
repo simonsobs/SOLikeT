@@ -60,7 +60,7 @@ from typing import Optional
 from cobaya.theory import Theory
 from cobaya.tools import are_different_params_lists
 from cobaya.log import LoggedError
-
+from cobaya.typing import InfoDict
 
 class TheoryForge_MFLike(Theory):
 
@@ -68,8 +68,8 @@ class TheoryForge_MFLike(Theory):
     data_folder: Optional[str]
     exp_ch: list
     eff_freqs: list
-    spectra: dict
-    systematics_template: dict
+    spectra: InfoDict
+    systematics_template: InfoDict
 
     def initialize(self):
 

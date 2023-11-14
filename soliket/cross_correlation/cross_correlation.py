@@ -8,6 +8,7 @@ data. Makes use of the cobaya CCL module for handling tracers and Limber integra
 import numpy as np
 from ..gaussian import GaussianData, GaussianLikelihood
 from cobaya.log import LoggedError
+from cobaya.typing import Optional, Any
 
 import sacc
 
@@ -16,6 +17,10 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     r"""
     Generic likelihood for cross-correlations of CCL tracer objects.
     """
+
+    datapath: Optional[str]
+    use_spectra: Any
+    ncovsims: int
 
     def initialize(self):
 
@@ -173,6 +178,10 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
     Likelihood for cross-correlations of galaxy weak lensing shear and CMB lensing data.
     """
     _allowable_tracers = ["cmb_convergence", "galaxy_shear"]
+
+    z_nuisance_mode: str
+    m_nuisance_mode: str
+    ia_mode: str
 
     def _get_theory(self, **params_values):
 

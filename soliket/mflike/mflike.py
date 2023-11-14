@@ -32,6 +32,7 @@ from cobaya.conventions import data_path, packages_path_input
 from cobaya.likelihoods.base_classes import InstallableLikelihood
 from cobaya.log import LoggedError
 from cobaya.tools import are_different_params_lists
+from cobaya.typing import InfoDict
 
 from ..gaussian import GaussianData, GaussianLikelihood
 
@@ -44,8 +45,10 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
     # attributes set from .yaml
     input_file: Optional[str]
     cov_Bbl_file: Optional[str]
-    data: dict
-    defaults: dict
+    lmax_theory: Optional[int]
+    data: InfoDict
+    defaults: InfoDict
+    data_folder: str
 
     def initialize(self):
         # Set default values to data member not initialized via yaml file

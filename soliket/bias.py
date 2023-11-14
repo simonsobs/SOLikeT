@@ -27,7 +27,7 @@ function (have a look at the linear bias model for ideas).
 """
 
 import numpy as np
-from typing import Optional
+from typing import Optional, List
 from cobaya.theory import Theory
 from cobaya.typing import InfoDict
 
@@ -38,6 +38,11 @@ class Bias(Theory):
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10**_logz
     _default_z_sampling[0] = 0
+
+    kmax: float
+    nonlinear: bool
+    z: List[float]
+    extra_args: InfoDict
 
     def initialize(self):
 

@@ -93,6 +93,7 @@ from typing import Optional
 from cobaya.theory import Theory
 from cobaya.tools import are_different_params_lists
 from cobaya.log import LoggedError
+from cobaya.typing import InfoDict
 
 from .constants import T_CMB, h_Planck, k_Boltzmann
 
@@ -123,9 +124,9 @@ class BandPass(Theory):
 
     # attributes set from .yaml
     data_folder: Optional[str]
-    read_from_sacc: dict
-    top_hat_band: dict
-    external_bandpass: dict
+    read_from_sacc: bool
+    top_hat_band: InfoDict
+    external_bandpass: InfoDict
 
     def initialize(self):
 

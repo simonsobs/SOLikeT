@@ -79,9 +79,10 @@ the likelihood.
 # https://cobaya.readthedocs.io/en/devel/theories_and_dependencies.html
 
 import numpy as np
-from typing import Sequence, Union
+from typing import Sequence, Union, List
 from cobaya.theory import Theory
 from cobaya.tools import LoggedError
+from cobaya.typing import InfoDict
 
 
 class CCL(Theory):
@@ -89,6 +90,11 @@ class CCL(Theory):
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10 ** _logz
     _default_z_sampling[0] = 0
+
+    kmax: float
+    nonlinear: bool
+    z: List[float]
+    extra_args: InfoDict
 
     def initialize(self) -> None:
         try:

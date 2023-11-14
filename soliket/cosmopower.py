@@ -99,7 +99,7 @@ else:
     HAS_COSMOPOWER = True
 import numpy as np
 
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Tuple, Mapping
 
 from cobaya.log import LoggedError
 from cobaya.theory import Theory
@@ -109,6 +109,11 @@ from cobaya.typing import InfoDict
 
 class CosmoPower(BoltzmannBase):
     """A CosmoPower Network wrapper for Cobaya."""
+
+    network_path: str
+    network_settings: InfoDict
+    renames: Mapping[str, str]
+    extra_args: InfoDict
 
     def initialize(self) -> None:
         super().initialize()
@@ -299,6 +304,12 @@ class CosmoPower(BoltzmannBase):
 
 class CosmoPowerDerived(Theory):
     """A theory class that can calculate derived parameters from CosmoPower networks."""
+
+    network_path: str
+    network_settings: InfoDict
+    renames: Mapping[str, str]
+    extra_args: InfoDict
+    derived_parameters: list
 
     def initialize(self) -> None:
         super().initialize()
