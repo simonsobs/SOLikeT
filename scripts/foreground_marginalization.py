@@ -1,5 +1,5 @@
 r"""
-.. module:: foreground_marginalization
+.. module:: fgmarge.foreground_marginalization
 
 :Synopsis: Perform the foreground marginalization for the TTTEEE CMB power spectra for SO.
 :Authors: Hidde Jense.

@@ -26,16 +26,19 @@ class ForegroundMarginalizer(MFLike):
         self.last_extract = None
         self.current_extract = None
         
-        self.bandpass.exp_ch = self.experiments
-        self.bandpass.bands = self.bands
+        if self.bandpass is not None:
+            self.bandpass.exp_ch = self.experiments
+            self.bandpass.bands = self.bands
         
-        self.theoryforge.lmin = self.l_bpws.min()
-        self.theoryforge.lmax = self.l_bpws.max()
-        self.theoryforge.ell = self.l_bpws
+        if self.theoryforge is not None:
+            self.theoryforge.lmin = self.l_bpws.min()
+            self.theoryforge.lmax = self.l_bpws.max()
+            self.theoryforge.ell = self.l_bpws
         
-        self.foregrounds.lmin = 0
-        self.foregrounds.lmax = self.l_bpws.max()
-        self.foregrounds.ell = np.arange(0, self.l_bpws.max()+1)
+        if self.foregrounds is not None:
+            self.foregrounds.lmin = 0
+            self.foregrounds.lmax = self.l_bpws.max()
+            self.foregrounds.ell = np.arange(0, self.l_bpws.max()+1)
     
     """
     Utility class for the foreground marginalization.
