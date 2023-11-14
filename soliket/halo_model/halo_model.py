@@ -35,9 +35,7 @@ function (have a look at the simple pyhalomodel model for ideas).
 import numpy as np
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
-from typing import Optional, Sequence
 from cobaya.theory import Theory
-from cobaya.typing import InfoDict
 import pyhalomodel as halo
 
 

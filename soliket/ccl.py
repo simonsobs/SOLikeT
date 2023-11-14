@@ -79,7 +79,7 @@ the likelihood.
 # https://cobaya.readthedocs.io/en/devel/theories_and_dependencies.html
 
 import numpy as np
-from typing import Sequence, Union
+from typing import Sequence
 from cobaya.theory import Theory
 from cobaya.tools import LoggedError
 
@@ -89,6 +89,9 @@ class CCL(Theory):
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10 ** _logz
     _default_z_sampling[0] = 0
+    kmax: float
+    z: np.ndarray
+    nonlinear: bool
 
     def initialize(self) -> None:
         try:
