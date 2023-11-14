@@ -19,7 +19,7 @@ from .limber import do_limber
 
 
 class XcorrLikelihood(GaussianLikelihood):
-    '''Cross-correlation Likelihood for CMB lensing and galaxy clustering probes.
+    """Cross-correlation Likelihood for CMB lensing and galaxy clustering probes.
 
     Accepts data files containing the two spectra from either text files or a sacc file.
 
@@ -58,7 +58,7 @@ class XcorrLikelihood(GaussianLikelihood):
     s1 : float
         Magnification bias slope for the galaxy sample.
 
-    '''
+    """
 
     def initialize(self):
         name: str = "Xcorr"  # noqa F841

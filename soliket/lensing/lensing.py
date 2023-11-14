@@ -5,15 +5,13 @@ r"""
 :Authors: Frank Qu, Mat Madhavacheril.
 
 This is a simple likelihood which inherits from generic binned power spectrum (PS)
-likelihood. It comes in two forms: the full ``LensingLikelihood`` which requires 
-(automated) downloading of external data and a more lightweight ``LensingLiteLikelihood`` 
-which is less accurate (and should only be used for testing) but does not require the 
+likelihood. It comes in two forms: the full ``LensingLikelihood`` which requires
+(automated) downloading of external data and a more lightweight ``LensingLiteLikelihood``
+which is less accurate (and should only be used for testing) but does not require the
 data download.
 """
 
 import os
-from pkg_resources import resource_filename
-
 import numpy as np
 import sacc
 from cobaya.likelihoods.base_classes import InstallableLikelihood
@@ -26,22 +24,22 @@ from ..ps import BinnedPSLikelihood
 
 class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     r"""
-    The full ``LensingLikelihood`` makes use of a *fiducial* lensing power spectrum which 
-    is calculated at a hard-coded set of fiducial cosmological parameters. This fiducial 
-    spectrum is combined with noise power spectra correction terms 
-    (:math:`N_0` and :math:`N_1` terms calculated using 
-    `this code <https://github.com/simonsobs/so-lenspipe/blob/master/bin/n1so.py>`_) 
-    appropriate for SO accounting for known biases in 
-    the lensing estimators. These correction terms are then combined with the power 
-    spectrum calculated at each Monte Carlo step. For more details on the calculation of 
+    The full ``LensingLikelihood`` makes use of a *fiducial* lensing power spectrum which
+    is calculated at a hard-coded set of fiducial cosmological parameters. This fiducial
+    spectrum is combined with noise power spectra correction terms
+    (:math:`N_0` and :math:`N_1` terms calculated using
+    `this code <https://github.com/simonsobs/so-lenspipe/blob/master/bin/n1so.py>`_)
+    appropriate for SO accounting for known biases in
+    the lensing estimators. These correction terms are then combined with the power
+    spectrum calculated at each Monte Carlo step. For more details on the calculation of
     the corrected power spectrum see e.g. Section 5.9 and Appendix E of
     `Qu et al (2023) <https://arxiv.org/abs/2304.05202>`_.
 
-    Noise power spectra are downloaded as part of the ``LensingLikelihood`` installation. 
-    This is an `Installable Likelihood 
+    Noise power spectra are downloaded as part of the ``LensingLikelihood`` installation.
+    This is an `Installable Likelihood
     <https://cobaya.readthedocs.io/en/latest/installation_cosmo.html>`_
     with necessary data files stored on NERSC. You can install these data files either by
-    running ``cobaya-install`` on the yaml file specifying your run, or letting the 
+    running ``cobaya-install`` on the yaml file specifying your run, or letting the
     Likelihood install itself at run time. Please see the cobaya documentation for more
     information about installable likelihoods.
     """
@@ -89,7 +87,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             else:
                 raise LoggedError(
                     self.log,
-                    "The 'data_folder' directory does not exist. "\
+                    "The 'data_folder' directory does not exist. "
                     "Check the given path [%s].",
                     self.data_folder,
                 )
@@ -98,12 +96,9 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         self.datapath = os.path.join(self.data_folder, self.data_filename)
         self.sacc = sacc.Sacc.load_fits(self.datapath)
 
-        x, y = self._get_data()
+        # x, y = self._get_data()
         self.cov = self._get_cov()
         self.binning_matrix = self._get_binning_matrix()
-
-
-
 
         # Initialize fiducial PS
         Cls = self._get_fiducial_Cls()
@@ -137,7 +132,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         Obtain a set of fiducial ``Cls`` from theory provider (e.g. ``camb``).
         Fiducial ``Cls`` are used to compute correction terms for the theory vector.
 
-        :return: Fiducial ``Cls`` 
+        :return: Fiducial ``Cls``
         """
         info_fiducial = {
             "params": self.fiducial_params,
@@ -154,7 +149,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         """
         Set ``lmax`` for theory ``Cls``
 
-        :return: Dictionary ``Cl`` of lmax for each spectrum type. 
+        :return: Dictionary ``Cl`` of lmax for each spectrum type.
         """
         return {
             "Cl": {
@@ -166,25 +161,23 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             }
         }
 
-
-
     def _get_data(self):
         bin_centers, bandpowers, cov = \
-        self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
+            self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
         self.x = bin_centers
         self.y = bandpowers
         return bin_centers, self.y
 
     def _get_cov(self):
         bin_centers, bandpowers, cov = \
-        self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
+            self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
         self.cov = cov
         return cov
 
     def _get_binning_matrix(self):
 
         bin_centers, bandpowers, cov, ind = \
-        self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True, return_ind=True)
+            self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True, return_ind=True)
         bpw = self.sacc.get_bandpower_windows(ind)
         binning_matrix = bpw.weight.T
         self.binning_matrix = binning_matrix
@@ -196,7 +189,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         :param params_values: Dictionary of cosmological parameters.
 
-        :return: Array ``Clkk``. 
+        :return: Array ``Clkk``.
         """
         cl = self.provider.get_Cl(ell_factor=False)
 
@@ -212,19 +205,19 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         Clkk_binned = self.binning_matrix.dot(Clkk_theo)
 
         correction = (
-            2
-            * (self.thetaclkk / self.n0)
-            * (
-                np.dot(self.N0cltt, Cl_tt - self.fcltt)
-                + np.dot(self.N0clee, Cl_ee - self.fclee)
-                + np.dot(self.N0clbb, Cl_bb - self.fclbb)
-                + np.dot(self.N0clte, Cl_te - self.fclte)
-            )
-            + np.dot(self.N1clpp, Clkk_theo - self.thetaclkk)
-            + np.dot(self.N1cltt, Cl_tt - self.fcltt)
-            + np.dot(self.N1clee, Cl_ee - self.fclee)
-            + np.dot(self.N1clbb, Cl_bb - self.fclbb)
-            + np.dot(self.N1clte, Cl_te - self.fclte)
+                2
+                * (self.thetaclkk / self.n0)
+                * (
+                        np.dot(self.N0cltt, Cl_tt - self.fcltt)
+                        + np.dot(self.N0clee, Cl_ee - self.fclee)
+                        + np.dot(self.N0clbb, Cl_bb - self.fclbb)
+                        + np.dot(self.N0clte, Cl_te - self.fclte)
+                )
+                + np.dot(self.N1clpp, Clkk_theo - self.thetaclkk)
+                + np.dot(self.N1cltt, Cl_tt - self.fcltt)
+                + np.dot(self.N1clee, Cl_ee - self.fclee)
+                + np.dot(self.N1clbb, Cl_bb - self.fclbb)
+                + np.dot(self.N1clte, Cl_te - self.fclte)
         )
 
         # put the correction term into bandpowers
@@ -236,13 +229,18 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 class LensingLiteLikelihood(BinnedPSLikelihood):
     """
     Lite version of Lensing Likelihood for quick tests, which does not make any of the
-    bias corrections requiring fiducial spectra calculations or downloads of external 
-    data. Simply a Gaussian likelihood between a provided binned ``pp`` data vector 
+    bias corrections requiring fiducial spectra calculations or downloads of external
+    data. Simply a Gaussian likelihood between a provided binned ``pp`` data vector
     and covariance matrix, and the appropriate theory vector.
     """
     kind: str = "pp"
     lmax: int = 3000
-    datapath: str = resource_filename("soliket", "lensing/data/binnedauto.txt")
-    covpath: str = resource_filename("soliket", "lensing/data/binnedcov.txt")
-    binning_matrix_path: str = resource_filename("soliket",
-                                                 "lensing/data/binningmatrix.txt")
+
+    def initialize(self):
+        data = os.path.join(self.get_class_path(), 'data')
+        self.datapath = self.datapath or os.path.join(data, 'binnedauto.txt')
+        self.covpath = self.covpath or os.path.join(data, 'binnedcov.txt')
+
+        self.binning_matrix_path = self.binning_matrix_path or \
+                                   os.path.join(data, 'binningmatrix.txt')
+        super().initialize()

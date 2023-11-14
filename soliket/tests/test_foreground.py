@@ -53,8 +53,8 @@ def test_foreground_compute():
                                              "T_CMB": 2.725
                                              },
 
-                           "components": {"tt": ["kSZ", "tSZ_and_CIB", 
-                                                 "cibp", "dust", "radio"], 
+                           "components": {"tt": ["kSZ", "tSZ_and_CIB",
+                                                 "cibp", "dust", "radio"],
                                           "te": ["radio", "dust"],
                                           "ee": ["radio", "dust"]
                                           },
@@ -75,7 +75,7 @@ def test_foreground_compute():
     components = info["foregrounds"]["components"]
     exp_ch = info["spectra"]["exp_ch"]
     eff_freqs = np.asarray(info["spectra"]["eff_freqs"])
-    bands = {f"{expc}_s0": {'nu': [eff_freqs[iexpc]], 'bandpass': [1.]} 
+    bands = {f"{expc}_s0": {'nu': [eff_freqs[iexpc]], 'bandpass': [1.]}
                 for iexpc, expc in enumerate(exp_ch)}
 
     model = get_model(info)  # noqa F841

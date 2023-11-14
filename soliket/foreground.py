@@ -1,23 +1,23 @@
 r"""
 .. module:: foreground
 
-The ``Foreground`` class initialized the foreground components and computes 
+The ``Foreground`` class initialized the foreground components and computes
 the foreground spectra for each component and each channel. The information
 on the arrays to use come from the ``TheoryForge`` class by default, through
-the dictionary ``bands``. This is a dictionary 
+the dictionary ``bands``. This is a dictionary
 
 .. code-block:: python
 
-   {"experiment_channel": {{"nu": [freqs...], 
+   {"experiment_channel": {{"nu": [freqs...],
      "bandpass": [...]}}, ...}
 
 which is filled by ``MFLike`` using the information from the sacc file.
-This dictionary is then passed to ``Bandpass`` to compute the bandpass 
+This dictionary is then passed to ``Bandpass`` to compute the bandpass
 transmissions, which are then used for the actual foreground spectra computation.
 
 
 If one wants to use this class as standalone, the ``bands`` dictionary is
-filled when initializing ``Foreground``. The name of the channels to use 
+filled when initializing ``Foreground``. The name of the channels to use
 are read from the ``exp_ch`` list in ``Foreground.yaml``, the effective
 frequencies are in the ``eff_freqs`` list. Of course the effective frequencies
 have to match the information from ``exp_ch``, i.e.:
@@ -40,13 +40,12 @@ function
                               eff_freqs,
                               **fg_params):
 
-which will have 
+which will have
 ``bandint_freqs=None`` (no passbands from ``BandPass``). The spectra will be computed
 assuming just a Dirac delta at the effective frequencies ``eff_freqs``.
 
 
 """
-
 
 import numpy as np
 import os
@@ -58,7 +57,6 @@ from cobaya.log import LoggedError
 
 
 class Foreground(Theory):
-
     spectra: dict
     foregrounds: dict
     eff_freqs: Optional[list]
@@ -67,7 +65,7 @@ class Foreground(Theory):
     # Initializes the foreground model. It sets the SED and reads the templates
     def initialize(self):
         """
-        Initializes the foreground models from ``fgspectra``. Sets the SED 
+        Initializes the foreground models from ``fgspectra``. Sets the SED
         of kSZ, tSZ, dust, radio, CIB Poisson and clustered,
         tSZxCIB, and reads the templates for CIB and tSZxCIB.
         """
@@ -76,8 +74,8 @@ class Foreground(Theory):
         from fgspectra import power as fgp
 
         self.expected_params_fg = ["a_tSZ", "a_kSZ", "a_p", "beta_p",
-                   "a_c", "beta_c", "a_s", "a_gtt", "a_gte", "a_gee",
-                   "a_psee", "a_pste", "xi", "T_d"]
+                                   "a_c", "beta_c", "a_s", "a_gtt", "a_gte", "a_gee",
+                                   "a_psee", "a_pste", "xi", "T_d"]
 
         self.requested_cls = self.spectra["polarizations"]
         self.lmin = self.spectra["lmin"]
@@ -89,14 +87,14 @@ class Foreground(Theory):
         if hasattr(self.eff_freqs, "__len__"):
             if not len(self.exp_ch) == len(self.eff_freqs):
                 raise LoggedError(
-                    self.log, "list of effective frequency has to have"\
-                            "same length as list of channels!"
+                    self.log, "list of effective frequency has to have"
+                              "same length as list of channels!"
                 )
 
         # self.bands to be filled with passbands read from sacc file
         # if mflike is used
-        self.bands = {f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]} 
-                for iexpc, expc in enumerate(self.exp_ch)}
+        self.bands = {f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]}
+                      for iexpc, expc in enumerate(self.exp_ch)}
 
         template_path = os.path.join(os.path.dirname(os.path.abspath(fgp.__file__)),
                                      'data')
@@ -142,22 +140,22 @@ class Foreground(Theory):
         The computation assumes the bandpass transmissions from the ``BandPass`` class
         and integration in frequency is performed if the passbands are not Dirac delta.
 
-        :param requested_cls: the fields required. If ``None``, 
-                              it uses the default ones in the 
+        :param requested_cls: the fields required. If ``None``,
+                              it uses the default ones in the
                               ``Foreground.yaml``
-        :param ell: ell range. If ``None`` the default range 
+        :param ell: ell range. If ``None`` the default range
                     set in ``Foreground.yaml`` is used
-        :param exp_ch: list of strings "experiment_channel" used to indicate the 
-                      foreground components computed for a particular array 
-                      of an experiment. 
+        :param exp_ch: list of strings "experiment_channel" used to indicate the
+                      foreground components computed for a particular array
+                      of an experiment.
                       If ``None``, it uses the default ones in the ``Foreground.yaml``
-        :param bandint_freqs: the bandpass transmissions. If ``None`` it is built as an 
+        :param bandint_freqs: the bandpass transmissions. If ``None`` it is built as an
                               array of frequencies stored in the ``eff_freqs`` argument,
-                              which in this case has to be not ``None``. If 
+                              which in this case has to be not ``None``. If
                               ``bandint_freqs`` is not ``None``, it is
                               the transmissions computed by the ``BandPass`` class
         :param eff_freqs: list of the effective frequencies for each channel
-                          used to compute the foreground components (assuming a Dirac 
+                          used to compute the foreground components (assuming a Dirac
                           delta passband at these frequencies) if the
                          ``bandint_freqs`` argument is not provided
         :param *fg_params: parameters of the foreground components
@@ -192,8 +190,7 @@ class Foreground(Theory):
             else:
                 raise LoggedError(
                     self.log, "no frequency list provided to compute the passbands"
-                        )
-
+                )
 
         model = {}
         model["tt", "kSZ"] = fg_params["a_kSZ"] * self.ksz({"nu": bandint_freqs},
@@ -246,14 +243,14 @@ class Foreground(Theory):
                                          'amp': fg_params['a_c']},
                                         {'ell': ell, 'ell_0': ell_0,
                                          'amp': - fg_params['xi'] \
-                                                    * np.sqrt(fg_params['a_tSZ'] *
-                                                              fg_params['a_c'])})})
+                                                * np.sqrt(fg_params['a_tSZ'] *
+                                                          fg_params['a_c'])})})
 
         model["ee", "radio"] = fg_params["a_psee"] * self.radio({"nu": bandint_freqs,
                                                                  "nu_0": nu_0,
                                                                  "beta": -0.5 - 2.},
                                                                 {"ell": ell_clp,
-                                                                "ell_0": ell_0clp,
+                                                                 "ell_0": ell_0clp,
                                                                  "alpha": 1})
 
         model["ee", "dust"] = fg_params["a_gee"] * self.dust({"nu": bandint_freqs,
@@ -289,9 +286,9 @@ class Foreground(Theory):
                             fg_dict[s, "tSZ", f1, f2] = model[s, "tSZ"][c1, c2]
                             fg_dict[s, "cibc", f1, f2] = model[s, "cibc"][c1, c2]
                             fg_dict[s, "tSZxCIB", f1, f2] = (
-                                model[s, comp][c1, c2]
-                                - model[s, "tSZ"][c1, c2]
-                                - model[s, "cibc"][c1, c2]
+                                    model[s, comp][c1, c2]
+                                    - model[s, "tSZ"][c1, c2]
+                                    - model[s, "cibc"][c1, c2]
                             )
                             fg_dict[s, "all", f1, f2] += model[s, comp][c1, c2]
                         else:
@@ -324,7 +321,7 @@ class Foreground(Theory):
     def calculate(self, state, want_derived=False, **params_values_dict):
         """
         Fills the ``state`` dictionary of the ``Foreground`` Theory class
-        with the foreground spectra, computed using the bandpass 
+        with the foreground spectra, computed using the bandpass
         transmissions from the ``BandPass`` class and the sampled foreground
         parameters.
 
@@ -336,8 +333,8 @@ class Foreground(Theory):
         # compute bandpasses at each step only if bandint_shift params are not null
         # and bandint_freqs has been computed at least once
         if np.all(
-            np.array([params_values_dict[k] for k in params_values_dict.keys() 
-                if "bandint_shift_" in k]) == 0.0
+                np.array([params_values_dict[k] for k in params_values_dict.keys()
+                          if "bandint_shift_" in k]) == 0.0
         ):
             if not hasattr(self, "bandint_freqs"):
                 self.log.info("Computing bandpass at first step, no shifts")
@@ -347,9 +344,9 @@ class Foreground(Theory):
 
         fg_params = {k: params_values_dict[k] for k in self.expected_params_fg}
         state["fg_dict"] = self._get_foreground_model(requested_cls=self.requested_cls,
-                                                    exp_ch=self.exp_ch,
-                                                    bandint_freqs=self.bandint_freqs,
-                                                    **fg_params)
+                                                      exp_ch=self.exp_ch,
+                                                      bandint_freqs=self.bandint_freqs,
+                                                      **fg_params)
 
     def get_fg_dict(self):
         """
