@@ -17,3 +17,4 @@ dependencies:
   - camb
   - pip:
       - -r requirements.txt
+      - velocileptors @git+https://github.com/sfschen/velocileptors 
