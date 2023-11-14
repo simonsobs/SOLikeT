@@ -325,7 +325,8 @@ def test_galaxykappa_pred(request):
 
     with open(os.path.join(rootdir, galaxykappa_yaml_file), 'r') as f:
         info = yaml.load(f, Loader=yaml.FullLoader)
-    info['datapath'] = os.path.join(rootdir, galaxykappa_sacc_file)
+    info['likelihood']['soliket.cross_correlation.GalaxyKappaLikelihood']['datapath'] = os.path.join(rootdir, galaxykappa_sacc_file)
+    print(info)
 
     params_dict =  {'sigma8': 0.8069016507, 
                     'omch2': 0.1206, 
