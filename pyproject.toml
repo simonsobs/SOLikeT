@@ -1,0 +1,31 @@
+[project]
+name = "soliket"
+version = "0.1.dev1"
+authors = [
+	{name = "", email = ""}
+]
+description = "Likelihood and Theory codes for the Simons Observatory."
+readme = "README.rst"
+requires-python = ">=3.8, <3.12"
+license = {text = "MIT"}
+dependencies = [
+    "requests",
+    'importlib-metadata; python_version<"3.8"',
+    "numpy",
+    "scipy",
+    "pandas", # to remove
+    "astropy",
+    "cobaya",
+    "sacc",
+    "fgspectra> = 1.1.0",
+    "pyccl >= 3.0; platform_system!=Windows"
+    "pyhalomodel"
+]
+
+[project.optional-dependencies]
+all = ["cosmopower"]
+docs = ["sphinx", "sphinx_rtd_theme"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
