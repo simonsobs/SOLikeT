@@ -2,10 +2,8 @@
 Check that CosmoPower gives the correct Planck CMB power spectrum.
 """
 import os
-import tempfile
 import pytest
 import numpy as np
-import matplotlib.pyplot as plt
 
 from cobaya.model import get_model
 from soliket.cosmopower import HAS_COSMOPOWER

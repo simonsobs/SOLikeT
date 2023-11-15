@@ -10,12 +10,6 @@ packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "lensing_packages"
 )
 
-import os
-
-packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
-    tempfile.gettempdir(), "lensing_packages"
-)
-
 
 @pytest.mark.parametrize("lhood",
                          ["mflike",
@@ -27,7 +21,6 @@ packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
                           # "xcorr"
                           ])
 def test_evaluate(lhood):
-
     if lhood == "multi":
         pytest.xfail(reason="multi lhood install failure")
 
@@ -54,7 +47,6 @@ def test_evaluate(lhood):
                           # "xcorr"
                           ])
 def test_mcmc(lhood):
-
     if lhood == "multi":
         pytest.xfail(reason="multi lhood install failure")
 
