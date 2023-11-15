@@ -1,8 +1,10 @@
 name: Testing
 
-on: 
+on:
+  push:
+    branches: [ master ]
   pull_request:
-    types: [opened, reopened, ready_for_review, review_requested]
+    branches: [ master ]
 
 jobs:
   test:
