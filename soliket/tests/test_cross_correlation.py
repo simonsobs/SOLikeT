@@ -136,7 +136,7 @@ def test_shearkappa_tracerselect(request):
     info_onebin = copy.deepcopy(info)
     info_onebin['likelihood']['ShearKappaLikelihood']['use_spectra'] = \
                                                             [('gs_des_bin1', 'ck_act')]
-    
+
     info_twobin = copy.deepcopy(info)
     info_twobin['likelihood']['ShearKappaLikelihood']['use_spectra'] = \
                                                                 [

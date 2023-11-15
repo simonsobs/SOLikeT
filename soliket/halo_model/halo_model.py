@@ -52,7 +52,7 @@ class HaloModel(Theory):
 
     # def must_provide(self, **requirements):
     #     options = requirements.get("halo_model") or {}
-    
+
     def _get_Pk_mm_lin(self):
         for pair in self._var_pairs:
             self.k, self.z, Pk_mm = \
@@ -80,7 +80,7 @@ class HaloModel_pyhm(HaloModel):
     NFW profiles. This is calculated via the `pyhalomodel
     <https://github.com/alexander-mead/pyhalomodel>`_ code.
     """
-    
+
     def initialize(self):
         super().initialize()
         self.Ms = np.logspace(np.log10(self.Mmin), np.log10(self.Mmax), self.nM)

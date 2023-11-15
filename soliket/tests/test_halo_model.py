@@ -26,7 +26,7 @@ def test_pyhalomodel_import():
 
 
 def test_pyhalomodel_model():
-    
+
     from soliket.halo_model import HaloModel_pyhm
 
     info["theory"] = {
