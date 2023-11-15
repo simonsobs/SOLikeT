@@ -1,10 +1,11 @@
 import os
 import numpy as np
-from typing import Optional
+from typing import Optional, Tuple
 from cobaya.likelihood import Likelihood
+from ..ps import BinnedPSLikelihood
 
 
-class CMBonly(Likelihood):
+class CMBonly(BinnedPSLikelihood):
     """
     Likelihood for SO foreground-marginalized (cmb-only).
 
@@ -12,7 +13,7 @@ class CMBonly(Likelihood):
     """
     file_base_name: str = "so_cmb"
 
-    input_file: str
+    data_filename: str = "so_simu_cmb_sacc.fits"
     data_folder: str = "SOCMBonly"
     ell_cuts: dict = {
         "TT": [0, 7000],
@@ -34,12 +35,12 @@ class CMBonly(Likelihood):
                 self.data_folder)
 
         import sacc
-        input_filename = os.path.join(self.data_folder, self.input_file)
-        self.log.debug(f"Searching for data in {input_filename}.")
+        self.datapath = os.path.join(self.data_folder, self.data_filename)
+        self.log.debug(f"Searching for data in {self.datapath}.")
 
-        input_file = sacc.Sacc.load_fits(input_filename)
+        self.sacc = sacc.Sacc.load_fits(self.datapath)
 
-        self.log.info(f"Loading data from {input_filename}.")
+        self.log.debug(f"File found, loading data from {self.datapath}.")
 
         pol_dt = {"t": "0", "e": "e", "b": "b"}
 
@@ -55,11 +56,11 @@ class CMBonly(Likelihood):
             t1, t2 = pol_dt[p1], pol_dt[p2]
             dt = f"cl_{t1}{t2}"
 
-            tracers = input_file.get_tracer_combinations(dt)
+            tracers = self.sacc.get_tracer_combinations(dt)
 
             for tr1, tr2 in tracers:
                 lmin, lmax = self.ell_cuts.get(pol, (-np.inf, np.inf))
-                ls, mu, ind = input_file.get_ell_cl(dt, tr1, tr2,
+                ls, mu, ind = self.sacc.get_ell_cl(dt, tr1, tr2,
                                                     return_ind=True)
                 mask = np.logical_and(ls >= lmin, ls <= lmax)
 
@@ -69,7 +70,7 @@ class CMBonly(Likelihood):
                     )
                     self.cull.append(ind[~mask])
 
-                window = input_file.get_bandpower_windows(ind[mask])
+                window = self.sacc.get_bandpower_windows(ind[mask])
 
                 self.spec_meta.append({
                     "data_type": dt,
@@ -84,52 +85,61 @@ class CMBonly(Likelihood):
 
                 idx_max = max(idx_max, max(ind))
                 self.lmax_theory = max(self.lmax_theory,
-                                       int(window.values.max())+1)
+                                       int(window.values.max()) + 1)
 
-        self.data_vec = np.zeros((idx_max+1,))
+        self.ell_vec = np.zeros((idx_max + 1,))
+        self.data_vec = np.zeros((idx_max + 1,))
         for m in self.spec_meta:
+            self.ell_vec[m["idx"]] = m["ell"]
             self.data_vec[m["idx"]] = m["spec"]
 
-        self.covmat = input_file.covariance.covmat
+        self.cov = self.sacc.covariance.covmat
         for culls in self.cull:
-            self.covmat[culls, :] = 0.0
-            self.covmat[:, culls] = 0.0
-            self.covmat[culls, culls] = 1e10
+            self.cov[culls, :] = 0.0
+            self.cov[:, culls] = 0.0
+            self.cov[culls, culls] = 1e10
 
-        self.inv_cov = np.linalg.inv(self.covmat)
+        self.inv_cov = np.linalg.inv(self.cov)
         self.logp_const = np.log(2.0 * np.pi) * -0.5 * len(self.data_vec)
-        self.logp_const -= 0.5 * np.linalg.slogdet(self.covmat)[1]
+        self.logp_const -= 0.5 * np.linalg.slogdet(self.cov)[1]
 
         self.log.debug(f"log(P) = {self.logp_const}")
         self.log.debug(f"len(data vec) = {len(self.data_vec)}")
 
     def get_requirements(self):
         return dict(Cl={
-            k: self.lmax_theory+1 for k in ["TT", "TE", "EE"]
+            k: self.lmax_theory + 1 for k in ["TT", "TE", "EE"]
         })
 
-    def chi_square(self, cl):
-        ps_vec = np.zeros_like(self.data_vec)
+    def _get_data(self) -> Tuple[np.ndarray, np.ndarray]:
+        return self.ell_vec, self.data_vec
+
+    def _get_theory(self, **param_values):
+        cl_theory = self.provider.get_Cl(ell_factor=True)
+        cl_vec = np.zeros_like(self.data_vec)
 
         for m in self.spec_meta:
             idx = m["idx"]
             win = m["window"].weight.T
             ls = m["window"].values
             pol = m["pol"]
-            dat = cl[pol][ls]
 
-            ps_vec[idx] = win @ dat
+            cl_vec[idx] = win @ cl_theory[pol][ls]
 
-        delta = self.data_vec - ps_vec
+        return cl_vec
 
+    def chi_square(self, binned_theory):
+        _, y = self._get_data()
+        delta = binned_theory - y
         chisquare = delta @ self.inv_cov @ delta
+
         self.log.debug(f"Chisqr = {chisquare:.3f}")
         return chisquare
 
-    def loglike(self, cl):
-        logp = -0.5 * self.chi_square(cl)
+    def loglike(self, binned_theory):
+        logp = -0.5 * self.chi_square(binned_theory)
         return self.logp_const + logp
 
     def logp(self, **param_values):
-        cl = self.provider.get_Cl(ell_factor=True)
-        return self.loglike(cl)
+        binned_theory = self._get_theory(**param_values)
+        return self.loglike(binned_theory)
