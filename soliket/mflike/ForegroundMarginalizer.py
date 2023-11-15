@@ -164,4 +164,3 @@ class ForegroundMarginalizer(MFLike):
               (Χ² = {-2 * (logp - self.logp_const)})"
         )
         return logp
-

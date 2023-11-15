@@ -1,1 +1,1 @@
-from .cmbonly import CMBonly
+from .cmbonly import CMBonly # noqa F401
