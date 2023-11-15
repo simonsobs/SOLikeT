@@ -59,4 +59,8 @@ except Exception:
     version = '{version}'
 """.lstrip()
 
+<<<<<<< HEAD
 setup()
+=======
+setup()
+>>>>>>> 5de7f7e (include for flat layout, reinstate setup.py)
