@@ -17,17 +17,21 @@ class CMBonly(BinnedPSLikelihood):
     """
     Likelihood for SO foreground-marginalized (cmb-only).
 
+    Possible settings for the likelihood:
+    
+    * ``data_folder`` and ``data_filename`` The (path to the) sacc file you want to load.
+    * ``ell_cuts`` A dictionary of ``xy: [min, max]`` for ell cuts on probes (e.g. ``"tt"
+    : [500,3000]`` to only use the TT data between l = 500 and l = 3000).
+    * ``lmax_theory`` If provided, the likelihood will request data up to at least this
+    value from the theory code.
+
     Author: Hidde T. Jense
     """
     file_base_name: str = "so_cmb"
 
     data_filename: str = "so_simu_cmb_sacc.fits"
     data_folder: str = "SOCMBonly"
-    ell_cuts: dict = {
-        "TT": [0, 7000],
-        "TE": [0, 7000],
-        "EE": [0, 7000]
-    }
+    ell_cuts: dict = {}
     lmax_theory: Optional[int] = None
 
     def initialize(self):
