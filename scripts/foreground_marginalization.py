@@ -89,7 +89,28 @@ param_names = ["a_tSZ", "a_kSZ", "a_p", "beta_p", "a_c", "a_s",
 # Good practice is to set the initial proposal quite low, and setting the update rate > 0.
 proposal *= 0.01
 update_proposal_every = 1000
-maxSamples = 300_000
+maxSamples = 300000
+
+
+def logprior(**params):
+    """
+    Any log(prior) function you want, given the parameters.
+    """
+    prior = {k: -1e10 for k in params.keys()}
+
+    for p in params.keys():
+        if p in param_ranges:
+            pmin, pmax = param_ranges[p]
+            if pmin < params[p] and params[p] < pmax:
+                prior[p] = 0.0
+
+    prior["a_gtt"] -= ((params["a_gtt"] - 2.79) / (2.0 * 0.45)) ** 2.0
+    prior["a_gte"] -= ((params["a_gte"] - 0.36) / (2.0 * 0.04)) ** 2.0
+    prior["a_gee"] -= ((params["a_gee"] - 0.13) / (2.0 * 0.03)) ** 2.0
+    prior["a_s"] -= ((params["a_s"] - 3.1) / (2.0 * 0.4)) ** 2.0
+
+    return sum([prior[k] for k in prior])
+
 
 """
 It is not recommended to edit the code below this line.
@@ -153,25 +174,6 @@ def update_proposal(data, Nsplits=4):
 
     return Rminus1, new_proposal
 
-
-def logprior(**params):
-    """
-    Any log(prior) function you want, given the parameters.
-    """
-    prior = {k: -1e10 for k in params.keys()}
-
-    for p in params.keys():
-        if p in param_ranges:
-            pmin, pmax = param_ranges[p]
-            if pmin < params[p] and params[p] < pmax:
-                prior[p] = 0.0
-
-    prior["a_gtt"] -= ((params["a_gtt"] - 2.79) / (2.0 * 0.45)) ** 2.0
-    prior["a_gte"] -= ((params["a_gte"] - 0.36) / (2.0 * 0.04)) ** 2.0
-    prior["a_gee"] -= ((params["a_gee"] - 0.13) / (2.0 * 0.03)) ** 2.0
-    prior["a_s"] -= ((params["a_s"] - 3.1) / (2.0 * 0.4)) ** 2.0
-
-    return sum([prior[k] for k in prior])
 
 weight = 0
 accepted = 0
