@@ -23,8 +23,7 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["soliket"]
-include = ["*"]
+include = ["soliket"]
 
 [project.optional-dependencies]
 all = ["cosmopower"]
