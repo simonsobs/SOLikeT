@@ -11,8 +11,15 @@ likelihood:
     stop_at_error: True
 
 theory:
-  cosmopower.wrappers.cobaya.CosmoPower:
-    package_file: jense_2023_camb_lcdm.yaml
+  camb:
+    extra_args:
+      lens_potential_accuracy: 8
+      lens_margin: 2050
+      min_l_logl_sampling: 6000
+      kmax: 10.0
+      k_per_logint: 130
+      lSampleBoost: 1.2
+      DoLateRadTruncation: false
 
 params:
   # Cosmology
