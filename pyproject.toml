@@ -2,7 +2,7 @@
 name = "soliket"
 version = "0.1.dev1"
 authors = [
-	{name = "", email = ""}
+	{name = "Simons Observatory"}
 ]
 description = "Likelihood and Theory codes for the Simons Observatory."
 readme = "README.rst"
@@ -17,10 +17,14 @@ dependencies = [
     "astropy",
     "cobaya",
     "sacc",
-    "fgspectra> = 1.1.0",
-    "pyccl >= 3.0; platform_system!=Windows"
+    "fgspectra >= 1.1.0",
+    "pyccl >= 3.0; platform_system!='Windows'",
     "pyhalomodel"
 ]
+
+[tool.setuptools.packages.find]
+where = ["soliket"]
+include = ["*"]
 
 [project.optional-dependencies]
 all = ["cosmopower"]
