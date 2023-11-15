@@ -42,6 +42,7 @@ The pages here describe how to install and run SOLikeT, and document the functio
 
    mflike
    fgmarge
+   cmbonly
    lensing
    clusters
    xcorr
