@@ -243,7 +243,8 @@ class BandPass(Theory):
                     )
                 if self.bandint_nsteps > 1 and np.any(np.array(self.bandint_width) == 0):
                     raise LoggedError(
-                        self.log, "One band has width = 0, set a positive width and run again"
+                        self.log, "One band has width = 0, \
+                                    set a positive width and run again"
                     )
                 # Compute central frequency given bandpass
                 fr = nu_ghz @ bp / bp.sum()
