@@ -11,6 +11,9 @@ from .mflike import MFLike
 
 
 class ForegroundMarginalizer(MFLike):
+    """
+    Utility class for the foreground marginalization.
+    """
     lmax_extract: Optional[int] = None
     requested_cls: Iterable[str] = ["tt", "te", "ee"]
     foregrounds: Any
@@ -41,9 +44,6 @@ class ForegroundMarginalizer(MFLike):
             self.foregrounds.lmax = self.l_bpws.max()
             self.foregrounds.ell = np.arange(0, self.l_bpws.max() + 1)
 
-    """
-    Utility class for the foreground marginalization.
-    """
     def make_mapping_matrix(self, **params_nuisance):
         """We build an overview of how many bins we are extracting per """
         self.extract_bins = {spec: 0 for spec in self.lcuts.keys()}
