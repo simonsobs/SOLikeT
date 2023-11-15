@@ -3,6 +3,9 @@ r"""
 
 :Synopsis: Perform the foreground marginalization for the TTTEEE CMB power spectra for SO.
 :Authors: Hidde Jense.
+
+This file contains the utlity class for the Foreground Marginalization of the
+multifrequency primary CMB data from the Simons Observatory.
 """
 from typing import Any, Iterable, Optional
 import numpy as np

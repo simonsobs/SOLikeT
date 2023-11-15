@@ -6,7 +6,8 @@ Foreground Marginalization (Primary CMB)
 Performing a Foreground Marginalization
 ---------------------------------------
 
-.. automodule:: scripts.foreground_marginalization.fgmarge
+To perform a foreground marginalization, the script
+``scripts/foreground_marginalization.py`` is provided.
 
 
 Foreground Marginalizer
