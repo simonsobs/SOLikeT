@@ -32,7 +32,7 @@ fgmarge = ForegroundMarginalizer({
     # Put your nondefault settings in here.
     "input_file": "LAT_simu_sacc_00000.fits",
     "cov_Bbl_file": "data_sacc_w_covar_and_Bbl.fits",
-    "data_folder": "ForegroundMarginalizer/v0.8",
+    "data_folder": "MFLike/v0.8",
     "bandpass": bandpass,
     "foregrounds": fgmodel,
     "theoryforge": thfo,

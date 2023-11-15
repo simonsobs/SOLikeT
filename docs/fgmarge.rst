@@ -70,6 +70,18 @@ between two (attempted) updates of the proposal matrix. You can set this number 
 if you want to disable this.
 
 
+Putting the output in a SACC file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``data_to_sacc.py`` script reads in the outputs from the foreground marginalization
+script and puts it into a sacc file, that can be directly read by the ``soliket.CMBonly``
+likelihood.
+
+By default, this script will ignore the first 30% of your chain (which is usually good
+enough to ensure a decent burn-in period). It will assume that the 145x145 binning
+window is optimal for the spectra.
+
+
 Foreground Marginalizer
 -----------------------
 

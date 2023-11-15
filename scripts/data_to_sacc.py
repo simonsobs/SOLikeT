@@ -18,7 +18,7 @@ fgmarge = ForegroundMarginalizer({
     # Put your nondefault settings in here.
     "input_file": "LAT_simu_sacc_00000.fits",
     "cov_Bbl_file": "data_sacc_w_covar_and_Bbl.fits",
-    "data_folder": "ForegroundMarginalizer/v0.8",
+    "data_folder": "MFLike/v0.8",
     "lmax_extract": {
         "tt": 7000,
         "te": 7000,
@@ -29,6 +29,9 @@ fgmarge = ForegroundMarginalizer({
     "bandpass": None
 })
 
+# This doesn't need to be changed, these parameters only need to be passed on to
+# the foreground marginalizer for consistency's sake. Unless you add new calibration
+# parameters, you can leave this dict as-is.
 fixed_params = {
     "T_d": 9.6,
     "cal_LAT_93": 1,

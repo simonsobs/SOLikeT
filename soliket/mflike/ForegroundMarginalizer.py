@@ -17,6 +17,7 @@ class ForegroundMarginalizer(MFLike):
     """
     Utility class for the foreground marginalization.
     """
+    data_folder: str = "MFLike/v0.8"
     lmax_extract: Optional[int] = None
     requested_cls: Iterable[str] = ["tt", "te", "ee"]
     foregrounds: Any
