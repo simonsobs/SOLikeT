@@ -4,7 +4,6 @@ from soliket.utils import binner
 
 
 def naive_binner(bmin, bmax, x, tobin):
-
     binned = list()
     bcent = list()
     # All but the last bins are open to the right
@@ -15,13 +14,12 @@ def naive_binner(bmin, bmax, x, tobin):
     bcent.append(0.5 * (bmax[-1] + bmin[-1]))
     binned.append(np.mean(tobin[np.where((x >= bmin[-1]) & (x <= bmax[-1]))[0]]))
 
-    return (np.array(bcent), np.array(binned))
+    return np.array(bcent), np.array(binned)
 
 
 def test_binning():
-
-    #bmin = np.arange(10, step=3)
-    #bmax = np.array([2, 5, 8, 12])
+    # bmin = np.arange(10, step=3)
+    # bmax = np.array([2, 5, 8, 12])
     binedge = np.arange(13, step=3)
     bmin = binedge[:-1]
     bmax = binedge[1:]

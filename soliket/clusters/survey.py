@@ -1,8 +1,8 @@
 """
 .. module:: survey
 
-This module contains useful functions to internally required by the cluster likelihood to 
-navigate cluster catalogues. The ``SurveyData`` class contains information about the 
+This module contains useful functions to internally required by the cluster likelihood to
+navigate cluster catalogues. The ``SurveyData`` class contains information about the
 specific survey.
 
 """
@@ -76,7 +76,7 @@ def loadAreaMask(extName, DIR):
      produced by nemo).
     Returns map array, wcs
     """
-    areaImg = pyfits.open(os.path.join(DIR, "areaMask%s.fits.gz" % (extName)))
+    areaImg = pyfits.open(os.path.join(DIR, "areaMask%s.fits.gz" % extName))
     areaMap = areaImg[0].data
     wcs = WCS(areaImg[0].header)  # , mode="pyfits")
     areaImg.close()
@@ -89,7 +89,7 @@ def loadRMSmap(extName, DIR):
     Returns map array, wcs
     """
     areaImg = pyfits.open(
-        os.path.join(DIR, "RMSMap_Arnaud_M2e14_z0p4%s.fits.gz" % (extName))
+        os.path.join(DIR, "RMSMap_Arnaud_M2e14_z0p4%s.fits.gz" % extName)
     )
     areaMap = areaImg[0].data
     wcs = WCS(areaImg[0].header)  # , mode="pyfits")
@@ -132,7 +132,7 @@ def loadQ(source, tileNames=None):
             )
         for tileName in tileNames:
             tab = atpy.Table().read(
-                combinedQTabFileName.replace(".fits", "#%s.fits" % (tileName))
+                combinedQTabFileName.replace(".fits", "#%s.fits" % tileName)
             )
             tckDict[tileName] = interpolate.splrep(tab["theta500Arcmin"], tab["Q"])
     return tckDict
