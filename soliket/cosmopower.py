@@ -91,6 +91,7 @@ temperature. See the :func:`~soliket.cosmopower.CosmoPower.ell_factor` and
 information on how SOLikeT infers these values.
 """
 import os
+
 try:
     import cosmopower as cp  # noqa F401
 except ImportError:
@@ -99,12 +100,11 @@ else:
     HAS_COSMOPOWER = True
 import numpy as np
 
-from typing import Dict, Iterable, Tuple
+from typing import Iterable, Tuple
 
 from cobaya.log import LoggedError
 from cobaya.theory import Theory
 from cobaya.theories.cosmo import BoltzmannBase
-from cobaya.typing import InfoDict
 
 
 class CosmoPower(BoltzmannBase):
@@ -113,7 +113,7 @@ class CosmoPower(BoltzmannBase):
     def initialize(self) -> None:
         super().initialize()
 
-        if self.network_settings is None: # pragma: no cover
+        if self.network_settings is None:  # pragma: no cover
             raise LoggedError("No network settings were provided.")
 
         self.networks = {}
@@ -130,10 +130,10 @@ class CosmoPower(BoltzmannBase):
             elif nettype["type"] == "PCAplusNN":
                 network = cp.cosmopower_PCAplusNN(
                     restore=True, restore_filename=netpath)
-            elif self.stop_at_error: # pragma: no cover
+            elif self.stop_at_error:  # pragma: no cover
                 raise ValueError(
                     f"Unknown network type {nettype['type']} for network {spectype}.")
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 self.log.warn(
                     f"Unknown network type {nettype['type']}\
                                                 for network {spectype}: skipped!")
@@ -150,7 +150,7 @@ class CosmoPower(BoltzmannBase):
             if network is not None:
                 self.networks[spectype.lower()] = netdata
 
-        if "lmax" not in self.extra_args: # pragma: no cover
+        if "lmax" not in self.extra_args:  # pragma: no cover
             self.extra_args["lmax"] = None
 
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")
@@ -175,11 +175,11 @@ class CosmoPower(BoltzmannBase):
         for spectype in self.networks:
             network = self.networks[spectype]
             used_params = {par: (cmb_params[par] if par in cmb_params else [
-                                 params[par]]) for par in network["parameters"]}
+                params[par]]) for par in network["parameters"]}
 
             if network["log"]:
                 data = network["network"].ten_to_predictions_np(used_params)[
-                    0, :]
+                       0, :]
             else:
                 data = network["network"].predictions_np(used_params)[0, :]
 
@@ -212,7 +212,7 @@ class CosmoPower(BoltzmannBase):
                 prefac *= self.ell_factor(ls, k)
 
             cls[k][ls] = cls_old[k] * prefac * \
-                self.cmb_unit_factor(k, units, 2.7255)
+                         self.cmb_unit_factor(k, units, 2.7255)
             cls[k][:2] = 0.0
             if np.any(np.isnan(cls[k])):
                 self.log.warning("CosmoPower used outside of trained "
@@ -380,4 +380,4 @@ class CosmoPowerDerived(Theory):
 
     def get_can_provide(self) -> Iterable[str]:
         return set([par for par in self.derived_parameters
-                                    if (len(par) > 0 and not par == "_")])
+                    if (len(par) > 0 and not par == "_")])

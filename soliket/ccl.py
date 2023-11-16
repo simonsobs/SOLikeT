@@ -8,14 +8,14 @@
 
    <br />
 
-The `Core Cosmology Library (CCL) <https://ccl.readthedocs.io/en/latest/>`_ is a 
-standardized library of routines to calculate basic observables used in cosmology. 
-It will be the standard analysis package used by the LSST 
+The `Core Cosmology Library (CCL) <https://ccl.readthedocs.io/en/latest/>`_ is a
+standardized library of routines to calculate basic observables used in cosmology.
+It will be the standard analysis package used by the LSST
 Dark Energy Science Collaboration (DESC).
 
-This Theory is a simple CCL wrapper with function to return CCL cosmo object, and 
-(optional) result of calling various custom methods on the ccl object. 
-The idea is this is included with the CCL package, so it can easily be used as a Cobaya 
+This Theory is a simple CCL wrapper with function to return CCL cosmo object, and
+(optional) result of calling various custom methods on the ccl object.
+The idea is this is included with the CCL package, so it can easily be used as a Cobaya
 component whenever CCL is installed, here for now.
 
 First version by AL. Untested example of usage at
@@ -79,18 +79,28 @@ the likelihood.
 # https://cobaya.readthedocs.io/en/devel/theories_and_dependencies.html
 
 import numpy as np
-from typing import Sequence, Union
+from typing import Sequence
 from cobaya.theory import Theory
-import pyccl as ccl
+from cobaya.tools import LoggedError
 
 
 class CCL(Theory):
     """A theory code wrapper for CCL."""
     _logz = np.linspace(-3, np.log10(1100), 150)
-    _default_z_sampling = 10**_logz
+    _default_z_sampling = 10 ** _logz
     _default_z_sampling[0] = 0
+    kmax: float
+    z: np.ndarray
+    nonlinear: bool
 
     def initialize(self) -> None:
+        try:
+            import pyccl as ccl
+        except ImportError:
+            raise LoggedError(self.log, "Could not import ccl. Install pyccl to use ccl.")
+        else:
+            self.ccl = ccl
+
         self._var_pairs = set()
         self._required_results = {}
 
@@ -111,8 +121,8 @@ class CCL(Theory):
 
         self.kmax = max(self.kmax, options.get('kmax', self.kmax))
         self.z = np.unique(np.concatenate(
-                            (np.atleast_1d(options.get("z", self._default_z_sampling)),
-                            np.atleast_1d(self.z))))
+            (np.atleast_1d(options.get("z", self._default_z_sampling)),
+             np.atleast_1d(self.z))))
 
         # Dictionary of the things CCL needs from CAMB/CLASS
         needs = {}
@@ -187,43 +197,44 @@ class CCL(Theory):
 
                     # Create a CCL cosmology object. Because we are giving it background
                     # quantities, it should not depend on the cosmology parameters given
-                    cosmo = ccl.CosmologyCalculator(
-                                                    Omega_c=Omega_c,
-                                                    Omega_b=Omega_b,
-                                                    h=h,
-                                                    sigma8=sigma8,
-                                                    n_s=n_s,
-                                                    m_nu=mnu,
-                                                    background={'a': a,
-                                                                'chi': distance,
-                                                                'h_over_h0': E_of_z},
-                                                    pk_linear={'a': a,
-                                                               'k': k,
-                                                               'delta_matter:delta_matter': Pk_lin}, # noqa E501
-                                                    pk_nonlin={'a': a,
-                                                               'k': k,
-                                                               'delta_matter:delta_matter': Pk_nonlin} # noqa E501
-                                                    )
+                    cosmo = self.ccl.CosmologyCalculator(
+                        Omega_c=Omega_c,
+                        Omega_b=Omega_b,
+                        h=h,
+                        sigma8=sigma8,
+                        n_s=n_s,
+                        m_nu=mnu,
+                        background={'a': a,
+                                    'chi': distance,
+                                    'h_over_h0': E_of_z},
+                        pk_linear={'a': a,
+                                   'k': k,
+                                   'delta_matter:delta_matter': Pk_lin}, # noqa E501
+                        pk_nonlin={'a': a,
+                                   'k': k,
+                                   'delta_matter:delta_matter': Pk_nonlin} # noqa E501
+                        )
 
                 else:
-                    cosmo = ccl.CosmologyCalculator(
-                                                    Omega_c=Omega_c,
-                                                    Omega_b=Omega_b,
-                                                    h=h,
-                                                    sigma8=sigma8,
-                                                    n_s=n_s,
-                                                    m_nu=mnu,
-                                                    background={'a': a,
-                                                                'chi': distance,
-                                                                'h_over_h0': E_of_z},
-                                                    pk_linear={'a': a,
-                                                               'k': k,
-                                                               'delta_matter:delta_matter': Pk_lin} # noqa E501
-                                                    )
+                    cosmo = self.ccl.CosmologyCalculator(
+                        Omega_c=Omega_c,
+                        Omega_b=Omega_b,
+                        h=h,
+                        sigma8=sigma8,
+                        n_s=n_s,
+                        m_nu=mnu,
+                        background={'a': a,
+                                    'chi': distance,
+                                    'h_over_h0': E_of_z},
+                        pk_linear={'a': a,
+                                   'k': k,
+                                   'delta_matter:delta_matter': Pk_lin} # noqa E501
+                        )
 
-        state['CCL'] = {'cosmo': cosmo}
+        state['CCL'] = {'cosmo': cosmo 'ccl': self.ccl}
+
         for required_result, method in self._required_results.items():
             state['CCL'][required_result] = method(cosmo)
 
-    def get_CCL(self) -> ccl.CosmologyCalculator:
+    def get_CCL(self):
         return self._current_state['CCL']

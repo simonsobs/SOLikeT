@@ -6,9 +6,6 @@ import numpy as np
 from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
-import os
-import pdb
-
 
 def get_demo_xcorr_model(theory):
     if theory == "camb":
@@ -81,7 +78,7 @@ def get_demo_xcorr_model(theory):
 
 
 @pytest.mark.skip(reason="Under development")
-@pytest.mark.parametrize("theory", ["camb"])#, "classy"])
+@pytest.mark.parametrize("theory", ["camb"])# , "classy"])
 def test_xcorr(theory):
 
     params = {'b1': 1.0, 's1': 0.4}

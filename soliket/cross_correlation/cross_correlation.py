@@ -1,5 +1,5 @@
 """
-:Synopsis: Likelihood for cross-correlation of CMB lensing with Large Scale Structure 
+:Synopsis: Likelihood for cross-correlation of CMB lensing with Large Scale Structure
 data. Makes use of the cobaya CCL module for handling tracers and Limber integration.
 
 :Authors: Pablo Lemos, Ian Harrison.
@@ -7,7 +7,6 @@ data. Makes use of the cobaya CCL module for handling tracers and Limber integra
 
 import numpy as np
 from ..gaussian import GaussianData, GaussianLikelihood
-import pyccl as ccl
 from cobaya.log import LoggedError
 import pyccl.nl_pt as pt
 
@@ -18,13 +17,18 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     r"""
     Generic likelihood for cross-correlations of CCL tracer objects.
     """
+
     def initialize(self):
 
         self._get_sacc_data()
         self._check_tracers()
 
     def get_requirements(self):
-        return {"CCL": {"kmax": 10, "nonlinear": True}}
+        return {"CCL": {"kmax": 10, "nonlinear": True}, "zstar": None}
+
+    def _get_CCL_results(self):
+        cosmo_dict = self.provider.get_CCL()
+        return cosmo_dict["ccl"], cosmo_dict["cosmo"]
 
     def _check_tracers(self):
 
@@ -49,11 +53,9 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
                                                 self.__class__.__name__,
                                                 self._allowable_tracers))
 
-
     def _get_nz(self, z, tracer, tracer_name, **params_values):
 
         if self.z_nuisance_mode == 'deltaz':
-
             bias = params_values['{}_deltaz'.format(tracer_name)]
             nz_biased = tracer.get_dndz(z - bias)
 
@@ -111,7 +113,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
         return x, y, dy
 
     def get_binning(self, tracer_comb):
-            
+
         bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
         bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
         ells_theory = bpw.values
@@ -301,9 +303,9 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         """
         Get theory prediction for all spectra.
         :param params_values: dictionary of parameters
-
         :return: array of theory predictions
         """
+        ccl, cosmo = self._get_CCL_results()
 
         cosmo = self.provider.get_CCL()["cosmo"]
         self.ptc.update_ingredients(cosmo)
@@ -341,14 +343,15 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
     def _get_theory(self, **params_values):
 
-        cosmo = self.provider.get_CCL()["cosmo"]
+        ccl, cosmo = self._get_CCL_results()
 
         cl_binned_list = []
 
         for tracer_comb in self.sacc_data.get_tracer_combinations():
 
             if self.sacc_data.tracers[tracer_comb[0]].quantity == "cmb_convergence":
-                tracer1 = ccl.CMBLensingTracer(cosmo, z_source=1060)
+                tracer1 = ccl.CMBLensingTracer(cosmo,
+                                               z_source=self.provider.get_param('zstar'))
 
             elif self.sacc_data.tracers[tracer_comb[0]].quantity == "galaxy_shear":
 
@@ -364,7 +367,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                     eta_IA = params_values['eta_IA']
                     z0_IA = np.trapz(z_tracer1 * nz_tracer1)
 
-                    ia_z = (z_tracer1, A_IA * ((1 + z_tracer1) / (1 + z0_IA))**eta_IA)
+                    ia_z = (z_tracer1, A_IA * ((1 + z_tracer1) / (1 + z0_IA)) ** eta_IA)
                 elif self.ia_mode == 'nla-perbin':
                     A_IA = params_values['{}_A_IA'.format(sheartracer_name)]
                     ia_z = (z_tracer1, A_IA * np.ones_like(z_tracer1))
@@ -377,7 +380,6 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                                                 ia_bias=ia_z)
 
                 if self.z_nuisance_mode is not None:
-
                     nz_tracer1 = self._get_nz(z_tracer1,
                                               tracer1,
                                               tracer_comb[0],
@@ -388,7 +390,8 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                                                     ia_bias=ia_z)
 
             if self.sacc_data.tracers[tracer_comb[1]].quantity == "cmb_convergence":
-                tracer2 = ccl.CMBLensingTracer(cosmo, z_source=1060)
+                tracer2 = ccl.CMBLensingTracer(cosmo,
+                                               z_source=self.provider.get_param('zstar'))
 
             elif self.sacc_data.tracers[tracer_comb[1]].quantity == "galaxy_shear":
 
@@ -404,7 +407,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                     eta_IA = params_values['eta_IA']
                     z0_IA = np.trapz(z_tracer2 * nz_tracer2)
 
-                    ia_z = (z_tracer2, A_IA * ((1 + z_tracer2) / (1 + z0_IA))**eta_IA)
+                    ia_z = (z_tracer2, A_IA * ((1 + z_tracer2) / (1 + z0_IA)) ** eta_IA)
                 elif self.ia_mode == 'nla-perbin':
                     A_IA = params_values['{}_A_IA'.format(sheartracer_name)]
                     ia_z = (z_tracer2, A_IA * np.ones_like(z_tracer2))
@@ -417,7 +420,6 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                                                 ia_bias=ia_z)
 
                 if self.z_nuisance_mode is not None:
-
                     nz_tracer2 = self._get_nz(z_tracer2,
                                               tracer2,
                                               tracer_comb[1],
@@ -435,7 +437,6 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
             cl_unbinned = ccl.cells.angular_cl(cosmo, tracer1, tracer2, ells_theory)
 
-
             if self.m_nuisance_mode is not None:
                 # note this allows wrong calculation, as we can do
                 # shear x shear if the spectra are in the sacc
@@ -446,7 +447,6 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
             cl_binned = np.dot(w_bins, cl_unbinned)
 
             cl_binned_list.append(cl_binned)
-
 
         cl_binned_total = np.concatenate(cl_binned_list)
 

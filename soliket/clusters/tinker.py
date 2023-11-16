@@ -45,7 +45,7 @@ def tinker_params_spline(delta, z=None):
     z = np.asarray(z)
     A = A0 * (1 + z) ** -.14
     a = a0 * (1 + z) ** -.06
-    alpha = 10. ** (-(((.75 / np.log10(delta / 75.))) ** 1.2))
+    alpha = 10. ** (-((.75 / np.log10(delta / 75.)) ** 1.2))
     b = b0 * (1 + z) ** -alpha
     c = np.zeros(np.shape(z)) + c0
     return A, a, b, c
@@ -60,12 +60,12 @@ def tinker_params_analytic(delta, z=None):
             if delta < 75.:
                 alpha = 1.
             else:
-                alpha = 10. ** (-(((.75 / np.log10(delta / 75.))) ** 1.2))
+                alpha = 10. ** (-((.75 / np.log10(delta / 75.)) ** 1.2))
 
     else:
         log_delta = np.log10(delta)
         A0 = 0.1 * log_delta - 0.05
-        a0 = 1.43 + (log_delta - 2.3) ** (1.5)
+        a0 = 1.43 + (log_delta - 2.3) ** 1.5
         b0 = 1.0 + (log_delta - 1.6) ** (-1.5)
         c0 = log_delta - 2.35
         A0[delta > 1600] = .26
@@ -78,7 +78,7 @@ def tinker_params_analytic(delta, z=None):
     A = A0 * (1 + z) ** -.14
     a = a0 * (1 + z) ** -.06
     if alpha is None:
-        alpha = 10. ** (-(((.75 / np.log10(delta / 75.))) ** 1.2))
+        alpha = 10. ** (-((.75 / np.log10(delta / 75.)) ** 1.2))
         alpha[delta < 75.] = 1.
     b = b0 * (1 + z) ** -alpha
     c = np.zeros(np.shape(z)) + c0
@@ -111,7 +111,7 @@ def top_hatf(kR):
     * This is called many times and costs a lot of runtime.
     * For small values, use Taylor series.
     """
-    out = np.nan_to_num(3 * (np.sin(kR) - (kR) * np.cos(kR))) / ((kR) ** 3)
+    out = np.nan_to_num(3 * (np.sin(kR) - kR * np.cos(kR))) / (kR ** 3)
     return out
 
 

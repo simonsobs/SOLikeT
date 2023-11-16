@@ -5,19 +5,19 @@ r"""
 :Authors: Thibaut Louis, Xavier Garrido, Max Abitbol,
           Erminia Calabrese, Antony Lewis, David Alonso.
 
-MFLike is a multi frequency likelihood code interfaced with the Cobaya 
+MFLike is a multi frequency likelihood code interfaced with the Cobaya
 sampler and a theory Boltzmann code such as CAMB, CLASS or Cosmopower.
-The ``MFLike`` likelihood class reads the data file (in ``sacc`` format) 
-and all the settings 
-for the MCMC run (such as file paths, :math:`\ell` ranges, experiments 
+The ``MFLike`` likelihood class reads the data file (in ``sacc`` format)
+and all the settings
+for the MCMC run (such as file paths, :math:`\ell` ranges, experiments
 and frequencies to be used, parameters priors...)
-from the ``MFLike.yaml`` file. 
+from the ``MFLike.yaml`` file.
 
-The theory :math:`C_{\ell}` are then summed to the (possibly frequency 
-integrated) foreground power spectra and modified by systematic effects 
-in the ``TheoryForge_MFLike`` class. The foreground power spectra are 
-computed by the ``soliket.Foreground`` class, while the bandpasses from 
-the ``soliket.BandPass`` one; the ``Foreground`` class is required by 
+The theory :math:`C_{\ell}` are then summed to the (possibly frequency
+integrated) foreground power spectra and modified by systematic effects
+in the ``TheoryForge_MFLike`` class. The foreground power spectra are
+computed by the ``soliket.Foreground`` class, while the bandpasses from
+the ``soliket.BandPass`` one; the ``Foreground`` class is required by
 ``TheoryForge_MFLike``, while ``BandPass`` is requires by ``Foreground``.
 This is a scheme of how ``MFLike`` and ``TheoryForge_MFLike`` are interfaced:
 
@@ -28,17 +28,15 @@ import os
 from typing import Optional
 
 import numpy as np
-from cobaya.conventions import data_path, packages_path_input
 from cobaya.likelihoods.base_classes import InstallableLikelihood
 from cobaya.log import LoggedError
-from cobaya.tools import are_different_params_lists
 
 from ..gaussian import GaussianData, GaussianLikelihood
 
 
 class MFLike(GaussianLikelihood, InstallableLikelihood):
     _url = "https://portal.nersc.gov/cfs/sobs/users/MFLike_data"
-    _release = "v0.8" 
+    _release = "v0.8"
     install_options = {"download_url": "{}/{}.tar.gz".format(_url, _release)}
 
     # attributes set from .yaml
@@ -51,7 +49,6 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         # Set default values to data member not initialized via yaml file
         self.l_bpws = None
         self.spec_meta = []
-
 
         # Set path to data
         if ((not getattr(self, "path", None)) and
@@ -73,7 +70,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             else:
                 raise LoggedError(
                     self.log,
-                    "The 'data_folder' directory does not exist. "\
+                    "The 'data_folder' directory does not exist. "
                     "Check the given path [%s].",
                     self.data_folder,
                 )
@@ -87,14 +84,13 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         self.prepare_data()
         self.lmax_theory = self.lmax_theory or 9000
         self.log.debug(f"Maximum multipole value: {self.lmax_theory}")
-        
-        self.log.info("Initialized!")
 
+        self.log.info("Initialized!")
 
     def get_requirements(self):
         r"""
-        Passes the fields ``ell``, ``requested_cls``, ``lcuts``, 
-        ``exp_ch`` (list of array names) and ``bands`` 
+        Passes the fields ``ell``, ``requested_cls``, ``lcuts``,
+        ``exp_ch`` (list of array names) and ``bands``
         (dictionary of ``exp_ch`` and the corresponding frequency
         and passbands) inside the dictionary ``requirements["cmbfg_dict"]``.
 
@@ -106,7 +102,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         reqs["cmbfg_dict"] = {"ell": self.l_bpws,
                               "requested_cls": self.requested_cls,
                               "lcuts": self.lcuts,
-                              "exp_ch": self.experiments, 
+                              "exp_ch": self.experiments,
                               "bands": self.bands}
         return reqs
 
@@ -125,7 +121,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         :param cmbfg_dict: the dictionary of theory + foregrounds
                            :math:`D_{\ell}`
 
-        :return: the exact loglikelihood :math:`\ln \mathcal{L}` 
+        :return: the exact loglikelihood :math:`\ln \mathcal{L}`
         """
         ps_vec = self._get_power_spectra(cmbfg_dict)
         delta = self.data_vec - ps_vec
@@ -189,7 +185,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             polarization combinations, scale cuts and
             whether TE should be symmetrized.
 
-            :param spec: the dictionary ``data["spectra"]`` 
+            :param spec: the dictionary ``data["spectra"]``
             """
             # Experiments/frequencies
             exp_1, exp_2 = spec["experiments"]
@@ -201,7 +197,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                             default_cuts["scales"]).copy()
 
             # For the same two channels, do not include ET and TE, only TE
-            if (exp_1 == exp_2):
+            if exp_1 == exp_2:
                 if "ET" in pols:
                     pols.remove("ET")
                     if "TE" not in pols:
@@ -221,7 +217,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         def get_sacc_names(pol, exp_1, exp_2):
             """
             Lower-level function of `prepare_data`.
-            Translates the polarization combination and channel 
+            Translates the polarization combination and channel
             name of a given entry in the `spectra`
             part of the input yaml file into the names expected
             in the SACC files.
@@ -280,9 +276,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                 else:
                     len_compressed += ind.size
 
-                
                 self.log.debug(f"{tname_1} {tname_2} {dtype} {ind.shape} {lmin} {lmax}")
-            
 
         # Get rid of all the unselected power spectra.
         # Sacc takes care of performing the same cuts in the
@@ -299,7 +293,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         # symmetrization option, for which SACC doesn't have native support.
         mat_compress = np.zeros([len_compressed, len_full])
         mat_compress_b = np.zeros([len_compressed, len_full])
-        
+
         self.lcuts = {k: c[1] for k, c in default_cuts["scales"].items()}
         index_sofar = 0
 
@@ -413,16 +407,16 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             w = m["bpw"].weight.T
 
             if p in ['tt', 'ee', 'bb']:
-                DlsObs[p,  m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
+                DlsObs[p, m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
             else:  # ['te','tb','eb']
                 if m['hasYX_xsp']:  # not symmetrizing
-                    DlsObs[p,  m['t1'], m['t2']] = cmbfg[p, m['t2'], m['t1']][ell]
+                    DlsObs[p, m['t1'], m['t2']] = cmbfg[p, m['t2'], m['t1']][ell]
                 else:
-                    DlsObs[p,  m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
-#
+                    DlsObs[p, m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
+                #
                 if self.defaults['symmetrize']:  # we average TE and ET (as for data)
-                    DlsObs[p,  m['t1'], m['t2']] += cmbfg[p, m['t2'], m['t1']][ell]
-                    DlsObs[p,  m['t1'], m['t2']] *= 0.5
+                    DlsObs[p, m['t1'], m['t2']] += cmbfg[p, m['t2'], m['t1']][ell]
+                    DlsObs[p, m['t1'], m['t2']] *= 0.5
 
             clt = w @ DlsObs[p, m["t1"], m["t2"]]
             ps_vec[i] = clt
@@ -431,7 +425,6 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
 
 class TestMFLike(MFLike):
-
     _url = "https://portal.nersc.gov/cfs/sobs/users/MFLike_data"
     filename = "v0.1_test"
     install_options = {"download_url": f"{_url}/{filename}.tar.gz"}

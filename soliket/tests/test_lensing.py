@@ -1,8 +1,6 @@
 import os
 import tempfile
-import pytest
 import numpy as np
-from cobaya.yaml import yaml_load
 from cobaya.model import get_model
 
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
@@ -27,7 +25,7 @@ info['params'] = fiducial_params
 
 def test_lensing_import(request):
 
-    from soliket.lensing import LensingLikelihood
+    from soliket.lensing import LensingLikelihood # noqa F401
 
 
 def test_lensing_like(request):

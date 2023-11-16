@@ -1,10 +1,6 @@
-# pytest -k bias -v .
-
-import pytest
 import numpy as np
 
 from cobaya.model import get_model
-from cobaya.run import run
 
 info = {"params": {
                    "b_lin": 1.1,
@@ -22,11 +18,11 @@ info = {"params": {
 
 
 def test_bias_import():
-    from soliket.bias import Bias
+    from soliket.bias import Bias # noqa F401
 
 
 def test_linear_bias_import():
-    from soliket.bias import Linear_bias
+    from soliket.bias import Linear_bias # noqa F401
 
 
 def test_linear_bias_model():
