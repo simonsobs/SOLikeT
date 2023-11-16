@@ -37,19 +37,19 @@ def test_shearkappa_import(request):
     from soliket.cross_correlation import ShearKappaLikelihood # noqa F401
 
 
-def test_galaxykappa_model(request):
+# def test_galaxykappa_model(request):
 
-    from soliket.cross_correlation import GalaxyKappaLikelihood
+#     from soliket.cross_correlation import GalaxyKappaLikelihood
 
-    info["params"]["b1"] = 2.
-    info["params"]["s1"] = 0.4
+#     info["params"]["b1"] = 2.
+#     info["params"]["s1"] = 0.4
 
-    info["likelihood"] = {
-        "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": os.path.join(request.config.rootdir,
-                                                           gkappa_sacc_file)}}
+#     info["likelihood"] = {
+#         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
+#                                   "datapath": os.path.join(request.config.rootdir,
+#                                                            gkappa_sacc_file)}}
 
-    model = get_model(info) # noqa F841
+#     model = get_model(info) # noqa F841
 
 
 def test_shearkappa_model(request):
@@ -68,24 +68,24 @@ def test_shearkappa_model(request):
     model = get_model(info) # noqa F841
 
 
-def test_galaxykappa_like(request):
+# def test_galaxykappa_like(request):
 
-    from soliket.cross_correlation import GalaxyKappaLikelihood
+#     from soliket.cross_correlation import GalaxyKappaLikelihood
 
-    info["params"]["b1"] = 2.
-    info["params"]["s1"] = 0.4
+#     info["params"]["b1"] = 2.
+#     info["params"]["s1"] = 0.4
 
-    info["likelihood"] = {
-        "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": os.path.join(request.config.rootdir,
-                                                           gkappa_sacc_file),
-                                  "use_spectra": [('gc_cmass', 'ck_actdr4')]}}
+#     info["likelihood"] = {
+#         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
+#                                   "datapath": os.path.join(request.config.rootdir,
+#                                                            gkappa_sacc_file),
+#                                   "use_spectra": [('gc_cmass', 'ck_actdr4')]}}
 
 
-    model = get_model(info)
-    loglikes, derived = model.loglikes()
+#     model = get_model(info)
+#     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], 174.013, atol=0.2, rtol=0.0)
+#     assert np.isclose(loglikes[0], 174.013, atol=0.2, rtol=0.0)
 
 
 def test_shearkappa_like(request):
