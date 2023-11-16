@@ -8,7 +8,7 @@ data. Makes use of the cobaya CCL module for handling tracers and Limber integra
 import numpy as np
 from ..gaussian import GaussianData, GaussianLikelihood
 from cobaya.log import LoggedError
-import pyccl.nl_pt as pt
+from pyccl import nl_pt as pt
 
 import sacc
 
