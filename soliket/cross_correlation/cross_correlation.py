@@ -23,7 +23,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
         self._check_tracers()
 
     def get_requirements(self):
-        return {"CCL": {"kmax": 10, "nonlinear": True}}
+        return {"CCL": {"kmax": 10, "nonlinear": True}, "zstar": None}
 
     def _get_CCL_results(self):
         cosmo_dict = self.provider.get_CCL()
@@ -157,7 +157,7 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
                                                     params_values["s1"] *
                                                     np.ones(len(z_gal_tracer)))
                                           )
-        tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1060)
+        tracer_k = ccl.CMBLensingTracer(cosmo, z_source=self.provider.get_param('zstar'))
 
         ells_theory_gk, w_bins_gk = self.get_binning((gal_tracer, cmbk_tracer))
 
@@ -183,7 +183,8 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
         for tracer_comb in self.sacc_data.get_tracer_combinations():
 
             if self.sacc_data.tracers[tracer_comb[0]].quantity == "cmb_convergence":
-                tracer1 = ccl.CMBLensingTracer(cosmo, z_source=1060)
+                tracer1 = ccl.CMBLensingTracer(cosmo,
+                                               z_source=self.provider.get_param('zstar'))
 
             elif self.sacc_data.tracers[tracer_comb[0]].quantity == "galaxy_shear":
 
@@ -222,7 +223,8 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                                                     ia_bias=ia_z)
 
             if self.sacc_data.tracers[tracer_comb[1]].quantity == "cmb_convergence":
-                tracer2 = ccl.CMBLensingTracer(cosmo, z_source=1060)
+                tracer2 = ccl.CMBLensingTracer(cosmo,
+                                               z_source=self.provider.get_param('zstar'))
 
             elif self.sacc_data.tracers[tracer_comb[1]].quantity == "galaxy_shear":
 
