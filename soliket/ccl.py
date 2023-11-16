@@ -169,7 +169,7 @@ class CCL(Theory):
 
         Omega_c = self.provider.get_param('omch2') / h ** 2
         Omega_b = self.provider.get_param('ombh2') / h ** 2
-        sigma8 =   self.provider.get_param('sigma8')
+        sigma8 = self.provider.get_param('sigma8')
         n_s = self.provider.get_param('ns')
         mnu = self.provider.get_param('mnu')
         # Array z is sorted in ascending order. CCL requires an ascending scale factor
@@ -231,7 +231,7 @@ class CCL(Theory):
                                    'delta_matter:delta_matter': Pk_lin} # noqa E501
                         )
 
-        state['CCL'] = {'cosmo': cosmo 'ccl': self.ccl}
+        state['CCL'] = {'cosmo': cosmo, 'ccl': self.ccl}
 
         for required_result, method in self._required_results.items():
             state['CCL'][required_result] = method(cosmo)

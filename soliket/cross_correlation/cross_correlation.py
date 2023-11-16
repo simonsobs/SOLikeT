@@ -161,7 +161,7 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
             for tracer_comb in self.sacc_data.get_tracer_combinations():
                 if tracer_comb not in spec_combs:
                     self.sacc_data.remove_selection(tracers=tracer_comb)
-   
+
         self.twopoints = self.sacc_data.get_tracer_combinations()
 
         self.bin_properties = {}
@@ -205,15 +205,18 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
 
         #TODO: Need to decide what we want to expose
         if self.bz_model == 'LagrangianPT':
-            self.ptc = pt.LagrangianPTCalculator(log10k_min=self.log10k_min, log10k_max=self.log10k_max,
+            self.ptc = pt.LagrangianPTCalculator(log10k_min=self.log10k_min,
+                                                 log10k_max=self.log10k_max,
                                                  nk_per_decade=self.nk_per_decade)
-                #  b1_pk_kind='pt', bk2_pk_kind='pt')
+            # b1_pk_kind='pt', bk2_pk_kind='pt')
         elif self.bz_model == 'EulerianPT':
-            self.ptc = pt.EulerianPTCalculator(with_NC=True, with_IA=True, log10k_min=self.log10k_min, 
-                                                log10k_max=self.log10k_max,
-                                                nk_per_decade=self.nk_per_decade)
+            self.ptc = pt.EulerianPTCalculator(with_NC=True, with_IA=True,
+                                               log10k_min=self.log10k_min, 
+                                               log10k_max=self.log10k_max,
+                                               nk_per_decade=self.nk_per_decade)
         else:
-            raise LoggedError(self.log, "Bias model {} not implemented yet.".format(self.bz_model))
+            raise LoggedError(self.log,
+                              "Bias model {} not implemented yet.".format(self.bz_model))
 
     def _get_nz(self, tr_name, **pars):
         """
@@ -254,7 +257,7 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
             bz = b1 + b1p * (z - zmean)
         return (z, bz)
 
-    def _get_tracers(self, cosmo, **params_values):
+    def _get_tracers(self, cosmo, ccl, **params_values):
         """
         Get CCL and PT tracers for each tracer considered.
         :param cosmo: CCL cosmology object
@@ -309,7 +312,7 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
 
         cosmo = self.provider.get_CCL()["cosmo"]
         self.ptc.update_ingredients(cosmo)
-        tracers = self._get_tracers(cosmo, **params_values)
+        tracers = self._get_tracers(cosmo, ccl, **params_values)
 
         cls = []
 
@@ -319,12 +322,15 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
             ells_theory, w_bins = self.get_binning((tr_x, tr_y))
 
             if self.PT_bias:
-                pk_xy = self.ptc.get_biased_pk2d(tracers[tr_x]['PT_tracer'], tracer2=tracers[tr_y]['PT_tracer'])
-                cl_unbinned = ccl.angular_cl(cosmo, tracers[tr_x]['ccl_tracer'], tracers[tr_y]['ccl_tracer'],
-                                                      ells_theory, p_of_k_a=pk_xy)
+                pk_xy = self.ptc.get_biased_pk2d(tracers[tr_x]['PT_tracer'],
+                                                 tracer2=tracers[tr_y]['PT_tracer'])
+                cl_unbinned = ccl.angular_cl(cosmo, tracers[tr_x]['ccl_tracer'],
+                                                    tracers[tr_y]['ccl_tracer'],
+                                                    ells_theory, p_of_k_a=pk_xy)
             else:
-                cl_unbinned = ccl.angular_cl(cosmo, tracers[tr_x]['ccl_tracer'], tracers[tr_y]['ccl_tracer'],
-                                                   ells_theory)
+                cl_unbinned = ccl.angular_cl(cosmo, tracers[tr_x]['ccl_tracer'],
+                                                    tracers[tr_y]['ccl_tracer'],
+                                                    ells_theory)
 
             cl_binned = np.dot(w_bins, cl_unbinned)
 
