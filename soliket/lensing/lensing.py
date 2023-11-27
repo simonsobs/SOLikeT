@@ -53,7 +53,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     lmax = 3000
     theory_lmax = 10000
     # flag about whether CCL should be used to compute the cmb lensing power spectrum
-    pp_ccl = True
+    pp_ccl = False
 
     fiducial_params = {
         "ombh2": 0.02219218,
@@ -222,7 +222,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             zstar = self.provider.get_param("zstar")
             cmbk = ccl.CMBLensingTracer(cosmo, z_source=zstar)
             Clkk_theo = ccl.angular_cl(cosmo, cmbk, cmbk, self.ls)
-            
+
         Cl_tt = cl["tt"][0: self.lmax]
         Cl_ee = cl["ee"][0: self.lmax]
         Cl_te = cl["te"][0: self.lmax]
