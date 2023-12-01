@@ -107,7 +107,7 @@ class CCL(Theory):
     def get_requirements(self) -> set:
         # These are currently required to construct a CCL cosmology object.
         # Ultimately CCL should depend only on observable not parameters
-        return {'omch2', 'ombh2'}
+        return {'omch2', 'ombh2', 'sigma8', 'ns', 'omnuh2'}
 
     def must_provide(self, **requirements) -> dict:
         # requirements is dictionary of things requested by likelihoods
@@ -169,6 +169,10 @@ class CCL(Theory):
 
         Omega_c = self.provider.get_param('omch2') / h ** 2
         Omega_b = self.provider.get_param('ombh2') / h ** 2
+        sigma8 = self.provider.get_param('sigma8')
+        n_s = self.provider.get_param('ns')
+        # mnu = self.provider.get_param('mnu')
+        mnu = self.provider.get_param('omnuh2') * 93.014
         # Array z is sorted in ascending order. CCL requires an ascending scale factor
         # as input
         # Flip the arrays to make them a function of the increasing scale factor.
@@ -181,7 +185,6 @@ class CCL(Theory):
         a = 1. / (1 + self.z[::-1])
         # growth = ccl.background.growth_factor(cosmo, a)
         # fgrowth = ccl.background.growth_rate(cosmo, a)
-
         if self.kmax:
             for pair in self._var_pairs:
                 # Get the matter power spectrum:
@@ -199,35 +202,38 @@ class CCL(Theory):
                         Omega_c=Omega_c,
                         Omega_b=Omega_b,
                         h=h,
-                        sigma8=0.8,
-                        n_s=0.96,
+                        sigma8=sigma8,
+                        n_s=n_s,
+                        m_nu=mnu,
                         background={'a': a,
                                     'chi': distance,
                                     'h_over_h0': E_of_z},
                         pk_linear={'a': a,
                                    'k': k,
-                                   'delta_matter:delta_matter': Pk_lin},  # noqa E501
+                                   'delta_matter:delta_matter': Pk_lin}, # noqa E501
                         pk_nonlin={'a': a,
                                    'k': k,
-                                   'delta_matter:delta_matter': Pk_nonlin}  # noqa E501
-                    )
+                                   'delta_matter:delta_matter': Pk_nonlin} # noqa E501
+                        )
 
                 else:
                     cosmo = self.ccl.CosmologyCalculator(
                         Omega_c=Omega_c,
                         Omega_b=Omega_b,
                         h=h,
-                        sigma8=0.8,
-                        n_s=0.96,
+                        sigma8=sigma8,
+                        n_s=n_s,
+                        m_nu=mnu,
                         background={'a': a,
                                     'chi': distance,
                                     'h_over_h0': E_of_z},
                         pk_linear={'a': a,
                                    'k': k,
-                                   'delta_matter:delta_matter': Pk_lin}  # noqa E501
-                    )
+                                   'delta_matter:delta_matter': Pk_lin} # noqa E501
+                        )
 
         state['CCL'] = {'cosmo': cosmo, 'ccl': self.ccl}
+
         for required_result, method in self._required_results.items():
             state['CCL'][required_result] = method(cosmo)
 

@@ -1,0 +1,233 @@
+# A simple cobaya likelihood for SO
+
+debug: True
+stop_at_error: True
+
+likelihood:
+  soliket.cross_correlation.GalaxyKappaLikelihood:
+    input_params_prefix: gcl
+    datapath: soliket/tests/data/abacus_red-sn+cmbk_cov=sim-noise+theor-err_abacus.fits
+    use_spectra: 
+      - bins:
+        - cl1
+        - cmbk
+      - bins:
+        - cl2
+        - cmbk
+      - bins:
+        - cl3
+        - cmbk
+    bins: 
+      - cl1
+      - cl2
+      - cl3
+      - cmbk
+    bz_model: LagrangianPT
+    nz_model: NzNone
+    defaults:
+      lmin: 30
+      lmax: 350
+      cl1: 
+        lmax: 350
+      cl2:
+        lmax: 500
+      cl3:
+        lmax: 600
+
+params:
+  mnu: 0.0
+  sigma8:
+    prior:
+      min: 0.1
+      max: 1.2
+    ref: 0.8069016507
+      # dist: norm
+      # loc: 0.809
+      # scale: 0.001
+    latex: \sigma_8
+    proposal: 0.001
+  omch2:
+    prior:
+      min: 0.09
+      max: 0.15
+    ref: 0.1206
+      # dist: norm
+      # loc: 0.116
+      # scale: 0.001
+    proposal: 0.0011
+    latex: \Omega_\mathrm{c}h^2
+  ombh2: 0.02237
+  H0: 67.36
+  ns: 0.9649
+  gcl_cl1_b1:
+    latex: b_1\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref: 1.585740073
+      # dist: norm
+      # loc: 1.58
+      # scale: 0.01
+  gcl_cl1_b1p:
+    latex: b_1p\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref: 1.369028161
+      # dist: norm
+      # loc: 1.36
+      # scale: 0.01
+  gcl_cl1_b2:
+    latex: b_2\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref: 0.2903571048
+      # dist: norm
+      # loc: 0.29
+      # scale: 0.01
+  gcl_cl1_b3nl: 0.0
+  gcl_cl1_bk2:
+    latex: b_k2\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref: 1.557112084
+      # dist: norm
+      # loc: 1.55
+      # scale: 0.01
+  gcl_cl1_bs:
+    latex: b_s\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref: -0.5728063156
+      # dist: norm
+      # loc: -0.57
+      # scale: 0.01
+  gcl_cl2_b1:
+    latex: b_1\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 1.81
+      scale: 0.01
+  gcl_cl2_b1p:
+    latex: b_1p\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 1.85
+      scale: 0.01
+  gcl_cl2_b2:
+    latex: b_2\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 0.46
+      scale: 0.01
+  gcl_cl2_b3nl: 0.0
+  gcl_cl2_bk2:
+    latex: b_k2\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 2.35
+      scale: 0.01
+  gcl_cl2_bs:
+    latex: b_s\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: -1.1
+      scale: 0.01
+  gcl_cl3_b1:
+    latex: b_1\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 2.1
+      scale: 0.01
+  gcl_cl3_b1p:
+    latex: b_1p\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 2.2
+      scale: 0.01
+  gcl_cl3_b2:
+    latex: b_2\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 0.89
+      scale: 0.01
+  gcl_cl3_b3nl: 0.0
+  gcl_cl3_bk2:
+    latex: b_k2\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: 4.0
+      scale: 0.01
+  gcl_cl3_bs:
+    latex: b_s\,\text{for}\,C_{l,1}
+    proposal: 0.01
+    prior:
+      min: -30.0
+      max: 30.0
+    ref:
+      dist: norm
+      loc: -1.71
+      scale: 0.01
+#  gc_cmass_bsn:
+#    latex: b_sn\,\text{for}\,C_{l,1}
+#    prior:
+#      max: 100000.0
+#      min: 0.0
+
+theory:
+  camb:
+    stop_at_error: True
+    # extra_args:
+    #   non_linear_model: takahashi
+  soliket.ccl.CCL:
+    kmax: 10.0
+    # nonlinear: False
+
+sampler:
+  evaluate:
+
+output: chains/test_galaxykappalike

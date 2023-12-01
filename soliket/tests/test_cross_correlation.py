@@ -5,6 +5,8 @@ from cobaya.model import get_model
 
 gammakappa_sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
 gkappa_sacc_file = 'soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits'
+galaxykappa_yaml_file = 'soliket/tests/test_galaxykappalike.yaml'
+galaxykappa_sacc_file = 'soliket/tests/data/abacus_red-sn+cmbk_cov=sim-noise+theor-err_abacus.fits' # noqa F501
 
 cosmo_params = {"Omega_c": 0.25, "Omega_b": 0.05, "h": 0.67, "n_s": 0.96}
 
@@ -35,19 +37,19 @@ def test_shearkappa_import(request):
     from soliket.cross_correlation import ShearKappaLikelihood # noqa F401
 
 
-def test_galaxykappa_model(request):
+# def test_galaxykappa_model(request):
 
-    from soliket.cross_correlation import GalaxyKappaLikelihood
+#     from soliket.cross_correlation import GalaxyKappaLikelihood
 
-    info["params"]["b1"] = 2.
-    info["params"]["s1"] = 0.4
+#     info["params"]["b1"] = 2.
+#     info["params"]["s1"] = 0.4
 
-    info["likelihood"] = {
-        "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": os.path.join(request.config.rootdir,
-                                                           gkappa_sacc_file)}}
+#     info["likelihood"] = {
+#         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
+#                                   "datapath": os.path.join(request.config.rootdir,
+#                                                            gkappa_sacc_file)}}
 
-    model = get_model(info) # noqa F841
+#     model = get_model(info) # noqa F841
 
 
 def test_shearkappa_model(request):
@@ -66,24 +68,24 @@ def test_shearkappa_model(request):
     model = get_model(info) # noqa F841
 
 
-def test_galaxykappa_like(request):
+# def test_galaxykappa_like(request):
 
-    from soliket.cross_correlation import GalaxyKappaLikelihood
+#     from soliket.cross_correlation import GalaxyKappaLikelihood
 
-    info["params"]["b1"] = 2.
-    info["params"]["s1"] = 0.4
+#     info["params"]["b1"] = 2.
+#     info["params"]["s1"] = 0.4
 
-    info["likelihood"] = {
-        "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": os.path.join(request.config.rootdir,
-                                                           gkappa_sacc_file),
-                                  "use_spectra": [('gc_cmass', 'ck_actdr4')]}}
+#     info["likelihood"] = {
+#         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
+#                                   "datapath": os.path.join(request.config.rootdir,
+#                                                            gkappa_sacc_file),
+#                                   "use_spectra": [('gc_cmass', 'ck_actdr4')]}}
 
 
-    model = get_model(info)
-    loglikes, derived = model.loglikes()
+#     model = get_model(info)
+#     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], 174.013, atol=0.2, rtol=0.0)
+#     assert np.isclose(loglikes[0], 174.013, atol=0.2, rtol=0.0)
 
 
 def test_shearkappa_like(request):
@@ -307,3 +309,90 @@ def test_shearkappa_hmcode(request):
     loglikes, derived = model.loglikes()
 
     assert np.isfinite(loglikes)
+
+
+def test_galaxykappa_pred(request):
+    """
+    Test that the prediction from the likelihood is the same as the one from CCL.
+    """
+
+    import pyccl as ccl
+    import pyccl.nl_pt as pt
+    import yaml
+    import sacc
+
+    rootdir = request.config.rootdir
+
+    with open(os.path.join(rootdir, galaxykappa_yaml_file), 'r') as f:
+        info = yaml.load(f, Loader=yaml.FullLoader)
+    info['likelihood']['soliket.cross_correlation.GalaxyKappaLikelihood']['datapath'] = \
+        os.path.join(rootdir, galaxykappa_sacc_file)
+    print(info)
+
+    params_dict = {'sigma8': 0.8069016507, 
+                    'omch2': 0.1206, 
+                    'gcl_cl1_b1': 1.585740073, 
+                    'gcl_cl2_b1': 1.813064786, 
+                    'gcl_cl3_b1': 2.119892852, 
+                    'gcl_cl1_b1p': 1.369028161, 
+                    'gcl_cl2_b1p': 1.855865645, 
+                    'gcl_cl3_b1p': 2.263006087, 
+                    'gcl_cl1_b2': 0.2903571048, 
+                    'gcl_cl2_b2': 0.4639643153, 
+                    'gcl_cl3_b2': 0.8976356733, 
+                    'gcl_cl1_bs': -0.5728063156, 
+                    'gcl_cl2_bs': -1.084741786, 
+                    'gcl_cl3_bs': -1.709779746, 
+                    'gcl_cl1_bk2': 1.557112084, 
+                    'gcl_cl2_bk2': 2.356926746, 
+                    'gcl_cl3_bk2': 4.006592607, 
+                    'mnu': 0.0, 
+                    'ombh2': 0.02237,
+                    'H0': 67.36,
+                    'ns': 0.9649,
+                    }
+
+    model = get_model(info) # noqa F841
+    loglikes, derived = model.loglikes(params_dict)
+    cl_th = model.likelihood['soliket.cross_correlation.GalaxyKappaLikelihood']._get_theory(**params_dict) # noqa F501
+
+    ells_theory, w_bins = model.likelihood['soliket.cross_correlation.GalaxyKappaLikelihood'].get_binning(('cl1', 'cmbk')) # noqa F501
+
+    # Get the theory prediction from CCL
+    Omega_c = params_dict['omch2'] / (params_dict['H0'] / 100.) ** 2.0
+    Omega_b = params_dict['ombh2'] / (params_dict['H0'] / 100.) ** 2.0
+    cosmo = ccl.Cosmology(Omega_c=Omega_c, Omega_b=Omega_b,
+                          h=params_dict['H0'] / 100., sigma8=params_dict['sigma8'], 
+                          n_s=params_dict['ns'], m_nu=params_dict['mnu'],
+                          matter_power_spectrum='camb', 
+                          extra_parameters={"camb": {"halofit_version": "mead2020"}})
+    s = sacc.Sacc.load_fits(os.path.join(rootdir, galaxykappa_sacc_file))
+    sacc_tr = s.tracers['cl1']
+    z_arr = sacc_tr.z
+    nz_arr = sacc_tr.nz
+    zmean = np.average(z_arr, weights=nz_arr)
+    b1z = params_dict['gcl_cl1_b1'] + params_dict['gcl_cl1_b1p'] * (z_arr - zmean)
+
+    # Number counts
+    ptt_g = pt.PTNumberCountsTracer(b1=(z_arr, b1z),
+                                    b2=params_dict['gcl_cl1_b2'], 
+                                    bs=params_dict['gcl_cl1_bs'],
+                                    bk2=params_dict['gcl_cl1_bk2'])
+    # Matter
+    ptt_m = pt.PTMatterTracer()
+
+    # Number counts
+    t_g = ccl.NumberCountsTracer(cosmo, has_rsd=False, dndz=(z_arr, nz_arr), 
+                                bias=(z_arr, np.ones_like(z_arr)), mag_bias=None)
+    # Lensing
+    t_l = ccl.CMBLensingTracer(cosmo, z_source=1030)
+    ptc = pt.LagrangianPTCalculator(log10k_min=-4, log10k_max=2, nk_per_decade=20)
+    ptc.update_ingredients(cosmo)
+
+    # Galaxies x matter
+    pk_gm = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_m)
+    # ell = np.arange(5287)
+    cls_ccl = ccl.angular_cl(cosmo, t_g, t_l, ells_theory, p_of_k_a=pk_gm)
+    cls_ccl_binned = np.dot(w_bins, cls_ccl)
+
+    assert np.allclose(cls_ccl_binned, cl_th[:10], rtol=4.e-4, atol=1.e-8)

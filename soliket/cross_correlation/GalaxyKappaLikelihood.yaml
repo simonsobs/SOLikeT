@@ -1,9 +1,15 @@
-params:
-  b1: 
-    prior:
-      min: 0.
-      max: 10.
-    latex: b_1
-  s1: 
-    value: 0.4
-    latex: s_1
+datapath: soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits
+use_spectra: all
+
+bins: gc_cmass
+bz_model: LagrangianPT
+nz_model: NzShift
+z_cmb: 1030
+input_params_prefix: '_'
+
+log10k_min: -4
+log10k_max: 2
+nk_per_decade: 20
+defaults:
+  lmin: 30
+  lmax: 3000
