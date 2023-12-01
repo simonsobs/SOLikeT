@@ -1,0 +1,94 @@
+output: chains/cmbonly
+debug: false
+
+sampler:
+  mcmc:
+    max_tries: 1000000
+
+likelihood:
+  soliket.CMBonly:
+    input_file: so_cmb_sacc_00000.fits
+    stop_at_error: True
+
+theory:
+  camb:
+    extra_args:
+      lens_potential_accuracy: 8
+      lens_margin: 2050
+      min_l_logl_sampling: 6000
+      kmax: 10.0
+      k_per_logint: 130
+      lSampleBoost: 1.2
+      DoLateRadTruncation: false
+
+params:
+  # Cosmology
+  ombh2:
+    prior:
+      min: 0.015
+      max: 0.030
+    ref:
+      dist: norm
+      loc: 0.022
+      scale: 0.002
+    proposal: 1e-3
+    latex: \Omega_b h^2
+  omch2:
+    prior:
+      min: 0.09
+      max: 0.15
+    ref:
+      dist: norm
+      loc: 0.12
+      scale: 0.02
+    proposal: 1e-2
+    latex: \Omega_c h^2
+  logA:
+    prior:
+      min: 2.5
+      max: 3.5
+    ref:
+      dist: norm
+      loc: 3.0
+      scale: 0.1
+    proposal: 1e-2
+    latex: \log(10^{10} A_s)
+  ns:
+    prior:
+      min: 0.85
+      max: 1.05
+    ref:
+      dist: norm
+      loc: 0.96
+      scale: 0.05
+    proposal: 1e-3
+    latex: n_s
+  h:
+    prior:
+      min: 0.4
+      max: 1.0
+    ref:
+      dist: norm
+      loc: 0.67
+      scale: 0.1
+    proposal: 1e-3
+    latex: h
+  tau:
+    prior:
+      min: 0.02
+      max: 0.20
+    ref:
+      dist: norm
+      loc: 0.0544
+      scale: 0.0073
+    proposal: 7e-3
+    latex: \tau_\mathrm{reio}
+  H0:
+    derived: True
+    value: "lambda h: 100.0 * h"
+  As:
+    derived: True
+    value: "lambda logA: 1e-10 * np.exp(logA)"
+
+prior:
+  tau_priors: "lambda tau: stats.norm.logpdf(tau, loc = 5.44e-2, scale = 7.3e-3)"

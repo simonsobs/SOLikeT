@@ -4,6 +4,7 @@ from .gaussian import GaussianLikelihood, MultiGaussianLikelihood  # noqa: F401
 from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401
 from .mflike import MFLike  # noqa: F401
 from .mflike import TheoryForge_MFLike # noqa F401
+from .cmbonly import CMBonly  # noqa: F401
 from .cross_correlation import CrossCorrelationLikelihood, GalaxyKappaLikelihood, ShearKappaLikelihood  # noqa: F401, E501
 from .xcorr import XcorrLikelihood  # noqa: F401
 from .foreground import Foreground # noqa F401

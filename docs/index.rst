@@ -42,6 +42,8 @@ The pages here describe how to install and run SOLikeT, and document the functio
    :maxdepth: 1
 
    mflike
+   fgmarge
+   cmbonly
    lensing
    clusters
    xcorr
