@@ -10,6 +10,11 @@ def cash_c_logpdf(theory, data, usestirling=True, name="binned"):
     ln_fac = np.zeros_like(obs, dtype=float)
     zcut_arr = np.arange(zcut)
 
+    # print("WARNING: Zapped some S/N bins as a test")
+    # theory=theory[:, 1:]
+    # obs=obs[:, 1:]
+    # ln_fac=ln_fac[:, 1:]
+
     if zcut > 0:
         theory = np.delete(theory, zcut_arr, 0)
         obs = np.delete(obs, zcut_arr, 0)

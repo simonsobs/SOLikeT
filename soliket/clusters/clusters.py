@@ -59,10 +59,18 @@ class BinnedClusterLikelihood(CashCLikelihood):
     def initialize(self):
 
         # constant binning in log10
-        qbins = np.arange(self.binning['q']['log10qmin'], self.binning['q']['log10qmax']+self.binning['q']['dlog10q'], self.binning['q']['dlog10q'])
-        self.qbins = 10**qbins
-        self.qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
-        self.Nq = int((self.binning['q']['log10qmax'] - self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']) + 1
+        # WARNING: This seems brittle
+        # qbins = np.arange(self.binning['q']['log10qmin'], self.binning['q']['log10qmax']+self.binning['q']['dlog10q'], self.binning['q']['dlog10q'])
+        # self.qbins = 10**qbins
+        # self.qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
+        # self.Nq = int((self.binning['q']['log10qmax'] - self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']) + 1
+        # Revised binning
+        self.Nq = int(np.ceil((self.binning['q']['log10qmax']-self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']))
+        qbins=np.linspace(self.binning['q']['log10qmin'], self.binning['q']['log10qmax'], self.Nq)
+        self.qbins = np.power(10, qbins) # bin edges
+        self.qarr = np.power(10, (qbins[1:]+qbins[:-1])/2)
+        self.Nq = self.Nq-1
+        assert(self.Nq > 0)
 
         # this is for liklihood computation
         self.zcut = self.binning['exclude_zbin']
@@ -190,6 +198,16 @@ class BinnedClusterLikelihood(CashCLikelihood):
             self.log.info('Number of clusters in snr bin {}: {}.'.format(kk, delN2D[:,kk].sum()))
         self.log.info("Total predicted 2D N = {}.".format(delN2D.sum()))
 
+        # Debugging
+        # from astLib import astImages
+        # astImages.saveFITS("theory_%.2f_%.2f.fits" % (self.theory.get_param('sigma8'), self.theory.get_param('Omega_c')), delN2D.transpose())
+        # astImages.saveFITS("obs_%.2f_%.2f.fits" % (self.theory.get_param('sigma8'), self.theory.get_param('Omega_c')), self.delN2Dcat[2].transpose())
+        # astImages.saveFITS("diff_%.2f_%.2f.fits" % (self.theory.get_param('sigma8'), self.theory.get_param('Omega_c')), (self.delN2Dcat[2]-delN2D).transpose())
+        # print("inspect grid")
+        # import IPython
+        # IPython.embed()
+        # sys.exit()
+
         return delN2D
 
     def _get_completeness_inj(self, mass, z, mass_500c, qbin, **params):
@@ -250,7 +268,6 @@ class BinnedClusterLikelihood(CashCLikelihood):
             kk = qbin
             qmin = qbins[kk]
             qmax = qbins[kk+1]
-
             opt_bias_corr_factor=np.ones(y0.shape)
             if self.selfunc['bias_handler'] == 'theory':
                 for i in range(Npatches):
@@ -842,6 +859,15 @@ def initialize_common(self):
             self.Q = Qdwnsmpld
             self.tiles_dwnsmpld = tiles_dwnsmpld
 
+            if 'override_noise' in self.selfunc.keys():
+                self.log.info("Overriden noise")
+                self.noise[:]=self.selfunc['override_noise']
+
+            if 'force_Q_equals_1' in self.selfunc.keys() and self.selfunc['force_Q_equals_1'] == True:
+                self.log.info("Forced Q == 1")
+                self.Q[:] = 1.0
+
+
             self.log.info("Number of down-sampled RMS = {}.".format(self.skyfracs.size))
             self.log.info("Number of down-sampled Q funcs = {}.".format(len(self.Q[0])))
 
@@ -1214,6 +1240,8 @@ def get_erf_diff(y, noise, qmin, qmax, qcut):
         qlim = qcut
     arg2 = (y/noise - qlim)/np.sqrt(2.)
     erf_compl = (special.erf(arg2) - special.erf(arg1)) / 2.
+    # HACK: 100% completeness above S/N limit, for noiseless data vector - doesn't actually help
+    # erf_compl[erf_compl > 0]=1.0
     return erf_compl
 
 def get_stf_diff(y, noise, qmin, qmax, qcut):
