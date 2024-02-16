@@ -1,4 +1,4 @@
-output: /Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/sz_total-planck-collab-15_step_1_test
+output: /project/r/rbond/ymehta3/output/param-fitting/mcmcresults/sz_test
 
 likelihood:
   soliket.ymap.ymap_ps.SZLikelihood:

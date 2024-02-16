@@ -4,6 +4,7 @@ from .gaussian import GaussianLikelihood, MultiGaussianLikelihood
 from .clusters import ClusterLikelihood
 # from .mflike import MFLike
 from .ccl import CCL
-from .ymap.ymap_ps import SZLikelihood, SZForegroundTheory
-from .ymap.classy_sz import classy_sz
-from .sz_binned_cluster_counts.binned_cc import binned_cc_likelihood
+# from .ymap.ymap_ps import SZLikelihood, SZForegroundTheory
+# from .sz_binned_cluster_counts.binned_cc import binned_cc_likelihood
+from .classy_cibxkappa import classy_cibxkappa
+from .cib_likelihood import CIB_Likelihood
