@@ -19,6 +19,8 @@ class CashCLikelihood(Likelihood):
             raise NotImplementedError
 
     def logp(self, **kwargs):
-        pk_intp = self.theory.get_Pk_interpolator()
+        pk_intp = self.provider.get_Pk_interpolator()
         theory = self._get_theory(pk_intp, **kwargs)
         return self.data.loglike(theory)
+
+
