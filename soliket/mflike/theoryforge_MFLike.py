@@ -245,13 +245,13 @@ class TheoryForge_MFLike(Theory):
             cal = (nuis_params["calG_all"] *
                    np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calT_{exp}"]
                              for exp in self.exp_ch]))
-            cal_pars["tt"] = 1 / cal
+            cal_pars["t"] = 1 / cal
 
         if "ee" in self.requested_cls or "te" in self.requested_cls:
             cal = (nuis_params["calG_all"] *
                    np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calE_{exp}"]
                              for exp in self.exp_ch]))
-            cal_pars["ee"] = 1 / cal
+            cal_pars["e"] = 1 / cal
 
         calib = syl.Calibration_alm(ell=self.ell, spectra=dls_dict)
 
