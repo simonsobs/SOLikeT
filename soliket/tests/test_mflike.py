@@ -2,7 +2,6 @@
 Make sure that this returns the same result as original mflike.MFLike from LAT_MFlike repo
 """
 import os
-import tempfile
 import unittest
 from packaging.version import Version
 
@@ -12,9 +11,9 @@ from soliket.mflike import TestMFLike
 
 import numpy as np
 
-packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
-    tempfile.gettempdir(), "LAT_packages"
-)
+from cobaya.tools import resolve_packages_path
+
+packages_path = resolve_packages_path()
 
 cosmo_params = {
     "cosmomc_theta": 0.0104085,

@@ -1,14 +1,10 @@
 import pkgutil
 import pytest
-import tempfile
 from cobaya.yaml import yaml_load
 from cobaya.run import run
+from cobaya.tools import resolve_packages_path
 
-import os
-
-packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
-    tempfile.gettempdir(), "lensing_packages"
-)
+packages_path = resolve_packages_path()
 
 
 @pytest.mark.parametrize("lhood",

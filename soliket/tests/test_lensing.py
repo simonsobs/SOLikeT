@@ -1,12 +1,9 @@
-import os
-import tempfile
 import numpy as np
 from cobaya.model import get_model
 
-packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
-    tempfile.gettempdir(), "lensing_packages"
-)
+from cobaya.tools import resolve_packages_path
 
+packages_path = resolve_packages_path()
 # Cosmological parameters for the test data from SO sims
 # See https://github.com/simonsobs/SOLikeT/pull/101 for validation plots
 fiducial_params = {

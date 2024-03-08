@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
 from soliket.tests.test_mflike import cosmo_params, nuisance_params
+from cobaya.tools import resolve_packages_path
 
+packages_path = resolve_packages_path()
 
 @pytest.mark.xfail(reason="lensing lhood install failure")
 def test_multi():
