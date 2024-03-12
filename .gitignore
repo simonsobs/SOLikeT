@@ -118,3 +118,6 @@ soliket/cosmopower
 soliket/clusters/checks/*
 soliket/clusters/notebooks/figs/*
 soliket/clusters/notebooks/ongoing/*
+
+# cibxlensing
+soliket/cibxlensing/chains
