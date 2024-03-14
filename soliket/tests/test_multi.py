@@ -8,12 +8,13 @@ packages_path = resolve_packages_path()
 @pytest.mark.xfail(reason="lensing lhood install failure")
 def test_multi():
 
+def test_multi():
     lensing_options = {"theory_lmax": 5000}
 
-    pre = "data_sacc_"
+    pre = "test_data_sacc_"
     mflike_options = {
         "input_file": pre + "00000.fits",
-        "cov_Bbl_file": pre + "w_covar_and_Bbl.fits",
+        "data_folder": "TestMFLike",
         "stop_at_error": True,
     }
 
