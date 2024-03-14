@@ -1,12 +1,9 @@
 import numpy as np
-import pytest
 from soliket.tests.test_mflike import cosmo_params, nuisance_params
 from cobaya.tools import resolve_packages_path
 
 packages_path = resolve_packages_path()
 
-@pytest.mark.xfail(reason="lensing lhood install failure")
-def test_multi():
 
 def test_multi():
     lensing_options = {"theory_lmax": 5000}
@@ -30,7 +27,7 @@ def test_multi():
     info = {
         "likelihood": {
             "soliket.gaussian.MultiGaussianLikelihood": {
-                "components": ["soliket.mflike.MFLike", "soliket.LensingLikelihood"],
+                "components": ["soliket.mflike.TestMFLike", "soliket.LensingLikelihood"],
                 "options": [mflike_options, lensing_options],
                 "stop_at_error": True,
             }
@@ -43,7 +40,7 @@ def test_multi():
     }
 
     info1 = {
-        "likelihood": {"soliket.mflike.MFLike": mflike_options},
+        "likelihood": {"soliket.mflike.TestMFLike": mflike_options},
         "theory": {"camb": camb_options,
                    "soliket.TheoryForge_MFLike": {'stop_at_error': True},
                    "soliket.Foreground": {"stop_at_error": True},
