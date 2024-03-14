@@ -22,7 +22,7 @@ def test_evaluate(lhood):
     info['sampler'] = {'evaluate': {}}
 
     from cobaya.install import install
-    install(info, path=packages_path, skip_global=True)
+    install(info, path=packages_path, skip_global=True, no_set_global=True)
 
     updated_info, sampler = run(info)
 
@@ -42,6 +42,6 @@ def test_mcmc(lhood):
     info['sampler'] = {'mcmc': {'max_samples': 10, 'max_tries': 1000}}
 
     from cobaya.install import install
-    install(info, path=packages_path, skip_global=True)
+    install(info, path=packages_path, skip_global=True, no_set_global=True)
 
     updated_info, sampler = run(info)
