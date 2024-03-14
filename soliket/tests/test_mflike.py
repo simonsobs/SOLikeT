@@ -78,8 +78,14 @@ class MFLikeTest(unittest.TestCase):
     def setUp(self):
         from cobaya.install import install
 
-        install({"likelihood": {"soliket.mflike.TestMFLike": None}},
-                path=packages_path, skip_global=False, force=True, debug=True, no_set_global=True)
+        install(
+            {"likelihood": {"soliket.mflike.TestMFLike": None}},
+            path=packages_path,
+            skip_global=False,
+            force=True,
+            debug=True,
+            no_set_global=True,
+        )
 
 
     def test_mflike(self):
