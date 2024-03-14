@@ -3,15 +3,15 @@ Make sure that this returns the same result as original mflike.MFLike from LAT_M
 """
 import os
 import unittest
-
-import camb
-import numpy as np
-from cobaya.model import get_model
-from cobaya.tools import resolve_packages_path
 from packaging.version import Version
 
+import camb
 import soliket  # noqa
 from soliket.mflike import TestMFLike
+
+import numpy as np
+
+from cobaya.tools import resolve_packages_path
 
 packages_path = resolve_packages_path()
 
@@ -59,27 +59,31 @@ nuisance_params = {
 }
 
 
-if Version(camb.__version__) >= Version("1.4"):
-    chi2s = {"tt": 545.1257, "te": 137.4146, "ee": 167.9850, "tt-te-et-ee": 790.5121}
+if Version(camb.__version__) >= Version('1.4'):
+    chi2s = {"tt": 545.1257,
+             "te": 137.4146,
+             "ee": 167.9850,
+             "tt-te-et-ee": 790.5121}
 else:
-    chi2s = {"tt": 544.9745, "te-et": 152.6807, "ee": 168.0953, "tt-te-et-ee": 790.4124}
+    chi2s = {"tt": 544.9745,
+             "te-et": 152.6807,
+             "ee": 168.0953,
+             "tt-te-et-ee": 790.4124}
 
 pre = "test_data_sacc_"
 
 
 class MFLikeTest(unittest.TestCase):
+
     def setUp(self):
         from cobaya.install import install
 
-        install(
-            {"likelihood": {"soliket.mflike.TestMFLike": None}},
-            path=packages_path,
-            skip_global=False,
-            force=True,
-            debug=True,
-        )
+        install({"likelihood": {"soliket.mflike.TestMFLike": None}},
+                path=packages_path, skip_global=False, force=True, debug=True)
+
 
     def test_mflike(self):
+
         # As of now, there is not a mechanism
         # in soliket to ensure there is .loglike that can be called like this
         # w/out cobaya
@@ -90,9 +94,9 @@ class MFLikeTest(unittest.TestCase):
         pars = camb.set_params(**camb_cosmo)
         results = camb.get_results(pars)
         powers = results.get_cmb_power_spectra(pars, CMB_unit="muK")
-        cl_dict = {
-            k: powers["total"][:, v] for k, v in {"tt": 0, "ee": 1, "te": 3}.items()
-        }
+        cl_dict = {k: powers["total"][:, v] for
+                   k, v in {"tt": 0, "ee": 1, "te": 3}.items()}
+
 
         BP = soliket.BandPass()
         FG = soliket.Foreground()
@@ -105,21 +109,21 @@ class MFLikeTest(unittest.TestCase):
 
         requested_cls = TF.requested_cls
         BP.bands = bands
-        BP.exp_ch = [k.replace("_s0", "") for k in bands.keys() if "_s0" in k]
+        BP.exp_ch = [k.replace("_s0", "") for k in bands.keys()
+                          if "_s0" in k]
 
         bandpass = BP._bandpass_construction(**nuisance_params)
 
-        fg_dict = FG._get_foreground_model(
-            requested_cls=requested_cls,
-            ell=ell,
-            exp_ch=exp_ch,
-            bandint_freqs=bandpass,
-            **nuisance_params
-        )
+        fg_dict = FG._get_foreground_model(requested_cls=requested_cls,
+                                                    ell=ell,
+                                                    exp_ch=exp_ch,
+                                                    bandint_freqs=bandpass,
+                                                    **nuisance_params)
 
         dlobs_dict = TF.get_modified_theory(cl_dict, fg_dict, **nuisance_params)
 
         for select, chi2 in chi2s.items():
+
             my_mflike = TestMFLike(
                 {
                     "external": TestMFLike,
@@ -144,6 +148,7 @@ class MFLikeTest(unittest.TestCase):
             self.assertAlmostEqual(-2 * (loglike - my_mflike.logp_const), chi2, 2)
 
     def test_cobaya(self):
+
         info = {
             "likelihood": {
                 "soliket.mflike.TestMFLike": {
@@ -162,20 +167,17 @@ class MFLikeTest(unittest.TestCase):
                     },
                 },
             },
-            "theory": {
-                "camb": {
-                    "extra_args": {"lens_potential_accuracy": 1},
-                    "stop_at_error": True,
-                }
-            },
+            "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1},
+                                "stop_at_error": True}},
             "params": cosmo_params,
             "modules": packages_path,
             "debug": True,
         }
 
-        info["theory"]["soliket.TheoryForge_MFLike"] = {"stop_at_error": True}
-        info["theory"]["soliket.Foreground"] = {"stop_at_error": True}
-        info["theory"]["soliket.BandPass"] = {"stop_at_error": True}
+        info["theory"]["soliket.TheoryForge_MFLike"] = {'stop_at_error': True}
+        info["theory"]["soliket.Foreground"] = {'stop_at_error': True}
+        info["theory"]["soliket.BandPass"] = {'stop_at_error': True}
+        from cobaya.model import get_model
 
         model = get_model(info)
         my_mflike = model.likelihood["soliket.mflike.TestMFLike"]
