@@ -2,6 +2,9 @@ import numpy as np
 
 from soliket.cash import CashCData
 from cobaya.theory import Theory
+from cobaya.tools import resolve_packages_path
+
+packages_path = resolve_packages_path()
 
 
 class cash_theory_calculator(Theory):
@@ -30,21 +33,21 @@ def test_cash_read_data(request):
     import os
     from soliket.cash import CashCLikelihood
 
-    cash_data_path = os.path.join(request.config.rootdir,
-            "soliket/tests/data/cash_data.txt")
+    cash_data_path = os.path.join(packages_path,
+            "../../../soliket/tests/data/cash_data.txt")
 
     cash_lkl = CashCLikelihood({"datapath": cash_data_path})
     cash_data = cash_lkl._get_data()
     assert np.allclose(cash_data[1], np.arange(20))
 
 
-def test_cash_logp(request):
+def test_cash_logp():
     import os
     from soliket.cash import CashCLikelihood
 
     params = {"cash_test_logp": 20}
-    cash_data_path = os.path.join(request.config.rootdir,
-            "soliket/tests/data/cash_data.txt")
+    cash_data_path = os.path.join(packages_path,
+            "../../../soliket/tests/data/cash_data.txt")
 
     cash_lkl = CashCLikelihood({"datapath": cash_data_path})
     cash_logp = cash_lkl.logp(**params)
