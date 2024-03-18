@@ -1,10 +1,8 @@
 import numpy as np
 
 from cobaya.model import get_model
-from cobaya.tools import resolve_packages_path
 from ..constants import T_CMB, h_Planck, k_Boltzmann
 
-packages_path = resolve_packages_path()
 
 info = {"params": {
     "bandint_shift_LAT_93": 0.0,
@@ -111,12 +109,12 @@ def test_bandpass_top_hat():
     assert np.allclose(bandint_freqs, bandpass)
 
 
-def test_bandpass_external_file():
+def test_bandpass_external_file(request):
     from soliket.bandpass import BandPass
     import os
 
-    filepath = os.path.join(packages_path,
-                            "../../../soliket/tests/data/")
+    filepath = os.path.join(request.config.rootdir,
+                            "soliket/tests/data/")
     # now testing reading from external file
     info["theory"].update({
         "bandpass": {"external": BandPass,

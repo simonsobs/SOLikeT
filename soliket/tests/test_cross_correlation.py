@@ -2,10 +2,7 @@ import numpy as np
 import os
 from soliket.ccl import CCL
 from cobaya.model import get_model
-from cobaya.tools import resolve_packages_path
 
-packages_path = resolve_packages_path()
-packages_path = os.path.join(packages_path, "../../../")
 
 gammakappa_sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
 gkappa_sacc_file = 'soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits'
@@ -39,7 +36,7 @@ def test_shearkappa_import():
     from soliket.cross_correlation import ShearKappaLikelihood # noqa F401
 
 
-def test_galaxykappa_model():
+def test_galaxykappa_model(request):
 
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
@@ -48,13 +45,13 @@ def test_galaxykappa_model():
 
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": os.path.join(packages_path,
+                                  "datapath": os.path.join(request.config.rootdir,
                                                            gkappa_sacc_file)}}
 
     model = get_model(info) # noqa F841
 
 
-def test_shearkappa_model():
+def test_shearkappa_model(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
@@ -64,13 +61,13 @@ def test_shearkappa_model():
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(packages_path,
+                           "datapath": os.path.join(request.config.rootdir,
                                                     gammakappa_sacc_file)}}
 
     model = get_model(info) # noqa F841
 
 
-def test_galaxykappa_like():
+def test_galaxykappa_like(request):
 
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
@@ -79,7 +76,7 @@ def test_galaxykappa_like():
 
     info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
-                                  "datapath": os.path.join(packages_path,
+                                  "datapath": os.path.join(request.config.rootdir,
                                                            gkappa_sacc_file),
                                   "use_spectra": [('gc_cmass', 'ck_actdr4')]}}
 
@@ -90,11 +87,11 @@ def test_galaxykappa_like():
     assert np.isclose(loglikes[0], 174.013, atol=0.2, rtol=0.0)
 
 
-def test_shearkappa_like():
+def test_shearkappa_like(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    rootdir = packages_path
+    rootdir = request.config.rootdir
 
     cs82_file = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
     test_datapath = os.path.join(rootdir, cs82_file)
@@ -122,12 +119,12 @@ def test_shearkappa_like():
     assert np.isclose(loglikes, 637.64473666)
 
 
-def test_shearkappa_tracerselect():
+def test_shearkappa_tracerselect(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
     import copy
 
-    rootdir = packages_path
+    rootdir = request.config.rootdir
 
     test_datapath = os.path.join(rootdir, gammakappa_sacc_file)
 
@@ -174,11 +171,11 @@ def test_shearkappa_tracerselect():
                        lhood_twobin.data.y)
 
 
-def test_shearkappa_hartlap():
+def test_shearkappa_hartlap(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    rootdir = packages_path
+    rootdir = request.config.rootdir
 
     cs82_file = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
     test_datapath = os.path.join(rootdir, cs82_file)
@@ -213,13 +210,13 @@ def test_shearkappa_hartlap():
                       rtol=1.e-5, atol=1.e-5)
 
 
-def test_shearkappa_deltaz():
+def test_shearkappa_deltaz(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(packages_path,
+                           "datapath": os.path.join(request.config.rootdir,
                                                     gammakappa_sacc_file),
                            "z_nuisance_mode": "deltaz"}}
 
@@ -229,13 +226,13 @@ def test_shearkappa_deltaz():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_m():
+def test_shearkappa_m(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(packages_path,
+                           "datapath": os.path.join(request.config.rootdir,
                                                     gammakappa_sacc_file),
                            "m_nuisance_mode": True}}
 
@@ -245,13 +242,13 @@ def test_shearkappa_m():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_ia_nla_noevo():
+def test_shearkappa_ia_nla_noevo(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(packages_path,
+                           "datapath": os.path.join(request.config.rootdir,
                                                     gammakappa_sacc_file),
                            "ia_mode": 'nla-noevo'}}
 
@@ -261,13 +258,13 @@ def test_shearkappa_ia_nla_noevo():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_ia_nla():
+def test_shearkappa_ia_nla(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(packages_path,
+                           "datapath": os.path.join(request.config.rootdir,
                                                     gammakappa_sacc_file),
                            "ia_mode": 'nla'}}
 
@@ -279,13 +276,13 @@ def test_shearkappa_ia_nla():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_ia_perbin():
+def test_shearkappa_ia_perbin(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(packages_path,
+                           "datapath": os.path.join(request.config.rootdir,
                                                     gammakappa_sacc_file),
                            "ia_mode": 'nla-perbin'}}
 
@@ -295,13 +292,13 @@ def test_shearkappa_ia_perbin():
     assert np.isfinite(loglikes)
 
 
-def test_shearkappa_hmcode():
+def test_shearkappa_hmcode(request):
 
     from soliket.cross_correlation import ShearKappaLikelihood
 
     info["likelihood"] = {"ShearKappaLikelihood":
                           {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(packages_path,
+                           "datapath": os.path.join(request.config.rootdir,
                                                     gammakappa_sacc_file)}}
     info["theory"] = {"camb": {'extra_args': {'halofit_version': 'mead2020_feedback',
                                               'HMCode_logT_AGN': 7.8}},
