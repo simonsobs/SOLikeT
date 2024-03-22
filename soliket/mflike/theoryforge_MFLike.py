@@ -140,7 +140,6 @@ class TheoryForge_MFLike(Theory):
             self.lcuts = req.get("lcuts", self.lcuts)
             self.exp_ch = req.get("exp_ch", self.exp_ch)
             self.bands = req.get("bands", self.bands)
-            #self.log.info("%d",self.ell)
 
             # theoryforge requires Cl from boltzmann solver
         # and fg_dict from Foreground theory component
@@ -150,7 +149,7 @@ class TheoryForge_MFLike(Theory):
         # Be sure that CMB is computed at lmax > lmax_data (lcuts from mflike here)
         reqs["Cl"] = {k: max(c, self.lmax_boltzmann + 1) for k, c in self.lcuts.items()}
         reqs["fg_dict"] = {"requested_cls": self.requested_cls,
-                           "ell": self.ell,#np.arange(self.lmax_fg + 2),#np.arange(max(self.ell[-1], self.lmax_fg + 1)),
+                           "ell": self.ell,
                            "exp_ch": self.exp_ch, "bands": self.bands}
         return reqs
 
@@ -187,10 +186,6 @@ class TheoryForge_MFLike(Theory):
         :return: the CMB+foregrounds :math:`D_{\ell}` dictionary,
                  modulated by systematics
         """
-        #self.Dls = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}#Dls
-
-        #if self.ell is None:
-        #   self.ell = np.arange(self.lmin, self.lmax + 1)
 
         nuis_params = {k: params[k] for k in self.expected_params_nuis}
 
@@ -199,8 +194,6 @@ class TheoryForge_MFLike(Theory):
         for f1 in self.exp_ch:
             for f2 in self.exp_ch:
                 for s in self.requested_cls:
-                    #cmbfg_dict[s, f1, f2] = (self.Dls[s][self.ell] +
-                    #                         fg_dict[s, 'all', f1, f2][self.ell])
                     cmbfg_dict[s, f1, f2] = (self.Dls[s] +
                                              fg_dict[s, 'all', f1, f2])
 
