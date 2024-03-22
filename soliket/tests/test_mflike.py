@@ -10,8 +10,6 @@ import camb
 import soliket  # noqa
 from soliket.mflike import TestMFLike
 
-import numpy as np
-
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "LAT_packages"
 )
@@ -103,10 +101,8 @@ class MFLikeTest(unittest.TestCase):
         FG = soliket.Foreground()
         TF = soliket.TheoryForge_MFLike()
 
-        ell = np.arange(lmax + 1)
         bands = TF.bands
         exp_ch = TF.exp_ch
-        print(exp_ch, bands)
 
         requested_cls = TF.requested_cls
         BP.bands = bands
@@ -114,14 +110,6 @@ class MFLikeTest(unittest.TestCase):
                           if "_s0" in k]
 
         bandpass = BP._bandpass_construction(**nuisance_params)
-
-        fg_dict = FG._get_foreground_model(requested_cls=requested_cls,
-                                                    ell=ell,
-                                                    exp_ch=exp_ch,
-                                                    bandint_freqs=bandpass,
-                                                    **nuisance_params)
-
-        dlobs_dict = TF.get_modified_theory(cl_dict, fg_dict, **nuisance_params)
 
         for select, chi2 in chi2s.items():
 
@@ -143,6 +131,15 @@ class MFLikeTest(unittest.TestCase):
                     },
                 }
             )
+
+            ell_cut = my_mflike.l_bpws
+            dls_cut = {s: cl_dict[s][ell_cut] for s, _ in my_mflike.lcuts.items()}
+            fg_dict = FG._get_foreground_model(requested_cls=requested_cls,
+                                                    ell=ell_cut,
+                                                    exp_ch=exp_ch,
+                                                    bandint_freqs=bandpass,
+                                                    **nuisance_params)
+            dlobs_dict = TF.get_modified_theory(dls_cut, fg_dict, **nuisance_params)
 
             loglike = my_mflike.loglike(dlobs_dict)
 

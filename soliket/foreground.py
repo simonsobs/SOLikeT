@@ -80,7 +80,6 @@ class Foreground(Theory):
         self.requested_cls = self.spectra["polarizations"]
         self.lmin = self.spectra["lmin"]
         self.lmax = self.spectra["lmax"]
-        self.ell = np.arange(self.lmin, self.lmax + 1)
         self.exp_ch = self.spectra["exp_ch"]
         self.eff_freqs = self.spectra["eff_freqs"]
 
@@ -169,6 +168,7 @@ class Foreground(Theory):
         # useful to make tests at different l_max than the data
         if not hasattr(ell, '__len__'):
             ell = self.ell
+
         ell_0 = self.fg_ell_0
         nu_0 = self.fg_nu_0
 
@@ -307,7 +307,7 @@ class Foreground(Theory):
         if "fg_dict" in requirements:
             req = requirements["fg_dict"]
             self.requested_cls = req.get("requested_cls", self.requested_cls)
-            self.ell = req.get("ell", self.ell)
+            self.ell = req.get("ell", None)
             self.bands = req.get("bands", self.bands)
             self.exp_ch = req.get("exp_ch", self.exp_ch)
             return {"bandint_freqs": {"bands": self.bands}}
@@ -344,6 +344,7 @@ class Foreground(Theory):
 
         fg_params = {k: params_values_dict[k] for k in self.expected_params_fg}
         state["fg_dict"] = self._get_foreground_model(requested_cls=self.requested_cls,
+                                                      ell=self.ell,
                                                       exp_ch=self.exp_ch,
                                                       bandint_freqs=self.bandint_freqs,
                                                       **fg_params)
