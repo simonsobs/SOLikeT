@@ -343,7 +343,6 @@ class Foreground(Theory):
             self.bandint_freqs = self.get_bandpasses(**params_values_dict)
 
         fg_params = {k: params_values_dict[k] for k in self.expected_params_fg}
-        
         state["fg_dict"] = self._get_foreground_model(requested_cls=self.requested_cls,
                                                       ell=self.ell,
                                                       exp_ch=self.exp_ch,

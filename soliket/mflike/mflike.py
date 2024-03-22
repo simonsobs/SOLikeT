@@ -104,7 +104,6 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                               "lcuts": self.lcuts,
                               "exp_ch": self.experiments,
                               "bands": self.bands}
-                              
         return reqs
 
     def _get_theory(self, **params_values):

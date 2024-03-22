@@ -161,7 +161,7 @@ class TheoryForge_MFLike(Theory):
 
     def calculate(self, state, want_derived=False, **params_values_dict):
         Dls = self.get_cmb_theory(**params_values_dict)
-        self.Dls = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}#Dls
+        self.Dls = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}
         params_values_nocosmo = {k: params_values_dict[k] for k in (
             self.expected_params_nuis)}
         fg_dict = self.get_foreground_theory(**params_values_nocosmo)
