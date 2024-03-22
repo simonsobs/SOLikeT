@@ -86,7 +86,6 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         self.log.debug(f"Maximum multipole value: {self.lmax_theory}")
 
         self.log.info("Initialized!")
-        self.log.info("%d",len(self.l_bpws))
 
     def get_requirements(self):
         r"""

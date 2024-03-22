@@ -10,8 +10,6 @@ import camb
 import soliket  # noqa
 from soliket.mflike import TestMFLike
 
-import numpy as np
-
 packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
     tempfile.gettempdir(), "LAT_packages"
 )
@@ -103,7 +101,6 @@ class MFLikeTest(unittest.TestCase):
         FG = soliket.Foreground()
         TF = soliket.TheoryForge_MFLike()
 
-        ell = np.arange(len(cl_dict["tt"]))
         bands = TF.bands
         exp_ch = TF.exp_ch
 

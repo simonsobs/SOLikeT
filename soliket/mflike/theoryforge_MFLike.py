@@ -167,7 +167,7 @@ class TheoryForge_MFLike(Theory):
         params_values_nocosmo = {k: params_values_dict[k] for k in (
             self.expected_params_nuis)}
         fg_dict = self.get_foreground_theory(**params_values_nocosmo)
-        state["cmbfg_dict"] = self.get_modified_theory(Dls_cut,#self.Dls,
+        state["cmbfg_dict"] = self.get_modified_theory(Dls_cut,
                                                        fg_dict, **params_values_nocosmo)
 
     def get_cmbfg_dict(self):
@@ -196,7 +196,7 @@ class TheoryForge_MFLike(Theory):
         for f1 in self.exp_ch:
             for f2 in self.exp_ch:
                 for s in self.requested_cls:
-                    cmbfg_dict[s, f1, f2] = (Dls[s] + #self.Dls[s] +
+                    cmbfg_dict[s, f1, f2] = (Dls[s] +
                                              fg_dict[s, 'all', f1, f2])
 
         # Apply alm based calibration factors
