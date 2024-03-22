@@ -1,12 +1,9 @@
-import os
-import tempfile
 import numpy as np
 from cobaya.model import get_model
 
-packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
-    tempfile.gettempdir(), "lensing_packages"
-)
+from cobaya.tools import resolve_packages_path
 
+packages_path = resolve_packages_path()
 # Cosmological parameters for the test data from SO sims
 # See https://github.com/simonsobs/SOLikeT/pull/101 for validation plots
 fiducial_params = {
@@ -31,8 +28,14 @@ def test_lensing_import(request):
 def test_lensing_like(request):
 
     from cobaya.install import install
-    install({"likelihood": {"soliket.lensing.LensingLikelihood": None}},
-            path=packages_path, skip_global=False, force=True, debug=True)
+    install(
+        {"likelihood": {"soliket.lensing.LensingLikelihood": None}},
+        path=packages_path,
+        skip_global=False,
+        force=True,
+        debug=True,
+        no_set_global=True,
+    )
 
     from soliket.lensing import LensingLikelihood
 
@@ -49,8 +52,14 @@ def test_lensing_ccl_limber(request):
     """
 
     from cobaya.install import install
-    install({"likelihood": {"soliket.lensing.LensingLikelihood": None}},
-            path=packages_path, skip_global=False, force=True, debug=True)
+    install(
+        {"likelihood": {"soliket.lensing.LensingLikelihood": None}},
+        path=packages_path,
+        skip_global=False,
+        force=True,
+        debug=True,
+        no_set_global=True,
+    )
 
     from soliket.lensing import LensingLikelihood
     from copy import deepcopy
