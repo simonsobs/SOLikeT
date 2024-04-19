@@ -136,7 +136,8 @@ class TheoryForge_MFLike(Theory):
         if "cmbfg_dict" in requirements:
             req = requirements["cmbfg_dict"]
             self.ell = req.get("ell", self.ell)
-            self.log.info('%d', self.ell[-1])
+            #self.log.info('%d', self.ell[0])
+            #self.log.info('%d', self.ell[-1])
             self.requested_cls = req.get("requested_cls", self.requested_cls)
             self.lcuts = req.get("lcuts", self.lcuts)
             self.exp_ch = req.get("exp_ch", self.exp_ch)

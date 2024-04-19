@@ -398,8 +398,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         """
         ps_vec = np.zeros_like(self.data_vec)
         DlsObs = dict()
-        # Note we rescale l_bpws because cmbfg spectra start from l=2
-        ell = self.l_bpws - 2
+        # Note we rescale l_bpws because cmbfg spectra start from first element of l_bpws (l=2)
+        ell = self.l_bpws - self.l_bpws[0]
 
         for m in self.spec_meta:
             p = m["pol"]
