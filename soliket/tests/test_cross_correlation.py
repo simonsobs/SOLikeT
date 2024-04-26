@@ -117,6 +117,8 @@ def test_shearkappa_like(request):
     model = get_model(info)
     loglikes, derived = model.loglikes()
 
+    import pdb; pdb.set_trace()
+
     assert np.isclose(loglikes, 637.64473666)
 
 

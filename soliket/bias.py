@@ -30,6 +30,8 @@ import numpy as np
 from typing import Optional
 from cobaya.theory import Theory
 
+from pyccl import nl_pt as pt
+
 
 class Bias(Theory):
     """Parent class for bias models."""
@@ -97,3 +99,40 @@ class Linear_bias(Bias):
 
         state["Pk_gg_grid"] = params_values_dict["b_lin"] ** 2. * Pk_mm
         state["Pk_gm_grid"] = params_values_dict["b_lin"] * Pk_mm
+
+
+class PTBias(Bias):
+
+    _bias_models = ['LagrangianPT', 'EulerianPT', 'BACCO', 'anzu']
+
+    def initialize():
+        super.initialize()
+
+        self.bz_model
+        self._initialize_pt()
+
+    def _initialize_pt(self):
+        """
+        Initialize CCL PT calculators.
+        """
+
+        #TODO: Need to decide what we want to expose
+        if self.bz_model == 'LagrangianPT':
+            self.ptc = pt.LagrangianPTCalculator(log10k_min=self.log10k_min,
+                                                 log10k_max=self.log10k_max,
+                                                 nk_per_decade=self.nk_per_decade)
+            # b1_pk_kind='pt', bk2_pk_kind='pt')
+        elif self.bz_model == 'EulerianPT':
+            self.ptc = pt.EulerianPTCalculator(with_NC=True, with_IA=True,
+                                               log10k_min=self.log10k_min, 
+                                               log10k_max=self.log10k_max,
+                                               nk_per_decade=self.nk_per_decade)
+        else:
+            raise LoggedError(self.log,
+                              "Bias model {} not implemented yet.".format(self.bz_model))
+
+    def calculate():
+
+        # do some checking on tracers?
+        state["Pk_gg_grid"] = self.ptc._get_pgg(tr1, tr2)
+        state["Pk_gm_grid"] = self.ptc._get_pgm(tr1)
