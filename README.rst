@@ -1,16 +1,16 @@
-=======
+====================================
 SOLikeT: SO Likelihoods and Theories
-=======
+====================================
 
-.. image:: https://github.com/simonsobs/soliket/workflows/Testing/badge.svg
+|workflow-badge| |coverage-badge| |docs-badge|
+
+.. |workflow-badge| image:: https://github.com/simonsobs/soliket/workflows/Testing/badge.svg
    :target: https://github.com/simonsobs/SOLikeT/actions?query=workflow%3ATesting
-   :alt: Testing Status
-   
-.. image:: https://codecov.io/gh/simonsobs/SOLikeT/branch/master/graph/badge.svg?token=ND945EQDWR 
+   :alt: Testing Status   
+.. |coverage-badge| image:: https://codecov.io/gh/simonsobs/SOLikeT/branch/master/graph/badge.svg?token=ND945EQDWR 
    :target: https://codecov.io/gh/simonsobs/SOLikeT
    :alt: Test Coverage
-
-.. image:: https://readthedocs.org/projects/soliket/badge/?version=latest
+.. |docs-badge| image:: https://readthedocs.org/projects/soliket/badge/?version=latest
    :target: https://soliket.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
@@ -18,9 +18,9 @@ SOLikeT is a centralized package for likelihood and theory implementations for t
 For more extensive details please see our main documentation pages at: `http://soliket.readthedocs.io/ <http://soliket.readthedocs.io/>`_.
 
 .. image:: docs/images/Sky_UCSD2b.jpg
-   :target: https://simonsobservatory.org/
-   :alt: Simons Observatory Logo
-   :width: 200
+  :target: https://simonsobservatory.org/
+  :alt: Simons Observatory Logo
+  :width: 200
 
 Installation
 ============
