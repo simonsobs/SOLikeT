@@ -1,14 +1,10 @@
 import pkgutil
 import pytest
-import tempfile
 from cobaya.yaml import yaml_load
 from cobaya.run import run
+from cobaya.tools import resolve_packages_path
 
-import os
-
-packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
-    tempfile.gettempdir(), "lensing_packages"
-)
+packages_path = resolve_packages_path()
 
 
 @pytest.mark.parametrize("lhood",
@@ -21,18 +17,12 @@ packages_path = os.environ.get("COBAYA_PACKAGES_PATH") or os.path.join(
                           # "xcorr"
                           ])
 def test_evaluate(lhood):
-    if lhood == "multi":
-        pytest.xfail(reason="multi lhood install failure")
-
-    if lhood == "mflike":
-        pytest.skip(reason="don't want to install 300Mb of data!")
-
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
     info['sampler'] = {'evaluate': {}}
 
     from cobaya.install import install
-    install(info, path=packages_path, skip_global=True)
+    install(info, path=packages_path, skip_global=True, no_set_global=True)
 
     updated_info, sampler = run(info)
 
@@ -47,17 +37,11 @@ def test_evaluate(lhood):
                           # "xcorr"
                           ])
 def test_mcmc(lhood):
-    if lhood == "multi":
-        pytest.xfail(reason="multi lhood install failure")
-
-    if lhood == "mflike":
-        pytest.skip(reason="don't want to install 300Mb of data!")
-
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
     info['sampler'] = {'mcmc': {'max_samples': 10, 'max_tries': 1000}}
 
     from cobaya.install import install
-    install(info, path=packages_path, skip_global=True)
+    install(info, path=packages_path, skip_global=True, no_set_global=True)
 
     updated_info, sampler = run(info)
