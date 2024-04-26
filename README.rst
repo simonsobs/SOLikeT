@@ -1,18 +1,18 @@
-=======
+====================================
 SOLikeT: SO Likelihoods and Theories
-=======
+====================================
 
-.. image:: https://github.com/simonsobs/soliket/workflows/Testing/badge.svg
-  :target: https://github.com/simonsobs/SOLikeT/actions?query=workflow%3ATesting
-  :alt: Testing Status
-   
-.. image:: https://codecov.io/gh/simonsobs/SOLikeT/branch/master/graph/badge.svg?token=ND945EQDWR 
-  :target: https://codecov.io/gh/simonsobs/SOLikeT
-  :alt: Test Coverage
+|workflow-badge| |coverage-badge| |docs-badge|
 
-.. image:: https://readthedocs.org/projects/soliket/badge/?version=latest
-  :target: https://soliket.readthedocs.io/en/latest/?badge=latest
-  :alt: Documentation Status
+.. |workflow-badge| image:: https://github.com/simonsobs/soliket/workflows/Testing/badge.svg
+   :target: https://github.com/simonsobs/SOLikeT/actions?query=workflow%3ATesting
+   :alt: Testing Status   
+.. |coverage-badge| image:: https://codecov.io/gh/simonsobs/SOLikeT/branch/master/graph/badge.svg?token=ND945EQDWR 
+   :target: https://codecov.io/gh/simonsobs/SOLikeT
+   :alt: Test Coverage
+.. |docs-badge| image:: https://readthedocs.org/projects/soliket/badge/?version=latest
+   :target: https://soliket.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 
 SOLikeT is a centralized package for likelihood and theory implementations for the `Simons Observatory <https://simonsobservatory.org/>`_.
 For more extensive details please see our main documentation pages at: `http://soliket.readthedocs.io/ <http://soliket.readthedocs.io/>`_.
