@@ -136,6 +136,8 @@ class TheoryForge_MFLike(Theory):
         if "cmbfg_dict" in requirements:
             req = requirements["cmbfg_dict"]
             self.ell = req.get("ell", self.ell)
+            #self.log.info('%d', self.ell[0])
+            #self.log.info('%d', self.ell[-1])
             self.requested_cls = req.get("requested_cls", self.requested_cls)
             self.lcuts = req.get("lcuts", self.lcuts)
             self.exp_ch = req.get("exp_ch", self.exp_ch)
@@ -149,7 +151,7 @@ class TheoryForge_MFLike(Theory):
         # Be sure that CMB is computed at lmax > lmax_data (lcuts from mflike here)
         reqs["Cl"] = {k: max(c, self.lmax_boltzmann + 1) for k, c in self.lcuts.items()}
         reqs["fg_dict"] = {"requested_cls": self.requested_cls,
-                           "ell": np.arange(max(self.ell[-1], self.lmax_fg + 1)),
+                           "ell": self.ell,
                            "exp_ch": self.exp_ch, "bands": self.bands}
         return reqs
 
@@ -161,10 +163,12 @@ class TheoryForge_MFLike(Theory):
 
     def calculate(self, state, want_derived=False, **params_values_dict):
         Dls = self.get_cmb_theory(**params_values_dict)
+        #self.Dls = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}
+        Dls_cut = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}
         params_values_nocosmo = {k: params_values_dict[k] for k in (
             self.expected_params_nuis)}
         fg_dict = self.get_foreground_theory(**params_values_nocosmo)
-        state["cmbfg_dict"] = self.get_modified_theory(Dls,
+        state["cmbfg_dict"] = self.get_modified_theory(Dls_cut,
                                                        fg_dict, **params_values_nocosmo)
 
     def get_cmbfg_dict(self):
@@ -185,7 +189,6 @@ class TheoryForge_MFLike(Theory):
         :return: the CMB+foregrounds :math:`D_{\ell}` dictionary,
                  modulated by systematics
         """
-        self.Dls = Dls
 
         nuis_params = {k: params[k] for k in self.expected_params_nuis}
 
@@ -194,8 +197,8 @@ class TheoryForge_MFLike(Theory):
         for f1 in self.exp_ch:
             for f2 in self.exp_ch:
                 for s in self.requested_cls:
-                    cmbfg_dict[s, f1, f2] = (self.Dls[s][self.ell] +
-                                             fg_dict[s, 'all', f1, f2][self.ell])
+                    cmbfg_dict[s, f1, f2] = (Dls[s] +
+                                             fg_dict[s, 'all', f1, f2])
 
         # Apply alm based calibration factors
         cmbfg_dict = self._get_calibrated_spectra(cmbfg_dict, **nuis_params)
