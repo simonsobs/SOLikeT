@@ -1,8 +1,8 @@
 """
 .. module:: szutils
 
-Contains functions (many inherited from the 
-`nemo <https://nemo-sz.readthedocs.io/en/latest/>`_) code) which are used internally by 
+Contains functions (many inherited from the
+`nemo <https://nemo-sz.readthedocs.io/en/latest/>`_) code) which are used internally by
 the cluster likelihood to convert between observed tSZ signal and cluster mass.
 
 """
@@ -134,7 +134,7 @@ class szutils:
         return ans
 
     def Y_prob(self, Y_c, LgY, YNoise):
-        Y = 10 ** (LgY)
+        Y = 10 ** LgY
 
         ans = gaussian(Y, Y_c, YNoise)
         return ans

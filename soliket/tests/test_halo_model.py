@@ -1,8 +1,6 @@
-import pytest
 import numpy as np
 
 from cobaya.model import get_model
-from cobaya.run import run
 
 info = {"params": {
                    "H0": 70.,
@@ -20,15 +18,15 @@ info = {"params": {
 
 
 def test_halomodel_import():
-    from soliket.halo_model import HaloModel
+    from soliket.halo_model import HaloModel # noqa F401
 
 
 def test_pyhalomodel_import():
-    from soliket.halo_model import HaloModel_pyhm
+    from soliket.halo_model import HaloModel_pyhm # noqa F401
 
 
 def test_pyhalomodel_model():
-    
+
     from soliket.halo_model import HaloModel_pyhm
 
     info["theory"] = {

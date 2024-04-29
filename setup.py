@@ -5,7 +5,6 @@
 # other information are set in the pyproject.toml file.
 
 import os
-import sys
 
 from setuptools import setup
 
