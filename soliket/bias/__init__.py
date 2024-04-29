@@ -1,1 +1,1 @@
-from .bias import Bias, LinearBias  # noqa: F401
+from .bias import Bias, Linear_bias # noqa: F401
