@@ -52,6 +52,8 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     sim_number = 0
     lmax = 3000
     theory_lmax = 10000
+    # flag about whether CCL should be used to compute the cmb lensing power spectrum
+    pp_ccl = False
 
     fiducial_params = {
         "ombh2": 0.02219218,
@@ -151,15 +153,33 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         :return: Dictionary ``Cl`` of lmax for each spectrum type.
         """
-        return {
-            "Cl": {
-                "pp": self.theory_lmax,
-                "tt": self.theory_lmax,
-                "te": self.theory_lmax,
-                "ee": self.theory_lmax,
-                "bb": self.theory_lmax,
+        if self.pp_ccl == False:
+            return {
+                "Cl": {
+                    "pp": self.theory_lmax,
+                    "tt": self.theory_lmax,
+                    "te": self.theory_lmax,
+                    "ee": self.theory_lmax,
+                    "bb": self.theory_lmax,
+                }
             }
-        }
+        else:
+            return {
+                "Cl": {
+                    "pp": self.theory_lmax,
+                    "tt": self.theory_lmax,
+                    "te": self.theory_lmax,
+                    "ee": self.theory_lmax,
+                    "bb": self.theory_lmax,
+                },
+                "CCL": {"kmax": 10,
+                        "nonlinear": True},
+                "zstar": None
+            }
+
+    def _get_CCL_results(self):
+        cosmo_dict = self.provider.get_CCL()
+        return cosmo_dict["ccl"], cosmo_dict["cosmo"]
 
     def _get_data(self):
         bin_centers, bandpowers, cov = \
@@ -193,14 +213,20 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         """
         cl = self.provider.get_Cl(ell_factor=False)
 
-        Cl_theo = cl["pp"][0: self.lmax]
+        if self.pp_ccl == False:
+            Cl_theo = cl["pp"][0: self.lmax]
+            ls = self.ls
+            Clkk_theo = (ls * (ls + 1)) ** 2 * Cl_theo * 0.25
+        else:
+            ccl, cosmo = self._get_CCL_results()
+            zstar = self.provider.get_param("zstar")
+            cmbk = ccl.CMBLensingTracer(cosmo, z_source=zstar)
+            Clkk_theo = ccl.angular_cl(cosmo, cmbk, cmbk, self.ls)
+
         Cl_tt = cl["tt"][0: self.lmax]
         Cl_ee = cl["ee"][0: self.lmax]
         Cl_te = cl["te"][0: self.lmax]
         Cl_bb = cl["bb"][0: self.lmax]
-
-        ls = self.ls
-        Clkk_theo = (ls * (ls + 1)) ** 2 * Cl_theo * 0.25
 
         Clkk_binned = self.binning_matrix.dot(Clkk_theo)
 

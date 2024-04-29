@@ -398,8 +398,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         """
         ps_vec = np.zeros_like(self.data_vec)
         DlsObs = dict()
-        # Note we rescale l_bpws because cmbfg spectra start from l=2
-        ell = self.l_bpws - 2
+        # Rescale l_bpws because cmbfg spectra start from first element of l_bpws (l=2)
+        ell = self.l_bpws - self.l_bpws[0]
 
         for m in self.spec_meta:
             p = m["pol"]
@@ -410,7 +410,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                 DlsObs[p, m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
             else:  # ['te','tb','eb']
                 if m['hasYX_xsp']:  # not symmetrizing
-                    DlsObs[p, m['t1'], m['t2']] = cmbfg[p, m['t2'], m['t1']][ell]
+                    DlsObs[p, m['t2'], m['t1']] = cmbfg[p, m['t2'], m['t1']][ell]
                 else:
                     DlsObs[p, m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
                 #
@@ -418,7 +418,10 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                     DlsObs[p, m['t1'], m['t2']] += cmbfg[p, m['t2'], m['t1']][ell]
                     DlsObs[p, m['t1'], m['t2']] *= 0.5
 
-            clt = w @ DlsObs[p, m["t1"], m["t2"]]
+            dls_obs = DlsObs[p, m["t2"], m["t1"]] if m["hasYX_xsp"] \
+                       else DlsObs[p, m["t1"], m["t2"]]
+
+            clt = w @ dls_obs
             ps_vec[i] = clt
 
         return ps_vec

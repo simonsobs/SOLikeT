@@ -5,8 +5,7 @@ debug: True
 likelihood:
   soliket.mflike.TestMFLike:
     data_folder: TestMFLike
-    input_file: data_sacc_00044.fits
-    cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
+    input_file: test_data_sacc_00000.fits
     defaults:
       # Which spectra?
       polarizations: ['TT', 'TE', 'ET', 'EE']

@@ -3,6 +3,7 @@ import os
 from soliket.ccl import CCL
 from cobaya.model import get_model
 
+
 gammakappa_sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
 gkappa_sacc_file = 'soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits'
 
@@ -25,12 +26,12 @@ info = {
 }
 
 
-def test_galaxykappa_import(request):
+def test_galaxykappa_import():
 
     from soliket.cross_correlation import GalaxyKappaLikelihood # noqa F401
 
 
-def test_shearkappa_import(request):
+def test_shearkappa_import():
 
     from soliket.cross_correlation import ShearKappaLikelihood # noqa F401
 

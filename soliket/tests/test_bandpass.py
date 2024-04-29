@@ -3,6 +3,7 @@ import numpy as np
 from cobaya.model import get_model
 from ..constants import T_CMB, h_Planck, k_Boltzmann
 
+
 info = {"params": {
     "bandint_shift_LAT_93": 0.0,
     "bandint_shift_LAT_145": 0.0,
