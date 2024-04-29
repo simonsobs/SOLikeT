@@ -11,3 +11,4 @@ from .bandpass import BandPass # noqa F401
 from .cosmopower import CosmoPower, CosmoPowerDerived  # noqa F401
 from .ccl import CCL  # noqa: F401
 from .clusters import ClusterLikelihood  # noqa: F401
+from .bias import Bias, LinearBias  # noqa: F401

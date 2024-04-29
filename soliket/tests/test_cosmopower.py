@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 
 from cobaya.model import get_model
-from soliket.cosmopower import HAS_COSMOPOWER
+from soliket.cosmopower.cosmopower import HAS_COSMOPOWER
 
 
 fiducial_params = {

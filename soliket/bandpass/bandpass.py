@@ -94,7 +94,7 @@ from cobaya.theory import Theory
 from cobaya.tools import are_different_params_lists
 from cobaya.log import LoggedError
 
-from .constants import T_CMB, h_Planck, k_Boltzmann
+from ..constants import T_CMB, h_Planck, k_Boltzmann
 
 
 # Converts from cmb units to brightness.
