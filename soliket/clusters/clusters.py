@@ -112,7 +112,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
     def _get_theory(self, pk_intp, **kwargs):
         if self.theorypred['choose_theory'] == 'classy_sz':
-            theory = self.theory.get_sz_binned_cluster_counts()
+            theory = self.provider.get_sz_binned_cluster_counts()
             dNdzdy_theoretical = theory['dndzdy']
             z_edges = theory['z_edges']
             log10y_edges = theory['log10y_edges']
@@ -131,7 +131,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
         marr = np.exp(self.lnmarr)
         Nq = self.Nq
 
-        h = self.theory.get_param("H0") / 100.0
+        h = self.provider.get_param("H0") / 100.0
 
         dndlnm = get_dndlnm(self, zz, pk_intp)
         dVdzdO = get_dVdz(self, zz, dVdz_interp=False)
@@ -307,7 +307,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
             loglkl = SZCC_Cash
             return loglkl
         else:
-            pk_intp = self.theory.get_Pk_interpolator()
+            pk_intp = self.provider.get_Pk_interpolator()
             theory = self._get_theory(pk_intp, **params_values)
             return self.data.loglike(theory)
 
@@ -627,11 +627,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
     def logp(self, **kwargs):
         if self.theorypred['choose_theory'] == 'classy_sz':
-            szcounts = self.theory.get_sz_unbinned_cluster_counts()
+            szcounts = self.provider.get_sz_unbinned_cluster_counts()
             # print('Ntot,lnlik,rates:',szcounts[1],szcounts[0],np.shape(szcounts[2]),szcounts[2])
             return szcounts[0]
         else:
-            pk_intp = self.theory.get_Pk_interpolator()
+            pk_intp = self.provider.get_Pk_interpolator()
             rate_densities = self._get_rate_fn(pk_intp, **kwargs)
             n_expected = self._get_n_expected(pk_intp, **kwargs)
             return self.data.loglike(rate_densities, n_expected)
@@ -998,18 +998,18 @@ def get_requirements(self):
 
 def get_Ez(both, zarr, Ez_interp):
     if Ez_interp: # interpolation is needed for Pfunc_per in unbinned
-        Ez = interp1d(both.zz, both.theory.get_Hubble(both.zz) / both.theory.get_param("H0"))
+        Ez = interp1d(both.zz, both.provider.get_Hubble(both.zz) / both.provider.get_param("H0"))
         return Ez(zarr)
     else:
-        return both.theory.get_Hubble(zarr) / both.theory.get_param("H0")
+        return both.provider.get_Hubble(zarr) / both.provider.get_param("H0")
 
 def get_om(both):
     if both.theorypred['choose_theory'] == "camb":
-        om = (both.theory.get_param("omch2") + both.theory.get_param("ombh2") +
-              both.theory.get_param("omnuh2"))/((both.theory.get_param("H0")/100.0)**2)
+        om = (both.provider.get_param("omch2") + both.provider.get_param("ombh2") +
+              both.provider.get_param("omnuh2"))/((both.provider.get_param("H0")/100.0)**2)
     elif both.theorypred['choose_theory'] == "class":
-        om = (both.theory.get_param("omega_cdm") +
-              both.theory.get_param("omega_b"))/((both.theory.get_param("H0")/100.0)**2) # for CLASS
+        om = (both.provider.get_param("omega_cdm") +
+              both.provider.get_param("omega_b"))/((both.provider.get_param("H0")/100.0)**2) # for CLASS
     else:
         print('please specify theory: camb/class')
         exit(0)
@@ -1019,20 +1019,20 @@ def get_dVdz(both, zarr, dVdz_interp):
     """dV/dzdOmega"""
 
     if dVdz_interp:
-        Da_intp = interp1d(both.zz, both.theory.get_angular_diameter_distance(both.zz))
+        Da_intp = interp1d(both.zz, both.provider.get_angular_diameter_distance(both.zz))
         DA_z = Da_intp(zarr)
-        H_intp = interp1d(both.zz, both.theory.get_Hubble(both.zz))
+        H_intp = interp1d(both.zz, both.provider.get_Hubble(both.zz))
         H_z = H_intp(zarr)
     else:
-        DA_z = both.theory.get_angular_diameter_distance(zarr)
-        H_z = both.theory.get_Hubble(zarr)
+        DA_z = both.provider.get_angular_diameter_distance(zarr)
+        H_z = both.provider.get_Hubble(zarr)
 
     dV_dz = (
         DA_z**2
         * (1.0 + zarr) ** 2
         / (H_z / C_KM_S)
     )
-    h = both.theory.get_param("H0") / 100.0
+    h = both.provider.get_param("H0") / 100.0
     return dV_dz*h**3
 
 def get_dndlnm(self, z, pk_intp):
@@ -1040,7 +1040,7 @@ def get_dndlnm(self, z, pk_intp):
     marr = self.lnmarr  # Mass in units of Msun/h
 
     if self.theorypred['massfunc_mode'] == 'internal':
-        h = self.theory.get_param("H0")/100.0
+        h = self.provider.get_param("H0")/100.0
         Ez = get_Ez(self,z)
 
         om = get_om(self)
@@ -1189,10 +1189,10 @@ def get_dndlnm(self, z, pk_intp):
 
     elif self.theorypred['massfunc_mode'] == 'ccl':
         # First, gather all the necessary ingredients for the number counts
-        mf = self.theory.get_nc_data()['HMF']
-        cosmo = self.theory.get_CCL()['cosmo']
+        mf = self.provider.get_nc_data()['HMF']
+        cosmo = self.provider.get_CCL()['cosmo']
 
-        h = self.theory.get_param("H0") / 100.0
+        h = self.provider.get_param("H0") / 100.0
         a = 1./(1+z)
         marr = np.exp(marr)
         dn_dlog10M = np.array([mf.get_mass_function(cosmo, marr/h, ai) for ai in a])
@@ -1267,9 +1267,9 @@ def gaussian(xx, mu, sig, noNorm=False):
 
 def convert_masses(both, marr, zz):
 
-    h = both.theory.get_param("H0") / 100.0
+    h = both.provider.get_param("H0") / 100.0
     if both.theorypred['choose_theory'] == 'CCL':
-        mf_data = both.theory.get_nc_data()
+        mf_data = both.provider.get_nc_data()
         md_hmf = mf_data['md']
 
         if both.theorypred['md_ym'] == '200m':
@@ -1281,7 +1281,7 @@ def convert_masses(both, marr, zz):
         else:
             raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
 
-        cosmo = both.theory.get_CCL()['cosmo']
+        cosmo = both.provider.get_CCL()['cosmo']
         a = 1. / (1. + zz)
         marr_ymmd = np.array([md_hmf.translate_mass(cosmo, marr / h, ai, md_ym) for ai in a]) * h
     else:
@@ -1293,11 +1293,11 @@ def convert_masses(both, marr, zz):
 
 def get_m500c(both, marr, zz):
 
-    h = both.theory.get_param("H0") / 100.0
-    mf_data = both.theory.get_nc_data()
+    h = both.provider.get_param("H0") / 100.0
+    mf_data = both.provider.get_nc_data()
     md_hmf = mf_data['md']
     md_500c = ccl.halos.MassDef(500, 'critical')
-    cosmo = both.theory.get_CCL()['cosmo']
+    cosmo = both.provider.get_CCL()['cosmo']
     a = 1. / (1. + zz)
 
     if a.ndim == 1:
@@ -1344,14 +1344,14 @@ def get_theta(self, mass_500c, z, Ez=None, Ez_interp=False):
 
     thetastar = 6.997
     alpha_theta = 1. / 3.
-    H0 = self.theory.get_param("H0")
+    H0 = self.provider.get_param("H0")
     h = H0/100.0
 
     if Ez is None:
         Ez = get_Ez(self, z, Ez_interp)
         Ez = Ez[:, None]
 
-    DAz_interp = interp1d(self.zz , self.theory.get_angular_diameter_distance(self.zz) * h)
+    DAz_interp = interp1d(self.zz , self.provider.get_angular_diameter_distance(self.zz) * h)
     DAz = DAz_interp(z)
     try:
         DAz = DAz[:, None]
@@ -1375,7 +1375,7 @@ def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=False, tile_index=Non
     except:
         Ez = Ez
 
-    h = self.theory.get_param("H0") / 100.0
+    h = self.provider.get_param("H0") / 100.0
 
     mb = mass * bias
     mb_500c = mass_500c * bias
