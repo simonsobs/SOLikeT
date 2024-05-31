@@ -4,7 +4,7 @@
 # NOTE: The configuration for the package, including the name, version, and
 # other information are set in the pyproject.toml file.
 
-import sys
+import sys, os
 
 from setuptools import setup
 
