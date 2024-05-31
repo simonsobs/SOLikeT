@@ -1,6 +1,7 @@
 [project]
 name = "soliket"
-version = "0.1.dev1"
+# version = "0.1.dev1"
+dynamic = ['version']
 authors = [
 	{name = "Simons Observatory"}
 ]
@@ -25,10 +26,13 @@ dependencies = [
 [tool.setuptools.packages.find]
 include = ["soliket"]
 
+[tool.setuptools_scm]
+version_file = "soliket/version.py"
+
 [project.optional-dependencies]
 all = ["cosmopower"]
 docs = ["sphinx", "sphinx_rtd_theme"]
 
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
 build-backend = "setuptools.build_meta"

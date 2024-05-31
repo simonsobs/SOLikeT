@@ -23,7 +23,7 @@ directly with::
     pip install -e .[test]
     pytest
 For more information, see:
-  http://docs.astropy.org/en/latest/development/testguide.html#running-tests
+  https://soliket.readthedocs.io/en/latest/developers.html#checking-code-in-development
 """
 
 if 'test' in sys.argv:
@@ -41,7 +41,7 @@ You can also build the documentation with Sphinx directly using::
     cd docs
     make html
 For more information, see:
-  http://docs.astropy.org/en/latest/install.html#builddocs
+  https://soliket.readthedocs.io/en/latest/developers.html#documentation
 """
 
 if 'build_docs' in sys.argv or 'build_sphinx' in sys.argv:
@@ -59,4 +59,5 @@ except Exception:
     version = '{version}'
 """.lstrip()
 
-setup()
+setup(use_scm_version={'write_to': os.path.join('soliket', 'version.py'),
+                       'write_to_template': VERSION_TEMPLATE})
