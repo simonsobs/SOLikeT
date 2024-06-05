@@ -1,7 +1,7 @@
 import numpy as np
 
-from . import utils
-from .gaussian import GaussianLikelihood
+from soliket import utils
+from soliket.gaussian import GaussianLikelihood
 
 
 class PSLikelihood(GaussianLikelihood):
