@@ -1,1 +1,6 @@
-from .cosmopower import CosmoPower, CosmoPowerDerived  # noqa F401
+from .cosmopower import CosmoPower, CosmoPowerDerived
+
+__all__ = [
+    "CosmoPower",
+    "CosmoPowerDerived",
+]

@@ -1,1 +1,5 @@
-from .bandpass import BandPass # noqa F401
+from .bandpass import BandPass
+
+__all__ = [
+    "BandPass",
+]

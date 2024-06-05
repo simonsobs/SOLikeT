@@ -1,1 +1,5 @@
-from .clusters import ClusterLikelihood  # noqa: F401
+from .clusters import ClusterLikelihood
+
+__all__ = [
+    "ClusterLikelihood",
+]

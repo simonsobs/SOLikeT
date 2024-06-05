@@ -13,7 +13,9 @@ MOCK_MODULES = ["cosmopower", "tensorflow", "pyccl", "camb"]
 for module in MOCK_MODULES:
     sys.modules[module] = mock.Mock()
 
-import soliket # noqa F401
+import soliket
+
+__all__ = ['soliket']
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information

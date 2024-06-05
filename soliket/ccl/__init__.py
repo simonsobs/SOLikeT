@@ -1,1 +1,5 @@
-from .ccl import CCL  # noqa: F401
+from .ccl import CCL
+
+__all__ = [
+    "CCL",
+]

@@ -1,1 +1,5 @@
-from .foreground import Foreground # noqa F401
+from .foreground import Foreground
+
+__all__ = [
+    "Foreground",
+]
