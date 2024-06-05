@@ -24,9 +24,9 @@ import pandas as pd
 import pyccl as ccl
 from scipy.interpolate import interp1d
 
+from soliket.clusters import massfunc as mf
 from soliket.poisson import PoissonLikelihood
 
-from . import massfunc as mf
 from .survey import SurveyData
 from .sz_utils import szutils
 
