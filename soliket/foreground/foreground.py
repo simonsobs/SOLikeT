@@ -47,13 +47,13 @@ assuming just a Dirac delta at the effective frequencies ``eff_freqs``.
 
 """
 
-import numpy as np
 import os
 from typing import Optional
 
+import numpy as np
+from cobaya.log import LoggedError
 from cobaya.theory import Theory
 from cobaya.tools import are_different_params_lists
-from cobaya.log import LoggedError
 
 
 class Foreground(Theory):

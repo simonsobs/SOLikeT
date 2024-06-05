@@ -1,5 +1,4 @@
 import pandas as pd
-
 from cobaya.likelihood import Likelihood
 
 from .poisson_data import PoissonData

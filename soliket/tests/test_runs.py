@@ -1,8 +1,9 @@
 import pkgutil
+
 import pytest
-from cobaya.yaml import yaml_load
 from cobaya.run import run
 from cobaya.tools import resolve_packages_path
+from cobaya.yaml import yaml_load
 
 packages_path = resolve_packages_path()
 

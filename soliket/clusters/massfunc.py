@@ -8,8 +8,10 @@ likelihood. Calculates the Halo Mass Function as in Tinker et al (2008) [2]_ .
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
+
+from soliket.constants import G_CGS, MPC2CM, MSUN_CGS
+
 from .tinker import dn_dlogM
-from ..constants import MSUN_CGS, G_CGS, MPC2CM
 
 np.seterr(divide='ignore', invalid='ignore')
 

@@ -1,7 +1,8 @@
-import numpy as np
 from typing import Optional
 
+import numpy as np
 from cobaya.likelihood import Likelihood
+
 from .cash_data import CashCData
 
 

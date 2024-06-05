@@ -26,8 +26,9 @@ If you want to add your own bias model, you can do so by inheriting from the
 function (have a look at the linear bias model for ideas).
 """
 
-import numpy as np
 from typing import Optional
+
+import numpy as np
 from cobaya.theory import Theory
 
 

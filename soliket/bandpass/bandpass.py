@@ -86,16 +86,15 @@ possible bandpass shift for that channel.
 
 """
 
-import numpy as np
 import os
 from typing import Optional
 
+import numpy as np
+from cobaya.log import LoggedError
 from cobaya.theory import Theory
 from cobaya.tools import are_different_params_lists
-from cobaya.log import LoggedError
 
-from ..constants import T_CMB, h_Planck, k_Boltzmann
-
+from soliket.constants import T_CMB, h_Planck, k_Boltzmann
 
 # Converts from cmb units to brightness.
 # Numerical factors not included, it needs proper normalization when used.

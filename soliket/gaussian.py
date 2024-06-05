@@ -1,8 +1,8 @@
-import numpy as np
 from typing import Optional, Sequence
 
-from cobaya.likelihood import Likelihood
+import numpy as np
 from cobaya.input import merge_info
+from cobaya.likelihood import Likelihood
 from cobaya.tools import recursive_update
 from cobaya.typing import empty_dict
 

@@ -7,11 +7,10 @@ r"""
 
 from importlib import import_module
 
-from scipy.stats import binned_statistic as binnedstat
 import numpy as np
-
 from cobaya.likelihood import Likelihood
 from cobaya.likelihoods.one import one
+from scipy.stats import binned_statistic as binnedstat
 
 
 def binner(ls, cls, bin_edges):

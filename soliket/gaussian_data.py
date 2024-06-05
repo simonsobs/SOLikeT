@@ -1,10 +1,11 @@
 import numpy as np
 
+from scipy.linalg import LinAlgError, cholesky
+
 try:
     import holoviews as hv
 except ImportError:
     pass
-from scipy.linalg import cholesky, LinAlgError
 
 
 def multivariate_normal_logpdf(theory, data, cov, inv_cov, log_det):

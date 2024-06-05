@@ -1,5 +1,4 @@
 import numpy as np
-
 from cobaya.model import get_model
 
 info = {"params": {
@@ -18,11 +17,11 @@ info = {"params": {
 
 
 def test_bias_import():
-    from soliket.bias import Bias # noqa F401
+    from soliket.bias import Bias  # noqa F401
 
 
 def test_linear_bias_import():
-    from soliket.bias import Linear_bias # noqa F401
+    from soliket.bias import Linear_bias  # noqa F401
 
 
 def test_linear_bias_model():

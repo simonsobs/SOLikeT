@@ -2,7 +2,7 @@
 import numpy as np
 from sklearn.datasets import make_spd_matrix
 
-from soliket.gaussian import GaussianData, MultiGaussianData, CrossCov
+from soliket.gaussian import CrossCov, GaussianData, MultiGaussianData
 
 
 def toy_data():

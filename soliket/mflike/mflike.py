@@ -31,7 +31,7 @@ import numpy as np
 from cobaya.likelihoods.base_classes import InstallableLikelihood
 from cobaya.log import LoggedError
 
-from ..gaussian import GaussianData, GaussianLikelihood
+from soliket.gaussian import GaussianData, GaussianLikelihood
 
 
 class MFLike(GaussianLikelihood, InstallableLikelihood):

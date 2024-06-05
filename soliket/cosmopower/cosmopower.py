@@ -91,20 +91,19 @@ temperature. See the :func:`~soliket.cosmopower.CosmoPower.ell_factor` and
 information on how SOLikeT infers these values.
 """
 import os
+from typing import Iterable, Tuple
+
+import numpy as np
+from cobaya.log import LoggedError
+from cobaya.theories.cosmo import BoltzmannBase
+from cobaya.theory import Theory
 
 try:
-    import cosmopower as cp  # noqa F401
+    import cosmopower as cp
 except ImportError:
     HAS_COSMOPOWER = False
 else:
     HAS_COSMOPOWER = True
-import numpy as np
-
-from typing import Iterable, Tuple
-
-from cobaya.log import LoggedError
-from cobaya.theory import Theory
-from cobaya.theories.cosmo import BoltzmannBase
 
 
 class CosmoPower(BoltzmannBase):

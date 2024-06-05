@@ -2,8 +2,8 @@
 Check that CCL works correctly.
 """
 import numpy as np
-from cobaya.model import get_model
 from cobaya.likelihood import Likelihood
+from cobaya.model import get_model
 
 
 class CheckLike(Likelihood):
@@ -48,7 +48,7 @@ def test_ccl_import(request):
     """
     Test whether we can import pyCCL.
     """
-    import pyccl # noqa F401
+    import pyccl  # noqa F401
 
 
 def test_ccl_cobaya(request):

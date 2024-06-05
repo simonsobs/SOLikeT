@@ -1,5 +1,4 @@
 import numpy as np
-
 from cobaya.model import get_model
 
 fiducial_params = {

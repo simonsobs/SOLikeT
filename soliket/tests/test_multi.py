@@ -1,6 +1,7 @@
 import numpy as np
-from soliket.tests.test_mflike import cosmo_params, nuisance_params
 from cobaya.tools import resolve_packages_path
+
+from soliket.tests.test_mflike import cosmo_params, nuisance_params
 
 packages_path = resolve_packages_path()
 

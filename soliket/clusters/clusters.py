@@ -17,14 +17,15 @@ References
                                                     <https://arxiv.org/abs/0803.2706>`_
 p
 """
+import os
+
 import numpy as np
 import pandas as pd
-import os
+import pyccl as ccl
 from scipy.interpolate import interp1d
 
-import pyccl as ccl
+from soliket.poisson import PoissonLikelihood
 
-from ..poisson import PoissonLikelihood
 from . import massfunc as mf
 from .survey import SurveyData
 from .sz_utils import szutils

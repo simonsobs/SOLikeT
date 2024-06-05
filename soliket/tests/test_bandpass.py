@@ -1,8 +1,7 @@
 import numpy as np
-
 from cobaya.model import get_model
-from ..constants import T_CMB, h_Planck, k_Boltzmann
 
+from soliket.constants import T_CMB, h_Planck, k_Boltzmann
 
 info = {"params": {
     "bandint_shift_LAT_93": 0.0,
@@ -69,6 +68,7 @@ def test_bandpass_read_from_sacc():
 
 def test_bandpass_top_hat():
     from soliket.bandpass import BandPass
+
     # now testing top-hat construction
     info["theory"].update({
         "bandpass": {"external": BandPass,
@@ -110,8 +110,9 @@ def test_bandpass_top_hat():
 
 
 def test_bandpass_external_file(request):
-    from soliket.bandpass import BandPass
     import os
+
+    from soliket.bandpass import BandPass
 
     filepath = os.path.join(request.config.rootdir,
                             "soliket/tests/data/")

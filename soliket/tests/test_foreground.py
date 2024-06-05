@@ -1,6 +1,6 @@
-import numpy as np
 import os
 
+import numpy as np
 from cobaya.model import get_model
 
 info = {"params": {
@@ -26,7 +26,7 @@ info = {"params": {
 
 
 def test_foreground_import():
-    from soliket.foreground import Foreground # noqa F401
+    from soliket.foreground import Foreground  # noqa F401
 
 
 def test_foreground_model():
@@ -39,8 +39,8 @@ def test_foreground_model():
 
 def test_foreground_compute():
 
-    from soliket.foreground import Foreground
     from soliket.bandpass import BandPass
+    from soliket.foreground import Foreground
 
     info["theory"] = {
                       "foreground": {"external": Foreground},

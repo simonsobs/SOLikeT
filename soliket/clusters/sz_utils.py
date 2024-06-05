@@ -9,11 +9,14 @@ the cluster likelihood to convert between observed tSZ signal and cluster mass.
 
 import numpy as np
 from scipy import interpolate
-# from astropy.cosmology import FlatLambdaCDM
 
 # from nemo import signals
-from ..constants import MPC2CM, MSUN_CGS, G_CGS, C_M_S, T_CMB
-from ..constants import h_Planck, k_Boltzmann, electron_mass_kg, elementary_charge
+from soliket.constants import (C_M_S, G_CGS, MPC2CM, MSUN_CGS, T_CMB,
+                               electron_mass_kg, elementary_charge, h_Planck,
+                               k_Boltzmann)
+
+# from astropy.cosmology import FlatLambdaCDM
+
 
 # from .clusters import C_KM_S as C_in_kms
 

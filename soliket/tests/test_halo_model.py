@@ -1,5 +1,4 @@
 import numpy as np
-
 from cobaya.model import get_model
 
 info = {"params": {
@@ -18,11 +17,11 @@ info = {"params": {
 
 
 def test_halomodel_import():
-    from soliket.halo_model import HaloModel # noqa F401
+    from soliket.halo_model import HaloModel  # noqa F401
 
 
 def test_pyhalomodel_import():
-    from soliket.halo_model import HaloModel_pyhm # noqa F401
+    from soliket.halo_model import HaloModel_pyhm  # noqa F401
 
 
 def test_pyhalomodel_model():

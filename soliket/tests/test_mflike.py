@@ -3,13 +3,13 @@ Make sure that this returns the same result as original mflike.MFLike from LAT_M
 """
 import os
 import unittest
-from packaging.version import Version
 
 import camb
-import soliket  # noqa
-from soliket.mflike import TestMFLike
-
 from cobaya.tools import resolve_packages_path
+from packaging.version import Version
+
+import soliket
+from soliket.mflike import TestMFLike
 
 packages_path = resolve_packages_path()
 

@@ -5,10 +5,9 @@ Parameters and functions used internally by the cluster likelihood for the Tinke
 
 """
 
-from builtins import zip
 import numpy as np
-from scipy.interpolate import InterpolatedUnivariateSpline as iuSpline
 from scipy.integrate import simps
+from scipy.interpolate import InterpolatedUnivariateSpline as iuSpline
 
 # Tinker stuff
 

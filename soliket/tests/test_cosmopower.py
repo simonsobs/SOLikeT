@@ -2,12 +2,12 @@
 Check that CosmoPower gives the correct Planck CMB power spectrum.
 """
 import os
-import pytest
+
 import numpy as np
-
+import pytest
 from cobaya.model import get_model
-from soliket.cosmopower.cosmopower import HAS_COSMOPOWER
 
+from soliket.cosmopower.cosmopower import HAS_COSMOPOWER
 
 fiducial_params = {
     "ombh2": 0.0224,
