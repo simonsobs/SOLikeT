@@ -20,19 +20,85 @@ dependencies = [
     "sacc",
     "fgspectra >= 1.1.0",
     "pyccl >= 3.0; platform_system!='Windows'",
-    "pyhalomodel"
+    "pyhalomodel",
+    "scikit-learn",
+    "camb",
+    "getdist",
+    "syslibrary>=0.2.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/simonsobs/SOLikeT/"
+Documentation = "https://soliket.readthedocs.io/en/latest/"
+
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+zip-safe = false
+
 [tool.setuptools.packages.find]
-include = ["soliket"]
+include = [
+    "soliket",
+    "soliket.bandpass",
+    "soliket.bias",
+    "soliket.cash",
+    "soliket.clusters",
+    "soliket.cosmopower",
+    "soliket.cross_correlation",
+    "soliket.foreground",
+    "soliket.gaussian",
+    "soliket.halo_model",
+    "soliket.lensing",
+    "soliket.mflike",
+    "soliket.poisson",
+    "soliket.ps",
+]
+
+[tool.setuptools.package-data]
+"*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
 
 [tool.setuptools_scm]
 version_file = "soliket/version.py"
 
 [project.optional-dependencies]
-all = ["cosmopower"]
-docs = ["sphinx", "sphinx_rtd_theme"]
+all = [
+    "cosmopower",
+    "pyccl",
+]
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+]
 
-[build-system]
-requires = ["setuptools>=64", "setuptools_scm>=8"]
-build-backend = "setuptools.build_meta"
+[tool.flake8]
+select = ["E713","E704","E703","E714","E741","E10","E11","E20","E22","E23","E25","E262","E27","E301","E302","E304","E9","F405","F406","F5","F6","F7","F8","E501","W191","F401","W1","W292","W293","W3"]
+max-line-length = 90
+exclude = [".tox","build","cobaya_packages","test",".eggs"]
+
+[tool.coverage.run]
+omit = [
+    "soliket/tests/*",
+    "soliket/*/tests/*",
+    "*/soliket/tests/*",
+    "*/soliket/*/tests/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+    # Don't complain about packages we have installed
+    "except ImportError",
+    "except ModuleNotFoundError",
+    # Don't complain if tests don't hit assertions
+    "raise AssertionError",
+    "raise NotImplementedError",
+    # Don't complain about script hooks
+    "def main\\(.*\\):",
+    # Ignore branches that don't pertain to this version of Python
+    "pragma: py{ignore_python_version}",
+    # Don't complain about IPython completion helper
+    "def _ipython_key_completions_",
+]
