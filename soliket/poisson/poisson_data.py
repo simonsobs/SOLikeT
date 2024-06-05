@@ -26,8 +26,8 @@ class PoissonData:
         if samples is not None:
             for c in columns:
                 if c not in samples:
-                    raise ValueError("If providing samples, must have samples \
-                                     for all columns: {}".format(columns))
+                    raise ValueError(f"If providing samples, must have samples \
+                                     for all columns: {columns}")
 
             if "prior" not in samples:
                 raise ValueError('Must provide value of interim prior \
