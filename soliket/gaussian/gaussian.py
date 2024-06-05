@@ -6,8 +6,9 @@ from cobaya.likelihood import Likelihood
 from cobaya.tools import recursive_update
 from cobaya.typing import empty_dict
 
+from soliket.utils import get_likelihood
+
 from .gaussian_data import GaussianData, MultiGaussianData
-from .utils import get_likelihood
 
 
 class GaussianLikelihood(Likelihood):
