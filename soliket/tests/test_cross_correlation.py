@@ -246,7 +246,7 @@ def test_shearkappa_deltaz(request, evaluate_one_info, test_cosmology_params):
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -7910.043704938653, atol=0.2, rtol=0.0)
 
 
 def test_shearkappa_m(request, evaluate_one_info, test_cosmology_params):
@@ -265,7 +265,7 @@ def test_shearkappa_m(request, evaluate_one_info, test_cosmology_params):
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -3737.5531377692337, atol=0.2, rtol=0.0)
 
 
 def test_shearkappa_ia_nla_noevo(request, evaluate_one_info, test_cosmology_params):
@@ -284,7 +284,7 @@ def test_shearkappa_ia_nla_noevo(request, evaluate_one_info, test_cosmology_para
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -111712.15660832982, atol=0.2, rtol=0.0)
 
 
 def test_shearkappa_ia_nla(request, evaluate_one_info, test_cosmology_params):
@@ -305,7 +305,7 @@ def test_shearkappa_ia_nla(request, evaluate_one_info, test_cosmology_params):
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -114145.55021412153, atol=0.2, rtol=0.0)
 
 
 def test_shearkappa_ia_perbin(request, evaluate_one_info, test_cosmology_params):
@@ -324,7 +324,7 @@ def test_shearkappa_ia_perbin(request, evaluate_one_info, test_cosmology_params)
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -100164.38521295182, atol=0.2, rtol=0.0)
 
 
 def test_shearkappa_hmcode(request, evaluate_one_info, test_cosmology_params):
@@ -350,4 +350,4 @@ def test_shearkappa_hmcode(request, evaluate_one_info, test_cosmology_params):
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -20679.897354035915, atol=0.2, rtol=0.0)

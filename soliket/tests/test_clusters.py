@@ -50,5 +50,5 @@ def test_clusters_n_expected(evaluate_one_info, test_cosmology_params):
 
     like = model_fiducial.likelihood["soliket.ClusterLikelihood"]
 
-    assert np.isfinite(lnl)
+    assert np.isclose(lnl, -847.22462272, rtol=1.e-3, atol=1.e-5)
     assert like._get_n_expected() > 40
