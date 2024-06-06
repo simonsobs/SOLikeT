@@ -1,7 +1,7 @@
 stop_at_error: False
 
 # A path to the directory where cosmopower networks are stored (can be either relative or absolute).
-network_path: soliket/data/CosmoPower/CP_paper/CMB
+network_path: soliket/cosmopower/data/CP_paper/
 
 # A dictionary of all networks and their settings.
 network_settings:

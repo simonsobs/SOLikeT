@@ -66,6 +66,7 @@ version_file = "soliket/version.py"
 all = [
     "cosmopower",
     "pyccl",
+    "tensorflow_probability<0.22",
 ]
 docs = [
     "sphinx",
