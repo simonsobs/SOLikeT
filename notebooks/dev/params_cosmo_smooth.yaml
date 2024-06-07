@@ -1,0 +1,30 @@
+cosmomc_theta:
+  value: 0.0104090
+logA:
+  value: 3.045
+  drop: True
+As:
+  value: 'lambda logA: 1e-10*np.exp(logA)'
+ombh2:
+  value: 0.02236
+omch2:
+  value: 0.1202
+ns:
+  value: 0.9649
+Alens:
+  value: 1.0
+tau:
+  value: 0.0544
+mnu1:
+  value: 0.0
+  drop: True
+mnu2:
+  value: 'lambda: np.sqrt(7.5e-5)'
+  drop: True
+mnu3:
+  value: 'lambda: np.sqrt(2.5e-3)'
+  drop: True
+mnu:
+  value: 'lambda mnu1, mnu2 ,mnu3: mnu1 + mnu2 + mnu3'
+nnu:
+  value: 3.044
