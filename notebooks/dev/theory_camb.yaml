@@ -1,0 +1,13 @@
+camb:
+  extra_args:
+    lens_potential_accuracy: 1
+    WantTransfer: True
+    Transfer.high_precision: True
+    Transfer.kmax: 1.2
+    num_nu_massless: 1.044
+    num_nu_massive: 2
+    nu_mass_eigenstates: 2
+    nu_mass_fractions: [0.14763410387308012,0.8523658961269198] ; #we use the minimal normal ordering case: massless lightest state, m2 and m3 computed according to oscilation measurements
+    nu_mass_numbers: [1,1]
+    share_delta_neff: True
+  stop_at_error: True
