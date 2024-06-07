@@ -8,8 +8,6 @@ from soliket import MultiGaussianLikelihood, PSLikelihood
 from soliket.gaussian import CrossCov, GaussianData
 from soliket.utils import get_likelihood
 
-# from scipy.stats import multivariate_normal
-
 
 class ToyLikelihood(PSLikelihood):
     name = "toy"
