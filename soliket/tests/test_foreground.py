@@ -1,11 +1,7 @@
-# pytest -k bandpass -v .
-
-import pytest
 import numpy as np
 import os
 
 from cobaya.model import get_model
-from cobaya.run import run
 
 info = {"params": {
                    "a_tSZ": 3.3044404448917724,
@@ -30,7 +26,7 @@ info = {"params": {
 
 
 def test_foreground_import():
-    from soliket.foreground import Foreground
+    from soliket.foreground import Foreground # noqa F401
 
 
 def test_foreground_model():
@@ -56,9 +52,9 @@ def test_foreground_compute():
                                              "ell_0": 3000,
                                              "T_CMB": 2.725
                                              },
-    
-                           "components": {"tt": ["kSZ", "tSZ_and_CIB", 
-                                                 "cibp", "dust", "radio"], 
+
+                           "components": {"tt": ["kSZ", "tSZ_and_CIB",
+                                                 "cibp", "dust", "radio"],
                                           "te": ["radio", "dust"],
                                           "ee": ["radio", "dust"]
                                           },
@@ -79,7 +75,7 @@ def test_foreground_compute():
     components = info["foregrounds"]["components"]
     exp_ch = info["spectra"]["exp_ch"]
     eff_freqs = np.asarray(info["spectra"]["eff_freqs"])
-    bands = {f"{expc}_s0": {'nu': [eff_freqs[iexpc]], 'bandpass': [1.]} 
+    bands = {f"{expc}_s0": {'nu': [eff_freqs[iexpc]], 'bandpass': [1.]}
                 for iexpc, expc in enumerate(exp_ch)}
 
     model = get_model(info)  # noqa F841
@@ -99,7 +95,7 @@ def test_foreground_compute():
 
     for k in fg_model_test.keys():
         assert np.allclose(fg_model[k], fg_model_test[k])
-        
+
 
 def get_fg(freqs, bandint_freqs, ell, ell_0, nu_0, requested_cls, components):
 

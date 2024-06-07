@@ -2,23 +2,23 @@
 .. module:: theoryforge
 
 The ``TheoryForge_MFLike`` class applies the foreground spectra and systematic
-effects to the theory spectra provided by ``MFLike``. To do that, ``MFLike`` 
+effects to the theory spectra provided by ``MFLike``. To do that, ``MFLike``
 provides ``TheoryForge_MFLike`` with the appropriate list of channels, the
 requested temperature/polarization fields, the
 :math:`\ell` ranges and a dictionary of the passbands read from the ``sacc`` file:
 
 .. code-block:: python
-   
-   bands = {"experiment_channel": {{"nu": [freqs...], 
+
+   bands = {"experiment_channel": {{"nu": [freqs...],
      "bandpass": [...]}}, ...}
 
-This dictionary is then passed to ``Bandpass`` (through ``Foreground``) 
-to compute the bandpass 
+This dictionary is then passed to ``Bandpass`` (through ``Foreground``)
+to compute the bandpass
 transmissions, which are then used for the actual foreground spectra computation.
 
 
 If one wants to use this class as standalone, the ``bands`` dictionary is
-filled when initializing ``TheoryForge_MFLike``. The name of the channels to use 
+filled when initializing ``TheoryForge_MFLike``. The name of the channels to use
 are read from the ``exp_ch`` list in ``TheoryForge_MFLike.yaml``, the effective
 frequencies are in the ``eff_freqs`` list. Of course the effective frequencies
 have to match the information from ``exp_ch``, i.e.:
@@ -34,14 +34,14 @@ power spectrum:
       ``calT_exp_nu``, ``calE_exp_nu``)
     * polarization angles effect (``alpha_exp_nu``)
     * systematic templates (e.g. T --> P leakage). In this case the dictionary
-      ``systematics_template`` has to be filled with the correct path 
+      ``systematics_template`` has to be filled with the correct path
       ``rootname``:
 
       .. code-block:: yaml
-      
+
         systematics_template:
           rootname: "test_template"
-      
+
       If left ``null``, no systematic template is applied.
 
 
@@ -54,7 +54,6 @@ They have to be named as ``cal/calT/calE/alpha`` + ``_``  + experiment_channel s
 """
 
 import numpy as np
-import os
 from typing import Optional
 
 from cobaya.theory import Theory
@@ -63,7 +62,6 @@ from cobaya.log import LoggedError
 
 
 class TheoryForge_MFLike(Theory):
-
     # attributes set from .yaml
     data_folder: Optional[str]
     exp_ch: list
@@ -96,21 +94,21 @@ class TheoryForge_MFLike(Theory):
         if hasattr(self.eff_freqs, "__len__"):
             if not len(self.exp_ch) == len(self.eff_freqs):
                 raise LoggedError(
-                    self.log, "list of effective frequency has to have"\
-                            "same length as list of channels!"
+                    self.log, "list of effective frequency has to have"
+                              "same length as list of channels!"
                 )
 
         # self.bands to be filled with passbands read from sacc file
         # if mflike is used
-        self.bands = {f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]} 
-                for iexpc, expc in enumerate(self.exp_ch)}
+        self.bands = {f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]}
+                      for iexpc, expc in enumerate(self.exp_ch)}
 
         self.expected_params_nuis = ["cal_LAT_93", "cal_LAT_145", "cal_LAT_225",
                                      "calT_LAT_93", "calE_LAT_93",
                                      "calT_LAT_145", "calE_LAT_145",
                                      "calT_LAT_225", "calE_LAT_225",
                                      "calG_all",
-                                     "alpha_LAT_93", "alpha_LAT_145", 
+                                     "alpha_LAT_93", "alpha_LAT_145",
                                      "alpha_LAT_225",
                                      ]
 
@@ -120,8 +118,6 @@ class TheoryForge_MFLike(Theory):
             self.systematics_template = self.systematics_template
             # Initialize template for marginalization, if needed
             self._init_template_from_file()
-
-
 
     def initialize_with_params(self):
         # Check that the parameters are the right ones
@@ -141,12 +137,14 @@ class TheoryForge_MFLike(Theory):
         if "cmbfg_dict" in requirements:
             req = requirements["cmbfg_dict"]
             self.ell = req.get("ell", self.ell)
+            #self.log.info('%d', self.ell[0])
+            #self.log.info('%d', self.ell[-1])
             self.requested_cls = req.get("requested_cls", self.requested_cls)
             self.lcuts = req.get("lcuts", self.lcuts)
             self.exp_ch = req.get("exp_ch", self.exp_ch)
-            self.bands = req.get("bands", self.bands) 
+            self.bands = req.get("bands", self.bands)
 
-        # theoryforge requires Cl from boltzmann solver
+            # theoryforge requires Cl from boltzmann solver
         # and fg_dict from Foreground theory component
         # Both requirements require some params to be computed
         # Passing those from theoryforge
@@ -154,7 +152,7 @@ class TheoryForge_MFLike(Theory):
         # Be sure that CMB is computed at lmax > lmax_data (lcuts from mflike here)
         reqs["Cl"] = {k: max(c, self.lmax_boltzmann + 1) for k, c in self.lcuts.items()}
         reqs["fg_dict"] = {"requested_cls": self.requested_cls,
-                           "ell": np.arange(max(self.ell[-1], self.lmax_fg + 1)),
+                           "ell": self.ell,
                            "exp_ch": self.exp_ch, "bands": self.bands}
         return reqs
 
@@ -166,31 +164,32 @@ class TheoryForge_MFLike(Theory):
 
     def calculate(self, state, want_derived=False, **params_values_dict):
         Dls = self.get_cmb_theory(**params_values_dict)
+        #self.Dls = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}
+        Dls_cut = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}
         params_values_nocosmo = {k: params_values_dict[k] for k in (
             self.expected_params_nuis)}
         fg_dict = self.get_foreground_theory(**params_values_nocosmo)
-        state["cmbfg_dict"] = self.get_modified_theory(Dls,
-            fg_dict, **params_values_nocosmo)
+        state["cmbfg_dict"] = self.get_modified_theory(Dls_cut,
+                                                       fg_dict, **params_values_nocosmo)
 
     def get_cmbfg_dict(self):
         return self.current_state["cmbfg_dict"]
 
     def get_modified_theory(self, Dls, fg_dict, **params):
         """
-        Takes the theory :math:`D_{\ell}`, sums it to the total 
-        foreground power spectrum (possibly computed with bandpass 
-        shift and bandpass integration) and applies calibration, 
+        Takes the theory :math:`D_{\ell}`, sums it to the total
+        foreground power spectrum (possibly computed with bandpass
+        shift and bandpass integration) and applies calibration,
         polarization angles rotation and systematic templates.
 
         :param Dls: CMB theory spectra
-        :param fg_dict: total foreground spectra, provided by 
+        :param fg_dict: total foreground spectra, provided by
                         ``soliket.Foreground``
         :param *params: dictionary of nuisance and foregrounds parameters
 
-        :return: the CMB+foregrounds :math:`D_{\ell}` dictionary, 
+        :return: the CMB+foregrounds :math:`D_{\ell}` dictionary,
                  modulated by systematics
         """
-        self.Dls = Dls
 
         nuis_params = {k: params[k] for k in self.expected_params_nuis}
 
@@ -199,8 +198,8 @@ class TheoryForge_MFLike(Theory):
         for f1 in self.exp_ch:
             for f2 in self.exp_ch:
                 for s in self.requested_cls:
-                    cmbfg_dict[s, f1, f2] = (self.Dls[s][self.ell] +
-                        fg_dict[s, 'all', f1, f2][self.ell])
+                    cmbfg_dict[s, f1, f2] = (Dls[s] +
+                                             fg_dict[s, 'all', f1, f2])
 
         # Apply alm based calibration factors
         cmbfg_dict = self._get_calibrated_spectra(cmbfg_dict, **nuis_params)
@@ -212,27 +211,25 @@ class TheoryForge_MFLike(Theory):
         if self.use_systematics_template:
             cmbfg_dict = self._get_template_from_file(cmbfg_dict, **nuis_params)
 
-
         return cmbfg_dict
-
 
     def _get_calibrated_spectra(self, dls_dict, **nuis_params):
         r"""
-        Calibrates the spectra through calibration factors at 
+        Calibrates the spectra through calibration factors at
         the map level:
 
         .. math::
-        
+
            D^{{\rm cal}, TT, \nu_1 \nu_2}_{\ell} &= \frac{1}{
            {\rm cal}_{G}\, {\rm cal}^{\nu_1} \, {\rm cal}^{\nu_2}\,
            {\rm cal}^{\nu_1}_{\rm T}\,
-           {\rm cal}^{\nu_2}_{\rm T}}\, D^{TT, \nu_1 \nu_2}_{\ell} 
+           {\rm cal}^{\nu_2}_{\rm T}}\, D^{TT, \nu_1 \nu_2}_{\ell}
 
            D^{{\rm cal}, TE, \nu_1 \nu_2}_{\ell} &= \frac{1}{
            {\rm cal}_{G}\,{\rm cal}^{\nu_1} \, {\rm cal}^{\nu_2}\,
            {\rm cal}^{\nu_1}_{\rm T}\,
-           {\rm cal}^{\nu_2}_{\rm E}}\, D^{TT, \nu_1 \nu_2}_{\ell} 
-        
+           {\rm cal}^{\nu_2}_{\rm E}}\, D^{TT, \nu_1 \nu_2}_{\ell}
+
            D^{{\rm cal}, EE, \nu_1 \nu_2}_{\ell} &= \frac{1}{
            {\rm cal}_{G}\,{\rm cal}^{\nu_1} \, {\rm cal}^{\nu_2}\,
            {\rm cal}^{\nu_1}_{\rm E}\,
@@ -250,34 +247,34 @@ class TheoryForge_MFLike(Theory):
         cal_pars = {}
         if "tt" in self.requested_cls or "te" in self.requested_cls:
             cal = (nuis_params["calG_all"] *
-                    np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calT_{exp}"]
-                                  for exp in self.exp_ch]))
-            cal_pars["tt"] = 1 / cal
+                   np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calT_{exp}"]
+                             for exp in self.exp_ch]))
+            cal_pars["t"] = 1 / cal
 
         if "ee" in self.requested_cls or "te" in self.requested_cls:
             cal = (nuis_params["calG_all"] *
-                    np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calE_{exp}"]
-                                  for exp in self.exp_ch]))
-            cal_pars["ee"] = 1 / cal
+                   np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calE_{exp}"]
+                             for exp in self.exp_ch]))
+            cal_pars["e"] = 1 / cal
 
         calib = syl.Calibration_alm(ell=self.ell, spectra=dls_dict)
 
         return calib(cal1=cal_pars, cal2=cal_pars, nu=self.exp_ch)
 
-###########################################################################
-# This part deals with rotation of spectra
-# Each freq {freq1,freq2,...,freqn} gets a rotation angle alpha_LAT_93, 
-# alpha_LAT_145, etc..
-###########################################################################
+    ###########################################################################
+    # This part deals with rotation of spectra
+    # Each freq {freq1,freq2,...,freqn} gets a rotation angle alpha_LAT_93,
+    # alpha_LAT_145, etc..
+    ###########################################################################
 
     def _get_rotated_spectra(self, dls_dict, **nuis_params):
         r"""
         Rotates the polarization spectra through polarization angles:
-        
+
         .. math::
-        
+
            D^{{\rm rot}, TE, \nu_1 \nu_2}_{\ell} &= \cos(\alpha^{\nu_2})
-           D^{TE, \nu_1 \nu_2}_{\ell} 
+           D^{TE, \nu_1 \nu_2}_{\ell}
 
            D^{{\rm rot}, EE, \nu_1 \nu_2}_{\ell} &= \cos(\alpha^{\nu_1})
            \cos(\alpha^{\nu_2}) D^{EE, \nu_1 \nu_2}_{\ell}
@@ -297,11 +294,11 @@ class TheoryForge_MFLike(Theory):
 
         return rot(rot_pars, nu=self.exp_ch, cls=self.requested_cls)
 
-###########################################################################
-# This part deals with template marginalization
-# A dictionary of template dls is read from yaml (likely to be not efficient)
-# then rescaled and added to theory dls
-###########################################################################
+    ###########################################################################
+    # This part deals with template marginalization
+    # A dictionary of template dls is read from yaml (likely to be not efficient)
+    # then rescaled and added to theory dls
+    ###########################################################################
 
     # Initializes the systematics templates
     # This is slow, but should be done only once
@@ -320,7 +317,7 @@ class TheoryForge_MFLike(Theory):
         # decide where to store systematics template.
         # Currently stored inside syslibrary package
         templ_from_file = \
-                syl.ReadTemplateFromFile(rootname=self.systematics_template["rootname"])
+            syl.ReadTemplateFromFile(rootname=self.systematics_template["rootname"])
         self.dltempl_from_file = templ_from_file(ell=self.ell)
 
     def _get_template_from_file(self, dls_dict, **nuis_params):

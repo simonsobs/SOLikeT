@@ -1,1 +1,1 @@
-from .xcorr import XcorrLikelihood
+from .xcorr import XcorrLikelihood # noqa F401

@@ -35,6 +35,7 @@ The pages here describe how to install and run SOLikeT, and document the functio
    bandpass
    foreground
    bias
+   halo_model
 
 .. toctree::
    :caption: Likelihood codes

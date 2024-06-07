@@ -1,26 +1,26 @@
 """
 .. module:: clusters
 
-:Synopsis: Poisson likelihood for SZ clusters for Simons Osbervatory 
+:Synopsis: Poisson likelihood for SZ clusters for Simons Osbervatory
 :Authors: Nick Battaglia, Eunseong Lee
 
 Likelihood for unbinned tSZ galaxy cluster number counts. Currently under development and
-should be used only with caution and advice. Uses the SZ scaling relations from 
-Hasselfield et al (2013) [1]_ to compare observed number of :math:`y`-map detections 
+should be used only with caution and advice. Uses the SZ scaling relations from
+Hasselfield et al (2013) [1]_ to compare observed number of :math:`y`-map detections
 with the prediction from a Tinker [2]_ Halo Mass Function.
 
 References
 ----------
-.. [1] Hasselfield et al, JCAP 07, 008 (2013) `arXiv:1301.0816 
+.. [1] Hasselfield et al, JCAP 07, 008 (2013) `arXiv:1301.0816
                                                 <https://arxiv.org/abs/1301.0816>`_
-.. [2] Tinker et al, Astrophys. J. 688, 2, 709 (2008) `arXiv:0803.2706 
+.. [2] Tinker et al, Astrophys. J. 688, 2, 709 (2008) `arXiv:0803.2706
                                                     <https://arxiv.org/abs/0803.2706>`_
-
+p
 """
 import numpy as np
 import pandas as pd
+import os
 from scipy.interpolate import interp1d
-from pkg_resources import resource_filename
 
 import pyccl as ccl
 
@@ -42,13 +42,15 @@ class ClusterLikelihood(PoissonLikelihood):
     """
     name = "Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err"]
-    data_path = resource_filename("soliket", "clusters/data/selFn_equD56")
-    # data_path = resource_filename("soliket", "clusters/data/selFn_SO")
-    data_name = resource_filename("soliket", "clusters/data/E-D56Clusters.fits")
+
     # data_name = resource_filename("soliket",
     #                   "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
 
     def initialize(self):
+        self.data_path = self.data_path or os.path.join(
+            self.get_class_path(), 'data', 'selFn_equD56')
+        self.data_name = os.path.join(self.get_class_path(), 'data', 'E-D56Clusters.fits')
+
         self.zarr = np.arange(0, 2, 0.05)
         self.k = np.logspace(-4, np.log10(5), 200)
         # self.mdef = ccl.halos.MassDef(500, 'critical')
@@ -57,10 +59,10 @@ class ClusterLikelihood(PoissonLikelihood):
 
     def get_requirements(self):
         """
-        This likelihood require :math:`P(k,z)`, :math:`H(z)`, :math:`d_A(z)`, 
+        This likelihood require :math:`P(k,z)`, :math:`H(z)`, :math:`d_A(z)`,
         :math:`r(z)` (co-moving radial distance) from Theory codes.
 
-        :return: Dictionary of requirements 
+        :return: Dictionary of requirements
         """
         return {
             "Pk_interpolator": {
@@ -105,12 +107,12 @@ class ClusterLikelihood(PoissonLikelihood):
 
     def _get_om(self):
         return (self.provider.get_param("omch2") + self.provider.get_param("ombh2")) / (
-            (self.provider.get_param("H0") / 100.0) ** 2
+                (self.provider.get_param("H0") / 100.0) ** 2
         )
 
     def _get_ob(self):
         return (self.provider.get_param("ombh2")) / (
-            (self.provider.get_param("H0") / 100.0) ** 2
+                (self.provider.get_param("H0") / 100.0) ** 2
         )
 
     def _get_Ez(self):
@@ -140,7 +142,7 @@ class ClusterLikelihood(PoissonLikelihood):
         )  # self.provider.get_Hubble(self.zarr) / self.provider.get_param("H0")
         om = self._get_om()
 
-        hmf = mf.HMF(om, Ez, pk=pks * h**3, kh=self.k / h, zarr=self.zarr)
+        hmf = mf.HMF(om, Ez, pk=pks * h ** 3, kh=self.k / h, zarr=self.zarr)
 
         return hmf
 
@@ -190,7 +192,7 @@ class ClusterLikelihood(PoissonLikelihood):
                 HMF.M, c_z, c_y * 1e-4, c_yerr * 1e-4, param_vals, Ez_fn, DA_fn
             )
 
-            dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp((np.log10(HMF.M), c_z))) * h**4.0
+            dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp((np.log10(HMF.M), c_z))) * h ** 4.0
 
             ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
             return ans
@@ -202,9 +204,9 @@ class ClusterLikelihood(PoissonLikelihood):
         DA_z = self.provider.get_angular_diameter_distance(self.zarr)
 
         dV_dz = (
-            DA_z**2
-            * (1.0 + self.zarr) ** 2
-            / (self.provider.get_Hubble(self.zarr) / C_KM_S)
+                DA_z ** 2
+                * (1.0 + self.zarr) ** 2
+                / (self.provider.get_Hubble(self.zarr) / C_KM_S)
         )
 
         # dV_dz *= (self.provider.get_param("H0") / 100.0) ** 3.0  # was h0
@@ -227,7 +229,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
         Ntot = 0
         dVdz = self._get_dVdz()
-        dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h**4.0  # getting rid of hs
+        dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h ** 4.0  # getting rid of hs
 
         for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
             Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
@@ -235,17 +237,16 @@ class ClusterLikelihood(PoissonLikelihood):
                 dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0
             )
             Ntot += (
-                np.trapz(N_z * dVdz, x=z_arr)
-                * 4.0
-                * np.pi
-                * self.survey.fskytotal
-                * frac
+                    np.trapz(N_z * dVdz, x=z_arr)
+                    * 4.0
+                    * np.pi
+                    * self.survey.fskytotal
+                    * frac
             )
 
         return Ntot
 
     def _test_n_tot(self, **kwargs):
-
         HMF = self._get_HMF()
         # param_vals = self._get_param_vals(**kwargs)
         # Ez_fn = self._get_Ez_interpolator()
@@ -257,15 +258,15 @@ class ClusterLikelihood(PoissonLikelihood):
 
         Ntot = 0
         dVdz = self._get_dVdz()
-        dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h**4.0  # getting rid of hs
+        dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h ** 4.0  # getting rid of hs
         # Test Mass function against Nemo.
         Pfunc = 1.0
         N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0)
         Ntot = (
-            np.trapz(N_z * dVdz, x=z_arr)
-            * 4.0
-            * np.pi
-            * (600.0 / (4 * np.pi * (180 / np.pi) ** 2))
+                np.trapz(N_z * dVdz, x=z_arr)
+                * 4.0
+                * np.pi
+                * (600.0 / (4 * np.pi * (180 / np.pi) ** 2))
         )
 
         return Ntot
