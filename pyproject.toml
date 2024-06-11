@@ -88,6 +88,7 @@ max-line-length = 90
 exclude = [".tox","build","cobaya_packages","test",".eggs"]
 
 [tool.coverage.run]
+source = ['soliket']
 omit = [
     "soliket/tests/*",
     "soliket/*/tests/*",
