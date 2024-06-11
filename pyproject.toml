@@ -44,7 +44,7 @@ include = [
     "soliket.bandpass",
     "soliket.bias",
     "soliket.cash",
-    "soliket.ccl",
+    "soliket.ccl", 
     "soliket.clusters",
     "soliket.cosmopower",
     "soliket.cross_correlation",
@@ -59,6 +59,13 @@ include = [
 
 [tool.setuptools.package-data]
 "*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
+
+[tool.pytest.ini_options]
+testpaths = [
+    "soliket",
+    "tests",
+    "soliket/tests/",
+]
 
 [tool.setuptools_scm]
 version_file = "soliket/version.py"
