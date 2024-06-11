@@ -89,6 +89,7 @@ exclude = [".tox","build","cobaya_packages","test",".eggs"]
 
 [tool.coverage.run]
 source = ['soliket']
+include = ['soliket/*']
 omit = [
     "soliket/tests/*",
     "soliket/*/tests/*",
