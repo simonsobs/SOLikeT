@@ -4,15 +4,24 @@ requires extra: astlib,fits,os,sys,nemo
 
 import numpy as np
 import pandas as pd
-import nemo as nm # needed for reading Q-functions
+try:
+    import nemo as nm # needed for reading Q-functions
+except ImportError:
+    nm = None
 import logging
 import os, sys
 import time # for timing
 from scipy import special, stats, interpolate, integrate
 from scipy.interpolate import interp1d, interp2d
 from astropy.io import fits
-import pyccl as ccl
-import soliket.clusters.nemo_mocks as selfunc
+try: 
+    import pyccl as ccl
+except ImportError:
+    ccl = None
+try:
+    import soliket.clusters.nemo_mocks as selfunc
+except ImportError:
+    selfunc = None
 
 from ..poisson import PoissonLikelihood
 from ..cash import CashCLikelihood
@@ -41,23 +50,24 @@ class BinnedClusterLikelihood(CashCLikelihood):
     def initialize(self):
 
 
-        # constant binning in log10
-        qbins = np.arange(self.binning['q']['log10qmin'], self.binning['q']['log10qmax']+self.binning['q']['dlog10q'], self.binning['q']['dlog10q'])
-        self.qbins = 10**qbins
-        self.qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
-        self.Nq = int((self.binning['q']['log10qmax'] - self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']) + 1
+        if nm is not None:
+            # constant binning in log10
+            qbins = np.arange(self.binning['q']['log10qmin'], self.binning['q']['log10qmax']+self.binning['q']['dlog10q'], self.binning['q']['dlog10q'])
+            self.qbins = 10**qbins
+            self.qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
+            self.Nq = int((self.binning['q']['log10qmax'] - self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']) + 1
 
-        # this is for liklihood computation
-        self.zcut = self.binning['exclude_zbin']
+            # this is for liklihood computation
+            self.zcut = self.binning['exclude_zbin']
 
-        initialize_common(self)
-        delNcat, _ = np.histogram(self.z_cat, bins=self.zbins)
-        self.delNcat = self.zarr, delNcat
-        self.log.info("Number of redshift bins = {}.".format(len(self.zarr)))
-        self.log.info('Number of SNR bins = {}.'.format(self.Nq))
+            initialize_common(self)
+            delNcat, _ = np.histogram(self.z_cat, bins=self.zbins)
+            self.delNcat = self.zarr, delNcat
+            self.log.info("Number of redshift bins = {}.".format(len(self.zarr)))
+            self.log.info('Number of SNR bins = {}.'.format(self.Nq))
 
-        delN2Dcat, _, _ = np.histogram2d(self.z_cat, self.q_cat, bins=[self.zbins, self.qbins])
-        self.delN2Dcat = self.zarr, self.qarr, delN2Dcat, self.zcut
+            delN2Dcat, _, _ = np.histogram2d(self.z_cat, self.q_cat, bins=[self.zbins, self.qbins])
+            self.delN2Dcat = self.zarr, self.qarr, delN2Dcat, self.zcut
 
         if self.theorypred['choose_theory'] == 'classy_sz':
             self.params = {}
@@ -108,7 +118,10 @@ class BinnedClusterLikelihood(CashCLikelihood):
         return hres_z
 
     def _get_data(self):
-        return self.delN2Dcat
+        try:
+            return self.delN2Dcat
+        except:
+            return None
 
     def _get_theory(self, pk_intp, **kwargs):
         if self.theorypred['choose_theory'] == 'classy_sz':
@@ -116,7 +129,9 @@ class BinnedClusterLikelihood(CashCLikelihood):
             dNdzdy_theoretical = theory['dndzdy']
             z_edges = theory['z_edges']
             log10y_edges = theory['log10y_edges']
-            return dNdzdy_theoretical,z_edges,log10y_edges
+            szcat_z = theory['szcat_z']
+            szcat_snr = theory['szcat_snr']
+            return dNdzdy_theoretical,z_edges,log10y_edges,szcat_z,szcat_snr
         else:
             start = time.time()
             delN = self._get_integrated(pk_intp, **kwargs)
@@ -280,8 +295,12 @@ class BinnedClusterLikelihood(CashCLikelihood):
         if self.theorypred['choose_theory'] == 'classy_sz':
             pk_intp = None
             theory = self._get_theory(pk_intp,**params_values)
-            dNdzdy_theoretical,z_edges,log10y_edges = theory
-            dNdzdy_catalog, zedges, yedges = np.histogram2d(self.z_cat,np.log10(self.q_cat), bins=[z_edges,log10y_edges])
+            dNdzdy_theoretical,z_edges,log10y_edges,szcat_z,szcat_snr = theory
+            # print("z_cat",szcat_z)
+            # print("q_cat",szcat_snr)
+            # print("z_edges",z_edges)
+            # print("log10y_edges",log10y_edges)
+            dNdzdy_catalog, zedges, yedges = np.histogram2d(szcat_z,np.log10(szcat_snr), bins=[z_edges,log10y_edges])
             SZCC_Cash = 0.
             N_z,N_y = np.shape(dNdzdy_theoretical)
             # if self.debug == True:
@@ -300,6 +319,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
                         SZCC_Cash += (dNdzdy_catalog[index_z,index_y] * np.log(dNdzdy_theoretical[index_z][index_y]) - dNdzdy_theoretical[index_z][index_y] - ln_factorial)
                         # if self.debug == True:
                         #     print("theory: %.5e, catalogue: %.5e"%(dNdzdy_theoretical[index_z][index_y],dNdzdy_catalog[index_z,index_y]))
+            
             if self.debug == True:
                 print("Ntot cat:",np.sum(dNdzdy_catalog[:,:]))
                 print("Ntot theory:",np.sum(dNdzdy_theoretical[:][:]))
@@ -327,29 +347,32 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     def initialize(self):
         initialize_common(self)
 
-        zmax = self.binning['z']['zmax']
 
-        self.zz = np.arange(0, zmax, 0.01) # redshift bounds should correspond to catalogue
-        if self.zz[0] == 0: self.zz[0] = 1e-5
-
-        self.log.info('Number of redshift points for theory calculation = {}.'.format(len(self.zz)))
-        self.log.info('Number of mass points for theory calculation = {}.'.format(len(self.lnmarr)))
-        self.log.info('Number of y0 points for theory calculation = {}.'.format(len(self.lny)))
-
-        self.catalog = pd.DataFrame(
-            {
-                "z": self.z_cat.byteswap().newbyteorder(),
-                "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(),
-                "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),
-                "tile_name": self.cat_tile_name.byteswap().newbyteorder()
-            }
-        )
-
-        # this is for liklihood computation
-        self.zcut = self.binning['exclude_zbin']
         if self.theorypred['choose_theory'] == 'classy_sz':
             self.params = {}
-        super().initialize()
+
+        else:
+            zmax = self.binning['z']['zmax']
+
+            self.zz = np.arange(0, zmax, 0.01) # redshift bounds should correspond to catalogue
+            if self.zz[0] == 0: self.zz[0] = 1e-5
+
+            self.log.info('Number of redshift points for theory calculation = {}.'.format(len(self.zz)))
+            self.log.info('Number of mass points for theory calculation = {}.'.format(len(self.lnmarr)))
+            self.log.info('Number of y0 points for theory calculation = {}.'.format(len(self.lny)))
+
+            self.catalog = pd.DataFrame(
+                {
+                    "z": self.z_cat.byteswap().newbyteorder(),
+                    "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(),
+                    "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),
+                    "tile_name": self.cat_tile_name.byteswap().newbyteorder()
+                }
+            )
+
+            # this is for liklihood computation
+            self.zcut = self.binning['exclude_zbin']
+            super().initialize()
 
     def get_requirements(self):
         if self.theorypred['choose_theory'] == 'classy_sz':
@@ -358,7 +381,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             return get_requirements(self)
 
     def _get_catalog(self):
-        return self.catalog, self.columns
+        try:
+            return self.catalog, self.columns
+        except:
+            return None,None
 
     def Pfunc_inj(self, marr, z, **params):
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
@@ -647,108 +673,225 @@ def initialize_common(self):
         self.log.setLevel(logging.ERROR)
     self.log.info('Initializing clusters.py ' + self.name)
 
-    self.qcut = self.selfunc['SNRcut']
-    self.datafile = self.data['cat_file']
-    self.data_directory = self.data['data_path']
+    if self.theorypred['choose_theory'] != 'classy_sz': 
+        self.qcut = self.selfunc['SNRcut']
+        self.datafile = self.data['cat_file']
+        self.data_directory = self.data['data_path']
 
-    if self.selfunc['method'] == 'SNRbased':
-        self.log.info('Running SNR based selection function.')
-    elif self.selfunc['method'] == 'injection':
-        self.log.info('Running injection based selection function.')
-    else:
-        print('please choose the method : SNRbased or injection')
-        exit(0)
-
-    if self.selfunc['whichQ'] == 'fit':
-        self.log.info('Using Qfit data.')
-    elif self.selfunc['whichQ'] == 'injection':
-        self.log.info('Using averaged Q from source injection.')
-        # Qsource only provides the average
-    else:
-        print('please choose the Q data : Qfit or injection')
-        exit(0)
-
-    if self.selfunc['resolution'] == 'full':
-        self.log.info('Running completeness with full selection function inputs. No downsampling.')
-    elif self.selfunc['resolution'] == 'downsample':
-        assert self.selfunc['dwnsmpl_bins'] is not None, 'resolution = downsample but no bin number given. Aborting.'
-        self.log.info('Running completeness with down-sampled selection function inputs.')
-
-    catf = fits.open(os.path.join(self.data_directory, self.datafile))
-    data = catf[1].data
-    zcat = data.field("redshift")
-    qcat = data.field("fixed_SNR") #NB note that there are another SNR in the catalogue
-    cat_tsz_signal = data.field("fixed_y_c")
-    cat_tsz_signal_err = data.field("fixed_err_y_c")
-    cat_tile_name = data.field("tileName")
-    # to print all columns: print(catf[1].columns)
-
-    # SPT-style SNR bias correction, this should be applied before applying SNR cut
-    self.debiasDOF = self.selfunc['debiasDOF']
-    self.debias_cutoff = self.selfunc['debias_cutoff']
-    #qcat = np.sqrt(np.power(qcat, 2) - debiasDOF) # dont debias catalog q!
-
-    # only above given SNR cut
-    ind = np.where(qcat >= self.qcut)[0]
-    self.z_cat = zcat[ind]
-    self.q_cat = qcat[ind]
-    self.cat_tsz_signal = cat_tsz_signal[ind]
-    self.cat_tsz_signal_err = cat_tsz_signal_err[ind]
-    self.cat_tile_name = cat_tile_name[ind]
-
-    self.N_cat = len(self.q_cat)
-    self.log.info('Total number of clusters in catalogue = {}.'.format(len(zcat)))
-    self.log.info('SNR cut = {}.'.format(self.qcut))
-    self.log.info('Number of clusters above the SNR cut = {}.'.format(self.N_cat))
-    self.log.info('The lowest redshift = {:.2f}'.format(self.z_cat.min()))
-    self.log.info('The highest redshift = {:.2f}'.format(self.z_cat.max()))
-    self.log.info('The lowest SNR = {:.2f}.'.format(self.q_cat.min()))
-    self.log.info('The highest SNR = {:.2f}.'.format(self.q_cat.max()))
-
-    if self.z_cat.max() > self.binning['z']['zmax']:
-        print("Maximum redshift from catalogue is out of given redshift range. Please widen the redshift range for prediction.")
-        exit(0)
-
-    # redshift bins for N(z)
-    self.zbins = np.arange(self.binning['z']['zmin'], self.binning['z']['zmax'] + self.binning['z']['dz'], self.binning['z']['dz'])
-    self.zarr =  0.5*(self.zbins[:-1] + self.zbins[1:])
-
-    self.lnmmin = np.log(self.binning['M']['Mmin'])
-    self.lnmmax = np.log(self.binning['M']['Mmax'])
-    self.dlnm = self.binning['M']['dlogM']
-    self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
-
-    # Ytrue bins if scatter != 0:
-    lnymin = -14.  # ln(1e-6) = -13.8
-    lnymax = -5.   # ln(1e-2.5) = -5.7
-    dlny = 0.2
-    lnybins = np.arange(lnymin, lnymax, dlny)
-    self.lny = 0.5*(lnybins[:-1] + lnybins[1:])
-
-    # this is to be consist with szcounts.f90
-    self.k = np.logspace(-4, np.log10(4), 200, endpoint=False)
-
-    self.datafile_rms = self.data['rms_file']
-    self.datafile_Q = self.data['Q_file']
-    self.datafile_tile = self.data['tile_file']
-
-    list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
-    file_rms = list[1].data
-
-    if self.selfunc['resolution'] == 'downsample':
-
-        filename_Q, ext = os.path.splitext(self.datafile_Q)
-        datafile_Q_dwsmpld = os.path.join(self.data_directory,
-            filename_Q + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
-
-        if os.path.exists(datafile_Q_dwsmpld):
-            Qfile = np.load(datafile_Q_dwsmpld)
-            self.Q = Qfile['Q_dwsmpld']
-            self.tt500 = Qfile['tt500']
-            self.log.info("Down-sampled Q funcs exists. Number of Q funcs = {}.".format(len(self.Q[0])))
-
+        if self.selfunc['method'] == 'SNRbased':
+            self.log.info('Running SNR based selection function.')
+        elif self.selfunc['method'] == 'injection':
+            self.log.info('Running injection based selection function.')
         else:
-            self.log.info("Reading in full Q function.")
+            print('please choose the method : SNRbased or injection')
+            exit(0)
+
+        if self.selfunc['whichQ'] == 'fit':
+            self.log.info('Using Qfit data.')
+        elif self.selfunc['whichQ'] == 'injection':
+            self.log.info('Using averaged Q from source injection.')
+            # Qsource only provides the average
+        else:
+            print('please choose the Q data : Qfit or injection')
+            exit(0)
+
+        if self.selfunc['resolution'] == 'full':
+            self.log.info('Running completeness with full selection function inputs. No downsampling.')
+        elif self.selfunc['resolution'] == 'downsample':
+            assert self.selfunc['dwnsmpl_bins'] is not None, 'resolution = downsample but no bin number given. Aborting.'
+            self.log.info('Running completeness with down-sampled selection function inputs.')
+
+    if self.theorypred['choose_theory'] != 'classy_sz': 
+        catf = fits.open(os.path.join(self.data_directory, self.datafile))
+        data = catf[1].data
+        zcat = data.field("redshift")
+        qcat = data.field("fixed_SNR") #NB note that there are another SNR in the catalogue
+        cat_tsz_signal = data.field("fixed_y_c")
+        cat_tsz_signal_err = data.field("fixed_err_y_c")
+        cat_tile_name = data.field("tileName")
+        # to print all columns: print(catf[1].columns)
+
+        # SPT-style SNR bias correction, this should be applied before applying SNR cut
+        self.debiasDOF = self.selfunc['debiasDOF']
+        self.debias_cutoff = self.selfunc['debias_cutoff']
+        #qcat = np.sqrt(np.power(qcat, 2) - debiasDOF) # dont debias catalog q!
+
+        # only above given SNR cut
+        ind = np.where(qcat >= self.qcut)[0]
+        self.z_cat = zcat[ind]
+        self.q_cat = qcat[ind]
+        self.cat_tsz_signal = cat_tsz_signal[ind]
+        self.cat_tsz_signal_err = cat_tsz_signal_err[ind]
+        self.cat_tile_name = cat_tile_name[ind]
+
+        self.N_cat = len(self.q_cat)
+        self.log.info('Total number of clusters in catalogue = {}.'.format(len(zcat)))
+        self.log.info('SNR cut = {}.'.format(self.qcut))
+        self.log.info('Number of clusters above the SNR cut = {}.'.format(self.N_cat))
+        self.log.info('The lowest redshift = {:.2f}'.format(self.z_cat.min()))
+        self.log.info('The highest redshift = {:.2f}'.format(self.z_cat.max()))
+        self.log.info('The lowest SNR = {:.2f}.'.format(self.q_cat.min()))
+        self.log.info('The highest SNR = {:.2f}.'.format(self.q_cat.max()))
+
+        if self.z_cat.max() > self.binning['z']['zmax']:
+            print("Maximum redshift from catalogue is out of given redshift range. Please widen the redshift range for prediction.")
+            exit(0)
+
+        # redshift bins for N(z)
+        self.zbins = np.arange(self.binning['z']['zmin'], self.binning['z']['zmax'] + self.binning['z']['dz'], self.binning['z']['dz'])
+        self.zarr =  0.5*(self.zbins[:-1] + self.zbins[1:])
+
+        self.lnmmin = np.log(self.binning['M']['Mmin'])
+        self.lnmmax = np.log(self.binning['M']['Mmax'])
+        self.dlnm = self.binning['M']['dlogM']
+        self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
+
+        # Ytrue bins if scatter != 0:
+        lnymin = -14.  # ln(1e-6) = -13.8
+        lnymax = -5.   # ln(1e-2.5) = -5.7
+        dlny = 0.2
+        lnybins = np.arange(lnymin, lnymax, dlny)
+        self.lny = 0.5*(lnybins[:-1] + lnybins[1:])
+
+        # this is to be consist with szcounts.f90
+        self.k = np.logspace(-4, np.log10(4), 200, endpoint=False)
+
+        self.datafile_rms = self.data['rms_file']
+        self.datafile_Q = self.data['Q_file']
+        self.datafile_tile = self.data['tile_file']
+
+        list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
+        file_rms = list[1].data
+
+        if self.selfunc['resolution'] == 'downsample':
+
+            filename_Q, ext = os.path.splitext(self.datafile_Q)
+            datafile_Q_dwsmpld = os.path.join(self.data_directory,
+                filename_Q + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
+
+            if os.path.exists(datafile_Q_dwsmpld):
+                Qfile = np.load(datafile_Q_dwsmpld)
+                self.Q = Qfile['Q_dwsmpld']
+                self.tt500 = Qfile['tt500']
+                self.log.info("Down-sampled Q funcs exists. Number of Q funcs = {}.".format(len(self.Q[0])))
+
+            else:
+                self.log.info("Reading in full Q function.")
+                tile_info = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
+
+                # removing tiles with zero areas
+                tile_area0 = tile_info[:, 1]
+                zero_index = np.where(tile_area0 == '0.000000')[0]
+                tile_area = np.delete(tile_info, zero_index, 0)
+
+                tile_name = tile_area[:, 0]
+                QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
+                                    tileNames=tile_name, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
+                Nt = len(tile_name)
+                self.log.info("Number of tiles = {}.".format(Nt))
+                self.tname = file_rms['tileName']
+
+                hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
+                data = hdulist[1].data
+                tt500 = data.field("theta500Arcmin")
+
+                # reading in all Q functions
+                allQ = np.zeros((len(tt500), Nt))
+                for i in range(Nt):
+                    allQ[:, i] = QFit.getQ(tt500, tileName=tile_name[i])
+                assert len(tt500) == len(allQ[:, 0])
+                self.tt500 = tt500
+                self.Q = allQ
+
+                # # fiddling Q fit using injection Q ---------------------------------
+                #
+                # if self.selfunc['Qtest'] == True:
+                #
+                #     injQFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
+                #                             tileNames=tile_name, QSource='injection', selFnDir=self.data_directory+'/selFn')
+                #
+                #     injQ = np.zeros(len(tt500))
+                #     injQ = injQFit.getQ(tt500, tileName=tile_area[:, 0][0])
+                #
+                #     meanQ = np.average(allQ, axis=1)
+                #     fac = injQ / meanQ
+                #     fac_arr = np.repeat(fac[:, np.newaxis], allQ.shape[1], axis=1)
+                #
+                #     self.Q = allQ * fac_arr
+                #
+                # #-------------------------------------------------------------------
+
+
+            filename_rms, ext = os.path.splitext(self.datafile_rms)
+            filename_tile, ext = os.path.splitext(self.datafile_tile)
+            datafile_rms_dwsmpld = os.path.join(self.data_directory,
+                    filename_rms + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
+            datafile_tiles_dwsmpld = os.path.join(self.data_directory,
+                    filename_tile + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy')
+
+            if os.path.exists(datafile_rms_dwsmpld):
+                rms = np.load(datafile_rms_dwsmpld)
+                self.noise = rms['noise']
+                self.skyfracs = rms['skyfracs']
+                self.log.info("Down-sampled RMS table exists. Number of RMS bins = {}.".format(self.skyfracs.size))
+
+                self.tiles_dwnsmpld = np.load(datafile_tiles_dwsmpld, allow_pickle='TRUE').item()
+
+            else:
+
+                self.log.info("Reading in full RMS table.")
+
+                self.noise = file_rms['y0RMS']
+                self.skyfracs = file_rms['areaDeg2'] * np.deg2rad(1.) ** 2
+                self.log.info("Number of RMS values = {}.".format(self.skyfracs.size))
+                self.log.info("Down-sampling RMS and Q function using {} bins.".format(self.selfunc['dwnsmpl_bins']))
+                binned_stat = stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
+                                                        bins=self.selfunc['dwnsmpl_bins'])
+                binned_area = binned_stat[0]
+                binned_rms_edges = binned_stat[1]
+
+                bin_ind = np.digitize(self.noise, binned_rms_edges)
+                tiledict = dict(zip(tile_name, np.arange(tile_area[:, 0].shape[0])))
+
+                Qdwnsmpld = np.zeros((self.Q.shape[0], self.selfunc['dwnsmpl_bins']))
+                tiles_dwnsmpld = {}
+
+                for i in range(self.selfunc['dwnsmpl_bins']):
+                    tempind = np.where(bin_ind == i + 1)[0]
+                    if len(tempind) == 0:
+                        #self.log.info('Found empty bin.')
+                        Qdwnsmpld[:, i] = np.zeros(self.Q.shape[0])
+                    else:
+                        #print('dowsampled rms bin ',i)
+                        temparea = self.skyfracs[tempind]
+                        #print('areas of tiles in bin',temparea)
+                        temptiles = self.tname[tempind]
+                        #print('names of tiles in bin',temptiles)
+                        for t in temptiles:
+                            tiles_dwnsmpld[t] = i
+
+                        test = [tiledict[key] for key in temptiles]
+                        Qdwnsmpld[:, i] = np.average(self.Q[:, test], axis=1, weights=temparea)
+
+                self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
+                self.skyfracs = binned_area
+                self.Q = Qdwnsmpld
+                self.tiles_dwnsmpld = tiles_dwnsmpld
+
+                self.log.info("Number of down-sampled RMS = {}.".format(self.skyfracs.size))
+                self.log.info("Number of down-sampled Q funcs = {}.".format(len(self.Q[0])))
+
+                assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.Q.shape[1]
+
+                if self.selfunc['save_dwsmpld']:
+                    np.savez(datafile_Q_dwsmpld, Q_dwsmpld=Qdwnsmpld, tt500=self.tt500)
+                    np.savez(datafile_rms_dwsmpld, noise=self.noise, skyfracs=self.skyfracs)
+                    np.save(datafile_tiles_dwsmpld, self.tiles_dwnsmpld)
+
+
+        elif self.selfunc['resolution'] == 'full':
+
+            self.log.info('Reading in full Q function.')
             tile_info = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
 
             # removing tiles with zero areas
@@ -758,10 +901,9 @@ def initialize_common(self):
 
             tile_name = tile_area[:, 0]
             QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-                                   tileNames=tile_name, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
+                                    tileNames=tile_name, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
             Nt = len(tile_name)
             self.log.info("Number of tiles = {}.".format(Nt))
-            self.tname = file_rms['tileName']
 
             hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
             data = hdulist[1].data
@@ -774,6 +916,52 @@ def initialize_common(self):
             assert len(tt500) == len(allQ[:, 0])
             self.tt500 = tt500
             self.Q = allQ
+
+            # when using full Q functions, noise values should be downsampled
+            # in a current setting, the number of noise values has to be same as the number of Q funcs
+            # hence the number of tiles - they are averaged by each tile
+
+            self.log.info("Reading in full RMS table.")
+            self.log.info("Number of RMS values = {}.".format(len(file_rms['y0RMS'])))
+            self.log.info("Down-sampling RMS using {} bins.".format(Nt))
+
+            self.tname = file_rms['tileName']
+
+            noisebyTile = {}
+            areabyTile = {}
+            for t in tile_name:
+                tileTab = file_rms[self.tname == t]
+                areaWeights = tileTab['areaDeg2'] / tileTab['areaDeg2'].sum()
+                noisebyTile[t] = np.average(tileTab['y0RMS'], weights=areaWeights)
+                areabyTile[t] = tileTab['areaDeg2'].sum()
+
+            self.noise = np.array([noisebyTile[t] for t in tile_name])
+            self.skyfracs = np.array([areabyTile[t] for t in tile_name]) * np.deg2rad(1.)**2
+
+            self.log.info("Number of down-sampled RMS = {}.".format(self.skyfracs.size))
+            self.log.info("Number of Q funcs = {}.".format(len(self.Q[0])))
+
+            assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.Q.shape[1]
+
+
+            # choosing tile ----------------------------------------------------
+
+            if self.selfunc['tiletest'] == True:
+
+                tile_index = 0
+                # tile_index = slice(120, 123, None)
+                print('Name of tile : ', tile_name[tile_index])
+
+                self.Q = self.Q[:, tile_index]
+                self.Q = self.Q[:, None]
+                self.noise = np.array([self.noise[tile_index]])
+                self.skyfracs = np.array([self.skyfracs[tile_index]])
+                # self.noise = self.noise[tile_index]
+                # self.skyfracs = self.skyfracs[tile_index]
+
+            #-------------------------------------------------------------------
+
+
 
             # # fiddling Q fit using injection Q ---------------------------------
             #
@@ -793,175 +981,15 @@ def initialize_common(self):
             #
             # #-------------------------------------------------------------------
 
+        if self.selfunc['method'] == 'injection':
 
-        filename_rms, ext = os.path.splitext(self.datafile_rms)
-        filename_tile, ext = os.path.splitext(self.datafile_tile)
-        datafile_rms_dwsmpld = os.path.join(self.data_directory,
-                filename_rms + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
-        datafile_tiles_dwsmpld = os.path.join(self.data_directory,
-                filename_tile + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy')
-
-        if os.path.exists(datafile_rms_dwsmpld):
-            rms = np.load(datafile_rms_dwsmpld)
-            self.noise = rms['noise']
-            self.skyfracs = rms['skyfracs']
-            self.log.info("Down-sampled RMS table exists. Number of RMS bins = {}.".format(self.skyfracs.size))
-
-            self.tiles_dwnsmpld = np.load(datafile_tiles_dwsmpld, allow_pickle='TRUE').item()
-
-        else:
-
-            self.log.info("Reading in full RMS table.")
-
-            self.noise = file_rms['y0RMS']
-            self.skyfracs = file_rms['areaDeg2'] * np.deg2rad(1.) ** 2
-            self.log.info("Number of RMS values = {}.".format(self.skyfracs.size))
-            self.log.info("Down-sampling RMS and Q function using {} bins.".format(self.selfunc['dwnsmpl_bins']))
-            binned_stat = stats.binned_statistic(self.noise, self.skyfracs, statistic='sum',
-                                                       bins=self.selfunc['dwnsmpl_bins'])
-            binned_area = binned_stat[0]
-            binned_rms_edges = binned_stat[1]
-
-            bin_ind = np.digitize(self.noise, binned_rms_edges)
-            tiledict = dict(zip(tile_name, np.arange(tile_area[:, 0].shape[0])))
-
-            Qdwnsmpld = np.zeros((self.Q.shape[0], self.selfunc['dwnsmpl_bins']))
-            tiles_dwnsmpld = {}
-
-            for i in range(self.selfunc['dwnsmpl_bins']):
-                tempind = np.where(bin_ind == i + 1)[0]
-                if len(tempind) == 0:
-                    #self.log.info('Found empty bin.')
-                    Qdwnsmpld[:, i] = np.zeros(self.Q.shape[0])
-                else:
-                    #print('dowsampled rms bin ',i)
-                    temparea = self.skyfracs[tempind]
-                    #print('areas of tiles in bin',temparea)
-                    temptiles = self.tname[tempind]
-                    #print('names of tiles in bin',temptiles)
-                    for t in temptiles:
-                        tiles_dwnsmpld[t] = i
-
-                    test = [tiledict[key] for key in temptiles]
-                    Qdwnsmpld[:, i] = np.average(self.Q[:, test], axis=1, weights=temparea)
-
-            self.noise = 0.5*(binned_rms_edges[:-1] + binned_rms_edges[1:])
-            self.skyfracs = binned_area
-            self.Q = Qdwnsmpld
-            self.tiles_dwnsmpld = tiles_dwnsmpld
-
-            self.log.info("Number of down-sampled RMS = {}.".format(self.skyfracs.size))
-            self.log.info("Number of down-sampled Q funcs = {}.".format(len(self.Q[0])))
-
-            assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.Q.shape[1]
-
-            if self.selfunc['save_dwsmpld']:
-                np.savez(datafile_Q_dwsmpld, Q_dwsmpld=Qdwnsmpld, tt500=self.tt500)
-                np.savez(datafile_rms_dwsmpld, noise=self.noise, skyfracs=self.skyfracs)
-                np.save(datafile_tiles_dwsmpld, self.tiles_dwnsmpld)
+            try:
+                self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut, self.qbins)
+            except:
+                self.compThetaInterpolator = selfunc.get_completess_inj_theta_y_unb(self.data_directory, self.qcut)
 
 
-    elif self.selfunc['resolution'] == 'full':
-
-        self.log.info('Reading in full Q function.')
-        tile_info = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
-
-        # removing tiles with zero areas
-        tile_area0 = tile_info[:, 1]
-        zero_index = np.where(tile_area0 == '0.000000')[0]
-        tile_area = np.delete(tile_info, zero_index, 0)
-
-        tile_name = tile_area[:, 0]
-        QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-                                   tileNames=tile_name, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
-        Nt = len(tile_name)
-        self.log.info("Number of tiles = {}.".format(Nt))
-
-        hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
-        data = hdulist[1].data
-        tt500 = data.field("theta500Arcmin")
-
-        # reading in all Q functions
-        allQ = np.zeros((len(tt500), Nt))
-        for i in range(Nt):
-            allQ[:, i] = QFit.getQ(tt500, tileName=tile_name[i])
-        assert len(tt500) == len(allQ[:, 0])
-        self.tt500 = tt500
-        self.Q = allQ
-
-        # when using full Q functions, noise values should be downsampled
-        # in a current setting, the number of noise values has to be same as the number of Q funcs
-        # hence the number of tiles - they are averaged by each tile
-
-        self.log.info("Reading in full RMS table.")
-        self.log.info("Number of RMS values = {}.".format(len(file_rms['y0RMS'])))
-        self.log.info("Down-sampling RMS using {} bins.".format(Nt))
-
-        self.tname = file_rms['tileName']
-
-        noisebyTile = {}
-        areabyTile = {}
-        for t in tile_name:
-            tileTab = file_rms[self.tname == t]
-            areaWeights = tileTab['areaDeg2'] / tileTab['areaDeg2'].sum()
-            noisebyTile[t] = np.average(tileTab['y0RMS'], weights=areaWeights)
-            areabyTile[t] = tileTab['areaDeg2'].sum()
-
-        self.noise = np.array([noisebyTile[t] for t in tile_name])
-        self.skyfracs = np.array([areabyTile[t] for t in tile_name]) * np.deg2rad(1.)**2
-
-        self.log.info("Number of down-sampled RMS = {}.".format(self.skyfracs.size))
-        self.log.info("Number of Q funcs = {}.".format(len(self.Q[0])))
-
-        assert self.noise.shape[0] == self.skyfracs.shape[0] and self.noise.shape[0] == self.Q.shape[1]
-
-
-        # choosing tile ----------------------------------------------------
-
-        if self.selfunc['tiletest'] == True:
-
-            tile_index = 0
-            # tile_index = slice(120, 123, None)
-            print('Name of tile : ', tile_name[tile_index])
-
-            self.Q = self.Q[:, tile_index]
-            self.Q = self.Q[:, None]
-            self.noise = np.array([self.noise[tile_index]])
-            self.skyfracs = np.array([self.skyfracs[tile_index]])
-            # self.noise = self.noise[tile_index]
-            # self.skyfracs = self.skyfracs[tile_index]
-
-        #-------------------------------------------------------------------
-
-
-
-        # # fiddling Q fit using injection Q ---------------------------------
-        #
-        # if self.selfunc['Qtest'] == True:
-        #
-        #     injQFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-        #                             tileNames=tile_name, QSource='injection', selFnDir=self.data_directory+'/selFn')
-        #
-        #     injQ = np.zeros(len(tt500))
-        #     injQ = injQFit.getQ(tt500, tileName=tile_area[:, 0][0])
-        #
-        #     meanQ = np.average(allQ, axis=1)
-        #     fac = injQ / meanQ
-        #     fac_arr = np.repeat(fac[:, np.newaxis], allQ.shape[1], axis=1)
-        #
-        #     self.Q = allQ * fac_arr
-        #
-        # #-------------------------------------------------------------------
-
-    if self.selfunc['method'] == 'injection':
-
-        try:
-            self.compThetaInterpolator = selfunc.get_completess_inj_theta_y(self.data_directory, self.qcut, self.qbins)
-        except:
-            self.compThetaInterpolator = selfunc.get_completess_inj_theta_y_unb(self.data_directory, self.qcut)
-
-
-    self.log.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
+        self.log.info('Entire survey area = {} deg2.'.format(self.skyfracs.sum()/(np.deg2rad(1.)**2.)))
 
 
 def get_requirements(self):

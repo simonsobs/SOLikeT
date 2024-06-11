@@ -1,0 +1,83 @@
+theory:
+  classy_szfast.classy_sz.classy_sz:
+    use_class_sz_fast_mode: 1
+    stop_at_error: true
+    extra_args:
+      output: sz_cluster_counts_fft,m500c_to_m200c,m200c_to_m500
+      mass function: T08M200c
+      concentration parameter: B13
+      B: 1.0
+      N_ncdm: 1
+      N_ur: 2.0328
+      m_ncdm: 0.06
+      T_ncdm: 0.71611
+      M_min: 10000000000000.0
+      M_max: 1.0e+16
+      ndim_redshifts: 100
+      szcounts_fft_nz: 100,
+      n_m_dndlnM: 100,
+      n_z_dndlnM: 100,
+      has_selection_function: 1
+      experiment: 1
+      y_m_relation: 1
+      signal-to-noise_cut-off_for_survey_cluster_completeness: 5.0
+      sz_selection_function_thetas_file: /Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class-sz/class_sz_auxiliary_files/excludes/tsz/nemo_sim_thetas_120923_30bins.txt
+      sz_selection_function_skyfracs_file: /Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class-sz/class_sz_auxiliary_files/excludes/tsz/nemo_sim_skyfracs_120923_30bins.txt
+      sz_selection_function_ylims_file: /Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class-sz/class_sz_auxiliary_files/excludes/tsz/nemo_sim_ylims_120923_30bins.txt
+      SZ_cat_file: /Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class-sz/class_sz_auxiliary_files/excludes/tsz/SZ_cat_nemosimkit_130923.txt
+      A_ym: 1.9e-05
+      B_ym: 0.08
+      C_ym: 0.0
+      sigmaM_ym: 0.173
+      m_pivot_ym_[Msun]: 425000000000000.0
+      use_m500c_in_ym_relation: 0
+      use_m200c_in_ym_relation: 1
+      use_skyaveraged_noise: 0
+      N_samp_fftw: 2048
+      z_min: 0.0
+      z_max: 2.5
+      szcounts_fft_z_min: 0.0
+      szcounts_fft_z_max: 2.5
+      tol_dlnm_dlnq: 0.01
+      ntab_dlnm_dlnq: 80
+      szcounts_qmax_fft_padded: 200.0
+      sigma_derivative: 0
+      szcc_dof: 3.0
+      szcc_qtrunc: 2.0
+      HMF_prescription_NCDM: 1
+      no_spline_in_tinker: 1
+likelihood:
+  soliket.UnbinnedClusterLikelihood:
+    stop_at_error: true
+    verbose: false
+    theorypred:
+      choose_theory: classy_sz
+params:
+  h: 0.68
+  n_s: 0.965
+  Omega_b: 0.049
+  Omega_cdm: 0.261
+  tau_reio: 0.06
+  tenToA0: 1.9e-05
+  B0: 0.08
+  scatter_sz: 0.2
+  bias_sz: 1.0
+  C0: 0.0
+  sigma8:
+    prior:
+      min: 0.0
+      max: 4.0
+    ref:
+      dist: norm
+      loc: 0.8
+      scale: 0.001
+    proposal: 0.001
+    latex: \sigma_8
+sampler:
+  evaluate:
+    override:
+      sigma8: 0.81
+output: test_unbinned_classy_sz_evaluate_may24
+stop_at_error: true
+timing: true
+

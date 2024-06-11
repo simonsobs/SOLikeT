@@ -36,7 +36,10 @@ in CCL, so this is far from general.
 """
 
 import numpy as np
-import pyccl as ccl
+try:
+    import pyccl as ccl
+except ImportError:
+    ccl = None
 from typing import NamedTuple, Sequence, Union, Optional, Callable
 from copy import deepcopy
 
