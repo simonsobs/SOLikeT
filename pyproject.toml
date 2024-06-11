@@ -69,7 +69,10 @@ testpaths = [
     "*/soliket/tests/",
 ]
 python_files = "*/test_*.py"
-addopts = "-rf --import-mode=importlib"
+addopts = [
+    "--import-mode=importlib",
+]
+pythonpath = "."
 
 [tool.setuptools_scm]
 version_file = "soliket/version.py"
