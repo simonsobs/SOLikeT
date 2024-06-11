@@ -59,6 +59,7 @@ include = [
 
 [tool.setuptools.package-data]
 "*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
+testpaths = "soliket"
 
 [tool.pytest.ini_options]
 testpaths = [
