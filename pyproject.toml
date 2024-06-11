@@ -66,6 +66,7 @@ testpaths = [
     "./soliket/",
     "./tests/",
     "./soliket/tests/",
+    "*/soliket/tests/",
 ]
 
 [tool.setuptools_scm]
