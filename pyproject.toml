@@ -44,6 +44,7 @@ include = [
     "soliket.bandpass",
     "soliket.bias",
     "soliket.cash",
+    "soliket.ccl",
     "soliket.clusters",
     "soliket.cosmopower",
     "soliket.cross_correlation",
