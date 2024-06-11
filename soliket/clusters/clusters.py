@@ -50,7 +50,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
     def initialize(self):
 
 
-        if nm is not None:
+        if self.theorypred['choose_theory'] != 'classy_sz':
             # constant binning in log10
             qbins = np.arange(self.binning['q']['log10qmin'], self.binning['q']['log10qmax']+self.binning['q']['dlog10q'], self.binning['q']['dlog10q'])
             self.qbins = 10**qbins
