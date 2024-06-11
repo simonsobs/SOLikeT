@@ -62,9 +62,9 @@ include = [
 
 [tool.pytest.ini_options]
 testpaths = [
-    "soliket",
-    "tests",
-    "soliket/tests/",
+    "./soliket/",
+    "./tests/",
+    "./soliket/tests/",
 ]
 
 [tool.setuptools_scm]
