@@ -1,0 +1,6 @@
+soliket.TheoryForge_MFLike:
+  spectra:
+    polarizations: ['tt', 'te', 'ee']
+    lmin: 2
+    lmax: 9050
+  stop_at_error: True

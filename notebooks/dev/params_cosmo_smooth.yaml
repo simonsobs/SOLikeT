@@ -1,20 +1,27 @@
 cosmomc_theta:
   value: 0.0104090
+  latex: \theta_mc
 logA:
   value: 3.045
   drop: True
+  latex: \log 10^{10} A_s
 As:
   value: 'lambda logA: 1e-10*np.exp(logA)'
 ombh2:
   value: 0.02236
+  latex: \Omega_b h^2
 omch2:
   value: 0.1202
+  latex: \Omega_c h^2
 ns:
   value: 0.9649
+  latex: n_s
 Alens:
   value: 1.0
+  latex: A_lens
 tau:
   value: 0.0544
+  latex: \tau
 mnu1:
   value: 0.0
   drop: True
@@ -26,5 +33,7 @@ mnu3:
   drop: True
 mnu:
   value: 'lambda mnu1, mnu2 ,mnu3: mnu1 + mnu2 + mnu3'
+  latex: \sum m_\nu
 nnu:
   value: 3.044
+  latex: N_eff
