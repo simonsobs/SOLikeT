@@ -64,7 +64,8 @@ pre = "test_data_sacc_"
 
 class Test_mflike:
 
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         from cobaya.install import install
 
         install(
