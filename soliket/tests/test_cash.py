@@ -1,7 +1,7 @@
 import numpy as np
+from cobaya.theory import Theory
 
 from soliket.cash import CashCData
-from cobaya.theory import Theory
 
 
 class cash_theory_calculator(Theory):
@@ -23,11 +23,12 @@ def toy_data():
 
 
 def test_cash_import():
-    from soliket.cash import CashCLikelihood # noqa F401
+    from soliket.cash import CashCLikelihood  # noqa F401
 
 
 def test_cash_read_data(request):
     import os
+
     from soliket.cash import CashCLikelihood
 
     cash_data_path = os.path.join(request.config.rootdir,
@@ -40,6 +41,7 @@ def test_cash_read_data(request):
 
 def test_cash_logp(request):
     import os
+
     from soliket.cash import CashCLikelihood
 
     params = {"cash_test_logp": 20}

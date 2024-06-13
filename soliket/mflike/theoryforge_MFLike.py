@@ -53,12 +53,12 @@ They have to be named as ``cal/calT/calE/alpha`` + ``_``  + experiment_channel s
 
 """
 
-import numpy as np
 from typing import Optional
 
+import numpy as np
+from cobaya.log import LoggedError
 from cobaya.theory import Theory
 from cobaya.tools import are_different_params_lists
-from cobaya.log import LoggedError
 
 
 class TheoryForge_MFLike(Theory):

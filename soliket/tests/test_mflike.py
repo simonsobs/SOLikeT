@@ -2,26 +2,17 @@
 Make sure that this returns the same result as original mflike.MFLike from LAT_MFlike repo
 """
 import os
-import unittest
-from packaging.version import Version
 
 import camb
-import soliket  # noqa
+import numpy as np
+import pytest
+from cobaya.tools import resolve_packages_path
+from packaging.version import Version
+
+import soliket
 from soliket.mflike import TestMFLike
 
-from cobaya.tools import resolve_packages_path
-
 packages_path = resolve_packages_path()
-
-cosmo_params = {
-    "cosmomc_theta": 0.0104085,
-    "As": 2.0989031673191437e-09,
-    "ombh2": 0.02237,
-    "omch2": 0.1200,
-    "ns": 0.9649,
-    "Alens": 1.0,
-    "tau": 0.0544,
-}
 
 nuisance_params = {
     "a_tSZ": 3.3044404448917724,
@@ -58,22 +49,23 @@ nuisance_params = {
 
 
 if Version(camb.__version__) >= Version('1.4'):
-    chi2s = {"tt": 545.1257,
-             "te": 137.4146,
-             "ee": 167.9850,
-             "tt-te-et-ee": 790.5121}
+    chi2s = {"tt": 544.9017,
+             "te": 136.6051,
+             "ee": 166.1897,
+             "tt-te-et-ee": 787.9529}
 else:
-    chi2s = {"tt": 544.9745,
-             "te-et": 152.6807,
-             "ee": 168.0953,
-             "tt-te-et-ee": 790.4124}
+    chi2s = {"tt": 544.8797,
+             "te-et": 151.8197,
+             "ee": 166.2835,
+             "tt-te-et-ee": 787.9843}
 
 pre = "test_data_sacc_"
 
 
-class MFLikeTest(unittest.TestCase):
+class Test_mflike:
 
-    def setUp(self):
+    @classmethod
+    def setup_class(cls):
         from cobaya.install import install
 
         install(
@@ -85,17 +77,16 @@ class MFLikeTest(unittest.TestCase):
             no_set_global=True,
         )
 
-
-    def test_mflike(self):
+    @pytest.mark.usefixtures("test_cosmology_params")
+    def test_mflike(self, test_cosmology_params):
 
         # As of now, there is not a mechanism
         # in soliket to ensure there is .loglike that can be called like this
         # w/out cobaya
 
-        camb_cosmo = cosmo_params.copy()
         lmax = 9000
-        camb_cosmo.update({"lmax": lmax, "lens_potential_accuracy": 1})
-        pars = camb.set_params(**camb_cosmo)
+        test_cosmology_params.update({"lmax": lmax, "lens_potential_accuracy": 1})
+        pars = camb.set_params(**test_cosmology_params)
         results = camb.get_results(pars)
         powers = results.get_cmb_power_spectra(pars, CMB_unit="muK")
         cl_dict = {k: powers["total"][:, v] for
@@ -148,9 +139,12 @@ class MFLikeTest(unittest.TestCase):
 
             loglike = my_mflike.loglike(dlobs_dict)
 
-            self.assertAlmostEqual(-2 * (loglike - my_mflike.logp_const), chi2, 2)
+            assert np.isclose(
+                -2 * (loglike - my_mflike.logp_const), chi2, atol=1e-2, rtol=0.0
+            )
 
-    def test_cobaya(self):
+    @pytest.mark.usefixtures("test_cosmology_params")
+    def test_cobaya(self, test_cosmology_params):
 
         info = {
             "likelihood": {
@@ -172,7 +166,7 @@ class MFLikeTest(unittest.TestCase):
             },
             "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1},
                                 "stop_at_error": True}},
-            "params": cosmo_params,
+            "params": test_cosmology_params,
             "modules": packages_path,
             "debug": True,
         }
@@ -185,4 +179,5 @@ class MFLikeTest(unittest.TestCase):
         model = get_model(info)
         my_mflike = model.likelihood["soliket.mflike.TestMFLike"]
         chi2 = -2 * (model.loglikes(nuisance_params)[0] - my_mflike.logp_const)
-        self.assertAlmostEqual(chi2[0], chi2s["tt-te-et-ee"], 2)
+
+        assert np.isclose(chi2[0], chi2s["tt-te-et-ee"], atol=1e-2, rtol=0.0)

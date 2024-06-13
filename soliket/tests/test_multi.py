@@ -1,11 +1,12 @@
 import numpy as np
-from soliket.tests.test_mflike import cosmo_params, nuisance_params
 from cobaya.tools import resolve_packages_path
+
+from soliket.tests.test_mflike import nuisance_params
 
 packages_path = resolve_packages_path()
 
 
-def test_multi():
+def test_multi(test_cosmology_params):
     lensing_options = {"theory_lmax": 5000}
 
     pre = "test_data_sacc_"
@@ -19,10 +20,10 @@ def test_multi():
 
     fg_params = {"a_tSZ": {"prior": {"min": 3.0, "max": 3.6}},
                  "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}}}
-    mflike_params = {**cosmo_params, **nuisance_params}
+    mflike_params = {**test_cosmology_params, **nuisance_params}
     mflike_params.update(fg_params)
 
-    lensing_params = {**cosmo_params}
+    lensing_params = {**test_cosmology_params}
 
     info = {
         "likelihood": {
@@ -71,7 +72,7 @@ def test_multi():
     logp_a = model.loglikes(fg_values_a, cached=False)[0].sum()
     logp_b = model.loglikes(fg_values_b, cached=False)[0].sum()
     d_logp = logp_b - logp_a
-    assert np.isfinite(d_logp)
+    assert np.isclose(d_logp, 0.0052275, rtol=1e-5)
 
     model1_logp_a = model1.loglikes(fg_values_a, cached=False)[0].sum()
     model2_logp_a = model2.loglikes({}, cached=False)[0].sum()
@@ -83,4 +84,4 @@ def test_multi():
     d_logp2 = model2_logp_b - model2_logp_a
     d_logp_sum = d_logp1 + d_logp2
 
-    assert np.isclose(d_logp, d_logp_sum)
+    assert np.isclose(d_logp, d_logp_sum, rtol=1e-5)

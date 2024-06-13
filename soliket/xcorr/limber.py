@@ -6,7 +6,8 @@ Used internally by the xcorr likelihood to compute angular power spectra of diff
 """
 
 import numpy as np
-from ..constants import C_HMPC
+
+from soliket.constants import C_HMPC
 
 oneover_chmpc = 1. / C_HMPC
 

@@ -12,14 +12,17 @@ data download.
 """
 
 import os
+
 import numpy as np
 import sacc
 from cobaya.likelihoods.base_classes import InstallableLikelihood
-from cobaya.model import get_model
 from cobaya.log import LoggedError
+from cobaya.model import get_model
+
+from soliket.ps import BinnedPSLikelihood
+
 # from cobaya.install import NotInstalledError
 
-from ..ps import BinnedPSLikelihood
 
 
 class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):

@@ -6,10 +6,10 @@ data. Makes use of the cobaya CCL module for handling tracers and Limber integra
 """
 
 import numpy as np
-from ..gaussian import GaussianData, GaussianLikelihood
+import sacc
 from cobaya.log import LoggedError
 
-import sacc
+from soliket.gaussian import GaussianData, GaussianLikelihood
 
 
 class CrossCorrelationLikelihood(GaussianLikelihood):

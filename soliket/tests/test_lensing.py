@@ -1,6 +1,5 @@
 import numpy as np
 from cobaya.model import get_model
-
 from cobaya.tools import resolve_packages_path
 
 packages_path = resolve_packages_path()
@@ -22,7 +21,7 @@ info['params'] = fiducial_params
 
 def test_lensing_import(request):
 
-    from soliket.lensing import LensingLikelihood # noqa F401
+    from soliket.lensing import LensingLikelihood  # noqa F401
 
 
 def test_lensing_like(request):
@@ -61,8 +60,9 @@ def test_lensing_ccl_limber(request):
         no_set_global=True,
     )
 
-    from soliket.lensing import LensingLikelihood
     from copy import deepcopy
+
+    from soliket.lensing import LensingLikelihood
 
     info_dict = deepcopy(info)
     # Neutrino mass put to 0 as far as it is not included in the ccl wrapper

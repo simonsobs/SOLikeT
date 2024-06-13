@@ -1,1 +1,8 @@
-from .cross_correlation import CrossCorrelationLikelihood, GalaxyKappaLikelihood, ShearKappaLikelihood   # noqa: F401, E501
+from .cross_correlation import (CrossCorrelationLikelihood,
+                                GalaxyKappaLikelihood, ShearKappaLikelihood)
+
+__all__ = [
+    "CrossCorrelationLikelihood",
+    "GalaxyKappaLikelihood",
+    "ShearKappaLikelihood",
+]

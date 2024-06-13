@@ -3,12 +3,9 @@ from tempfile import gettempdir
 
 import numpy as np
 from sklearn.datasets import make_spd_matrix
-# from scipy.stats import multivariate_normal
 
-from soliket.gaussian import GaussianData, CrossCov
-from soliket import MultiGaussianLikelihood
-from soliket import PSLikelihood
-
+from soliket import MultiGaussianLikelihood, PSLikelihood
+from soliket.gaussian import CrossCov, GaussianData
 from soliket.utils import get_likelihood
 
 
