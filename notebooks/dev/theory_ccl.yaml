@@ -1,2 +1,3 @@
-soliket.ccl.CCL:
-  nonlinear: false
+soliket.CCL:
+  kmax: 10.
+  nonlinear: True
