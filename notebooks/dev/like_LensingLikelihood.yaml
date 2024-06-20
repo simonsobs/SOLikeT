@@ -1,0 +1,4 @@
+soliket.LensingLikelihood:
+  theory_lmax: 5000
+  stop_at_error: False
+  pp_ccl: True
