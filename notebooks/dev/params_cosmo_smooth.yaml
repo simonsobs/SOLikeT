@@ -1,8 +1,8 @@
 cosmomc_theta:
   prior:
-    max: 0.01042
-    min: 0.01040
-  ref: 0.0104090
+    max: 0.0104110
+    min: 0.0104100
+  ref: 0.0104108
   latex: \theta_mc
 logA:
   prior:
@@ -18,8 +18,8 @@ ombh2:
   latex: \Omega_b h^2
 omch2:
   prior:
-    max: 0.99
-    min: 0.005
+    max: 0.20
+    min: 0.05
   ref: 0.1202
   latex: \Omega_c h^2
 ns:

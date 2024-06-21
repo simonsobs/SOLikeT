@@ -1,6 +1,6 @@
 debug: False
 sampler:
-  evaluate: null
+  # evaluate: null
   mcmc:
     Rminus1_cl_stop: 0.2
     Rminus1_stop: 0.01
