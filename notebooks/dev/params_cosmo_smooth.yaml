@@ -1,8 +1,14 @@
 cosmomc_theta:
-  value: 0.0104090
+  prior:
+    max: 0.01042
+    min: 0.01040
+  ref: 0.0104090
   latex: \theta_mc
 logA:
-  value: 3.045
+  prior:
+    max: 4.0
+    min: 1.6
+  ref: 3.045
   drop: True
   latex: \log 10^{10} A_s
 As:
@@ -11,7 +17,10 @@ ombh2:
   value: 0.02236
   latex: \Omega_b h^2
 omch2:
-  value: 0.1202
+  prior:
+    max: 0.99
+    min: 0.005
+  ref: 0.1202
   latex: \Omega_c h^2
 ns:
   value: 0.9649

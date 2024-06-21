@@ -1,9 +1,19 @@
 A_IA:
   latex: A_{IA}
-  value: 0.35
+  prior:
+    dist: norm
+    loc: 0.0
+    scale: 0.65
+  proposal: 0.5
+  ref: 0.35
 eta_IA:
   latex: \eta_{IA}
-  value: 1.66
+  prior:
+    dist: norm
+    loc: 0.0
+    scale: 4.0
+  proposal: 3.0
+  ref: 1.66
 gs_des_bin1_deltaz:
   latex: \Delta z_{1}
   value: 0.0
