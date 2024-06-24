@@ -1,4 +1,4 @@
-output: /project/r/rbond/ymehta3/output/param-fitting/mcmcresults/sz_test
+output: /Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/sz_total-planck-collab-15_step_1_test
 
 likelihood:
   soliket.ymap.ymap_ps.SZLikelihood:
@@ -17,10 +17,10 @@ theory:
     # foreground_data_file: "data_fg-ell-cib_rs_ir_cn-total-planck-collab-15.txt"
 
 
-
-  soliket.ymap.classy_sz:
+  classy_szfast.classy_sz.classy_sz:
+     use_class_sz_fast_mode: 1
      extra_args:
-          output : 'tSZ_1h, tCl'
+          output : 'tSZ_1h'
           units for tSZ spectrum : 'dimensionless'
           component of tSZ power spectrum : 'total'
           # write sz results to files : 'no'
@@ -34,22 +34,22 @@ theory:
           z_max : 3.0
           M_min : 1.0e10
           M_max : 3.5e15
-          z_max_pk : 4.
+          # z_max_pk : 4.
 
-          non_linear: 'halofit'
-          k_per_decade_class_sz : 20.
-          k_min_for_pk_class_sz : 1e-3
-          k_max_for_pk_class_sz : 1e1
+          # non_linear: 'halofit'
+          # k_per_decade_class_sz : 20.
+          # k_min_for_pk_class_sz : 1e-3
+          # k_max_for_pk_class_sz : 1e1
 
-          perturbations_verbose: 10
-          thermodynamics_verbose: 10
-          background_verbose: 10
-          class_sz_verbose: 10
-          spectra_verbose: 10
+          perturbations_verbose: 0
+          thermodynamics_verbose: 0
+          background_verbose: 0
+          class_sz_verbose: 0
+          spectra_verbose: 0
 
           # harmonic_verbose: 0
           # fourier_verbose : 0
-          input_verbose : 10
+          input_verbose : 0
           # lensing_verbose : 0
           # The base model features two massless
           # and one massive neutrino with m=0.06eV.
@@ -60,6 +60,32 @@ theory:
           m_ncdm : 0.06
           T_ncdm : 0.71611
           YHe: 'BBN'
+
+          #
+          # n_k_pressure_profile : 80 # this is l/ls
+          # n_m_pressure_profile : 30 # default: 100, decrease for faster
+          # n_z_pressure_profile : 30 # default: 100, decrease for faster
+          #
+          # k_min_gas_pressure_profile : 1e-3 # l/ls hence no need for very extreme values...
+          # k_max_gas_pressure_profile : 1e2
+          #
+          #
+          # k_min_samp_fftw : 1e-3
+          # k_max_samp_fftw : 1e3
+          # N_samp_fftw : 100,
+          #
+          #
+          # hm_consistency : 1
+          #
+          #
+          # use_fft_for_profiles_transform : 1
+          # x_min_gas_pressure_fftw : 1e-5
+          # x_max_gas_pressure_fftw : 1e2
+
+
+          # ndim_masses : 500
+          ndim_redshifts : 30
+
           # following parameters (50,50) give less than 1% difference w.r.t. ndimSZ = 100 and n_arraySZ=1000
           # [relevant for tabulation of sigma(R,z)]
           # ndimSZ: 50
@@ -140,17 +166,28 @@ params:
     proposal: 0.0014
     latex: \Omega_\mathrm{c} h^2
 
-  A_s:
+  # A_s:
+  #   prior:
+  #     min: 0.1e-9
+  #     max: 10e-9
+  #   ref:
+  #     dist: norm
+  #     loc: 2.1e-9
+  #     scale: 0.032e-9
+  #   proposal: 0.032e-9
+  #   latex: A_\mathrm{s}
+
+  logA:
+    latex: ln10^{10}A_s
     prior:
-      min: 0.1e-9
-      max: 10e-9
+      max: 3.5
+      min: 2.5
+    proposal: 0.12892144
     ref:
       dist: norm
-      loc: 2.1e-9
-      scale: 0.032e-9
-    proposal: 0.032e-9
-    latex: A_\mathrm{s}
-
+      loc: 2.9939341
+      scale: 0.12892144
+  tau_reio: 0.055
   n_s:
     prior:
       min: 0.94
@@ -186,13 +223,13 @@ params:
     latex: H_0
 
   # add derived parameter, e.g.:
-  Omega_m:
-    latex: \Omega_\mathrm{m}
-  sigma8:
-    latex: \sigma_8
-  F_sz:
-    derived: 'lambda sigma8, Omega_m, B, H0: (sigma8/0.8)*(Omega_m/0.3)**0.35*(B/1.25)**-0.35*(H0/70.)**-0.20'
-    latex: F_\mathrm{sz}
+  # Omega_m:
+  #   latex: \Omega_\mathrm{m}
+  # sigma8:
+  #   latex: \sigma_8
+  # F_sz:
+  #   derived: 'lambda sigma8, Omega_m, B, H0: (sigma8/0.8)*(Omega_m/0.3)**0.35*(B/1.25)**-0.35*(H0/70.)**-0.20'
+  #   latex: F_\mathrm{sz}
 
 
 sampler:
@@ -212,7 +249,8 @@ sampler:
       B: 1.41
       omega_cdm: 0.125
       omega_b: 0.0224
-      A_s: 1.9e-9
+      # A_s: 1.9e-9
+      logA: 3.05321
       n_s: 0.96
       H0: 69.
       A_CIB: 0.66
@@ -221,4 +259,5 @@ sampler:
 
 
 
-debug : True
+debug : False
+timing: True

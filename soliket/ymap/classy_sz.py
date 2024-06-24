@@ -57,6 +57,15 @@ class classy_sz(classy):
                     args_names=[],
                     args=[])
 
+        if "sz_unbinned_cluster_counts" in requirements:
+            # make sure cobaya still runs as it does for standard classy
+            requirements.pop("sz_unbinned_cluster_counts")
+            # specify the method to collect the new observable
+            self.collectors["sz_unbinned_cluster_counts"] = Collector(
+                    method="szunbinned_loglike", # name of the method in classy.pyx
+                    args_names=[],
+                    args=[])
+
         super().must_provide(**requirements)
 
     # get the required new observable
@@ -65,6 +74,10 @@ class classy_sz(classy):
         cls = deepcopy(self._current_state["Cl_sz"])
         return cls
 
+    # get the required new observable
+    def get_sz_unbinned_cluster_counts(self):
+        cls = deepcopy(self._current_state["sz_unbinned_cluster_counts"])
+        return cls
 
     # get the required new observable
     def get_sz_binned_cluster_counts(self):
