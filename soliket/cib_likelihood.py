@@ -23,6 +23,7 @@ from scipy.ndimage.interpolation import shift
 from typing import Optional, Sequence
 from pkg_resources import resource_filename
 from myfuncs import alm as yalm
+from mpi4py import MPI
 
 
 
@@ -31,9 +32,9 @@ class CIB_Likelihood(GaussianLikelihood):
     cib_spectra_file: Optional[str] = 'toy_data.npy'
     cib_cov_directory: Optional[str] = '/project/r/rbond/ymehta3/output/param-fitting/'
     # cib_cov_file: Optional[str] = 'covCl_avg_v3.npy'
-    cib_cov_file: Optional[str] = 'toy_cov.npy'
-    cross_wsp_directory: Optional[str] = '/project/r/rbond/ymehta3/output/cross_errs/gaussian_covariances/'
-    cross_wsp_file: Optional[str] = 'cov_wsp_cross_545_3.0e+20_gp40.fits'
+    cib_cov_file: Optional[str] = 'toy_cov_fudge.npy'
+    cross_wsp_directory: Optional[str] = '/project/r/rbond/ymehta3/output/mask_decoupled/mcms/'
+    cross_wsp_file: Optional[str] = 'wsp_DR6_x_545_4.0e+20_gp40.fits'
     cov_ell_info_directory: Optional[str] = '/project/r/rbond/ymehta3/' 
     cov_ell_info_file: Optional[str] = 'input_data/bandpower_ell_info.txt'
 
@@ -54,6 +55,10 @@ class CIB_Likelihood(GaussianLikelihood):
         #Extract the Data
         self.datavector = Dpoints[:,1]
         self.ellsvector = Dpoints[:,0]  # for mock data, this is binned class_sz theory ells
+
+        self.debug_index = 1
+        comm = MPI.COMM_WORLD
+        self.rank = comm.Get_rank()
 
         super().initialize()
 
@@ -86,33 +91,35 @@ class CIB_Likelihood(GaussianLikelihood):
             Cl_kappa_cib = Dl_tot_theory / fac
             theoryvector_unbinned.append(Cl_kappa_cib)
 
-        # #Bin Theory
-        # theoryvector_binned = []
-        # for Cls_unbinned in theoryvector_unbinned:
-        #     #Interpolate the Theory Vector 
-        #     full_ells = np.arange(lmax)
-        #     interp_Cls_unbinned = np.interp(full_ells, ells_theory, Cls_unbinned)
+        #Bin Theory
+        theoryvector_binned = []
+        for Cls_unbinned in theoryvector_unbinned:
+            #Interpolate the Theory Vector 
+            full_ells = np.arange(self.lmax+1)
+            interp_Cls_unbinned = np.interp(full_ells, ells_theory, Cls_unbinned)
 
-        #     # for mock data, the data ells are the binned theory ells, so there's already perfect syncronization with the theory Cl's
-        #     theoryvector_binned.append( yalm.binTheory(interp_Cls_unbinned, self.wsp_name) )
+            # for mock data, the data ells are the binned theory ells, so there's already perfect syncronization with the theory Cl's
+            theoryvector_binned.append( yalm.binTheory(interp_Cls_unbinned, self.wsp_name) )
 
-        theoryvector_binned = theoryvector_unbinned
+        # theoryvector_binned = theoryvector_unbinned
 
         #Create large, Multifreq Theory Vector
         theoryvector = np.array(theoryvector_binned).flatten()
 
         #Debugging
-        debugfname = self.data_directory + 'mcmcresults/' + 'steps_Cls.txt'
-        if not os.path.isfile(debugfname):
-            np.savetxt(debugfname, [theoryvector])
-        else:
-            # import pdb; pdb.set_trace()
-            all_theoryCls = np.loadtxt(debugfname)
-            if all_theoryCls.ndim == 1:
-                np.savetxt(debugfname, np.stack( (all_theoryCls, theoryvector) ))
-            elif all_theoryCls.ndim == 2: 
-                np.savetxt(debugfname, np.concatenate( (all_theoryCls, theoryvector[None, :]) ))
-            else:
-                raise ValueError('something has gone horribly wrong with saving the previous spectra!')
+        # debugfname = self.data_directory + 'mcmcresults/steps/' + f'steps_Cls_{self.rank}_{self.debug_index}.npy'
+        # # if not os.path.isfile(debugfname):
+        # #     np.savetxt(debugfname, [theoryvector])
+        # # else:
+        # #     # import pdb; pdb.set_trace()
+        # #     all_theoryCls = np.loadtxt(debugfname)
+        # #     if all_theoryCls.ndim == 1:
+        # #         np.savetxt(debugfname, np.stack( (all_theoryCls, theoryvector) ))
+        # #     elif all_theoryCls.ndim == 2: 
+        # #         np.savetxt(debugfname, np.concatenate( (all_theoryCls, theoryvector[None, :]) ))
+        # #     else:
+        # #         raise ValueError('something has gone horribly wrong with saving the previous spectra!')
+        # np.save(debugfname, theoryvector)
+        # self.debug_index += 1
 
         return theoryvector
