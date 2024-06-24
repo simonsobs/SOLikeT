@@ -6,7 +6,7 @@ from .gaussian import GaussianLikelihood, MultiGaussianLikelihood
 # from .ccl import CCL
 # from .ymap.ymap_ps import SZLikelihood, SZForegroundTheory
 ## from .sz_binned_cluster_counts.binned_cc import binned_cc_likelihood
-from .classy_cibxkappa import classy_cibxkappa
-from .cib_likelihood import CIB_Likelihood
-from .yg.galaxy_x_galaxy import GXG_Likelihood
-from .yg.y_x_galaxy import YXG_Likelihood
+# from .classy_cibxkappa import classy_cibxkappa
+from .cibxlensing import CIBxKAPPA_Likelihood
+# from .yg.galaxy_x_galaxy import GXG_Likelihood
+# from .yg.y_x_galaxy import YXG_Likelihood

@@ -27,7 +27,7 @@ from mpi4py import MPI
 
 
 
-class CIB_Likelihood(GaussianLikelihood):
+class CIBxKAPPA_Likelihood(GaussianLikelihood):
     cib_spectra_directory: Optional[str] = '/project/r/rbond/ymehta3/output/param-fitting/'
     cib_spectra_file: Optional[str] = 'toy_data.npy'
     cib_cov_directory: Optional[str] = '/project/r/rbond/ymehta3/output/param-fitting/'
@@ -64,7 +64,7 @@ class CIB_Likelihood(GaussianLikelihood):
 
 
     def get_requirements(self):
-        return {"Cl_kappa_cib": {}}
+        return {"cl_cib_kappa": {}}
 
     def _get_data(self):
         ell = self.ellsvector
@@ -76,7 +76,7 @@ class CIB_Likelihood(GaussianLikelihood):
 
 
     def _get_theory(self, **params_values):
-        theory = self.theory.get_Cl_kappa_cib()
+        theory = self.theory.get_cl_cib_kappa()
         theoryvector_unbinned = []
 
         #Extract All Cross Spectra

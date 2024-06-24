@@ -1,0 +1,1 @@
+from .cibxlensing_likelihood import CIBxKAPPA_Likelihood
