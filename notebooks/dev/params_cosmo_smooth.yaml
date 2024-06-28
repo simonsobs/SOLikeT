@@ -1,18 +1,56 @@
-cosmomc_theta:
-  value: 0.0104090
-  latex: \theta_mc
+# cosmomc_theta:
+#   prior:
+#     min: 103.8e-4
+#     max: 104.4e-4
+#   ref: 0.0104108
+#   latex: \theta_mc
+H0:
+  latex: H_0
+  prior:
+    max: 100
+    min: 40
+  ref:
+    dist: norm
+    loc: 67.7
+    scale: 5.0
 logA:
-  value: 3.045
-  drop: True
-  latex: \log 10^{10} A_s
+  drop: true
+  latex: \log(10^{10} A_\mathrm{s})
+  prior:
+    max: 4.0
+    min: 1.6
+  ref:
+    dist: norm
+    loc: 3.05
+    scale: 0.001
 As:
   value: 'lambda logA: 1e-10*np.exp(logA)'
+  derived: true
 ombh2:
-  value: 0.02236
-  latex: \Omega_b h^2
+  latex: \Omega_\mathrm{b} h^2
+  value: 0.0224
+  renames:
+  - omegabh2
+omega_de:
+  latex: \Omega_\Lambda
+  derived: true
+  renames:
+  - omegal
+omegam:
+  latex: \Omega_\mathrm{m}
+  derived: true
+omegamh2:
+  derived: 'lambda omegam, H0: omegam*(H0/100)**2'
+  latex: \Omega_\mathrm{m} h^2
 omch2:
-  value: 0.1202
+  prior:
+    min: 0.09
+    max: 0.15
+  ref: 0.1202
   latex: \Omega_c h^2
+sigma8:
+  latex: \sigma_8
+  derived: true
 ns:
   value: 0.9649
   latex: n_s
