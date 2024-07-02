@@ -6,23 +6,11 @@
 #   latex: \theta_mc
 H0:
   latex: H_0
-  prior:
-    max: 100
-    min: 40
-  ref:
-    dist: norm
-    loc: 67.7
-    scale: 5.0
+  value: 67.7
 logA:
   drop: true
   latex: \log(10^{10} A_\mathrm{s})
-  prior:
-    max: 4.0
-    min: 1.6
-  ref:
-    dist: norm
-    loc: 3.05
-    scale: 0.001
+  value: 3.05
 As:
   value: 'lambda logA: 1e-10*np.exp(logA)'
   derived: true
@@ -43,10 +31,7 @@ omegamh2:
   derived: 'lambda omegam, H0: omegam*(H0/100)**2'
   latex: \Omega_\mathrm{m} h^2
 omch2:
-  prior:
-    min: 0.09
-    max: 0.15
-  ref: 0.1202
+  value: 0.1202
   latex: \Omega_c h^2
 sigma8:
   latex: \sigma_8
@@ -72,3 +57,6 @@ mnu3:
 mnu:
   value: 'lambda mnu1, mnu2 ,mnu3: mnu1 + mnu2 + mnu3'
   latex: \sum m_\nu
+nnu:
+  value: 3.044
+  latex: N_eff
