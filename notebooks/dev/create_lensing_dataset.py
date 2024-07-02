@@ -6,7 +6,7 @@ from cobaya.yaml import yaml_load_file
 from cobaya.model import get_model
 
 # read in the cobaya info
-info = yaml_load_file('run_lensing.yaml')
+info = yaml_load_file('run_lensing_fiducial.yaml')
 
 model = get_model(info)
 model.loglikes({})

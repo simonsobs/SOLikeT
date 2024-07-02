@@ -12,7 +12,7 @@ from cobaya.yaml import yaml_load_file
 from cobaya.install import install
 from cobaya.model import get_model
 
-info = yaml_load_file('run_shearkappa.yaml')
+info = yaml_load_file('run_shearkappa_fiducial.yaml')
 
 # here we will adopt a nominal cosmology to populate the sacc file
 # before replacing with the spectra we just computed within soliket
@@ -40,7 +40,7 @@ nell_win = len(ells_win)
 
 # for i in range(n_ell):
 #     wins[i, i * delta_ell : (i + 1) * delta_ell] = 1.0 * win_norm
-    
+
 # Well = sacc.BandpowerWindow(ells_win, wins.T)
 
 # s_win = sacc.Sacc.load_fits('../../../../act-x-des/desgamma-x-actkappa/data/UNBLINDED_ACTPlanck_tSZfree_ACTDR4-kappa_DESY3-gamma_data_simCov.fits')

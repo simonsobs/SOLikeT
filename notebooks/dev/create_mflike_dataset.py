@@ -9,7 +9,7 @@ from cobaya.install import install
 from cobaya.model import get_model
 
 # read in the cobaya info
-info = yaml_load_file('run_mflike.yaml')
+info = yaml_load_file('run_mflike_fiducial.yaml')
 
 # ensure all components are installed
 install(info)
@@ -106,14 +106,14 @@ for exp_f in exp_freq:
     my_data_bandpasses = {"nu":np.array([float(exp_f.split("_")[1])]), "b_nu":np.array([1.])}
     my_data_beams = {"l":np.arange(10000), "bl":np.ones(10000)}
 
-    # CMB temperature 
+    # CMB temperature
     spec_sacc.add_tracer("NuMap", "%s_s0" % (exp_f),
                                  quantity="cmb_temperature", spin=0,
                                  nu=model.components[0].bands[exp_f+"_s0"]["nu"],
                                  bandpass=model.components[0].bands[exp_f+"_s0"]["bandpass"],
                                  ell=my_data_beams["l"],
                                  beam=my_data_beams["bl"])
-    
+
     # CMB polarization
     spec_sacc.add_tracer("NuMap", "%s_s2" % (exp_f),
                                  quantity="cmb_polarization", spin=2,

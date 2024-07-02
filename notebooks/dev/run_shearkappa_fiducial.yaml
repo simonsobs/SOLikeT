@@ -1,0 +1,7 @@
+debug: False
+
+theory: !defaults [theory_camb, theory_ccl]
+
+likelihood: !defaults [like_shearkappa]
+
+params: !defaults [params_cosmo_smooth_fiducial, params_shearkappanuisance_smooth_fiducial]
