@@ -20,9 +20,6 @@ getdist_options = {'ignore_rows': 0.3}
 MFLike = yaml_load_file('run_mflike.yaml')
 LensingLike = yaml_load_file('run_lensing.yaml')
 
-del MFLike['params']['nnu']
-del LensingLike['params']['nnu']
-
 # DataSet is a combination of likelihoods, list of name tags to identify data components
 joint = DataSet(['MFLike', 'LensingLike'], [MFLike, LensingLike])
 
