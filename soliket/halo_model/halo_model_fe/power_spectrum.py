@@ -23,6 +23,8 @@ class mm_gg_mg_spectra:
         self.gal_mod           = gal_mod
 
     def halo_terms_matter(self):
+        rho_mean = self.instance_200.mean_density()
+
         intmass_1h = np.zeros([len(self.k_array), len(self.redshift), len(self.mass)])
         intmass_2h = np.zeros([len(self.k_array), len(self.redshift), len(self.mass)])
 
@@ -32,9 +34,12 @@ class mm_gg_mg_spectra:
         for k in range(len(self.k_array)):
             intmass_1h[k,:,:] = self.instance_200.dndM * (self.mass[np.newaxis, :] * self.instance_200.u_k[:,:,k]) ** 2
             intmass_2h[k,:,:] = self.instance_200.bias_cib * self.instance_200.dndM * self.mass[np.newaxis, :] * self.instance_200.u_k[:,:,k]
+
+            B = 1. - trapz(self.instance_200.bias_cib * self.instance_200.dndM * self.mass[np.newaxis, :]  / rho_mean, self.mass, axis=-1) 
+            print(B)
             
-            Pk_1h[k,:] = trapz(intmass_1h[k,:,:], self.mass, axis=-1) / self.instance_200.mean_density() ** 2
-            Pk_2h[k,:] = self.Pk_array[:,k] * (trapz(intmass_2h[k,:,:], self.mass, axis=-1) ** 2) / self.instance_200.mean_density() ** 2
+            Pk_1h[k,:] = trapz(intmass_1h[k,:,:], self.mass, axis=-1) / rho_mean ** 2
+            Pk_2h[k,:] = self.Pk_array[:,k] * (trapz(intmass_2h[k,:,:], self.mass, axis=-1)/ rho_mean + B) ** 2 
 
         Pk_mm = Pk_1h + Pk_2h
 
