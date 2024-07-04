@@ -6,6 +6,7 @@ A_IA:
     scale: 0.65
   proposal: 0.5
   ref: 0.35
+  # value: 0.35
 eta_IA:
   latex: \eta_{IA}
   prior:
@@ -14,6 +15,7 @@ eta_IA:
     scale: 4.0
   proposal: 3.0
   ref: 1.66
+  # value: 1.66
 gs_des_bin1_deltaz:
   latex: \Delta z_{1}
   value: 0.0

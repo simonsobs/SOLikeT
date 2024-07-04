@@ -23,6 +23,7 @@ logA:
     dist: norm
     loc: 3.05
     scale: 0.001
+  # value: 3.05
 As:
   value: 'lambda logA: 1e-10*np.exp(logA)'
   derived: true
@@ -47,6 +48,7 @@ omch2:
     min: 0.09
     max: 0.15
   ref: 0.1202
+  # value: 0.1202
   latex: \Omega_c h^2
 sigma8:
   latex: \sigma_8

@@ -19,33 +19,40 @@ info = yaml_load_file('run_shearkappa.yaml')
 # we also use the nominal cosmology for constructing a Gaussian covmat
 h = 0.677
 
-cosmo = ccl.Cosmology(Omega_c=info['params']['omch2']['value']/(h*h),
+cosmo = ccl.Cosmology(Omega_c=info['params']['omch2']['ref']/(h*h),
                       Omega_b=info['params']['ombh2']['value']/(h*h),
                       h=h,
                       n_s=info['params']['ns']['value'],
-                      A_s=1e-10*np.exp(info['params']['logA']['value']))
+                      A_s=1e-10*np.exp(info['params']['logA']['ref']['loc']))
 
 # construct binning
-ell_max = 600
-n_ell = 20
+ell_max = 1900
+n_ell = 6
 delta_ell = ell_max // n_ell
 
 ells = (np.arange(n_ell) + 0.5) * delta_ell
 
 ells_win = np.arange(ell_max + 1)
 nell_win = len(ells_win)
-wins = np.zeros([n_ell, len(ells_win)])
+# wins = np.zeros([n_ell, len(ells_win)])
 
-for i in range(n_ell):
-    wins[i, i * delta_ell : (i + 1) * delta_ell] = 1.0
+# win_norm = n_ell / ell_max
+
+# for i in range(n_ell):
+#     wins[i, i * delta_ell : (i + 1) * delta_ell] = 1.0 * win_norm
     
-Well = sacc.BandpowerWindow(ells_win, wins.T)
+# Well = sacc.BandpowerWindow(ells_win, wins.T)
+
+# s_win = sacc.Sacc.load_fits('../../../../act-x-des/desgamma-x-actkappa/data/UNBLINDED_ACTPlanck_tSZfree_ACTDR4-kappa_DESY3-gamma_data_simCov.fits')
+
+Well = sacc.BandpowerWindow(ells_win, np.loadtxt('bpw1.txt'))
 
 # set up kappa lensing tracer
 zstar = 1086
-fsky_solensing = 0.4
 
 tracer_so_k = ccl.CMBLensingTracer(cosmo, z_source=zstar)
+noise_so_kk = np.loadtxt('./data/nlkk_v3_1_0_deproj0_SENS1_fsky0p4_it_lT30-3000_lP30-5000.dat')[:,7] # [7 is MV(all)]
+noise_so_kk = noise_so_kk[:ell_max+1]
 
 # Approximation to SO LAT beam
 fwhm_so_k = 1. * units.arcmin
@@ -69,7 +76,7 @@ for ibin in np.arange(1, nbins+1):
     shear_nz.append(nz_bin)
     z0_IA = np.trapz(z_shear * nz_bin)
 
-    ia_z = (z_shear, info['params']['A_IA']['value'] * ((1 + z_shear) / (1 + z0_IA)) ** info['params']['eta_IA']['value'])
+    ia_z = (z_shear, info['params']['A_IA']['ref'] * ((1 + z_shear) / (1 + z0_IA)) ** info['params']['eta_IA']['ref'])
 
     tracer_bin = ccl.WeakLensingTracer(cosmo,
                                        dndz=(z_shear, nz_bin),
@@ -80,7 +87,7 @@ for ibin in np.arange(1, nbins+1):
 # calculate spectra
 spectra = np.zeros([n_maps, n_maps, nell_win])
 spectra_label = np.empty([n_maps, n_maps], dtype='S2')
-spectra[0, 0, :] = ccl.angular_cl(cosmo, tracer_so_k, tracer_so_k, ells_win)
+spectra[0, 0, :] = ccl.angular_cl(cosmo, tracer_so_k, tracer_so_k, ells_win) + noise_so_kk
 spectra_label[0, 0] = 'kk'
 
 for ibin in np.arange(1, nbins+1):
@@ -192,17 +199,33 @@ s.save_fits('./data/shearkappa_smooth_mockdata.fits', overwrite=True)
 
 # now we calculate the soliket spectra at the fiducial parameters
 
+fid_cosmo = {'H0': info['params']['H0']['ref']['loc'],
+             'logA': info['params']['logA']['ref']['loc'],
+             'omch2': info['params']['omch2']['ref'],
+             'A_IA': info['params']['A_IA']['ref'],
+             'eta_IA': info['params']['eta_IA']['ref'],}
+
 # force model computation at fiducial parameters
 model = get_model(info)
-model.loglikes()
+model.loglikes(fid_cosmo)
 
 # and replace the data in the sacc file
 sklike = model.likelihood['soliket.cross_correlation.ShearKappaLikelihood']
 
+# param_values = {'H0': 67.7, 'logA': 3.05, 'omch2': 0.1202, 'A_IA': 0.35, 'eta_IA': 1.66}
 param_values = {}
 
 for par in info['params']:
-    param_values[par] = info['params'][par]['value']
+    try:
+        param_values[par] = info['params'][par]['value']
+    except KeyError:
+        try:
+            param_values[par] = info['params'][par]['ref']['loc']
+        except:
+            try:
+                param_values[par] = info['params'][par]['ref']
+            except:
+                continue
 
 sktheory = sklike._get_theory(**param_values)
 
@@ -211,9 +234,9 @@ s.mean = sktheory
 s.save_fits('./data/shearkappa_smooth_mockdata.fits', overwrite=True)
 
 model = get_model(info)
-likes = model.loglikes()
+likes = model.loglikes(fid_cosmo)
 
 sklike = model.likelihood['soliket.cross_correlation.ShearKappaLikelihood']
 sktheory = sklike._get_theory(**param_values)
 
-assert np.all(sklike==sktheory)
+assert np.all(s.mean==sktheory)
