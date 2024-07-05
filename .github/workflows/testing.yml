@@ -25,8 +25,8 @@ jobs:
             python-version: '3.8'
             toxenv: py38-test-oldest
 
-          - name: macOS 11
-            os: macos-11
+          - name: macOS latest
+            os: macos-latest
             python-version: '3.11'
             toxenv: py311-test-latest
 
@@ -34,7 +34,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Install Conda w/ Python ${{ matrix.python-version }}
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: false
           python-version: ${{ matrix.python-version }}
