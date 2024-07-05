@@ -25,8 +25,8 @@ jobs:
             python-version: '3.8'
             toxenv: py38-test-oldest
 
-          - name: macOS 11
-            os: macos-11
+          - name: macOS latest
+            os: macos-latest
             python-version: '3.11'
             toxenv: py311-test-latest
 
