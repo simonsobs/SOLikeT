@@ -13,7 +13,7 @@ dependencies = [
     "requests",
     'importlib-metadata; python_version<"3.8"',
     "numpy",
-    "scipy",
+    "scipy>=1.6",
     "pandas", # to remove
     "astropy",
     "cobaya",
