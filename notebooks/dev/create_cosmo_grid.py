@@ -1,13 +1,13 @@
 # sample grid parameter file
-# build grid with "cobaya-grid-create grid_dir simple_grid.py"
 
 import numpy as np
 from cobaya import InputDict
 from cobaya.grid_tools.batchjob import DataSet
 from cobaya.yaml import yaml_load_file
+import copy
 
 default: InputDict = {
-    'sampler': {'mcmc': {'max_samples': 10, 'burn_in': 2, 'covmat': 'auto'}},
+    'sampler': {'mcmc': {'Rminus1_stop': 0.1, 'learn_every': '20d', 'covmat': 'auto'}},
 }
 
 # dict or list of default settings to combine; each item can be dict or yaml file name
@@ -17,15 +17,27 @@ importance_defaults = []
 minimize_defaults = []
 getdist_options = {'ignore_rows': 0.3}
 
-MFLike = yaml_load_file('run_mflike.yaml')
-LensingLike = yaml_load_file('run_lensing.yaml')
+MFLike: InputDict = {'likelihood': yaml_load_file('like_mflike.yaml'),
+                     'params': yaml_load_file('params_cosmo_smooth.yaml') | \
+                               yaml_load_file('params_mflikefg_smooth.yaml') | \
+                               yaml_load_file('params_mflikecal_smooth.yaml'),
+                     'theory': yaml_load_file('theory_camb.yaml') | \
+                               yaml_load_file('theory_ccl.yaml') | \
+                               yaml_load_file('theory_bandpass.yaml') | \
+                               yaml_load_file('theory_foregrounds.yaml') | \
+                               yaml_load_file('theory_theoryforge.yaml')
+                    }
 
-# DataSet is a combination of likelihoods, list of name tags to identify data components
-joint = DataSet(['MFLike', 'LensingLike'], [MFLike, LensingLike])
+LensingLike: InputDict = {'likelihood':  yaml_load_file('like_LensingLikelihood.yaml'),
+                          'params': yaml_load_file('params_cosmo_smooth.yaml'),
+                          'theory': yaml_load_file('theory_camb.yaml') | \
+                                    yaml_load_file('theory_ccl.yaml')
+                        }
 
-# Dictionary of groups of data/parameter combination to run
-# datasets is a list of DataSet objects, or tuples of data name tag combinations and
-# corresponding list of input dictionaries or yaml files.
+joint = DataSet(['MFLike', 'LensingLike'], [MFLike, copy.deepcopy(LensingLike)])
+
+#LensingLike['params']['ombh2'] = {'value': 0.022}
+
 
 groups = {
     'main': {
