@@ -129,7 +129,7 @@ def sigma_sq_integral(R_grid, power_spt, k_val):
         ) * k ** 2 for k, i in zip(k_val, np.arange(len(k_val)))]
     )
 
-    return simps(to_integ / (2 * np.pi ** 2), x=k_val, axis=0)
+    return simpson(to_integ / (2 * np.pi ** 2), x=k_val, axis=0)
 
 
 def dn_dlogM(M, z, rho, delta, k, P, comoving=False):
