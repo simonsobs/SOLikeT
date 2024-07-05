@@ -1,6 +1,5 @@
 [project]
 name = "soliket"
-# version = "0.1.dev1"
 dynamic = ['version']
 authors = [
 	{name = "Simons Observatory"}
