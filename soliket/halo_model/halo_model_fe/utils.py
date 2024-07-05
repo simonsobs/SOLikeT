@@ -300,7 +300,6 @@ class u_p_nfw_hmf_bias:
     def fsigma(self, rad, red, zeta):
         z = red
         dhalo = self.delta_h / cosmo.Om(z)
-        lgdelta = np.log10(dhalo)
         A_0 = self.coefficient(dhalo)[0]
         a_0 = self.coefficient(dhalo)[1]
         b_0 = self.coefficient(dhalo)[2]
@@ -324,7 +323,8 @@ class u_p_nfw_hmf_bias:
 
     def dn_dm(self, red, zeta):
         rad = self.mass_to_radius()
-        return self.gsigma(rad, red, zeta) * self.mean_density() * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2 #using normalized T08 hmf
+        #return self.gsigma(rad, red, zeta) * self.mean_density() * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2 #using normalized T08 hmf
+        return self.fsigma(rad, red, zeta) * self.mean_density() * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2 #using un-normalized T08 hmf
 
     def dn_dlnm(self, red, zeta):
         return self.mh * self.dn_dm(red, zeta)

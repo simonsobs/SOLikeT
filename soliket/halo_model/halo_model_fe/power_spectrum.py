@@ -36,7 +36,6 @@ class mm_gg_mg_spectra:
             intmass_2h[k,:,:] = self.instance_200.bias_cib * self.instance_200.dndM * self.mass[np.newaxis, :] * self.instance_200.u_k[:,:,k]
 
             B = 1. - trapz(self.instance_200.bias_cib * self.instance_200.dndM * self.mass[np.newaxis, :]  / rho_mean, self.mass, axis=-1) 
-            print(B)
             
             Pk_1h[k,:] = trapz(intmass_1h[k,:,:], self.mass, axis=-1) / rho_mean ** 2
             Pk_2h[k,:] = self.Pk_array[:,k] * (trapz(intmass_2h[k,:,:], self.mass, axis=-1)/ rho_mean + B) ** 2 
@@ -118,3 +117,28 @@ class mm_gg_mg_spectra:
             Pgal = Pk_1h + Pk_2h
 
             return Pgal, Pk_1h, Pk_2h
+        
+    def halo_terms_matter_galaxy(self):
+        rho_mean  = self.instance_200.mean_density()
+        ngal_mean = self.instance_HOD.ngal_EP_200c
+
+        intmass_1h   = np.zeros([len(self.k_array), len(self.redshift), len(self.mass)])
+        intmass_2h_m = np.zeros([len(self.k_array), len(self.redshift), len(self.mass)])
+        intmass_2h_g = np.zeros([len(self.k_array), len(self.redshift), len(self.mass)])
+
+        Pk_1h      = np.zeros([len(self.k_array), len(self.redshift)])
+        Pk_2h      = np.zeros([len(self.k_array), len(self.redshift)])
+
+        for k in range(len(self.k_array)):
+            intmass_1h[k,:,:]   = self.instance_200.dndM * self.instance_HOD.Nbra_EP[np.newaxis,:] * self.mass[np.newaxis,:] * self.instance_200.u_k[:,:,k] ** 2
+            intmass_2h_m[k,:,:] = self.instance_200.dndM * self.instance_200.bias_cib * self.mass[np.newaxis,:] * self.instance_200.u_k[:,:,k]
+            intmass_2h_g[k,:,:] = self.instance_200.dndM * self.instance_200.bias_cib * self.instance_HOD.Nbra_EP[np.newaxis,:] * self.instance_200.u_k[:,:,k]
+
+            B = 1. - trapz(self.instance_200.bias_cib * self.instance_200.dndM * self.mass[np.newaxis, :]  / rho_mean, self.mass, axis=-1)
+
+            Pk_1h[k,:] = trapz(intmass_1h[k,:,:], self.mass, axis=-1) / (ngal_mean * rho_mean)
+            Pk_2h[k,:] = self.Pk_array[:,k] * (trapz(intmass_2h_m[k,:,:], self.mass, axis=-1) / rho_mean + B) * trapz(intmass_2h_g[k,:,:], self.mass, axis=-1) / ngal_mean
+
+        Pmg = Pk_1h + Pk_2h
+
+        return Pmg, Pk_1h, Pk_2h
