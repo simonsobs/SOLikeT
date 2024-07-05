@@ -1,9 +1,3 @@
-# cosmomc_theta:
-#   prior:
-#     min: 103.8e-4
-#     max: 104.4e-4
-#   ref: 0.0104108
-#   latex: \theta_mc
 H0:
   latex: H_0
   prior:
@@ -12,7 +6,7 @@ H0:
   ref:
     dist: norm
     loc: 67.7
-    scale: 5.0
+    scale: 1.0
 logA:
   drop: true
   latex: \log(10^{10} A_\mathrm{s})
@@ -25,10 +19,15 @@ logA:
     scale: 0.001
 As:
   value: 'lambda logA: 1e-10*np.exp(logA)'
-  derived: true
 ombh2:
   latex: \Omega_\mathrm{b} h^2
-  value: 0.0224
+  prior:
+    min: 0.022
+    max: 0.023
+  ref:
+    dist: norm
+    loc: 0.0224
+    scale: 0.0001
   renames:
   - omegabh2
 omega_de:
@@ -46,19 +45,33 @@ omch2:
   prior:
     min: 0.09
     max: 0.15
-  ref: 0.1202
+  ref:
+    dist: norm
+    loc: 0.1202
+    scale: 0.001
   latex: \Omega_c h^2
 sigma8:
   latex: \sigma_8
   derived: true
 ns:
-  value: 0.9649
+  prior:
+    min: 0.9
+    max: 1.1
+  ref:
+    dist: norm
+    loc: 0.9649
+    scale: 0.001
   latex: n_s
 Alens:
   value: 1.0
   latex: A_lens
 tau:
-  value: 0.0544
+  prior:
+    dist: norm
+    loc: 0.0544
+    scale: 0.007
+  ref: 0.0544
+  proposal: 0.003
   latex: \tau
 mnu1:
   value: 0.0
