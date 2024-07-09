@@ -1,6 +1,5 @@
 [project]
 name = "soliket"
-# version = "0.1.dev1"
 dynamic = ['version']
 authors = [
 	{name = "Simons Observatory"}
@@ -62,7 +61,7 @@ include = [
 "*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
 
 [tool.setuptools_scm]
-version_file = "soliket/version.py"
+version_file = "soliket/_version.py"
 
 [project.optional-dependencies]
 all = [
