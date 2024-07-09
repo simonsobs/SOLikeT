@@ -14,6 +14,8 @@ output: chains/mflike
 
 theory: !defaults [theory_camb, theory_bandpass, theory_foregrounds, theory_theoryforge]
 
+priors: !defaults [prior_mflikecosmo_smooth, priors_mflikesyst_smooth]
+
 likelihood: !defaults [like_mflike]
 
-params: !defaults [params_cosmo_smooth, params_mflikefg_smooth, params_mflikecal_smooth]
+params: !defaults [params_cosmo_smooth, params_mflikefg_smooth, params_mflikesyst_smooth]

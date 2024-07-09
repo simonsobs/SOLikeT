@@ -60,8 +60,15 @@ Alens:
   value: 1.0
   latex: A_lens
 tau:
-  value: 0.0544
-  latex: \tau
+  prior:
+    min: 0.02
+    max: 0.12
+  ref:
+    dist: norm
+    loc: 0.0544
+    scale: 0.0073
+  proposal: 0.0073
+  latex: \tau_\mathrm{reio}
 mnu1:
   value: 0.0
   drop: True
