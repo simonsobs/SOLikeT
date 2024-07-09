@@ -227,16 +227,21 @@ class BinnedClusterLikelihood(CashCLikelihood):
             qmin = qbins[kk]
             qmax = qbins[kk+1]
 
+            opt_bias_corr_factor=np.ones(y0.shape)
+            for i in range(Npatches):
+                trueSNR=y0[i]/noise[i]
+                opt_bias_corr_factor[i]=_opt_bias_func(trueSNR,-0.050878653910331195,1.2289192256357637)
+
             if scatter == 0.:
 
                 arg = []
                 for i in range(Npatches):
 
                     if compl_mode == 'erf_prod':
-                        arg.append(get_erf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq, dof = self.debiasDOF))
+                        arg.append(get_erf_prod(y0[i]*opt_bias_corr_factor[i], noise[i], qmin, qmax, qcut, kk, Nq, dof = self.debiasDOF))
                         #arg.append(get_stf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
                     elif compl_mode == 'erf_diff':
-                        arg.append(get_erf_diff(y0[i], noise[i], qmin, qmax, qcut, dof = self.debiasDOF))
+                        arg.append(get_erf_diff(y0[i]*opt_bias_corr_factor[i], noise[i], qmin, qmax, qcut, dof = self.debiasDOF))
                         #arg.append(get_stf_diff(y0[i], noise[i], qmin, qmax, qcut))
 
                 comp = np.einsum('ijk,i->jk', np.nan_to_num(arg), skyfracs)
@@ -245,7 +250,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
                 lnyy = np.float32(self.lny)
                 yy0 = np.exp(lnyy)
-                mu = np.float32(np.log(y0))
+                mu = np.float32(np.log(y0*opt_bias_corr_factor))
                 fac = np.float32(1./np.sqrt(2.*np.pi*scatter**2))
 
                 comp = 0.
@@ -275,6 +280,10 @@ class BinnedClusterLikelihood(CashCLikelihood):
         else:
             comp = self._get_completeness_inj(marr, zarr, marr_500c, qbin, **params)
         return comp
+
+   def _opt_bias_func(snr, A, B):
+        """Return optimization bias correction factor - multiply true y0 by this to get what the cluster finder recovers """
+        return 1. + A/snr + B/snr**2
 
     def logp(self, **params_values):
         if self.theorypred['choose_theory'] == 'classy_sz':
@@ -552,6 +561,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             Ynoise = np.outer(Ynoise, np.ones(np.shape(Ytilde[0,:,:])))
             Ynoise_a = np.reshape(Ynoise, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
 
+            SNRTrue = Ytilde / Ynoise_a
+            opt_bias_corr_factor=_opt_bias_func(trueSNR,-0.050878653910331195,1.2289192256357637)
+
+            Ytilde=Ytilde*opt_bias_corr_factor
+
             ans = np.nan_to_num(get_erf(Ytilde, Ynoise_a, qcut_a)).T
             #ans = np.nan_to_num(get_stf(Ytilde, Ynoise_a, qcut_a)).T
 
@@ -563,6 +577,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             qcut = np.outer(np.ones(np.shape(Y_a)), self.qcut)
             qcut_a = np.reshape(qcut, (Y_a.shape[0], Y_a.shape[1]))
+
+            SNRTrue = Y_a / Ynoise_a
+            opt_bias_corr_factor=_opt_bias_func(trueSNR,-0.050878653910331195,1.2289192256357637)
+
+            Y_a=Y_a*opt_bias_corr_factor
 
             Yerf = get_erf(Y_a, Ynoise_a, qcut_a)
             #Yerf = get_stf(Y_a, Ynoise_a, qcut_a)
