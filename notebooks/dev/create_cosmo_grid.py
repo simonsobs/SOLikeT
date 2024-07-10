@@ -42,15 +42,30 @@ LensingLike: InputDict = {'likelihood':  yaml_load_file('like_LensingLikelihood.
                           'priors': yaml_load_file('prior_mflikecosmo_smooth.yaml')
                         }
 
-joint = DataSet(['MFLike', 'LensingLike'], [MFLike, copy.deepcopy(LensingLike)])
+ShearKappaLike: InputDict = {'likelihood':  yaml_load_file('like_shearkappa.yaml'),
+                          'params': yaml_load_file('params_cosmo_smooth.yaml') | \
+                                    yaml_load_file('params_shearkappanuisance_smooth.yaml'),
+                          'theory': yaml_load_file('theory_camb.yaml') | \
+                                    yaml_load_file('theory_ccl.yaml'),
+                          'priors': yaml_load_file('prior_mflikecosmo_smooth.yaml')
+                        }
 
-#LensingLike['params']['ombh2'] = {'value': 0.022}
+joint1 = DataSet(['MFLike', 'LensingLike'], [MFLike, LensingLike])
+joint2 = DataSet(['MFLike', 'ShearKappaLike'], [MFLike, ShearKappaLike])
+joint3 = DataSet(['LensingLike', 'ShearKappaLike'], [LensingLike, ShearKappaLike])
+joint4 = DataSet(['MFLike', 'LensingLike', 'ShearKappaLike'], [MFLike, LensingLike, ShearKappaLike])
 
 
 groups = {
     'main': {
         'models': ['LCDM', 'Neff'],
-        'datasets': [('MFLike', MFLike), ('LensingLike', LensingLike), joint],
+        'datasets': [('MFLike', MFLike),
+                     ('LensingLike', LensingLike),
+                     ('ShearKappaLike', ShearKappaLike),
+                     joint1,
+                     joint2,
+                     joint3,
+                     joint4],
         "defaults": {},  # options specific to this group
     }
 }

@@ -4,4 +4,4 @@ cal_LAT_225_prior: "lambda cal_LAT_225: stats.norm.logpdf(cal_LAT_225, loc=1.0, 
 
 bandint_shift_LAT_93_prior: "lambda bandint_shift_LAT_93: stats.norm.logpdf(bandint_shift_LAT_93, loc=0.0, scale=1.0)"
 bandint_shift_LAT_145_prior: "lambda bandint_shift_LAT_145: stats.norm.logpdf(bandint_shift_LAT_145, loc=0.0, scale=1.0)"
-bandint_shift_LAT_225_prior: "lambda bandint_shift_LAT_225: stats.norm.logpdf(bandint_shift_LAT_225, loc=0.0, scale=1.0)
+bandint_shift_LAT_225_prior: "lambda bandint_shift_LAT_225: stats.norm.logpdf(bandint_shift_LAT_225, loc=0.0, scale=1.0)"
