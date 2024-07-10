@@ -33,4 +33,4 @@ jobs:
       - name: Run Tests
         shell: bash -el {0}
         run: |
-          python -Xutf8 -m tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
+          tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
