@@ -17,6 +17,7 @@ logA:
     dist: norm
     loc: 3.05
     scale: 0.001
+  # value: 3.05
 As:
   value: 'lambda logA: 1e-10*np.exp(logA)'
 ombh2:
@@ -67,12 +68,14 @@ Alens:
   latex: A_lens
 tau:
   prior:
+    min: 0.02
+    max: 0.12
+  ref:
     dist: norm
     loc: 0.0544
-    scale: 0.007
-  ref: 0.0544
-  proposal: 0.003
-  latex: \tau
+    scale: 0.0073
+  proposal: 0.0073
+  latex: \tau_\mathrm{reio}
 mnu1:
   value: 0.0
   drop: True
