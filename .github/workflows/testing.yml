@@ -34,7 +34,6 @@ jobs:
             os: windows-latest
             python-version: '3.11'
             toxenv: py311-test-latest
-            env: PYTHONUTF8=utf-8
 
     steps:
       - name: Checkout repository
