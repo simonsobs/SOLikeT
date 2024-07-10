@@ -12,7 +12,8 @@ default: InputDict = {
                          'drag': False,
                          'max_tries': 10000,
                          'oversample_power': 0.4,
-                         'proposal_scale': 1.9}},
+                         'proposal_scale': 1.9,
+                         'learn_every': '20d'}},
 }
 
 # dict or list of default settings to combine; each item can be dict or yaml file name
@@ -27,7 +28,6 @@ MFLike: InputDict = {'likelihood': yaml_load_file('like_mflike.yaml'),
                                yaml_load_file('params_mflikefg_smooth.yaml') | \
                                yaml_load_file('params_mflikesyst_smooth.yaml'),
                      'theory': yaml_load_file('theory_camb.yaml') | \
-                               yaml_load_file('theory_ccl.yaml') | \
                                yaml_load_file('theory_bandpass.yaml') | \
                                yaml_load_file('theory_foregrounds.yaml') | \
                                yaml_load_file('theory_theoryforge.yaml'),
