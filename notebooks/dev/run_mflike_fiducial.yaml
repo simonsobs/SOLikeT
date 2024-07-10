@@ -4,4 +4,4 @@ theory: !defaults [theory_camb, theory_bandpass, theory_foregrounds, theory_theo
 
 likelihood: !defaults [like_mflike]
 
-params: !defaults [params_cosmo_smooth_fiducial, params_mflikefg_smooth_fiducial, params_mflikecal_smooth_fiducial]
+params: !defaults [params_cosmo_smooth_fiducial, params_mflikefg_smooth_fiducial, params_mflikesyst_smooth_fiducial]
