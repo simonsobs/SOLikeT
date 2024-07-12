@@ -29,24 +29,20 @@ MFLike: InputDict = {'likelihood': yaml_load_file('like_mflike.yaml'),
                      'theory': yaml_load_file('theory_camb.yaml') | \
                                yaml_load_file('theory_bandpass.yaml') | \
                                yaml_load_file('theory_foregrounds.yaml') | \
-                               yaml_load_file('theory_theoryforge.yaml'),
-                     'prior': yaml_load_file('prior_mflikecosmo_smooth.yaml') | \
-                               yaml_load_file('priors_mflikesyst_smooth.yaml')
+                               yaml_load_file('theory_theoryforge.yaml')
                     }
 
 LensingLike: InputDict = {'likelihood':  yaml_load_file('like_LensingLikelihood.yaml'),
                           'params': yaml_load_file('params_cosmo_smooth.yaml'),
                           'theory': yaml_load_file('theory_camb.yaml') | \
-                                    yaml_load_file('theory_ccl.yaml'),
-                          'prior': yaml_load_file('prior_mflikecosmo_smooth.yaml')
+                                    yaml_load_file('theory_ccl.yaml')
                         }
 
 ShearKappaLike: InputDict = {'likelihood':  yaml_load_file('like_shearkappa.yaml'),
                           'params': yaml_load_file('params_cosmo_smooth.yaml') | \
                                     yaml_load_file('params_shearkappanuisance_smooth.yaml'),
                           'theory': yaml_load_file('theory_camb.yaml') | \
-                                    yaml_load_file('theory_ccl.yaml'),
-                          'prior': yaml_load_file('prior_mflikecosmo_smooth.yaml')
+                                    yaml_load_file('theory_ccl.yaml')
                         }
 
 joint1 = DataSet(['MFLike', 'LensingLike'], [MFLike, LensingLike])

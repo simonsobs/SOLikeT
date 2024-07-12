@@ -67,6 +67,10 @@ Alens:
   value: 1.0
   latex: A_lens
 tau:
+  prior:
+    dist: norm
+    loc: 0.0544
+    scale: 0.0073
   ref:
     dist: norm
     loc: 0.0544
