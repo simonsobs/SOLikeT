@@ -1,24 +1,24 @@
 bandint_shift_LAT_93:
   prior:
     dist: norm
-    loc: 1.
-    scale: 0.01
+    loc: 0.
+    scale: 1.
   ref: 0.
   proposal: 0.1
   latex: \Delta_{\rm band}^{93}
 bandint_shift_LAT_145:
   prior:
     dist: norm
-    loc: 1.
-    scale: 0.01
+    loc: .
+    scale: 1.
   ref: 0.
   proposal: 0.1
   latex: \Delta_{\rm band}^{145}
 bandint_shift_LAT_225:
   prior:
     dist: norm
-    loc: 1.
-    scale: 0.01
+    loc: 0.
+    scale: 1.
   ref: 0.
   proposal: 0.1
   latex: \Delta_{\rm band}^{225}
@@ -26,24 +26,24 @@ bandint_shift_LAT_225:
 cal_LAT_93:
   prior:
     dist: norm
-    loc: 0.
-    scale: 1.
+    loc: 1.
+    scale: 0.01
   ref: 1
   proposal: 0.001
   latex: \mathrm{Cal}^{93}
 cal_LAT_145:
   prior:
     dist: norm
-    loc: 0.
-    scale: 1.
+    loc: 1.
+    scale: 0.01
   ref: 1
   proposal: 0.001
   latex: \mathrm{Cal}^{145}
 cal_LAT_225:
   prior:
     dist: norm
-    loc: 0.
-    scale: 1.
+    loc: 1.
+    scale: 0.01
   ref: 1
   proposal: 0.001
   latex: \mathrm{Cal}^{225}
