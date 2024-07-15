@@ -7,9 +7,9 @@ dependencies:
   - pip
   - compilers
   - make
-  - gsl
-  - openmpi
   - cmake
+  - gsl
+  - mpi4py
   - swig
   - fftw
   - pip:
