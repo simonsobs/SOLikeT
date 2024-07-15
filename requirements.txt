@@ -1,7 +1,6 @@
 pytest-cov
 mpi4py
 camb
-Cython
 numpy
 scipy>=1.6
 pandas

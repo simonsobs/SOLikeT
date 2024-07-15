@@ -9,7 +9,8 @@ dependencies:
   - make
   - cmake
   - gsl
-  - mpi4py
+  - openmpi
+  - cython
   - swig
   - fftw
   - pip:
