@@ -9,7 +9,7 @@ bandint_shift_LAT_93:
 bandint_shift_LAT_145:
   prior:
     dist: norm
-    loc: .
+    loc: 0.
     scale: 1.
   ref: 0.
   proposal: 0.1
