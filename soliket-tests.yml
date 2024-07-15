@@ -9,5 +9,8 @@ dependencies:
   - make
   - gsl
   - openmpi
+  - cmake
+  - swig
+  - fftw
   - pip:
       - -r requirements.txt

@@ -1,9 +1,6 @@
 pytest-cov
-swig
-cmake
 mpi4py
 camb
-pyFFTW
 Cython
 numpy
 scipy>=1.6
