@@ -1,3 +1,11 @@
+pytest-cov
+swig
+cmake
+mpi4py
+camb
+pyFFTW
+Cython
+pygsl
 numpy
 scipy>=1.6
 pandas
