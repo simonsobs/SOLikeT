@@ -1,5 +1,23 @@
 """
 requires extra: astlib,fits,os,sys,nemo
+=======
+.. module:: clusters
+
+:Synopsis: Poisson likelihood for SZ clusters for Simons Osbervatory 
+:Authors: Nick Battaglia, Eunseong Lee
+
+Likelihood for unbinned tSZ galaxy cluster number counts. Currently under development and
+should be used only with caution and advice. Uses the SZ scaling relations from 
+Hasselfield et al (2013) [1]_ to compare observed number of :math:`y`-map detections 
+with the prediction from a Tinker [2]_ Halo Mass Function.
+
+References
+----------
+.. [1] Hasselfield et al, JCAP 07, 008 (2013) `arXiv:1301.0816 
+                                                <https://arxiv.org/abs/1301.0816>`_
+.. [2] Tinker et al, Astrophys. J. 688, 2, 709 (2008) `arXiv:0803.2706 
+                                                    <https://arxiv.org/abs/0803.2706>`_
+
 """
 
 import numpy as np
@@ -11,6 +29,7 @@ import time # for timing
 from scipy import special, stats, interpolate, integrate
 from scipy.interpolate import interp1d, interp2d
 from astropy.io import fits
+import astropy.table as atpy
 import pyccl as ccl
 import soliket.clusters.nemo_mocks as selfunc
 
@@ -33,26 +52,35 @@ class BinnedClusterLikelihood(CashCLikelihood):
     selfunc: dict = {}
     binning: dict = {}
     verbose: bool = False
-
     debug: bool = False
 
-    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
+    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None,
+              "opt_bias_A":None, "opt_bias_B":None}
 
     def initialize(self):
 
-
         # constant binning in log10
-        qbins = np.arange(self.binning['q']['log10qmin'], self.binning['q']['log10qmax']+self.binning['q']['dlog10q'], self.binning['q']['dlog10q'])
-        self.qbins = 10**qbins
-        self.qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
-        self.Nq = int((self.binning['q']['log10qmax'] - self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']) + 1
+        # WARNING: This seems brittle
+        # qbins = np.arange(self.binning['q']['log10qmin'], self.binning['q']['log10qmax']+self.binning['q']['dlog10q'], self.binning['q']['dlog10q'])
+        # self.qbins = 10**qbins
+        # self.qarr = 10**(0.5*(qbins[:-1] + qbins[1:]))
+        # self.Nq = int((self.binning['q']['log10qmax'] - self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']) + 1
+        # Revised binning
+        self.Nq = int(np.ceil((self.binning['q']['log10qmax']-self.binning['q']['log10qmin'])/self.binning['q']['dlog10q']))
+        qbins = np.linspace(self.binning['q']['log10qmin'], self.binning['q']['log10qmax'], self.Nq)
+        self.qbins = np.power(10, qbins) # bin edges
+        self.qarr = np.power(10, (qbins[1:]+qbins[:-1])/2)
+        self.Nq = self.Nq - 1
+        assert(self.Nq > 0)
 
         # this is for liklihood computation
         self.zcut = self.binning['exclude_zbin']
 
         initialize_common(self)
+
         delNcat, _ = np.histogram(self.z_cat, bins=self.zbins)
         self.delNcat = self.zarr, delNcat
+
         self.log.info("Number of redshift bins = {}.".format(len(self.zarr)))
         self.log.info('Number of SNR bins = {}.'.format(self.Nq))
 
@@ -99,11 +127,11 @@ class BinnedClusterLikelihood(CashCLikelihood):
         # for now using the same binning as in NEMO for comparison
         hr = 0.2
         if zi < hr :
-            dzi = 1e-2 #1e-3
+            dzi = 1e-2
         elif zi >= hr and zi <=1.:
             dzi = 1e-2
         else:
-            dzi = 1e-2 #5e-2 #self.binning['z']['dz']
+            dzi = 1e-2
         hres_z = zi + dzi
         return hres_z
 
@@ -160,8 +188,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
         delN2D = np.zeros((len(zarr), Nq))
 
         # integrate over mass
-        dndzz = np.trapz(intgr[None, :,:]*cc, dx=self.dlnm, axis=2)
-        #dndzz = np.trapz(intgr[None, :,:]*cc, x=self.lnmarr, axis=2)
+        dndzz = integrate.simpson(intgr[None, :,:]*cc, x=self.lnmarr, axis=2)
 
         # integrate over fine z bins and sum over in larger z bins
         for i in range(len(zarr)):
@@ -171,7 +198,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
             test = np.abs(zz - nzarr[i+1])
             i2 = np.argmin(test)
 
-            delN2D[i,:] = np.trapz(dndzz[:, i1:i2+1], x=zz[i1:i2+1]).T
+            delN2D[i,:] = integrate.simpson(dndzz[:, i1:i2+1], x=zz[i1:i2+1]).T
 
         self.log.info("\r Total predicted 2D N = {}".format(delN2D.sum()))
 
@@ -181,6 +208,16 @@ class BinnedClusterLikelihood(CashCLikelihood):
         for kk in range(Nq):
             self.log.info('Number of clusters in snr bin {}: {}.'.format(kk, delN2D[:,kk].sum()))
         self.log.info("Total predicted 2D N = {}.".format(delN2D.sum()))
+
+        # Debugging
+        # from astLib import astImages
+        # astImages.saveFITS("theory_%.2f_%.2f.fits" % (self.provider.get_param('sigma8'), self.provider.get_param('Omega_c')), delN2D.transpose())
+        # astImages.saveFITS("obs_%.2f_%.2f.fits" % (self.provider.get_param('sigma8'), self.provider.get_param('Omega_c')), self.delN2Dcat[2].transpose())
+        # astImages.saveFITS("diff_%.2f_%.2f.fits" % (self.provider.get_param('sigma8'), self.provider.get_param('Omega_c')), (self.delN2Dcat[2]-delN2D).transpose())
+        # print("inspect grid")
+        # import IPython
+        # IPython.embed()
+        # sys.exit()
 
         return delN2D
 
@@ -206,14 +243,30 @@ class BinnedClusterLikelihood(CashCLikelihood):
             fac = 1. / np.sqrt(2. * np.pi * scatter ** 2)
             arg = (self.lny[None, None, :] - np.log(y0[:, :, None])) / (np.sqrt(2.) * scatter)
             PY = fac * np.exp(-arg ** 2.)
-            comp = np.trapz(comp*PY, self.lny, axis=-1)
+            comp = integrate.simpson(comp*PY, self.lny, axis=-1)
 
         return comp
 
 
-    # completeness 2D
     def _get_completeness(self, marr, zarr, y0, qbin, marr_500c=None, **params):
+        """Calculate completeness on (mass, z) grid for given signal-to-noise-bin.
+
+        Args:
+            marr (array): Masses defining the (mass, z) grid
+            zarr (array): Redshifts defining the (mass, z) grid
+            y0 (array): Cube of predicted y0 values on the (mass, z) grid - each
+                plane corresponds to a different patch.
+            qbin (int): Index of the signal-to-noise (q) bin for which completeness
+                will be calculated.
+
+        Returns:
+            Completeness on (mass, z) grid for given signal to noise bin, averaged
+            over all patches.
+
+        """
+
         if self.selfunc['method'] == 'SNRbased':
+
             scatter = params["scatter_sz"]
             noise = self.noise
             qcut = self.qcut
@@ -227,10 +280,12 @@ class BinnedClusterLikelihood(CashCLikelihood):
             qmin = qbins[kk]
             qmax = qbins[kk+1]
 
-            opt_bias_corr_factor=np.ones(y0.shape)
-            for i in range(Npatches):
-                trueSNR=y0[i]/noise[i]
-                opt_bias_corr_factor[i]=_opt_bias_func(trueSNR,-0.050878653910331195,1.2289192256357637)
+            opt_bias_corr_factor = np.ones(y0.shape)
+            if self.selfunc['bias_handler'] == 'theory':
+                for i in range(Npatches):
+                    trueSNR = y0[i] / noise[i]
+                    opt_bias_corr_factor[i] = _opt_bias_func(trueSNR, params['opt_bias_A'], params['opt_bias_B'])
+
 
             if scatter == 0.:
 
@@ -238,11 +293,9 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 for i in range(Npatches):
 
                     if compl_mode == 'erf_prod':
-                        arg.append(get_erf_prod(y0[i]*opt_bias_corr_factor[i], noise[i], qmin, qmax, qcut, kk, Nq, dof = self.debiasDOF))
-                        #arg.append(get_stf_prod(y0[i], noise[i], qmin, qmax, qcut, kk, Nq))
+                        arg.append(get_erf_prod(y0[i]*opt_bias_corr_factor[i], noise[i], qmin, qmax, qcut, kk, Nq, dof=self.selfunc['debiasDOF']))
                     elif compl_mode == 'erf_diff':
-                        arg.append(get_erf_diff(y0[i]*opt_bias_corr_factor[i], noise[i], qmin, qmax, qcut, dof = self.debiasDOF))
-                        #arg.append(get_stf_diff(y0[i], noise[i], qmin, qmax, qcut))
+                        arg.append(get_erf_diff(y0[i]*opt_bias_corr_factor[i], noise[i], qmin, qmax, qcut, dof=self.selfunc['debiasDOF']))
 
                 comp = np.einsum('ijk,i->jk', np.nan_to_num(arg), skyfracs)
 
@@ -256,23 +309,21 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 comp = 0.
                 for i in range(Npatches):
                     if compl_mode == 'erf_prod':
-                        arg = get_erf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq, dof = self.debiasDOF)
-                        #arg = get_stf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq)
+                        arg = get_erf_prod(yy0, noise[i], qmin, qmax, qcut, kk, Nq, dof=self.selfunc['debiasDOF'])
                     elif compl_mode == 'erf_diff':
-                        arg = get_erf_diff(yy0, noise[i], qmin, qmax, qcut, dof = self.debiasDOF)
-                        #arg = get_stf_diff(yy0, noise[i], qmin, qmax, qcut)
+                        arg = get_erf_diff(yy0, noise[i], qmin, qmax, qcut, dof=self.selfunc['debiasDOF'])
 
                     cc = np.float32(arg * skyfracs[i])
                     arg0 = np.float32((lnyy[:, None,None] - mu[i])/(np.sqrt(2.)*scatter))
                     args = fac * np.exp(np.float32(-arg0**2.)) * cc[:, None,None]
 
                     # truncation for debiasing:
-                    qtab_filter = yy0/noise[i]
-                    qtab_filter[qtab_filter<self.debias_cutoff] = 0.
-                    qtab_filter[qtab_filter>=self.debias_cutoff] = 1.
+                    qtab_filter = yy0 / noise[i]
+                    qtab_filter[qtab_filter < self.selfunc['debias_cutoff']] = 0.
+                    qtab_filter[qtab_filter >= self.selfunc['debias_cutoff']] = 1.
                     # end truncation for debiasing.
 
-                    comp += np.trapz(np.float32(args)*qtab_filter[:,None,None], x=lnyy, axis=0)
+                    comp += integrate.simpson(np.float32(args)*qtab_filter[:,None,None], x=lnyy, axis=0)
 
             comp[comp < 0.] = 0.
             comp[comp > 1.] = 1.
@@ -280,10 +331,6 @@ class BinnedClusterLikelihood(CashCLikelihood):
         else:
             comp = self._get_completeness_inj(marr, zarr, marr_500c, qbin, **params)
         return comp
-
-   def _opt_bias_func(snr, A, B):
-        """Return optimization bias correction factor - multiply true y0 by this to get what the cluster finder recovers """
-        return 1. + A/snr + B/snr**2
 
     def logp(self, **params_values):
         if self.theorypred['choose_theory'] == 'classy_sz':
@@ -331,14 +378,16 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
     selfunc: dict = {}
     binning: dict = {}
     YM: dict = {}
-    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None}
+    params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None,
+              "opt_bias_A":None, "opt_bias_B":None}
 
     def initialize(self):
+
         initialize_common(self)
 
         zmax = self.binning['z']['zmax']
 
-        self.zz = np.arange(0, zmax, 0.01) # redshift bounds should correspond to catalogue
+        self.zz = np.arange(0, zmax, 1e-2) # redshift bounds should correspond to catalogue
         if self.zz[0] == 0: self.zz[0] = 1e-5
 
         self.log.info('Number of redshift points for theory calculation = {}.'.format(len(self.zz)))
@@ -347,10 +396,10 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         self.catalog = pd.DataFrame(
             {
-                "z": self.z_cat.byteswap().newbyteorder(),
-                "tsz_signal": self.cat_tsz_signal.byteswap().newbyteorder(),
-                "tsz_signal_err": self.cat_tsz_signal_err.byteswap().newbyteorder(),
-                "tile_name": self.cat_tile_name.byteswap().newbyteorder()
+                "z": self.z_cat,
+                "tsz_signal": self.cat_tsz_signal,
+                "tsz_signal_err": self.cat_tsz_signal_err,
+                "tile_name": self.cat_tile_name
             }
         )
 
@@ -416,8 +465,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 zcut_arr = np.arange(zcut)
                 Ntot = np.sum(np.delete(Nz, zcut_arr, 0))
             else:
-                Nz = np.trapz(dndlnm * Pfunc[:,:,index], dx=np.diff(self.lnmarr[:, None], axis=0), axis=0)
-                Ntot += np.trapz(Nz * dVdz, x=zz) * frac
+                Nz = integrate.simpson(dndlnm * Pfunc[:,:,index], self.lnmarr[:, None], axis=0)
+                Ntot += integrate.simpson(Nz * dVdz, x=zz) * frac
 
         self.log.info("Total predicted N = {}".format(Ntot))
 
@@ -433,7 +482,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         Nz = 0
         for index, frac in enumerate(self.skyfracs):
-            Nz += np.trapz(dndlnm * dVdz * Pfunc[:,:,index], x=self.lnmarr[:, None], axis=0) * frac
+            Nz += integrate.simpson(dndlnm * dVdz * Pfunc[:,:,index], x=self.lnmarr[:, None], axis=0) * frac
 
         Nzz = np.zeros(len(zarr))
         for i in range(len(zarr)):
@@ -442,7 +491,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             test = np.abs(zz - nzarr[i+1])
             i2 = np.argmin(test)
 
-            Nzz[i] = np.trapz(Nz[i1:i2+1], x=zz[i1:i2+1])
+            Nzz[i] = integrate.simpson(Nz[i1:i2+1], x=zz[i1:i2+1])
 
         # self.log.info("\r Total predicted N = {}".format(Nzz.sum()))
         # for i in range(len(zarr)):
@@ -481,10 +530,9 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
             Pfunc_ind = self.Pfunc_per(tile_index, marr, c_z, c_y, c_yerr, kwargs).T
             dn_dlnm = np.squeeze(dndlnm_intp(c_z, self.lnmarr))
-            dVdz = get_dVdz(self, c_z, dVdz_interp=True)*self.skyfracs[tile_index] ## added skyfrac dependence here.
-            ans = np.trapz(dn_dlnm * Pfunc_ind * dVdz[None,:], x=self.lnmarr[:,None], axis=0)
-            #ans = np.trapz(dn_dlnm * Pfunc_ind * dVdz[None,:] * self.skyfracs.sum(), x=self.lnmarr[:,None], axis=0)
-
+            dVdz = get_dVdz(self, c_z, dVdz_interp=True)
+            ans = integrate.simpson(dn_dlnm * Pfunc_ind * dVdz[None,:], x=self.lnmarr[:,None], axis=0)
+            #ans = integrate.simpson(dn_dlnm * Pfunc_ind * dVdz[None,:] * self.skyfracs.sum(), x=self.lnmarr[:,None], axis=0)
             return ans
 
         return Prob_per_cluster
@@ -515,7 +563,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         )
         return ans
 
-    def P_Yo_vec(self, LgY, marr, z, params):
+    def P_Yo_vec(self, LgY, Ynoise, marr, z, params):
 
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
             marr_ymmd = convert_masses(self, marr, z)
@@ -531,6 +579,11 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         Y = np.repeat(Y[np.newaxis, :,:,:], Ytilde.shape[0], axis=0)
         Ytilde = np.repeat(Ytilde[:, np.newaxis, :,:], Y.shape[1], axis=1)
+
+        if self.selfunc['bias_handler'] == 'theory':
+            trueSNR = Ytilde / Ynoise[:, None, None, None]
+            opt_bias_corr_factor = _opt_bias_func(trueSNR, params['opt_bias_A'], params['opt_bias_B'])
+            Ytilde = Ytilde * opt_bias_corr_factor
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
 
@@ -561,15 +614,16 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             Ynoise = np.outer(Ynoise, np.ones(np.shape(Ytilde[0,:,:])))
             Ynoise_a = np.reshape(Ynoise, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
 
-            SNRTrue = Ytilde / Ynoise_a
-            opt_bias_corr_factor=_opt_bias_func(trueSNR,-0.050878653910331195,1.2289192256357637)
-
-            Ytilde=Ytilde*opt_bias_corr_factor
+            if self.selfunc['bias_handler'] == 'theory':
+                trueSNR = Ytilde / Ynoise_a
+                opt_bias_corr_factor = _opt_bias_func(trueSNR, params['opt_bias_A'], params['opt_bias_B'])
+                Ytilde = Ytilde * opt_bias_corr_factor
 
             ans = np.nan_to_num(get_erf(Ytilde, Ynoise_a, qcut_a)).T
             #ans = np.nan_to_num(get_stf(Ytilde, Ynoise_a, qcut_a)).T
 
         else:
+
             Y = np.exp(LgY)
 
             Y_a = np.repeat(Y[:, np.newaxis], np.shape(Ynoise), axis=1)
@@ -578,13 +632,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             qcut = np.outer(np.ones(np.shape(Y_a)), self.qcut)
             qcut_a = np.reshape(qcut, (Y_a.shape[0], Y_a.shape[1]))
 
-            SNRTrue = Y_a / Ynoise_a
-            opt_bias_corr_factor=_opt_bias_func(trueSNR,-0.050878653910331195,1.2289192256357637)
-
-            Y_a=Y_a*opt_bias_corr_factor
-
             Yerf = get_erf(Y_a, Ynoise_a, qcut_a)
-            #Yerf = get_stf(Y_a, Ynoise_a, qcut_a)
 
             sig_tr = np.outer(np.ones([marr.shape[0], z.shape[0]]), Yerf)
             sig_thresh = np.reshape(sig_tr, (marr.shape[0], z.shape[0], Yerf.shape[0], Yerf.shape[1]))
@@ -593,9 +641,15 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             LgYa2 = np.reshape(LgYa, (marr.shape[0], z.shape[0], len(LgY)))
 
             # replace nan with 0's:
-            P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, marr, z, params).T)
+            P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, Ynoise, marr, z, params).T)
 
-            ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) #* np.log(10) # why log10?
+            # truncation for debiasing:
+            qtab_filter = Y_a / Ynoise_a
+            qtab_filter[qtab_filter < self.selfunc['debias_cutoff']] = 0.
+            qtab_filter[qtab_filter >= self.selfunc['debias_cutoff']] = 1.
+            # end truncation for debiasing.
+
+            ans = integrate.simpson(P_Y * sig_thresh * qtab_filter[None,None,:,:], x=LgY, axis=2) #* np.log(10) # why log10?
 
         return ans
 
@@ -633,13 +687,13 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             Y = np.exp(LgY)
             LgYa = np.outer(np.ones(len(marr)), LgY)
 
-            P_Y_sig = np.nan_to_num(get_erf(Y, Y_err[:,None], self.qcut))
+            P_Y_sig = np.nan_to_num(get_erf(Y, Y_err[:, None], self.qcut))
             #P_Y_sig = self.Y_prob(Y_c[:, None], LgY, Y_err[:, None])
 
             P_Y = np.nan_to_num(self.P_Yo(tile_index, LgYa, marr, z, params))
             P_Y_sig = np.repeat(P_Y_sig[:, np.newaxis, :], P_Y.shape[1], axis=1)
             LgY = LgY[None, None, :]
-            ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=2)
+            ans = integrate.simpson(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=2)
 
         return ans
 
@@ -667,8 +721,13 @@ def initialize_common(self):
     self.log.info('Initializing clusters.py ' + self.name)
 
     self.qcut = self.selfunc['SNRcut']
-    self.datafile = self.data['cat_file']
-    self.data_directory = self.data['data_path']
+    self.datafile = os.path.abspath(self.data['cat_file'])
+    self.selfn_dir = os.path.abspath(self.data['selfn_path'])
+    if 'footprint' in self.data.keys():
+        self.footprint = self.data['footprint']
+        self.log.info('Footprint = {}.'.format(self.footprint))
+    else:
+        self.footprint = None
 
     if self.selfunc['method'] == 'SNRbased':
         self.log.info('Running SNR based selection function.')
@@ -693,19 +752,21 @@ def initialize_common(self):
         assert self.selfunc['dwnsmpl_bins'] is not None, 'resolution = downsample but no bin number given. Aborting.'
         self.log.info('Running completeness with down-sampled selection function inputs.')
 
-    catf = fits.open(os.path.join(self.data_directory, self.datafile))
-    data = catf[1].data
-    zcat = data.field("redshift")
-    qcat = data.field("fixed_SNR") #NB note that there are another SNR in the catalogue
-    cat_tsz_signal = data.field("fixed_y_c")
-    cat_tsz_signal_err = data.field("fixed_err_y_c")
-    cat_tile_name = data.field("tileName")
-    # to print all columns: print(catf[1].columns)
+    cat_tab = atpy.Table().read(self.datafile)
+    if self.footprint is not None:
+        cat_tab = cat_tab[cat_tab['footprint_{}'.format(self.footprint)] == True]
+    zcat = cat_tab['redshift'].data.astype(float)
+    qcat = cat_tab['fixed_SNR'].data.astype(float)
+    cat_tsz_signal = cat_tab['fixed_y_c'].data.astype(float)
+    cat_tsz_signal_err = cat_tab['fixed_err_y_c'].data.astype(float)
+    cat_tile_name = np.array(cat_tab['tileName'].data, dtype = str)
 
-    # SPT-style SNR bias correction, this should be applied before applying SNR cut
-    self.debiasDOF = self.selfunc['debiasDOF']
-    self.debias_cutoff = self.selfunc['debias_cutoff']
-    #qcat = np.sqrt(np.power(qcat, 2) - debiasDOF) # dont debias catalog q!
+    # Optimization bias handler
+    if self.selfunc['bias_handler'] not in ['theory', 'catalog']:
+        raise NotImplementedError('bias_handler should be either "theory" or "catalog"')
+    if self.selfunc['bias_handler'] == 'catalog':
+        debiasDOF = self.selfunc['debiasDOF']
+        qcat = np.sqrt(np.power(qcat, 2) - debiasDOF)
 
     # only above given SNR cut
     ind = np.where(qcat >= self.qcut)[0]
@@ -747,18 +808,23 @@ def initialize_common(self):
     # this is to be consist with szcounts.f90
     self.k = np.logspace(-4, np.log10(4), 200, endpoint=False)
 
-    self.datafile_rms = self.data['rms_file']
-    self.datafile_Q = self.data['Q_file']
-    self.datafile_tile = self.data['tile_file']
+    if self.footprint is None:
+        self.datafile_rms = self.selfn_dir + os.path.sep + "RMSTab.fits"
+    else:
+        self.datafile_rms = self.selfn_dir + os.path.sep + "RMSTab_%s.fits" % (self.footprint)
+    self.datafile_Q = self.selfn_dir + os.path.sep + "QFit.fits"
 
-    list = fits.open(os.path.join(self.data_directory, self.datafile_rms))
-    file_rms = list[1].data
+    # We need to get rid of the below some how
+    self.datafile_tile = self.selfn_dir + os.path.sep + "tileAreas.txt"
+
+    with fits.open(self.datafile_rms) as in_file:
+        file_rms = in_file[1].data
 
     if self.selfunc['resolution'] == 'downsample':
 
         filename_Q, ext = os.path.splitext(self.datafile_Q)
-        datafile_Q_dwsmpld = os.path.join(self.data_directory,
-            filename_Q + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
+        datafile_Q_dwsmpld = filename_Q + \
+            'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz'
 
         if os.path.exists(datafile_Q_dwsmpld):
             Qfile = np.load(datafile_Q_dwsmpld)
@@ -768,23 +834,24 @@ def initialize_common(self):
 
         else:
             self.log.info("Reading in full Q function.")
-            tile_info = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
 
-            # removing tiles with zero areas
-            tile_area0 = tile_info[:, 1]
-            zero_index = np.where(tile_area0 == '0.000000')[0]
-            tile_area = np.delete(tile_info, zero_index, 0)
+            # Old  - we want to ultimately remove
+            # tile_info = np.genfromtxt(self.datafile_tile, dtype=str)
+            # tile_area0 = tile_info[:, 1]
+            # zero_index = np.where(tile_area0 == '0.000000')[0]
+            # tile_area = np.delete(tile_info, zero_index, 0)
+            # tile_name = tile_area[:, 0]
 
-            tile_name = tile_area[:, 0]
-            QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-                                   tileNames=tile_name, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
+            tile_name = np.unique(file_rms['tileName'])
+            QFit = nm.signals.QFit(QSource=self.selfunc['whichQ'], selFnDir=self.selfn_dir,
+                                   tileNames = tile_name)
             Nt = len(tile_name)
             self.log.info("Number of tiles = {}.".format(Nt))
-            self.tname = file_rms['tileName']
+            self.tname = np.array(file_rms['tileName'], dtype = str) # Avoids potential chararray weirdness
 
-            hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
-            data = hdulist[1].data
-            tt500 = data.field("theta500Arcmin")
+            with fits.open(self.datafile_Q) as hdulist:
+                data = hdulist[1].data
+                tt500 = data.field("theta500Arcmin")
 
             # reading in all Q functions
             allQ = np.zeros((len(tt500), Nt))
@@ -794,31 +861,12 @@ def initialize_common(self):
             self.tt500 = tt500
             self.Q = allQ
 
-            # # fiddling Q fit using injection Q ---------------------------------
-            #
-            # if self.selfunc['Qtest'] == True:
-            #
-            #     injQFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-            #                             tileNames=tile_name, QSource='injection', selFnDir=self.data_directory+'/selFn')
-            #
-            #     injQ = np.zeros(len(tt500))
-            #     injQ = injQFit.getQ(tt500, tileName=tile_area[:, 0][0])
-            #
-            #     meanQ = np.average(allQ, axis=1)
-            #     fac = injQ / meanQ
-            #     fac_arr = np.repeat(fac[:, np.newaxis], allQ.shape[1], axis=1)
-            #
-            #     self.Q = allQ * fac_arr
-            #
-            # #-------------------------------------------------------------------
-
-
         filename_rms, ext = os.path.splitext(self.datafile_rms)
         filename_tile, ext = os.path.splitext(self.datafile_tile)
-        datafile_rms_dwsmpld = os.path.join(self.data_directory,
-                filename_rms + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz')
-        datafile_tiles_dwsmpld = os.path.join(self.data_directory,
-                filename_tile + 'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy')
+        datafile_rms_dwsmpld = filename_rms + \
+            'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npz'
+        datafile_tiles_dwsmpld = filename_tile + \
+            'dwsmpld_nbins={}'.format(self.selfunc['dwnsmpl_bins']) + '.npy'
 
         if os.path.exists(datafile_rms_dwsmpld):
             rms = np.load(datafile_rms_dwsmpld)
@@ -833,6 +881,9 @@ def initialize_common(self):
             self.log.info("Reading in full RMS table.")
 
             self.noise = file_rms['y0RMS']
+
+            # print(self.noise.min(), self.noise.max()) # 5.5760333e-06 4.0576047e-05
+
             self.skyfracs = file_rms['areaDeg2'] * np.deg2rad(1.) ** 2
             self.log.info("Number of RMS values = {}.".format(self.skyfracs.size))
             self.log.info("Down-sampling RMS and Q function using {} bins.".format(self.selfunc['dwnsmpl_bins']))
@@ -842,7 +893,7 @@ def initialize_common(self):
             binned_rms_edges = binned_stat[1]
 
             bin_ind = np.digitize(self.noise, binned_rms_edges)
-            tiledict = dict(zip(tile_name, np.arange(tile_area[:, 0].shape[0])))
+            tiledict = dict(zip(tile_name, np.arange(tile_name.shape[0])))
 
             Qdwnsmpld = np.zeros((self.Q.shape[0], self.selfunc['dwnsmpl_bins']))
             tiles_dwnsmpld = {}
@@ -868,6 +919,15 @@ def initialize_common(self):
             self.skyfracs = binned_area
             self.Q = Qdwnsmpld
             self.tiles_dwnsmpld = tiles_dwnsmpld
+
+            if 'override_noise' in self.selfunc.keys():
+                self.log.info("Overriden noise")
+                self.noise[:]=self.selfunc['override_noise']
+
+            if 'force_Q_equals_1' in self.selfunc.keys() and self.selfunc['force_Q_equals_1'] == True:
+                self.log.info("Forced Q == 1")
+                self.Q[:] = 1.0
+
 
             self.log.info("Number of down-sampled RMS = {}.".format(self.skyfracs.size))
             self.log.info("Number of down-sampled Q funcs = {}.".format(len(self.Q[0])))
@@ -952,25 +1012,6 @@ def initialize_common(self):
 
         #-------------------------------------------------------------------
 
-
-
-        # # fiddling Q fit using injection Q ---------------------------------
-        #
-        # if self.selfunc['Qtest'] == True:
-        #
-        #     injQFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-        #                             tileNames=tile_name, QSource='injection', selFnDir=self.data_directory+'/selFn')
-        #
-        #     injQ = np.zeros(len(tt500))
-        #     injQ = injQFit.getQ(tt500, tileName=tile_area[:, 0][0])
-        #
-        #     meanQ = np.average(allQ, axis=1)
-        #     fac = injQ / meanQ
-        #     fac_arr = np.repeat(fac[:, np.newaxis], allQ.shape[1], axis=1)
-        #
-        #     self.Q = allQ * fac_arr
-        #
-        # #-------------------------------------------------------------------
 
     if self.selfunc['method'] == 'injection':
 
@@ -1214,7 +1255,7 @@ def get_dndlnm(self, z, pk_intp):
         h = self.provider.get_param("H0") / 100.0
         a = 1./(1+z)
         marr = np.exp(marr)
-        dn_dlog10M = np.array([mf.get_mass_function(cosmo, marr/h, ai) for ai in a])
+        dn_dlog10M = np.array([mf(cosmo, marr/h, ai) for ai in a])
         # For consistency with internal mass function computation
         dn_dlog10M /= h**3 * np.log(10.)
 
@@ -1224,7 +1265,7 @@ def get_dndlnm(self, z, pk_intp):
         # return self.get_dndlnM_at_z_and_M(z,marr)
 
 
-def get_erf(y, noise, cut, dof = 0):
+def get_erf(y, noise, cut, dof=0):
     #arg = (y - cut*noise)/np.sqrt(2.)/noise
     arg = (np.sqrt((y/noise)**2.+dof) - cut)/np.sqrt(2.)
     erfc = (special.erf(arg) + 1.)/2.
@@ -1235,7 +1276,7 @@ def get_erf(y, noise, cut, dof = 0):
 #     ans[y - qcut*noise > 0] = 1.0
 #     return ans
 
-def get_erf_diff(y, noise, qmin, qmax, qcut, dof = 0):
+def get_erf_diff(y, noise, qmin, qmax, qcut, dof=0):
     arg1 = (np.sqrt((y/noise)**2.+dof) - qmax)/np.sqrt(2.)
     if qmin > qcut:
         qlim = qmin
@@ -1243,6 +1284,8 @@ def get_erf_diff(y, noise, qmin, qmax, qcut, dof = 0):
         qlim = qcut
     arg2 = (np.sqrt((y/noise)**2.+dof) - qlim)/np.sqrt(2.)
     erf_compl = (special.erf(arg2) - special.erf(arg1)) / 2.
+    # HACK: 100% completeness above S/N limit, for noiseless data vector - doesn't actually help
+    # erf_compl[erf_compl > 0]=1.0
     return erf_compl
 
 # def get_stf_diff(y, noise, qmin, qmax, qcut):
@@ -1283,7 +1326,6 @@ def gaussian(xx, mu, sig, noNorm=False):
         return 1.0 / (sig * np.sqrt(2 * np.pi)) \
                             * np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
 
-
 def convert_masses(both, marr, zz):
 
     h = both.provider.get_param("H0") / 100.0
@@ -1292,17 +1334,17 @@ def convert_masses(both, marr, zz):
         md_hmf = mf_data['md']
 
         if both.theorypred['md_ym'] == '200m':
-            md_ym = ccl.halos.MassDef200m(c_m='Bhattacharya13')
+            md_ym = ccl.halos.MassDef(200, 'matter')
         elif both.theorypred['md_ym'] == '200c':
-            md_ym = ccl.halos.MassDef200c(c_m='Bhattacharya13')
+            md_ym = ccl.halos.MassDef(200, 'critical')
         elif both.theorypred['md_ym'] == '500c':
             md_ym = ccl.halos.MassDef(500, 'critical')
         else:
             raise NotImplementedError('Only md_hmf = 200m, 200c and 500c currently supported.')
-
         cosmo = both.provider.get_CCL()['cosmo']
         a = 1. / (1. + zz)
-        marr_ymmd = np.array([md_hmf.translate_mass(cosmo, marr / h, ai, md_ym) for ai in a]) * h
+        mass_trans=ccl.halos.mass_translator(mass_in = md_hmf, mass_out = md_ym, concentration = 'Bhattacharya13')
+        marr_ymmd = np.array([mass_trans(cosmo, marr / h, ai) for ai in a]) * h
     else:
         if both.theorypred['md_hmf'] == '200m' and both.theorypred['md_ym'] == '500c':
             marr_ymmd = both._get_M500c_from_M200m(marr, zz).T
@@ -1319,10 +1361,11 @@ def get_m500c(both, marr, zz):
     cosmo = both.provider.get_CCL()['cosmo']
     a = 1. / (1. + zz)
 
+    mass_trans=ccl.halos.mass_translator(mass_in = md_hmf, mass_out = md_500c, concentration = 'Bhattacharya13')
     if a.ndim == 1:
-        marr_500c = np.array([md_hmf.translate_mass(cosmo, marr/h, ai, md_500c) for ai in a]) * h
+        marr_500c = np.array([mass_trans(cosmo, marr/h, ai) for ai in a]) * h
     else:
-        marr_500c = md_hmf.translate_mass(cosmo, marr/h, a, md_500c) * h
+        marr_500c = mass_trans(cosmo, marr/h, a) * h
 
     return marr_500c
 
@@ -1419,3 +1462,11 @@ def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=False, tile_index=Non
     y0[y0 <= 0] = 1e-9
 
     return y0
+
+def _opt_bias_func(snr, A, B):
+    """Return optimization bias correction factor - multiply true y0 by this to get what the cluster finder recovers """
+
+    corr = 1. + A/snr + B/(snr**2)
+    corr[snr < 2.0] = 1.0
+
+    return corr
