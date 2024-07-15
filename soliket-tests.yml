@@ -7,5 +7,7 @@ dependencies:
   - pip
   - compilers
   - make
+  - gsl
+  - openmpi
   - pip:
       - -r requirements.txt
