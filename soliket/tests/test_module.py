@@ -7,4 +7,4 @@ def test_soliket_version():
 
     import soliket
 
-    ver = soliket.__version__
+    assert(soliket.__version__)

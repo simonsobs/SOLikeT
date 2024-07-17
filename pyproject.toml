@@ -62,6 +62,7 @@ include = [
 
 [tool.setuptools_scm]
 version_file = "soliket/_version.py"
+write_to = "soliket/_version.py"
 
 [project.optional-dependencies]
 all = [
