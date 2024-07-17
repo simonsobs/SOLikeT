@@ -14,16 +14,22 @@ from cobaya.model import get_model
 
 info = yaml_load_file('run_shearkappa.yaml')
 
+fiducial_cosmo = yaml_load_file('params_cosmo_smooth_fiducial.yaml')
+fiducial_sys = yaml_load_file('params_shearkappanuisance_smooth_fiducial.yaml')
+
+fiducial_params = {**fiducial_cosmo, **fiducial_sys}
+info['params'] = fiducial_params
+
 # here we will adopt a nominal cosmology to populate the sacc file
 # before replacing with the spectra we just computed within soliket
 # we also use the nominal cosmology for constructing a Gaussian covmat
 h = 0.677
 
-cosmo = ccl.Cosmology(Omega_c=info['params']['omch2']['ref']/(h*h),
+cosmo = ccl.Cosmology(Omega_c=info['params']['omch2']['value']/(h*h),
                       Omega_b=info['params']['ombh2']['value']/(h*h),
                       h=h,
                       n_s=info['params']['ns']['value'],
-                      A_s=1e-10*np.exp(info['params']['logA']['ref']['loc']))
+                      A_s=1e-10*np.exp(info['params']['logA']['value']))
 
 # construct binning
 ell_max = 1900
@@ -76,7 +82,7 @@ for ibin in np.arange(1, nbins+1):
     shear_nz.append(nz_bin)
     z0_IA = np.trapz(z_shear * nz_bin)
 
-    ia_z = (z_shear, info['params']['A_IA']['ref'] * ((1 + z_shear) / (1 + z0_IA)) ** info['params']['eta_IA']['ref'])
+    ia_z = (z_shear, info['params']['A_IA']['value'] * ((1 + z_shear) / (1 + z0_IA)) ** info['params']['eta_IA']['value'])
 
     tracer_bin = ccl.WeakLensingTracer(cosmo,
                                        dndz=(z_shear, nz_bin),
@@ -199,11 +205,11 @@ s.save_fits('./data/shearkappa_smooth_mockdata.fits', overwrite=True)
 
 # now we calculate the soliket spectra at the fiducial parameters
 
-fid_cosmo = {'H0': info['params']['H0']['ref']['loc'],
-             'logA': info['params']['logA']['ref']['loc'],
-             'omch2': info['params']['omch2']['ref'],
-             'A_IA': info['params']['A_IA']['ref'],
-             'eta_IA': info['params']['eta_IA']['ref'],}
+fid_cosmo = {'H0': info['params']['H0']['value'],
+             'logA': info['params']['logA']['value'],
+             'omch2': info['params']['omch2']['value'],
+             'A_IA': info['params']['A_IA']['value'],
+             'eta_IA': info['params']['eta_IA']['value'],}
 
 # force model computation at fiducial parameters
 model = get_model(info)
@@ -220,10 +226,10 @@ for par in info['params']:
         param_values[par] = info['params'][par]['value']
     except KeyError:
         try:
-            param_values[par] = info['params'][par]['ref']['loc']
+            param_values[par] = info['params'][par]['value']
         except:
             try:
-                param_values[par] = info['params'][par]['ref']
+                param_values[par] = info['params'][par]['value']
             except:
                 continue
 
