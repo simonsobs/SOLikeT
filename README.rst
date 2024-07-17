@@ -43,7 +43,7 @@ SOLikeT is a collection of modules for use within the Cobaya cosmological infere
 
 SOLikeT examples and explanatory notebooks are under construction, but will be run using standard [yaml](https://en.wikipedia.org/wiki/YAML) format (which can in turn be read in as Python dictionaries). The examples will be run using something similar to::
 
-  cobaya-run soliket-example.yml
+  cobaya-run examples/example_1.yaml
 
 
 Developing SOLikeT Theories and Likelihoods
