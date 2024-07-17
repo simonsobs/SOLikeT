@@ -12,6 +12,25 @@ We have provided a conda environment defined in `soliket-tests.yml <https://gith
 
    $ conda env create --file soliket-tests.yml
 
+You can then install the `latest released version of `soliket` from PyPI <https://pypi.org/project/soliket/>`_ into this environment:
+
+::
+
+   $ conda activate soliket-tests
+   $ pip install soliket
+
+Installing in editable mode For development
+-------------------------------------------
+
+If you wish to actively develop the code you can instead install the in-development version of `soliket` from the github repository in editable mode:
+
+::
+
+   $ git clone https://github.com/simonsobs/soliket
+   $ cd soliket
+   $ pip install -e .
+
+
 Optional: Install CosmoPower
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation).
