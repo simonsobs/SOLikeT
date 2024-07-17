@@ -1,4 +1,10 @@
-from soliket._version import __version__
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("package-name")
+except PackageNotFoundError:
+    # package is not installed
+    pass
 
 from .bandpass import BandPass
 from .bias import Bias, Linear_bias
