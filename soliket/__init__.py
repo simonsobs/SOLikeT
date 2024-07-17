@@ -1,3 +1,5 @@
+from soliket._version import __version__
+
 from .bandpass import BandPass
 from .bias import Bias, Linear_bias
 from .ccl import CCL
