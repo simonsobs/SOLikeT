@@ -12,17 +12,17 @@ We have provided a conda environment defined in `soliket-tests.yml <https://gith
 
    $ conda env create --file soliket-tests.yml
 
-You can then install the `latest released version of `soliket` from PyPI <https://pypi.org/project/soliket/>`_ into this environment:
+You can then install the `latest released version of SOLikeT from PyPI <https://pypi.org/project/soliket/>`_ into this environment:
 
 ::
 
    $ conda activate soliket-tests
    $ pip install soliket
 
-Installing in editable mode For development
--------------------------------------------
+Installing in editable mode for development
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you wish to actively develop the code you can instead install the in-development version of `soliket` from the github repository in editable mode:
+If you wish to actively develop the code you can instead install the in-development version of SOLikeT from the github repository in editable mode:
 
 ::
 
@@ -41,8 +41,8 @@ Unless using an M1 Mac this should be easily achievable with::
 
 If you wish to install it using your own system tools (including new M1 Mac) some useful information is provided below.
 
-Harder Way: Preparing your own conda environment
-----------------------------------
+Harder Way: Preparing your own environment
+------------------------------------------
 
 **CREATE VIRTUAL CONDA ENV TO RUN COBAYA**
 Based on `cobaya documentation <https://cobaya.readthedocs.io/en/latest/cluster_amazon.html>`_.
