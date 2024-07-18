@@ -61,6 +61,7 @@ include = [
 "*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
 
 [tool.setuptools_scm]
+version_file = "soliket/_version.py"
 
 [project.optional-dependencies]
 all = [
