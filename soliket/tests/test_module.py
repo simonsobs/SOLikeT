@@ -1,10 +1,8 @@
-
 def test_soliket_import():
+    import soliket  # noqa: F401
 
-    import soliket
 
 def test_soliket_version():
-
     import soliket
 
-    assert(soliket.__version__)
+    assert soliket.__version__
