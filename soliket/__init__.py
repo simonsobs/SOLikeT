@@ -1,3 +1,11 @@
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("soliket")
+except PackageNotFoundError:
+    # package is not installed
+    pass
+
 from .bandpass import BandPass
 from .bias import Bias, Linear_bias
 from .ccl import CCL
