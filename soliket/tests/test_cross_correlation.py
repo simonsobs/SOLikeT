@@ -184,15 +184,16 @@ def test_shearkappa_hartlap(request, evaluate_one_info):
     # Cosmological parameters for the test data, digitized from
     # Fig. 3 and Eq. 8 of Hall & Taylor (2014).
     # See https://github.com/simonsobs/SOLikeT/pull/58 for validation plots
-    evaluate_one_info['params'] = {"omch2": 0.118,  # Planck + lensing + WP + highL
-                                   "ombh2": 0.0222,
-                                   "H0": 68.0,
-                                   "ns": 0.962,
-                                   # "As": 2.1e-9,
-                                   "As": 2.5e-9,  # offset the theory to upweight inv_cov in loglike
-                                   "tau": 0.094,
-                                   "mnu": 0.0,
-                                   "nnu": 3.046}
+    evaluate_one_info['params'] = \
+        {"omch2": 0.118,  # Planck + lensing + WP + highL
+         "ombh2": 0.0222,
+         "H0": 68.0,
+         "ns": 0.962,
+         # "As": 2.1e-9,
+         "As": 2.5e-9,  # offset the theory to upweight inv_cov in loglike
+         "tau": 0.094,
+         "mnu": 0.0,
+         "nnu": 3.046}
 
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
