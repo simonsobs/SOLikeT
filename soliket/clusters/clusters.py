@@ -59,8 +59,8 @@ class ClusterLikelihood(PoissonLikelihood):
         try:
             import pyccl as ccl
         except ImportError:
-            raise LoggedError(self.log,
-                              "Could not import ccl. Install pyccl to use ClusterLikelihood.")
+            raise LoggedError(self.log, "Could not import ccl. "
+                                        "Install pyccl to use ClusterLikelihood.")
         else:
             self.ccl = ccl
         super().initialize()
