@@ -50,8 +50,9 @@ def test_shearkappa_model(request, evaluate_one_info, test_cosmology_params):
 
     evaluate_one_info["likelihood"] = {"ShearKappaLikelihood":
                                            {"external": ShearKappaLikelihood,
-                                            "datapath": os.path.join(request.config.rootdir,
-                                                                     gammakappa_sacc_file)}}
+                                            "datapath":
+                                                os.path.join(request.config.rootdir,
+                                                             gammakappa_sacc_file)}}
 
     model = get_model(evaluate_one_info)  # noqa F841
 
@@ -211,11 +212,12 @@ def test_shearkappa_deltaz(request, evaluate_one_info, test_cosmology_params):
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
 
-    evaluate_one_info["likelihood"] = {"ShearKappaLikelihood":
-                                           {"external": ShearKappaLikelihood,
-                                            "datapath": os.path.join(request.config.rootdir,
-                                                                     gammakappa_sacc_file),
-                                            "z_nuisance_mode": "deltaz"}}
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "z_nuisance_mode": "deltaz"}}
 
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
@@ -229,11 +231,12 @@ def test_shearkappa_m(request, evaluate_one_info, test_cosmology_params):
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
 
-    evaluate_one_info["likelihood"] = {"ShearKappaLikelihood":
-                                           {"external": ShearKappaLikelihood,
-                                            "datapath": os.path.join(request.config.rootdir,
-                                                                     gammakappa_sacc_file),
-                                            "m_nuisance_mode": True}}
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "m_nuisance_mode": True}}
 
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
@@ -247,11 +250,12 @@ def test_shearkappa_ia_nla_noevo(request, evaluate_one_info, test_cosmology_para
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
 
-    evaluate_one_info["likelihood"] = {"ShearKappaLikelihood":
-                                           {"external": ShearKappaLikelihood,
-                                            "datapath": os.path.join(request.config.rootdir,
-                                                                     gammakappa_sacc_file),
-                                            "ia_mode": 'nla-noevo'}}
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "ia_mode": 'nla-noevo'}}
 
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
@@ -265,11 +269,12 @@ def test_shearkappa_ia_nla(request, evaluate_one_info, test_cosmology_params):
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
 
-    evaluate_one_info["likelihood"] = {"ShearKappaLikelihood":
-                                           {"external": ShearKappaLikelihood,
-                                            "datapath": os.path.join(request.config.rootdir,
-                                                                     gammakappa_sacc_file),
-                                            "ia_mode": 'nla'}}
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "ia_mode": 'nla'}}
 
     evaluate_one_info["params"]["eta_IA"] = 1.7
 
@@ -285,11 +290,12 @@ def test_shearkappa_ia_perbin(request, evaluate_one_info, test_cosmology_params)
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
 
-    evaluate_one_info["likelihood"] = {"ShearKappaLikelihood":
-                                           {"external": ShearKappaLikelihood,
-                                            "datapath": os.path.join(request.config.rootdir,
-                                                                     gammakappa_sacc_file),
-                                            "ia_mode": 'nla-perbin'}}
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "ia_mode": 'nla-perbin'}}
 
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
@@ -303,10 +309,11 @@ def test_shearkappa_hmcode(request, evaluate_one_info, test_cosmology_params):
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
 
-    evaluate_one_info["likelihood"] = {"ShearKappaLikelihood":
-                                           {"external": ShearKappaLikelihood,
-                                            "datapath": os.path.join(request.config.rootdir,
-                                                                     gammakappa_sacc_file)}}
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file)}}
     evaluate_one_info["theory"] = {
         "camb": {
             'extra_args': {

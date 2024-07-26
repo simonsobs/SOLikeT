@@ -21,12 +21,10 @@ info['params'] = fiducial_params
 
 
 def test_lensing_import(request):
-
     from soliket.lensing import LensingLikelihood  # noqa F401
 
 
 def test_lensing_like(request):
-
     from cobaya.install import install
     install(
         {"likelihood": {"soliket.lensing.LensingLikelihood": None}},
@@ -44,6 +42,7 @@ def test_lensing_like(request):
     loglikes, derived = model.loglikes()
 
     assert np.isclose(loglikes[0], 335.8560097798468, atol=0.2, rtol=0.0)
+
 
 @pytest.mark.require_ccl
 def test_lensing_ccl_limber(request):
@@ -74,7 +73,7 @@ def test_lensing_ccl_limber(request):
     model.loglikes({})
     cl_camb = model.likelihood['LensingLikelihood']._get_theory()
 
-    info_dict["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood, 
+    info_dict["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood,
                                                      "pp_ccl": True}}
     info_dict["theory"]["soliket.CCL"] = {"kmax": 10, "nonlinear": True}
     model = get_model(info_dict)
