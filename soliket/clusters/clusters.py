@@ -21,7 +21,6 @@ import os
 
 import numpy as np
 import pandas as pd
-import pyccl as ccl
 from scipy.interpolate import interp1d
 
 from soliket.clusters import massfunc as mf
@@ -29,6 +28,7 @@ from soliket.poisson import PoissonLikelihood
 
 from .survey import SurveyData
 from .sz_utils import szutils
+from cobaya import LoggedError
 
 C_KM_S = 2.99792e5
 
@@ -54,8 +54,14 @@ class ClusterLikelihood(PoissonLikelihood):
 
         self.zarr = np.arange(0, 2, 0.05)
         self.k = np.logspace(-4, np.log10(5), 200)
-        # self.mdef = ccl.halos.MassDef(500, 'critical')
+        # self.mdef = self.ccl.halos.MassDef(500, 'critical')
 
+        try:
+            import pyccl as ccl
+        except ImportError:
+            raise LoggedError(self.log, "Could not import ccl. Install pyccl to use ClusterLikelihood.")
+        else:
+            self.ccl = ccl
         super().initialize()
 
     def get_requirements(self):
@@ -82,11 +88,11 @@ class ClusterLikelihood(PoissonLikelihood):
 
     def _get_sz_model(self, cosmo):
         model = SZModel()
-        model.hmf = ccl.halos.MassFuncTinker08(cosmo, mass_def=self.mdef)
-        model.hmb = ccl.halos.HaloBiasTinker10(
+        model.hmf = self.ccl.halos.MassFuncTinker08(cosmo, mass_def=self.mdef)
+        model.hmb = self.ccl.halos.HaloBiasTinker10(
             cosmo, mass_def=self.mdef, mass_def_strict=False
         )
-        model.hmc = ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
+        model.hmc = self.ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
         # model.szk = SZTracer(cosmo)
         return model
 

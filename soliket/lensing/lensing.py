@@ -109,7 +109,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         Cls = self._get_fiducial_Cls()
 
         # Set the fiducial spectra
-        self.ls = np.arange(0, self.lmax)
+        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
         self.fcltt = Cls["tt"][0: self.lmax]
         self.fclpp = Cls["pp"][0: self.lmax]
         self.fclee = Cls["ee"][0: self.lmax]
