@@ -10,7 +10,6 @@ requires-python = ">=3.8, <3.12"
 license = {text = "MIT"}
 dependencies = [
     "requests",
-    'importlib-metadata; python_version<"3.8"',
     "numpy",
     "scipy>=1.6",
     "pandas", # to remove
@@ -103,4 +102,9 @@ exclude_lines = [
     "pragma: py{ignore_python_version}",
     # Don't complain about IPython completion helper
     "def _ipython_key_completions_",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "require_ccl",
 ]

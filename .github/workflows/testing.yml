@@ -30,6 +30,14 @@ jobs:
             python-version: '3.11'
             toxenv: py311-test-latest
 
+          - name: Windows latest
+            os: windows-latest
+            python-version: '3.11'
+            toxenv: py311-test-latest
+            env:
+              PYTHONIOENCODING: utf-8
+              PYTHONUTF8: 1
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

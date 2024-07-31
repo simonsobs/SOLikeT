@@ -2,8 +2,11 @@
 Check that CCL works correctly.
 """
 import numpy as np
+import pytest
 from cobaya.likelihood import Likelihood
 from cobaya.model import get_model
+
+pytestmark = pytest.mark.require_ccl
 
 
 class CheckLike(Likelihood):
@@ -11,8 +14,9 @@ class CheckLike(Likelihood):
     This is a mock likelihood that simply forces soliket.CCL to calculate
     a CCL object.
     """
+
     def logp(self, **params_values):
-        ccl = self.provider.get_CCL() # noqa F841
+        ccl = self.provider.get_CCL()  # noqa F841
         return -1.0
 
     def get_requirements(self):

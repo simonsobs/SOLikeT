@@ -1,4 +1,4 @@
-"""
+r"""
 .. module:: theoryforge
 
 The ``TheoryForge_MFLike`` class applies the foreground spectra and systematic
@@ -175,7 +175,7 @@ class TheoryForge_MFLike(Theory):
         return self.current_state["cmbfg_dict"]
 
     def get_modified_theory(self, Dls, fg_dict, **params):
-        """
+        r"""
         Takes the theory :math:`D_{\ell}`, sums it to the total
         foreground power spectrum (possibly computed with bandpass
         shift and bandpass integration) and applies calibration,
@@ -320,7 +320,7 @@ class TheoryForge_MFLike(Theory):
         self.dltempl_from_file = templ_from_file(ell=self.ell)
 
     def _get_template_from_file(self, dls_dict, **nuis_params):
-        """
+        r"""
         Adds the systematics template, modulated by ``nuis_params['templ_freq']``
         parameters, to the :math:`D_{\ell}`.
 
