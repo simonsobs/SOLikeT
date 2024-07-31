@@ -19,7 +19,7 @@ jobs:
       - name: Install Dependencies
         shell: bash -el {0}
         run: |
-          pip install tox-conda flake8 "pip<21.1"
+          pip install tox-conda flake8 setuptools wheel
       - name: Check Code Style
         shell: bash -el {0}
         run: |
