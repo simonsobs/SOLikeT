@@ -1,0 +1,292 @@
+output: /project/r/rbond/ymehta3/output/param-fitting/mcmcresults/cibxkappa_job_cross_4param
+
+likelihood:
+  soliket.CIBxKAPPA_Likelihood:
+    # cib_spectra_directory:
+    # cib_spectra_file:
+    # cib_cov_directory: "/scratch/r/rbond/ymehta3/output/param-fitting/"
+    # cib_cov_file: "big_Cov.npy"
+
+    # ymap_ps_file: "data_ps-ell-y2-erry2_total-planck-collab-15.txt"
+    # f_sky: 0.47 #sky_fraction of Planck y-map (communicated by Barbara Commis)
+    # trispectrum_directory: "/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/"
+    # trispectrum_ref: "tSZ_trispectrum_ref_total-planck-collab-15_step_1.txt"
+    stop_at_error: True
+
+
+
+theory:
+  # soliket.classy_cibxkappa:
+  class_sz.python.classy_szfast.classy_szfast.classy_sz:
+    use_class_sz_no_cosmo_mode: 1
+    use_class_sz_fast_mode: 1
+    extra_args:
+      cosmo_model: 0
+      skip_background_and_thermo: 0
+      skip_chi: 1
+      skip_hubble: 1
+      skip_pkl: 0
+      skip_pknl: 1
+      skip_sigma8_and_der: 0
+      skip_sigma8_at_z: 1
+
+      output : 'lens_cib_1h, lens_cib_2h'
+      A_s: 2.15086031154146e-9
+      L_sat_epsabs: 1.0e-40
+      L_sat_epsrel: 0.001
+      M_max: 6711000000000000.0
+      M_min: 67110000.0
+      M_min_HOD_cib: 10000000000.0
+      N_ncdm: 1
+      omega_ncdm: 0.00064
+      N_ur: 2.0328
+      omega_cdm: 0.1203058
+      Normalisation_of_L_-_M_relation_in_[JyMPc2/Msun]: 6.4e-08
+      Dust_temperature_today_in_Kelvins: 24.4
+      # Redshift_evolution_of_dust_temperature: 0.36
+      # Emissivity_index_of_sed: 1.75
+      # Power_law_index_of_SED_at_high_frequency: 1.7
+      # Redshift_evolution_of_L_-_M_normalisation: 3.6
+      Most_efficient_halo_mass_in_Msun: 10**12.6
+      Size_of_halo_masses_sourcing_CIB_emission: 0.5
+      # T_ncdm: 0.71611
+      cib_frequency_list_num: 3
+      # cib_frequency_list_num: 1
+      cib_Snu_cutoff_list [mJy]: 710, 315, 350
+      # cib_Snu_cutoff_list [mJy]: 350
+      cib_frequency_list_in_GHz: 857, 353, 545
+      # cib_frequency_list_in_GHz: 545
+      concentration parameter: D08
+      damping_1h_term: 0
+      # deg_ncdm: 3
+      dell: 128
+      delta for cib: 200m
+      ell_max: 4000
+      ell_min: 2
+      freq_max: 50000.0
+      freq_min: 10.0
+      h: 0.6711
+      has_cib_flux_cut: 1
+      hm_consistency: 1
+      k_max_tau0_over_l_max: 5.0
+      k_pivot: 0.05
+      m_ncdm: 0.02
+      mass function: T10
+      mass_epsabs: 1.0e-40
+      mass_epsrel: 0.0001
+      n_s: 0.9625356
+      ndim_masses: 150
+      ndim_redshifts: 150
+      non_linear: halofit
+      omega_b: 0.022068
+      perturb_sampling_stepsize: 0.2
+      pressure_profile_epsabs: 1.0e-08
+      pressure_profile_epsrel: 0.001
+      redshift_epsabs: 1.0e-40
+      redshift_epsrel: 0.0001
+      tau_reio: 0.0925
+      z_max: 6.0
+      z_max_pk: 6.0
+      z_min: 0.07
+      # A_s: 2.2e-09
+      # Dust temperature today in Kelvins: 24.4
+      # L_sat_epsabs: 1.0e-40
+      # L_sat_epsrel: 0.001
+      # M_max: 6711000000000000.0
+      # M_min: 67110000.0
+      # M_min_HOD: 10000000000.0
+      # Most efficient halo mass in Msun: 3981071705534.969
+      # N_ncdm: 1
+      # omega_ncdm: 0.00064
+      # N_ur: 2.0328
+      # Normalisation of L - M relation in [Jy MPc2/Msun]: 6.4e-08
+      # Omega_cdm: 0.2685008554866952
+      # Power law index of SED at high frequency: 1.7
+      # Redshift evolution of L - M normalisation: 3.6
+      # # Redshift evolution of dust temperature: 0.36
+      # Size of of halo masses sourcing CIB emission: 0.5
+      # T_ncdm: 0.71611
+      # # cib_frequency_list_num: 3
+      # cib_frequency_list_num: 1
+      # # cib_Snu_cutoff_list [mJy]: 710, 315, 350
+      # cib_Snu_cutoff_list [mJy]: 350
+      # # cib_frequency_list_in_GHz: 857, 353, 545
+      # cib_frequency_list_in_GHz: 545
+      # concentration parameter: D08
+      # damping_1h_term: 0
+      # # deg_ncdm: 3
+      # dell: 64
+      # delta for cib: 200m
+      # ell_max: 3968.0
+      # ell_min: 2.0
+      # freq_max: 50000.0
+      # freq_min: 10.0
+      # h: 0.6711
+      # has_cib_flux_cut: 1
+      # hm_consistency: 1
+      # k_max_tau0_over_l_max: 5.0
+      # k_pivot: 0.05
+      # m_ncdm: 0.02
+      # mass function: T10
+      # mass_epsabs: 1.0e-40
+      # mass_epsrel: 0.0001
+      # n_s: 0.9624
+      # ndim_masses: 150
+      # ndim_redshifts: 150
+      # non_linear: halofit
+      # omega_b: 0.022068
+      # perturb_sampling_stepsize: 0.2
+      # pressure_profile_epsabs: 1.0e-08
+      # pressure_profile_epsrel: 0.001
+      # redshift_epsabs: 1.0e-40
+      # redshift_epsrel: 0.0001
+      # tau_reio: 0.0925
+      # z_max: 6.0
+      # z_max_pk: 6.0
+      # z_min: 0.07
+      # #M_min_HOD is the threshold above which nc = 1:
+      # M_min_HOD : 10.**10,
+      # M_min : 1e10*common_settings['h'],
+      # M_max : 1e16*common_settings['h'],
+      # z_min : 0.06,
+      # z_max : 15,
+      # ### Precision
+      # #redshift_epsabs : 1.0e-40
+      # #redshift_epsrel : 0.0005
+      # #mass_epsabs : 1.0e-40
+      # #mass_epsrel : 0.0005
+      # dell : 64,
+      # #multipoles_sz : 'ell_mock'
+      # ell_max : 3968.0,
+      # ell_min : 2.0,
+      # ndim_masses : 100,
+      # ndim_redshifts : 100,
+      # # z_min : 0.005
+      # # z_max : 3.0
+      # # M_min : 1.0e10
+      # # M_max : 3.5e15
+      # # z_max_pk : 4.
+      # cib_frequency_list_num : 3,
+      # cib_frequency_list_in_GHz : '353, 545, 857'
+      # non_linear: 'halofit'
+      # k_per_decade_class_sz : 20.
+      # k_min_for_pk_class_sz : 1e-3
+      # k_max_for_pk_class_sz : 1e1
+      # perturbations_verbose: 10
+      # thermodynamics_verbose: 10
+      # background_verbose: 10
+      # class_sz_verbose: 10
+      # spectra_verbose: 10
+      # mass function : 'T10'
+      # # harmonic_verbose: 0
+      # # fourier_verbose : 0
+      # input_verbose : 10
+      # # lensing_verbose : 0
+      # # The base model features two massless
+      # # and one massive neutrino with m=0.06eV.
+      # # The settings below ensures that Neff=3.046
+      # # and m/omega = 93.14 eV
+      # N_ur : 2.0328
+      # N_ncdm : 1
+      # m_ncdm : 0.06
+      # T_ncdm : 0.71611
+      # YHe: 'BBN'
+      # # following parameters (50,50) give less than 1% difference w.r.t. ndimSZ = 100 nd n_arraySZ=1000
+      # # [relevant for tabulation of sigma(R,z)]
+      # # ndimSZ: 50
+      # # n_arraySZ: 50
+      # #write parameters : 'yeap'
+      # create reference trispectrum for likelihood code: 'NO'
+      # append_name_trispectrum_ref: 'total-planck-collab-15_step_1'
+      # path to reference trispectrum for likelihood code: '/Users/boris/Work/CLASS-SZ/SO-SZ/Likelihoods_sz/solike/ymap/chains/sz_ps_completeness_analysis/'
+
+
+params:
+  Redshift_evolution_of_dust_temperature:
+    prior:
+      min: 0.10
+      max: 0.85
+    ref:
+      dist: norm
+      loc: 0.36
+      scale: 0.05
+    proposal: 0.05
+    latex: \alpha
+    # drop: True
+
+  # Normalisation_of_L_-_M_relation_in_[JyMPc2/Msun]:
+  #   prior:
+  #     min: 0
+  #     max: 2
+  #   ref:
+  #     dist: norm
+  #     loc: 6.4e-08
+  #     scale: 1.28e-08
+  #   proposal: 1.28e-08
+  #   latex: L_{o}
+  #   # drop: True
+
+  # Redshift evolution of dust temperature: 
+  #   value: 'lambda alpha: alpha'
+
+  Emissivity_index_of_sed:
+    prior:
+      min: 1
+      max: 2.5
+    ref:
+      dist: norm
+      loc: 1.75
+      scale: 0.06
+    latex: \beta
+
+  Power_law_index_of_SED_at_high_frequency:
+    prior:
+      min: 0.9
+      max: 2.5
+    ref:
+      dist: norm
+      loc: 1.7
+      scale: 0.2
+    latex: \gamma
+
+  Redshift_evolution_of_L_-_M_normalisation:
+    prior:
+      min: 2.8
+      max: 4.4
+    ref:
+      dist: norm
+      loc: 3.6
+      scale: 0.2
+    latex: \delta
+
+  # Dust_temperature_today_in_Kelvins:
+  #   prior:
+  #     min: 16
+  #     max: 32
+  #   ref:
+  #     dist: norm
+  #     loc: 24.4
+  #     scale: 1.9
+  #   latex: T_{o
+
+
+
+sampler:
+  #settings for covmat see https://cobaya.readthedocs.io/en/latest/sampler_mcmc.html
+  mcmc:
+    covmat: #auto
+    Rminus1_stop: 0.01
+    # drag: true
+    proposal_scale: 2.4
+    learn_proposal: True
+    learn_proposal_Rminus1_max: 2.
+
+  # evaluate:
+  #   override:
+  #     # #parameter values:
+  #     'Redshift_evolution_of_dust_temperature': 0.36
+
+
+debug : False
+verbose: False
+timing: True
