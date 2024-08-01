@@ -48,8 +48,10 @@ jobs:
           condarc-file: soliket-tests.yml
 
       - name: Install Dependencies
-        run:  conda activate soliket-tests && pip install -e .
+        shell: bash -el {0}
+        run:  pip install -e .
       - name: Run Tests
+        shell: bash -el {0}
         run: pytest .
       - if: matrix.os == 'ubuntu-latest'
         name: Report Coverage
