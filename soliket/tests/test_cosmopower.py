@@ -75,7 +75,7 @@ def test_cosmopower_import(request):
 def test_cosmopower_theory(request):
     info_dict['theory']['soliket.CosmoPower']['network_path'] = \
         os.path.join(request.config.rootdir, 'soliket/cosmopower/data/CP_paper')
-    model_fiducial = get_model(info_dict)   # noqa F841
+    model_fiducial = get_model(info_dict)  # noqa F841
 
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
@@ -91,7 +91,6 @@ def test_cosmopower_loglike(request):
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_against_camb(request):
-
     info_dict['theory'] = {'camb': {'stop_at_error': True}}
     model_camb = get_model(info_dict)
     logL_camb = float(model_camb.loglikes({})[0])

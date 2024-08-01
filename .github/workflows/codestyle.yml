@@ -10,17 +10,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Install Conda w/ Python 3.11
+      - name: Install Conda w/ Python 3.12
         uses: conda-incubator/setup-miniconda@v2
         with:
-          auto-activate-base: false
-          python-version: '3.11'
-          channels: conda-forge
+          python-version: '3.12'
       - name: Install Dependencies
-        shell: bash -el {0}
-        run: |
-          pip install tox-conda flake8
+        run: pip install Flake8-pyproject
       - name: Check Code Style
-        shell: bash -el {0}
-        run: |
-          tox -e codestyle
+        run: flake8  .

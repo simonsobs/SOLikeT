@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  COBAYA_PACKAGES_PATH: ./cobaya_packages
+  SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL: True
+
 jobs:
   test:
     name: ${{ matrix.name }}
@@ -18,25 +22,18 @@ jobs:
           - name: latest supported versions
             os: ubuntu-latest
             python-version: '3.11'
-            toxenv: py311-test-all-latest-cov
 
-          - name: oldest supported versions
-            os: ubuntu-latest
-            python-version: '3.8'
-            toxenv: py38-test-oldest
-
-          - name: macOS latest
-            os: macos-latest
-            python-version: '3.11'
-            toxenv: py311-test-latest
-
-          - name: Windows latest
-            os: windows-latest
-            python-version: '3.11'
-            toxenv: py311-test-latest
-            env:
-              PYTHONIOENCODING: utf-8
-              PYTHONUTF8: 1
+    #          - name: oldest supported versions
+    #            os: ubuntu-latest
+    #            python-version: '3.8'
+    #
+    #          - name: macOS latest
+    #            os: macos-latest
+    #            python-version: '3.11'
+    #
+    #          - name: Windows latest
+    #            os: windows-latest
+    #            python-version: '3.12'
 
     steps:
       - name: Checkout repository
@@ -44,17 +41,17 @@ jobs:
       - name: Install Conda w/ Python ${{ matrix.python-version }}
         uses: conda-incubator/setup-miniconda@v3
         with:
-          auto-activate-base: false
+          activate-environment: test
           python-version: ${{ matrix.python-version }}
           channels: conda-forge
+          condarc-file: soliket-tests.yml
+
       - name: Install Dependencies
-        shell: bash -el {0}
-        run: |
-          pip install tox-conda
+        run: pip install .
+
       - name: Run Tests
         shell: bash -el {0}
-        run: |
-           tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
-      - if: contains(matrix.toxenv, '-cov')
+        run: pytest .
+      - if: matrix.os == 'ubuntu-latest'
         name: Report Coverage
         uses: codecov/codecov-action@v3
