@@ -23,17 +23,17 @@ jobs:
             os: ubuntu-latest
             python-version: '3.11'
 
-    #          - name: oldest supported versions
-    #            os: ubuntu-latest
-    #            python-version: '3.8'
-    #
-    #          - name: macOS latest
-    #            os: macos-latest
-    #            python-version: '3.11'
-    #
-    #          - name: Windows latest
-    #            os: windows-latest
-    #            python-version: '3.12'
+          - name: oldest supported versions
+            os: ubuntu-latest
+            python-version: '3.8'
+
+          - name: macOS latest
+            os: macos-latest
+            python-version: '3.11'
+
+          - name: Windows latest
+            os: windows-latest
+            python-version: '3.12'
 
     steps:
       - name: Checkout repository
@@ -49,7 +49,7 @@ jobs:
 
       - name: Run Tests
         shell: bash -el {0}
-        run: pytest .
+        run: pip install -e . && pytest -cov .
       - if: matrix.os == 'ubuntu-latest'
         name: Report Coverage
         uses: codecov/codecov-action@v3
