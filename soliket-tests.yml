@@ -15,5 +15,6 @@ dependencies:
   - cython
   - mpi4py
   - camb
+  - pytest
   - pip:
       - -r requirements.txt
