@@ -1,12 +1,10 @@
 numpy
 scipy>=1.6
 pandas
-scikit-learn
 pyyaml
 py-bobyqa
 packaging
 tqdm
-tensorflow<2.14
 portalocker
 dill
 fuzzywuzzy
