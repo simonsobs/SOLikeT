@@ -42,14 +42,13 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: soliket-tests
-          auto_activate_base: False
+          auto-activate-base: False
           python-version: ${{ matrix.python-version }}
           channels: conda-forge
           condarc-file: soliket-tests.yml
 
       - name: Install Dependencies
-        run: pip install .
-
+        run:  conda activate soliket-tests && pip install -e .
       - name: Run Tests
         run: pytest .
       - if: matrix.os == 'ubuntu-latest'
