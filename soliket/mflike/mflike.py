@@ -115,7 +115,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         return self.loglike(cmbfg_dict)
 
     def loglike(self, cmbfg_dict):
-        """
+        r"""
         Computes the gaussian log-likelihood
 
         :param cmbfg_dict: the dictionary of theory + foregrounds
@@ -215,7 +215,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             return exp_1, exp_2, pols, scls, symm
 
         def get_sacc_names(pol, exp_1, exp_2):
-            """
+            r"""
             Lower-level function of `prepare_data`.
             Translates the polarization combination and channel
             name of a given entry in the `spectra`
@@ -388,7 +388,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         self.data = GaussianData("mflike", self.ell_vec, self.data_vec, self.cov)
 
     def _get_power_spectra(self, cmbfg):
-        """
+        r"""
         Get :math:`D_{\ell}` from the theory component
         already modified by ``theoryforge_MFLike``
 

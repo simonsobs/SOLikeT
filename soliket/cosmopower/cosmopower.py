@@ -220,7 +220,7 @@ class CosmoPower(BoltzmannBase):
         return cls
 
     def ell_factor(self, ls: np.ndarray, spectra: str) -> np.ndarray:
-        """
+        r"""
         Calculate the ell factor for a specific spectrum.
         These prefactors are used to convert from Cell to Dell and vice-versa.
 

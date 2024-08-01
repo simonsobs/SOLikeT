@@ -86,7 +86,7 @@ class Bias(Theory):
 
 
 class Linear_bias(Bias):
-    """
+    r"""
     :Synopsis: Linear bias model.
 
     Has one free parameter, :math:`b_\mathrm{lin}` (``b_lin``).
