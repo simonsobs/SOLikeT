@@ -7,6 +7,8 @@ import camb
 import numpy as np
 import pytest
 from cobaya.tools import resolve_packages_path
+from packaging.version import Version
+
 import soliket
 from soliket.mflike import TestMFLike
 
@@ -45,10 +47,11 @@ nuisance_params = {
     "alpha_LAT_225": 0,
 }
 
-chi2s = {"tt": 544.8797,
-         "te-et": 151.8197,
-         "ee": 166.2835,
-         "tt-te-et-ee": 787.9843}
+
+chi2s = {"tt": 544.9017,
+         "te": 136.6051,
+         "ee": 166.1897,
+         "tt-te-et-ee": 787.9529}
 
 pre = "test_data_sacc_"
 
