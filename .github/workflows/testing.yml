@@ -47,9 +47,7 @@ jobs:
           channels: conda-forge
           condarc-file: soliket-tests.yml
 
-      - name: Install Dependencies
-        shell: bash -el {0}
-        run:  pip install -e .
+
       - name: Run Tests
         shell: bash -el {0}
         run: pytest .
