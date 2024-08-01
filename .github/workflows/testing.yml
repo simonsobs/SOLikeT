@@ -45,12 +45,14 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: false
+          activate-environment: soliket-tests
+          environment-file: soliket-tests.yml
           python-version: ${{ matrix.python-version }}
           channels: conda-forge
       - name: Install Dependencies
         shell: bash -el {0}
         run: |
-          pip install tox-conda
+          pip install tox
       - name: Run Tests
         shell: bash -el {0}
         run: |

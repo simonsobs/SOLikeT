@@ -1,6 +1,7 @@
 numpy
 scipy>=1.6
 pandas
+pytest-cov
 scikit-learn
 pyyaml
 py-bobyqa

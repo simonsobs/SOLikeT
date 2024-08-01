@@ -13,6 +13,7 @@ dependencies = [
     "numpy",
     "scipy>=1.6",
     "pandas", # to remove
+    "pytest-cov",
     "astropy",
     "cobaya",
     "sacc",
@@ -65,7 +66,6 @@ version_file = "soliket/_version.py"
 [project.optional-dependencies]
 all = [
     "cosmopower",
-    "pyccl",
     "tensorflow_probability<0.22",
 ]
 docs = [
