@@ -46,6 +46,7 @@ jobs:
         with:
           auto-activate-base: false
           activate-environment: soliket-tests
+          environment-file: soliket-tests.yml
           python-version: ${{ matrix.python-version }}
           channels: conda-forge
       - name: Install Dependencies
