@@ -41,7 +41,8 @@ jobs:
       - name: Install Conda w/ Python ${{ matrix.python-version }}
         uses: conda-incubator/setup-miniconda@v3
         with:
-          activate-environment: test
+          activate-environment: soliket-tests
+          auto_activate_base: False
           python-version: ${{ matrix.python-version }}
           channels: conda-forge
           condarc-file: soliket-tests.yml
@@ -50,7 +51,6 @@ jobs:
         run: pip install .
 
       - name: Run Tests
-        shell: bash -el {0}
         run: pytest .
       - if: matrix.os == 'ubuntu-latest'
         name: Report Coverage
