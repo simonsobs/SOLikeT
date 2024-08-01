@@ -45,8 +45,7 @@ jobs:
           auto-activate-base: False
           python-version: ${{ matrix.python-version }}
           channels: conda-forge
-          condarc-file: soliket-tests.yml
-
+          environment-file: soliket-tests.yml
 
       - name: Run Tests
         shell: bash -el {0}
