@@ -7,8 +7,6 @@ import camb
 import numpy as np
 import pytest
 from cobaya.tools import resolve_packages_path
-from packaging.version import Version
-
 import soliket
 from soliket.mflike import TestMFLike
 
