@@ -1,5 +1,5 @@
 options:
-    read_matterPS: True #if True, reads pre-computed linear matter PS
+    read_matterPS: False #if True, reads pre-computed linear matter PS
                         #if False, computes the linear matter PS using CAMB
     two_populations: False
     power_spectra: 
@@ -7,6 +7,14 @@ options:
         galaxy_galaxy: #'gg'
         matter_galaxy: 
     redshift: './tabulated/redshift.txt'
+
+    zmin: 0 
+    zmax: 3
+    nz: 10
+
+    Mmin: 11
+    Mmax: 15
+    nm: 200 
 
 parameters:
   cosmology:

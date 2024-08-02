@@ -15,10 +15,12 @@ with open("paramfile_halomod.yaml") as f:
 
 #-----------------------------------------------general settings------------------------------------------------
 read_matterPS  = settings['options']['read_matterPS']
-redshift_path  = settings['options']['redshift']
+#redshift_path  = settings['options']['redshift']
 gal_mod        = settings['options']['two_populations']
 ps_computation = settings['options']['power_spectra']
-redshift       = np.loadtxt(redshift_path)
+redshift = np.linspace(settings['options']['zmin'], settings['options']['zmax'], settings['options']['nz'])
+print(redshift)
+#redshift       = np.loadtxt(redshift_path)
 
 if gal_mod == True:
     print('halo model assuming two galaxy populations')
@@ -56,7 +58,7 @@ else:
 #-------------------------------------------------------Other settings-------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------
 # set mass range
-logmass = np.arange(11, 15, 0.1)
+logmass = np.linspace(settings['options']['Mmin'], settings['options']['Mmax'], settings['options']['nm'])
 mh      = 10 ** logmass / (h ** -1)
 
 # set the mass overdensity
