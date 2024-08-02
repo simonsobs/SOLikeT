@@ -53,6 +53,10 @@ jobs:
         shell: bash -el {0}
         run: |
           pip install tox
+      - name: temp test mflike installation
+        shell: bash -el {0}
+        run: |
+          pip install git+https://github.com/simonsobs/LAT_MFLike.git@restructure#egg=mflike
       - name: Run Tests
         shell: bash -el {0}
         run: |

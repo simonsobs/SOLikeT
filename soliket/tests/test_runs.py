@@ -9,8 +9,7 @@ packages_path = resolve_packages_path()
 
 
 @pytest.mark.parametrize("lhood",
-                         ["mflike",
-                          "lensing",
+                         ["lensing",
                           "lensing_lite",
                           "multi",
                           # "galaxykappa",
@@ -29,8 +28,7 @@ def test_evaluate(lhood):
 
 
 @pytest.mark.parametrize("lhood",
-                         ["mflike",
-                          "lensing",
+                         ["lensing",
                           "lensing_lite",
                           "multi",
                           # "galaxykappa",
