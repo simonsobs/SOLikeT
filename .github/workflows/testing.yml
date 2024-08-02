@@ -23,7 +23,7 @@ jobs:
           - name: oldest supported versions
             os: ubuntu-latest
             python-version: '3.9'
-            toxenv: py38-test-oldest
+            toxenv: py39-test-oldest
 
           - name: macOS latest
             os: macos-latest
@@ -32,8 +32,8 @@ jobs:
 
           - name: Windows latest
             os: windows-latest
-            python-version: '3.12'
-            toxenv: py312-test-latest
+            python-version: '3.11'
+            toxenv: py311-test-latest
             env:
               PYTHONIOENCODING: utf-8
               PYTHONUTF8: 1

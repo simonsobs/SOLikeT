@@ -2,12 +2,12 @@
 name = "soliket"
 dynamic = ['version']
 authors = [
-	{name = "Simons Observatory"}
+    { name = "Simons Observatory" }
 ]
 description = "Likelihood and Theory codes for the Simons Observatory."
 readme = "README.rst"
 requires-python = ">=3.9"
-license = {text = "MIT"}
+license = { text = "MIT" }
 dependencies = [
     "requests",
     "numpy",
@@ -55,7 +55,7 @@ include = [
     "soliket.poisson",
     "soliket.ps",
     "soliket.xcorr",
-    ]
+]
 
 [tool.setuptools.package-data]
 "*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
@@ -72,11 +72,14 @@ docs = [
     "sphinx",
     "sphinx_rtd_theme",
 ]
+tests = [
+    "scikit-learn",
+]
 
 [tool.flake8]
-select = ["E713","E704","E703","E714","E741","E10","E11","E20","E22","E23","E25","E262","E27","E301","E302","E304","E9","F405","F406","F5","F6","F7","F8","E501","W191","F401","W1","W292","W293","W3"]
+select = ["E713", "E704", "E703", "E714", "E741", "E10", "E11", "E20", "E22", "E23", "E25", "E262", "E27", "E301", "E302", "E304", "E9", "F405", "F406", "F5", "F6", "F7", "F8", "E501", "W191", "F401", "W1", "W292", "W293", "W3"]
 max-line-length = 90
-exclude = [".tox","build","cobaya_packages","test",".eggs"]
+exclude = [".tox", "build", "cobaya_packages", "test", ".eggs"]
 
 [tool.coverage.run]
 omit = [
