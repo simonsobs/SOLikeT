@@ -23,6 +23,7 @@ dependencies = [
     "camb",
     "getdist",
     "syslibrary>=0.2.0",
+    "git+https://github.com/simonsobs/LAT_MFLike.git@restructure#egg=mflike"
 ]
 
 [project.urls]
