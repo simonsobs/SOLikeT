@@ -22,7 +22,7 @@ jobs:
 
           - name: oldest supported versions
             os: ubuntu-latest
-            python-version: '3.8'
+            python-version: '3.9'
             toxenv: py38-test-oldest
 
           - name: macOS latest
@@ -32,8 +32,8 @@ jobs:
 
           - name: Windows latest
             os: windows-latest
-            python-version: '3.11'
-            toxenv: py311-test-latest
+            python-version: '3.12'
+            toxenv: py312-test-latest
             env:
               PYTHONIOENCODING: utf-8
               PYTHONUTF8: 1
@@ -53,10 +53,6 @@ jobs:
         shell: bash -el {0}
         run: |
           pip install tox
-      - name: temp test mflike installation
-        shell: bash -el {0}
-        run: |
-          pip install git+https://github.com/simonsobs/LAT_MFLike.git@restructure#egg=mflike
       - name: Run Tests
         shell: bash -el {0}
         run: |
