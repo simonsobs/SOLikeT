@@ -76,8 +76,10 @@ class CIBxKAPPA_Likelihood(GaussianLikelihood):
 
 
     def _get_theory(self, **params_values):
-        theory = self.theory.get_cl_cib_kappa()
+        theory = self.theory.get_Cl_kappa_cib()
         theoryvector_unbinned = []
+        if self.debug_index == 5:
+            import pdb; pdb.set_trace()
 
         #Extract All Cross Spectra
         freq_list = np.sort(np.array(list(theory.keys())).astype(int))

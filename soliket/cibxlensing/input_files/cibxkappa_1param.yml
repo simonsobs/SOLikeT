@@ -16,8 +16,8 @@ likelihood:
 
 
 theory:
-  # soliket.classy_cibxkappa:
-  class_sz.python.classy_szfast.classy_szfast.classy_sz:
+  soliket.cibxlensing.classy_cibxkappa_theory.classy_cibxkappa:
+  # class_sz.python.classy_szfast.classy_szfast.classy_sz:
     use_class_sz_no_cosmo_mode: 1
     use_class_sz_fast_mode: 1
     extra_args:
@@ -42,11 +42,11 @@ theory:
       N_ur: 2.0328
       omega_cdm: 0.1203058
       Normalisation_of_L_-_M_relation_in_[JyMPc2/Msun]: 6.4e-08
-      # Dust_temperature_today_in_Kelvins: 24.4
+      Dust_temperature_today_in_Kelvins: 24.4
       # Redshift_evolution_of_dust_temperature: 0.36
-      # Emissivity_index_of_sed: 1.75
-      # Power_law_index_of_SED_at_high_frequency: 1.7
-      # Redshift_evolution_of_L_-_M_normalisation: 3.6
+      Emissivity_index_of_sed: 1.75
+      Power_law_index_of_SED_at_high_frequency: 1.7
+      Redshift_evolution_of_L_-_M_normalisation: 3.6
       Most_efficient_halo_mass_in_Msun: 10**12.6
       Size_of_halo_masses_sourcing_CIB_emission: 0.5
       # T_ncdm: 0.71611
