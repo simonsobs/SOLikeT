@@ -7,6 +7,10 @@ Used internally by the xcorr likelihood to compute angular power spectra of diff
 
 import numpy as np
 
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid
 from soliket.constants import C_HMPC
 
 oneover_chmpc = 1. / C_HMPC
@@ -16,7 +20,7 @@ def mag_bias_kernel(provider, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_ar
     """Calculates magnification bias kernel."""
 
     dndzprime = np.interp(zprime_arr, dndz[:, 0], dndz[:, 1], left=0, right=0)
-    norm = np.trapz(dndz[:, 1], x=dndz[:, 0])
+    norm = trapezoid(dndz[:, 1], x=dndz[:, 0])
     dndzprime = dndzprime / norm  # TODO check this norm is right
 
     g_integrand = (chiprime_arr - chi_arr[np.newaxis, :]) / chiprime_arr \
@@ -25,7 +29,7 @@ def mag_bias_kernel(provider, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_ar
                             + 1 - provider.get_param('omegam')) \
                   * dndzprime
 
-    g = chi_arr * np.trapz(g_integrand, x=chiprime_arr, axis=0)
+    g = chi_arr * trapezoid(g_integrand, x=chiprime_arr, axis=0)
 
     W_mu = (5. * s1 - 2.) * 1.5 * provider.get_param('omegam') \
            * (provider.get_param('H0') / 100) ** 2 * oneover_chmpc ** 2 \
@@ -52,12 +56,12 @@ def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
     W_g1 = np.interp(zatchi(chi_arr), dndz1[:, 0], dndz1[:, 1] \
                      * provider.get_Hubble(dndz1[:, 0], units='1/Mpc'), left=0, right=0)
     if not normed:
-        W_g1 /= np.trapz(W_g1, x=chi_arr)
+        W_g1 /= trapezoid(W_g1, x=chi_arr)
 
     W_g2 = np.interp(zatchi(chi_arr), dndz2[:, 0], dndz2[:, 1] \
                      * provider.get_Hubble(dndz2[:, 0], units='1/Mpc'), left=0, right=0)
     if not normed:
-        W_g2 /= np.trapz(W_g2, x=chi_arr)
+        W_g2 /= trapezoid(W_g2, x=chi_arr)
 
     W_kappa = oneover_chmpc ** 2. * 1.5 * provider.get_param('omegam') \
               * (provider.get_param('H0') / 100) ** 2. * (1. + zatchi(chi_arr)) \
@@ -66,7 +70,7 @@ def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
     # Get effective redshift
     # if use_zeff:
     #     kern = W_g1 * W_g2 / chi_arr**2
-    #     zeff = np.trapz(kern * z_arr,x=chi_arr) / np.trapz(kern, x=chi_arr)
+    #     zeff = trapezoid(kern * z_arr,x=chi_arr) / trapezoid(kern, x=chi_arr)
     # else:
     #     zeff = -1.0
 
@@ -108,13 +112,13 @@ def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
         W_mu1kappa = W_kappa[i_chi] * W_mu1[i_chi] / (chi ** 2) * p_mm
         c_ell_mu1kappa[:, :, i_chi] = W_mu1kappa.T
 
-    c_ell_g1g1 = np.trapz(c_ell_g1g1, x=chi_arr, axis=-1)
-    c_ell_g1kappa = np.trapz(c_ell_g1kappa, x=chi_arr, axis=-1)
-    c_ell_kappakappa = np.trapz(c_ell_kappakappa, x=chi_arr, axis=-1)
+    c_ell_g1g1 = trapezoid(c_ell_g1g1, x=chi_arr, axis=-1)
+    c_ell_g1kappa = trapezoid(c_ell_g1kappa, x=chi_arr, axis=-1)
+    c_ell_kappakappa = trapezoid(c_ell_kappakappa, x=chi_arr, axis=-1)
 
-    c_ell_g1mu1 = np.trapz(c_ell_g1mu1, x=chi_arr, axis=-1)
-    c_ell_mu1mu1 = np.trapz(c_ell_mu1mu1, x=chi_arr, axis=-1)
-    c_ell_mu1kappa = np.trapz(c_ell_mu1kappa, x=chi_arr, axis=-1)
+    c_ell_g1mu1 = trapezoid(c_ell_g1mu1, x=chi_arr, axis=-1)
+    c_ell_mu1mu1 = trapezoid(c_ell_mu1mu1, x=chi_arr, axis=-1)
+    c_ell_mu1kappa = trapezoid(c_ell_mu1kappa, x=chi_arr, axis=-1)
 
     clobs_gg = c_ell_g1g1 + 2. * c_ell_g1mu1 + c_ell_mu1mu1
     clobs_kappag = c_ell_g1kappa + c_ell_mu1kappa
