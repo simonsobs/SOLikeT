@@ -73,12 +73,12 @@ class MultiGaussianLikelihood(GaussianLikelihood):
 
         self.log.info('Initialized.')
 
-    def initialize_with_provider(self, provider): # pragma: no cover
+    def initialize_with_provider(self, provider):  # pragma: no cover
         for like in self.likelihoods:
             like.initialize_with_provider(provider)
         # super().initialize_with_provider(provider)
 
-    def get_helper_theories(self): # pragma: no cover
+    def get_helper_theories(self):  # pragma: no cover
         helpers = {}
         for like in self.likelihoods:
             helpers.update(like.get_helper_theories())
