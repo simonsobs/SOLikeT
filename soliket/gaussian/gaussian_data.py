@@ -1,53 +1,50 @@
+from typing import Optional, Sequence
 import numpy as np
-
-from scipy.linalg import LinAlgError, cholesky
-
-try:
-    import holoviews as hv
-except ImportError:
-    pass
-
-
-def multivariate_normal_logpdf(theory, data, cov, inv_cov, log_det):
-    const = np.log(2 * np.pi) * (-len(data) / 2) + log_det * (-1 / 2)
-    delta = data - theory
-    #print(const,delta,np.dot(delta, inv_cov.dot(delta)))
-    return -0.5 * np.dot(delta, inv_cov.dot(delta)) + const
+from cobaya.likelihoods.base_classes.DataSetLikelihood import _fast_chi_square
 
 
 class GaussianData:
-    """Named multivariate gaussian data
     """
+     Named multivariate gaussian data
+    """
+    name: str  # name identifier for the data
+    x: Sequence  # labels for each data point
+    y: np.ndarray  # data point values
+    cov: np.ndarray  # covariance matrix
+    inv_cov: np.ndarray  # inverse covariance matrix
+    ncovsims: Optional[int]  # number of simulations used to estimate covariance
 
-    def __init__(self, name, x, y, cov, ncovsims=None):
+    _fast_chi_squared = _fast_chi_square()
+
+    def __init__(self, name, x: Sequence, y: Sequence[float], cov: np.ndarray, ncovsims: Optional[int] = None):
 
         self.name = str(name)
         self.ncovsims = ncovsims
 
         if not (len(x) == len(y) and cov.shape == (len(x), len(x))):
-            raise ValueError(f"Incompatible shapes! x={x.shape}, y={y.shape}, \
+            raise ValueError(f"Incompatible shapes! x={len(x)}, y={len(y)}, \
                                cov={cov.shape}")
 
         self.x = x
-        self.y = y
+        self.y = np.ascontiguousarray(y)
         self.cov = cov
-        try:
-            self.cholesky = cholesky(cov)
-        except LinAlgError:
-            raise ValueError("Covariance is not SPD!")
-        if ncovsims is None:
-            self.inv_cov = np.linalg.inv(self.cov)
-        else:
+        self.eigenevalues = np.linalg.eigvalsh(cov)
+        if self.eigenevalues.min() <= 0:
+            raise ValueError("Covariance is not positive definite!")
+
+        self.inv_cov = np.linalg.inv(self.cov)
+        if ncovsims is not None:
             hartlap_factor = (self.ncovsims - len(x) - 2) / (self.ncovsims - 1)
-            self.inv_cov = hartlap_factor * np.linalg.inv(self.cov)
-        self.log_det = np.linalg.slogdet(self.cov)[1]
+            self.inv_cov *= hartlap_factor
+        log_det = np.log(self.eigenevalues).sum()
+        self.norm_const = -(np.log(2 * np.pi) * len(x) + log_det) / 2
 
     def __len__(self):
         return len(self.x)
 
     def loglike(self, theory):
-        return multivariate_normal_logpdf(theory, self.y, self.cov, self.inv_cov,
-                                          self.log_det)
+        delta = self.y - theory
+        return -0.5 * self._fast_chi_squared(self.inv_cov, delta) + self.norm_const
 
 
 class MultiGaussianData(GaussianData):
@@ -109,21 +106,21 @@ class MultiGaussianData(GaussianData):
         return self.data.name
 
     @property
-    def cov(self):
-        return self.data.cov
-
-    @property
     def inv_cov(self):
         return self.data.inv_cov
 
     @property
-    def log_det(self):
-        return self.data.log_det
+    def cov(self):
+        return self.data.cov
+
+    @property
+    def norm_const(self):
+        return self.data.norm_const
 
     @property
     def labels(self):
         return [x for y in [[name] * len(d) for
-                name, d in zip(self.names, self.data_list)] for x in y]
+                            name, d in zip(self.names, self.data_list)] for x in y]
 
     def _index_range(self, name):
         if name not in self.names:
@@ -157,6 +154,8 @@ class MultiGaussianData(GaussianData):
         self._data = GaussianData(" + ".join(self.names), x, y, cov)
 
     def plot_cov(self, **kwargs):
+        import holoviews as hv
+
         data = [
             (f"{li}: {self.data.x[i]}", f"{lj}: {self.data.x[j]}", self.cov[i, j])
             for i, li in zip(range(len(self.data)), self.labels)
