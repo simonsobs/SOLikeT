@@ -22,9 +22,6 @@ from cobaya.model import get_model
 from soliket.ps import BinnedPSLikelihood
 
 
-# from cobaya.install import NotInstalledError
-
-
 class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     r"""
     The full ``LensingLikelihood`` makes use of a *fiducial* lensing power spectrum which
@@ -157,7 +154,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         :return: Dictionary ``Cl`` of lmax for each spectrum type.
         """
-        if self.pp_ccl == False:
+        if self.pp_ccl is False:
             return {
                 "Cl": {
                     "pp": self.theory_lmax,
@@ -217,7 +214,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         """
         cl = self.provider.get_Cl(ell_factor=False)
 
-        if self.pp_ccl == False:
+        if self.pp_ccl is False:
             Cl_theo = cl["pp"][0: self.lmax]
             ls = self.ls
             Clkk_theo = (ls * (ls + 1)) ** 2 * Cl_theo * 0.25

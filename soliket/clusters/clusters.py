@@ -18,7 +18,6 @@ References
 p
 """
 import os
-
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
@@ -27,7 +26,7 @@ from soliket.clusters import massfunc as mf
 from soliket.poisson import PoissonLikelihood
 
 from .survey import SurveyData
-from .sz_utils import szutils
+from .sz_utils import szutils, trapezoid
 from cobaya import LoggedError
 
 C_KM_S = 2.99792e5
@@ -87,15 +86,15 @@ class ClusterLikelihood(PoissonLikelihood):
             # "CCL": {"methods": {"sz_model": self._get_sz_model}, "kmax": 10},
         }
 
-    def _get_sz_model(self, cosmo):
-        model = SZModel()
-        model.hmf = self.ccl.halos.MassFuncTinker08(cosmo, mass_def=self.mdef)
-        model.hmb = self.ccl.halos.HaloBiasTinker10(
-            cosmo, mass_def=self.mdef, mass_def_strict=False
-        )
-        model.hmc = self.ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
-        # model.szk = SZTracer(cosmo)
-        return model
+    # def _get_sz_model(self, cosmo):
+    #     model = SZModel()
+    #     model.hmf = self.ccl.halos.MassFuncTinker08(cosmo, mass_def=self.mdef)
+    #     model.hmb = self.ccl.halos.HaloBiasTinker10(
+    #         cosmo, mass_def=self.mdef, mass_def_strict=False
+    #     )
+    #     model.hmc = self.ccl.halos.HMCalculator(cosmo, model.hmf, model.hmb, self.mdef)
+    #     # model.szk = SZTracer(cosmo)
+    #     return model
 
     def _get_catalog(self):
         self.survey = SurveyData(
@@ -202,7 +201,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
             dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp((np.log10(HMF.M), c_z))) * h ** 4.0
 
-            ans = np.trapz(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
+            ans = trapezoid(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
             return ans
 
         return Prob_per_cluster
@@ -241,11 +240,11 @@ class ClusterLikelihood(PoissonLikelihood):
 
         for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
             Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
-            N_z = np.trapz(
+            N_z = trapezoid(
                 dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0
             )
             Ntot += (
-                    np.trapz(N_z * dVdz, x=z_arr)
+                    trapezoid(N_z * dVdz, x=z_arr)
                     * 4.0
                     * np.pi
                     * self.survey.fskytotal
@@ -269,9 +268,9 @@ class ClusterLikelihood(PoissonLikelihood):
         dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h ** 4.0  # getting rid of hs
         # Test Mass function against Nemo.
         Pfunc = 1.0
-        N_z = np.trapz(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0)
+        N_z = trapezoid(dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0)
         Ntot = (
-                np.trapz(N_z * dVdz, x=z_arr)
+                trapezoid(N_z * dVdz, x=z_arr)
                 * 4.0
                 * np.pi
                 * (600.0 / (4 * np.pi * (180 / np.pi) ** 2))

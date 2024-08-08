@@ -156,7 +156,7 @@ class CCL(Theory):
         return []
 
     def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict) -> bool:
+                  **params_values_dict):
         # calculate the general CCL cosmo object which likelihoods can then use to get
         # what they need (likelihoods should cache results appropriately)
         # get our requirements from self.provider

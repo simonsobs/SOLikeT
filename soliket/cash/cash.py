@@ -1,10 +1,10 @@
 from typing import Optional
-
 import numpy as np
 from cobaya.likelihood import Likelihood
-
 from .cash_data import CashCData
 
+
+# Likelihood for independent Poisson-distributed data (here called Cash-C, see https://arxiv.org/abs/1912.05444)
 
 class CashCLikelihood(Likelihood):
     name: str = "Cash-C"
@@ -17,7 +17,7 @@ class CashCLikelihood(Likelihood):
 
     def _get_data(self):
         data = np.loadtxt(self.datapath, unpack=False)
-        N = data[:, -1] # assume data stored like column_stack([z, q, N])
+        N = data[:, -1]  # assume data stored like column_stack([z, q, N])
         x = data[:, :-1]
         return x, N
 
