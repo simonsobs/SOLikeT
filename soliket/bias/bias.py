@@ -71,7 +71,8 @@ class Bias(Theory):
 
     def _get_Pk_mm(self):
         self.k, self.z, Pk_mm = \
-            self.provider.get_Pk_grid(var_pair=list(self._var_pairs)[0], nonlinear=self.nonlinear)
+            self.provider.get_Pk_grid(var_pair=list(self._var_pairs)[0],
+                                      nonlinear=self.nonlinear)
         return Pk_mm
 
     def get_Pk_gg_grid(self) -> dict:
