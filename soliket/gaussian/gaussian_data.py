@@ -16,7 +16,8 @@ class GaussianData:
 
     _fast_chi_squared = _fast_chi_square()
 
-    def __init__(self, name, x: Sequence, y: Sequence[float], cov: np.ndarray, ncovsims: Optional[int] = None):
+    def __init__(self, name, x: Sequence, y: Sequence[float], cov: np.ndarray,
+                 ncovsims: Optional[int] = None):
 
         self.name = str(name)
         self.ncovsims = ncovsims

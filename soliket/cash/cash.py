@@ -4,7 +4,8 @@ from cobaya.likelihood import Likelihood
 from .cash_data import CashCData
 
 
-# Likelihood for independent Poisson-distributed data (here called Cash-C, see https://arxiv.org/abs/1912.05444)
+# Likelihood for independent Poisson-distributed data
+# (here called Cash-C, see https://arxiv.org/abs/1912.05444)
 
 class CashCLikelihood(Likelihood):
     name: str = "Cash-C"
