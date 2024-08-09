@@ -1,6 +1,6 @@
 from typing import Optional, Sequence
 import numpy as np
-from cobaya.likelihoods.base_classes.DataSetLikelihood import _fast_chi_square
+from cobaya.likelihoods.base_classes import _fast_chi_square
 
 
 class GaussianData:
