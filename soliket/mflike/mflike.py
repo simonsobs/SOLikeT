@@ -82,7 +82,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
         # Read data
         self.prepare_data()
-        self.lmax_theory = self.lmax_theory or 1500
+        self.lmax_theory = self.lmax_theory or 9000
         self.log.debug(f"Maximum multipole value: {self.lmax_theory}")
 
         self.log.info("Initialized!")
