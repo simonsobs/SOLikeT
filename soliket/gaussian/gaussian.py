@@ -7,8 +7,7 @@ from cobaya.tools import recursive_update
 from cobaya.typing import empty_dict
 
 from soliket.utils import get_likelihood
-
-from .gaussian_data import GaussianData, MultiGaussianData
+from soliket.gaussian.gaussian_data import GaussianData, MultiGaussianData
 
 
 class GaussianLikelihood(Likelihood):
@@ -32,6 +31,9 @@ class GaussianLikelihood(Likelihood):
 
     def _get_theory(self, **kwargs):
         raise NotImplementedError
+
+    def _get_gauss_data(self):
+        return self.data
 
     def logp(self, **params_values):
         theory = self._get_theory(**params_values)
@@ -68,7 +70,7 @@ class MultiGaussianLikelihood(GaussianLikelihood):
     def initialize(self):
         self.cross_cov = CrossCov.load(self.cross_cov_path)
 
-        data_list = [like.data for like in self.likelihoods]
+        data_list = [like._get_gauss_data() for like in self.likelihoods]
         self.data = MultiGaussianData(data_list, self.cross_cov)
 
         self.log.info('Initialized.')

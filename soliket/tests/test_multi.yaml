@@ -5,37 +5,11 @@ debug: True
 likelihood:
   soliket.gaussian.MultiGaussianLikelihood:
     components:
-      - soliket.mflike.TestMFLike
+      - mflike.MFLike
       - soliket.LensingLikelihood
     options:
-      - input_file: test_data_sacc_00000.fits
-        data_folder: "TestMFLike"
-        defaults:
-          # Which spectra?
-          polarizations: ['TT', 'TE', 'ET', 'EE']
-          # Scale cuts (in ell) for each spectrum
-          scales:
-            TT: [2, 6002]
-            TE: [2, 6002]
-            ET: [2, 6002]
-            EE: [2, 6002]
-          symmetrize: False
-        data:
-          experiments:
-            - LAT_93
-            - LAT_145
-            - LAT_225
-
-          spectra:
-            - experiments: ['LAT_93', 'LAT_93']
-              polarizations: ['TT','TE','EE']
-            - experiments: ['LAT_93', 'LAT_145']
-            - experiments: ['LAT_93', 'LAT_225']
-            - experiments: ['LAT_145', 'LAT_145']
-              polarizations: ['TT','TE','EE']
-            - experiments: ['LAT_145', 'LAT_225']
-            - experiments: ['LAT_225', 'LAT_225']
-              polarizations: ['TT','TE','EE']
+      - input_file: LAT_simu_sacc_00044.fits
+        cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
       - theory_lmax: 5000
         stop_at_error: true
     stop_at_error: True
@@ -177,7 +151,7 @@ params:
     latex: \xi
   T_d:
     prior:
-      min:  8.60
+      min: 8.60
       max: 10.60
     proposal: 0.6
     latex: T_d
@@ -212,6 +186,12 @@ params:
   calG_all:
     value: 1
     latex: \mathrm{Cal}_{\rm G}^{\rm All}
+  cal_LAT_93:
+    value: 1
+  cal_LAT_145:
+    value: 1
+  cal_LAT_225:
+    value: 1
   alpha_LAT_93:
     value: 0 #deg
     latex: \alpha^{93}
@@ -227,11 +207,7 @@ theory:
     stop_at_error: False
     extra_args:
       lens_potential_accuracy: 1
-  soliket.TheoryForge_MFLike: 
-    stop_at_error: True
-  soliket.Foreground:
-    stop_at_error: True
-  soliket.BandPass:
+  mflike.BandpowerForeground:
     stop_at_error: True
 
 sampler:

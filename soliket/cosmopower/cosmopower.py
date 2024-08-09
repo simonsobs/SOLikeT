@@ -1,4 +1,4 @@
-"""
+r"""
 .. module:: soliket.cosmopower
 
 :Synopsis: Simple CosmoPower theory wrapper for Cobaya.
