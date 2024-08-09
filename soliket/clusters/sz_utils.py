@@ -8,6 +8,10 @@ the cluster likelihood to convert between observed tSZ signal and cluster mass.
 """
 
 import numpy as np
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid
 from scipy import interpolate
 
 # from nemo import signals
@@ -16,8 +20,6 @@ from soliket.constants import (C_M_S, G_CGS, MPC2CM, MSUN_CGS, T_CMB,
                                k_Boltzmann)
 
 # from astropy.cosmology import FlatLambdaCDM
-
-
 # from .clusters import C_KM_S as C_in_kms
 
 rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
@@ -112,7 +114,7 @@ class szutils:
 
         P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, MM, zz, param_vals, Ez_fn, Da_fn))
 
-        ans = np.trapz(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10)
+        ans = trapezoid(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10)
         return ans
 
     def PfuncY(self, YNoise, M, z_arr, param_vals, Ez_fn, Da_fn):
@@ -126,13 +128,12 @@ class szutils:
 
     def P_of_Y_per(self, LgY, MM, zz, Y_c, Y_err, param_vals):
         P_Y_sig = np.outer(np.ones(len(MM)), self.Y_prob(Y_c, LgY, Y_err))
-        LgYa = np.outer(np.ones(len(MM)), LgY)
 
         LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
         LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
 
         P_Y = np.nan_to_num(self.P_Yo(LgYa2, MM, zz, param_vals))
-        ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1) * np.log(10)
+        ans = trapezoid(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1) * np.log(10)
 
         return ans
 
@@ -148,7 +149,7 @@ class szutils:
 
         P_Y_sig = self.Y_prob(Y_c, LgY, Y_err)
         P_Y = np.nan_to_num(self.P_Yo(LgYa, MM, zz, param_vals, Ez_fn, Da_fn))
-        ans = np.trapz(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
+        ans = trapezoid(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
 
         return ans
 
@@ -171,7 +172,7 @@ class szutils:
         P_Y_sig = self.Y_prob(Y_c, self.LgY, Y_err)
         P_Y = np.nan_to_num(self.P_Yo(self.LgY, Marr, zarr, param_vals, Ez_fn, Da_fn))
 
-        ans = np.trapz(P_Y * P_Y_sig, x=self.LgY, axis=2)
+        ans = trapezoid(P_Y * P_Y_sig, x=self.LgY, axis=2)
 
         return ans
 

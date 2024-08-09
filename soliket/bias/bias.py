@@ -26,8 +26,6 @@ If you want to add your own bias model, you can do so by inheriting from the
 function (have a look at the linear bias model for ideas).
 """
 
-from typing import Optional
-
 import numpy as np
 from cobaya.theory import Theory
 
@@ -72,10 +70,9 @@ class Bias(Theory):
         return needs
 
     def _get_Pk_mm(self):
-        for pair in self._var_pairs:
-            self.k, self.z, Pk_mm = \
-                self.provider.get_Pk_grid(var_pair=pair, nonlinear=self.nonlinear)
-
+        self.k, self.z, Pk_mm = \
+            self.provider.get_Pk_grid(var_pair=list(self._var_pairs)[0],
+                                      nonlinear=self.nonlinear)
         return Pk_mm
 
     def get_Pk_gg_grid(self) -> dict:
@@ -93,7 +90,7 @@ class Linear_bias(Bias):
     """
 
     def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict) -> Optional[bool]:
+                  **params_values_dict):
         Pk_mm = self._get_Pk_mm()
 
         state["Pk_gg_grid"] = params_values_dict["b_lin"] ** 2. * Pk_mm
