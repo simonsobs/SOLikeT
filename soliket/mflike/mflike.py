@@ -82,7 +82,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
         # Read data
         self.prepare_data()
-        self.lmax_theory = self.lmax_theory or 9000
+        self.lmax_theory = self.lmax_theory or 1500
         self.log.debug(f"Maximum multipole value: {self.lmax_theory}")
 
         self.log.info("Initialized!")
@@ -99,7 +99,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         # mflike requires cmbfg_dict from theoryforge
         # cmbfg_dict requires some params to be computed
         reqs = dict()
-        reqs["cmbfg_dict"] = {"ell": self.l_bpws,
+        reqs["cmbfg_dict"] = {"ell": np.arange(2, 2001),
+        # "ell": self.l_bpws,
                               "requested_cls": self.requested_cls,
                               "lcuts": self.lcuts,
                               "exp_ch": self.experiments,
@@ -400,29 +401,30 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         DlsObs = dict()
         # Rescale l_bpws because cmbfg spectra start from first element of l_bpws (l=2)
         ell = self.l_bpws - self.l_bpws[0]
+        ell = np.arange(2,1999)
 
-        for m in self.spec_meta:
-            p = m["pol"]
-            i = m["ids"]
-            w = m["bpw"].weight.T
+        for m0 in self.spec_meta:
+            p0 = m0["pol"]
+            i0 = m0["ids"]
+            w0 = m0["bpw"].weight.T
 
-            if p in ['tt', 'ee', 'bb']:
-                DlsObs[p, m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
+            if p0 in ['tt', 'ee', 'bb']:
+                DlsObs[p0, m0['t1'], m0['t2']] = cmbfg[p0, m0['t1'], m0['t2']][ell]
             else:  # ['te','tb','eb']
-                if m['hasYX_xsp']:  # not symmetrizing
-                    DlsObs[p, m['t2'], m['t1']] = cmbfg[p, m['t2'], m['t1']][ell]
+                if m0['hasYX_xsp']:  # not symmetrizing
+                    DlsObs[p0, m0['t2'], m0['t1']] = cmbfg[p0, m0['t2'], m0['t1']][ell]
                 else:
-                    DlsObs[p, m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
+                    DlsObs[p0, m0['t1'], m0['t2']] = cmbfg[p0, m0['t1'], m0['t2']][ell]
                 #
                 if self.defaults['symmetrize']:  # we average TE and ET (as for data)
-                    DlsObs[p, m['t1'], m['t2']] += cmbfg[p, m['t2'], m['t1']][ell]
-                    DlsObs[p, m['t1'], m['t2']] *= 0.5
+                    DlsObs[p0, m0['t1'], m0['t2']] += cmbfg[p0, m0['t2'], m0['t1']][ell]
+                    DlsObs[p0, m0['t1'], m0['t2']] *= 0.5
 
-            dls_obs = DlsObs[p, m["t2"], m["t1"]] if m["hasYX_xsp"] \
-                       else DlsObs[p, m["t1"], m["t2"]]
+            dls_obs = DlsObs[p0, m0["t2"], m0["t1"]] if m0["hasYX_xsp"] \
+                       else DlsObs[p0, m0["t1"], m0["t2"]]
 
-            clt = w @ dls_obs
-            ps_vec[i] = clt
+            clt = w0[:,ell] @ dls_obs
+            ps_vec[i0] = clt
 
         return ps_vec
 

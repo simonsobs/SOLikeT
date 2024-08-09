@@ -1,0 +1,124 @@
+debug: False
+
+# Choose a sampler.
+# Running the evaluate sampler will compute the likelihood
+# only at a single value of parameters
+sampler:
+  evaluate: null
+
+# Specify the output location and file prefix
+output: output/example_2
+
+# Specify which Likelihoods we would like to use
+# Any options for the Likelihood will use their default values unless specified here
+# In this case the options and defaults are specified in soliket/mflike/MFLike.yaml
+# Note that MFLike is a Cobaya `installable likelihood`.
+# When running this yaml file, or calling `cobaya-install example_1.yaml` the required
+# installable components will automatically be downloaded and installed. 
+# Note that for the soliket MFLike likelihood we are required to calculate:
+# - CMB theory power spectra (from CAMB theory below)
+# - Multi-frequency bandpass calibrations (from soliket.BandPass theory below)
+# - Multi-frequency foregrounds (from soliket.Foreground theory below)
+# - The combination of the above components (from soliket.TheoryForge_MFLike theory below)
+likelihood:
+  soliket.MFLike:
+    data_folder: MFLike/v0.8
+    input_file: LAT_simu_sacc_00000.fits
+    cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
+    lmax_theory: 1500
+    defaults:
+      polarizations: ['TT', 'TE', 'ET', 'EE']
+      scales:
+        TT: [30, 1500]
+        TE: [30, 1500]
+        ET: [30, 1500]
+        EE: [30, 1500]
+      symmetrize: False
+      lcuts: 1500
+
+# Specify the Theory codes which will compute observables to be compared with the data
+# in the Likelihood.
+# Here we specify the CAMB Einstein-Boltzmann code, with a number of choices made on
+# precision and neutrino model.
+theory:
+  soliket.CosmoPower:
+    network_path: soliket/cosmopower/data/CP_paper
+    network_settings:
+      tt:
+        type: NN
+        log: True
+        filename: cmb_TT_NN
+        has_ell_factor: False
+      ee:
+        type: NN
+        log: True
+        filename: cmb_EE_NN
+        has_ell_factor: False
+      te:
+        type: PCAplusNN
+        log: False
+        filename: cmb_TE_PCAplusNN
+        has_ell_factor: False
+
+  soliket.BandPass:
+    stop_at_error: True
+
+  soliket.Foreground:
+    stop_at_error: True
+    spectra:
+        polarizations: ["tt", "te", "ee"]
+        lmin: 2
+        lmax: 1500
+        exp_ch: ["LAT_150"]
+        eff_freqs: [150.]
+
+  soliket.TheoryForge_MFLike:
+    spectra:
+      polarizations: ['tt', 'te', 'ee']
+      lmin: 2
+      lmax: 1500
+    stop_at_error: True
+
+# Specify the parameter values at which to compute the likelihood
+params:
+  H0:
+    latex: H_0
+    derived: 'lambda h: h * 100.'
+  h:
+    latex: h_0
+    value: 0.677
+  logA:
+    # Dropped parameters are sampled but not passed to Likelihood/Theory codes
+    # Here it is As (specified below) which is passed to the Likelihood/Theory code.
+    # drop: true
+    latex: \log(10^{10} A_\mathrm{s})
+    value: 3.05
+  As:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+  ombh2:
+    latex: \Omega_\mathrm{b} h^2
+    value: 0.0224
+  omch2:
+    latex: \Omega_c h^2
+    value: 0.1202
+  ns:
+    latex: n_s
+    value: 0.9649
+  Alens:
+    latex: A_lens
+    value: 1.0
+  tau:
+    latex: \tau_\mathrm{reio}
+    value: 0.0554
+  mnu1:
+    value: 0.0
+    drop: True
+  mnu2:
+    value: 'lambda: np.sqrt(7.5e-5)'
+    drop: True
+  mnu3:
+    value: 'lambda: np.sqrt(2.5e-3)'
+    drop: True
+  mnu:
+    value: 'lambda mnu1, mnu2 ,mnu3: mnu1 + mnu2 + mnu3'
+    latex: \sum m_\nu
