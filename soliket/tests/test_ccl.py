@@ -24,17 +24,8 @@ class CheckLike(Likelihood):
 
 
 ccl_like_and_theory = {
-    "likelihood": {
-        "checkLike": {"external": CheckLike}
-    },
-    "theory": {
-        "camb": {
-        },
-        "soliket.CCL": {
-            "kmax": 10.0,
-            "nonlinear": True
-        }
-    }
+    "likelihood": {"checkLike": {"external": CheckLike}},
+    "theory": {"camb": {}, "soliket.CCL": {"kmax": 10.0, "nonlinear": True}},
 }
 
 

@@ -11,12 +11,16 @@ from .bias import Bias, Linear_bias
 from .ccl import CCL
 from .clusters import ClusterLikelihood
 from .cosmopower import CosmoPower, CosmoPowerDerived
-from .cross_correlation import (CrossCorrelationLikelihood,
-                                GalaxyKappaLikelihood, ShearKappaLikelihood)
+from .cross_correlation import (
+    CrossCorrelationLikelihood,
+    GalaxyKappaLikelihood,
+    ShearKappaLikelihood,
+)
 from .foreground import Foreground
 from .gaussian import GaussianLikelihood, MultiGaussianLikelihood
 from .lensing import LensingLikelihood, LensingLiteLikelihood
 from .mflike import MFLike, TheoryForge_MFLike
+
 # from .studentst import StudentstLikelihood
 from .ps import BinnedPSLikelihood, PSLikelihood
 from .xcorr import XcorrLikelihood

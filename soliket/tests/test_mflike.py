@@ -48,22 +48,15 @@ nuisance_params = {
 }
 
 
-if Version(camb.__version__) >= Version('1.4'):
-    chi2s = {"tt": 544.9017,
-             "te": 136.6051,
-             "ee": 166.1897,
-             "tt-te-et-ee": 787.9529}
+if Version(camb.__version__) >= Version("1.4"):
+    chi2s = {"tt": 544.9017, "te": 136.6051, "ee": 166.1897, "tt-te-et-ee": 787.9529}
 else:
-    chi2s = {"tt": 544.8797,
-             "te-et": 151.8197,
-             "ee": 166.2835,
-             "tt-te-et-ee": 787.9843}
+    chi2s = {"tt": 544.8797, "te-et": 151.8197, "ee": 166.2835, "tt-te-et-ee": 787.9843}
 
 pre = "test_data_sacc_"
 
 
 class Test_mflike:
-
     @classmethod
     def setup_class(cls):
         from cobaya.install import install
@@ -79,7 +72,6 @@ class Test_mflike:
 
     @pytest.mark.usefixtures("test_cosmology_params")
     def test_mflike(self, test_cosmology_params):
-
         # As of now, there is not a mechanism
         # in soliket to ensure there is .loglike that can be called like this
         # w/out cobaya
@@ -89,9 +81,9 @@ class Test_mflike:
         pars = camb.set_params(**test_cosmology_params)
         results = camb.get_results(pars)
         powers = results.get_cmb_power_spectra(pars, CMB_unit="muK")
-        cl_dict = {k: powers["total"][:, v] for
-                   k, v in {"tt": 0, "ee": 1, "te": 3}.items()}
-
+        cl_dict = {
+            k: powers["total"][:, v] for k, v in {"tt": 0, "ee": 1, "te": 3}.items()
+        }
 
         BP = soliket.BandPass()
         FG = soliket.Foreground()
@@ -102,13 +94,11 @@ class Test_mflike:
 
         requested_cls = TF.requested_cls
         BP.bands = bands
-        BP.exp_ch = [k.replace("_s0", "") for k in bands.keys()
-                          if "_s0" in k]
+        BP.exp_ch = [k.replace("_s0", "") for k in bands.keys() if "_s0" in k]
 
         bandpass = BP._bandpass_construction(**nuisance_params)
 
         for select, chi2 in chi2s.items():
-
             my_mflike = TestMFLike(
                 {
                     "external": TestMFLike,
@@ -130,11 +120,13 @@ class Test_mflike:
 
             ell_cut = my_mflike.l_bpws
             dls_cut = {s: cl_dict[s][ell_cut] for s, _ in my_mflike.lcuts.items()}
-            fg_dict = FG._get_foreground_model(requested_cls=requested_cls,
-                                                    ell=ell_cut,
-                                                    exp_ch=exp_ch,
-                                                    bandint_freqs=bandpass,
-                                                    **nuisance_params)
+            fg_dict = FG._get_foreground_model(
+                requested_cls=requested_cls,
+                ell=ell_cut,
+                exp_ch=exp_ch,
+                bandint_freqs=bandpass,
+                **nuisance_params,
+            )
             dlobs_dict = TF.get_modified_theory(dls_cut, fg_dict, **nuisance_params)
 
             loglike = my_mflike.loglike(dlobs_dict)
@@ -145,7 +137,6 @@ class Test_mflike:
 
     @pytest.mark.usefixtures("test_cosmology_params")
     def test_cobaya(self, test_cosmology_params):
-
         info = {
             "likelihood": {
                 "soliket.mflike.TestMFLike": {
@@ -164,16 +155,20 @@ class Test_mflike:
                     },
                 },
             },
-            "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1},
-                                "stop_at_error": True}},
+            "theory": {
+                "camb": {
+                    "extra_args": {"lens_potential_accuracy": 1},
+                    "stop_at_error": True,
+                }
+            },
             "params": test_cosmology_params,
             "modules": packages_path,
             "debug": True,
         }
 
-        info["theory"]["soliket.TheoryForge_MFLike"] = {'stop_at_error': True}
-        info["theory"]["soliket.Foreground"] = {'stop_at_error': True}
-        info["theory"]["soliket.BandPass"] = {'stop_at_error': True}
+        info["theory"]["soliket.TheoryForge_MFLike"] = {"stop_at_error": True}
+        info["theory"]["soliket.Foreground"] = {"stop_at_error": True}
+        info["theory"]["soliket.BandPass"] = {"stop_at_error": True}
         from cobaya.model import get_model
 
         model = get_model(info)

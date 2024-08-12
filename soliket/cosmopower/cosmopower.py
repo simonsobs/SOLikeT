@@ -124,18 +124,20 @@ class CosmoPower(BoltzmannBase):
             netpath = os.path.join(self.network_path, nettype["filename"])
 
             if nettype["type"] == "NN":
-                network = cp.cosmopower_NN(
-                    restore=True, restore_filename=netpath)
+                network = cp.cosmopower_NN(restore=True, restore_filename=netpath)
             elif nettype["type"] == "PCAplusNN":
                 network = cp.cosmopower_PCAplusNN(
-                    restore=True, restore_filename=netpath)
+                    restore=True, restore_filename=netpath
+                )
             elif self.stop_at_error:  # pragma: no cover
                 raise ValueError(
-                    f"Unknown network type {nettype['type']} for network {spectype}.")
+                    f"Unknown network type {nettype['type']} for network {spectype}."
+                )
             else:  # pragma: no cover
                 self.log.warn(
                     f"Unknown network type {nettype['type']}\
-                                                for network {spectype}: skipped!")
+                                                for network {spectype}: skipped!"
+                )
 
             netdata["type"] = nettype["type"]
             netdata["log"] = nettype.get("log", True)
@@ -153,8 +155,7 @@ class CosmoPower(BoltzmannBase):
             self.extra_args["lmax"] = None
 
         self.log.info(f"Loaded CosmoPower from directory {self.network_path}")
-        self.log.info(
-            f"CosmoPower will expect the parameters {self.all_parameters}")
+        self.log.info(f"CosmoPower will expect the parameters {self.all_parameters}")
 
     def calculate(self, state: dict, want_derived: bool = True, **params) -> bool:
         ## sadly, this syntax not valid until python 3.9
@@ -163,22 +164,22 @@ class CosmoPower(BoltzmannBase):
         # } | {
         #     self.translate_param(p): [params[p]] for p in params
         # }
-        cmb_params = {**{
-            p: [params[p]] for p in params
-        }, **{
-            self.translate_param(p): [params[p]] for p in params
-        }}
+        cmb_params = {
+            **{p: [params[p]] for p in params},
+            **{self.translate_param(p): [params[p]] for p in params},
+        }
 
         ells = None
 
         for spectype in self.networks:
             network = self.networks[spectype]
-            used_params = {par: (cmb_params[par] if par in cmb_params else [
-                params[par]]) for par in network["parameters"]}
+            used_params = {
+                par: (cmb_params[par] if par in cmb_params else [params[par]])
+                for par in network["parameters"]
+            }
 
             if network["log"]:
-                data = network["network"].ten_to_predictions_np(used_params)[
-                       0, :]
+                data = network["network"].ten_to_predictions_np(used_params)[0, :]
             else:
                 data = network["network"].predictions_np(used_params)[0, :]
 
@@ -210,12 +211,13 @@ class CosmoPower(BoltzmannBase):
             if ell_factor:
                 prefac *= self.ell_factor(ls, k)
 
-            cls[k][ls] = cls_old[k] * prefac * \
-                         self.cmb_unit_factor(k, units, 2.7255)
+            cls[k][ls] = cls_old[k] * prefac * self.cmb_unit_factor(k, units, 2.7255)
             cls[k][:2] = 0.0
             if np.any(np.isnan(cls[k])):
-                self.log.warning("CosmoPower used outside of trained "
-                                 "{} ell range. Filled in with NaNs.".format(k))
+                self.log.warning(
+                    "CosmoPower used outside of trained "
+                    "{} ell range. Filled in with NaNs.".format(k)
+                )
 
         return cls
 
@@ -245,15 +247,15 @@ class CosmoPower(BoltzmannBase):
         if spectra in ["tt", "te", "tb", "ee", "et", "eb", "bb", "bt", "be"]:
             ellfac = ls * (ls + 1.0) / (2.0 * np.pi)
         elif spectra in ["pt", "pe", "pb", "tp", "ep", "bp"]:
-            ellfac = (ls * (ls + 1.0)) ** (3. / 2.) / (2.0 * np.pi)
+            ellfac = (ls * (ls + 1.0)) ** (3.0 / 2.0) / (2.0 * np.pi)
         elif spectra in ["pp"]:
             ellfac = (ls * (ls + 1.0)) ** 2.0 / (2.0 * np.pi)
 
         return ellfac
 
-    def cmb_unit_factor(self, spectra: str,
-                        units: str = "FIRASmuK2",
-                        Tcmb: float = 2.7255) -> float:
+    def cmb_unit_factor(
+        self, spectra: str, units: str = "FIRASmuK2", Tcmb: float = 2.7255
+    ) -> float:
         """
         Calculate the CMB prefactor for going from dimensionless power spectra to
         CMB units.
@@ -270,12 +272,12 @@ class CosmoPower(BoltzmannBase):
         if x == "t" or x == "e" or x == "b":
             res *= self._cmb_unit_factor(units, Tcmb)
         elif x == "p":
-            res *= 1. / np.sqrt(2.0 * np.pi)
+            res *= 1.0 / np.sqrt(2.0 * np.pi)
 
         if y == "t" or y == "e" or y == "b":
             res *= self._cmb_unit_factor(units, Tcmb)
         elif y == "p":
-            res *= 1. / np.sqrt(2.0 * np.pi)
+            res *= 1.0 / np.sqrt(2.0 * np.pi)
 
         return res
 
@@ -308,26 +310,26 @@ class CosmoPowerDerived(Theory):
         netpath = os.path.join(self.network_path, self.network_settings["filename"])
 
         if self.network_settings["type"] == "NN":
-            self.network = cp.cosmopower_NN(
-                restore=True, restore_filename=netpath)
+            self.network = cp.cosmopower_NN(restore=True, restore_filename=netpath)
         elif self.network_settings["type"] == "PCAplusNN":
             self.network = cp.cosmopower_PCAplusNN(
-                restore=True, restore_filename=netpath)
+                restore=True, restore_filename=netpath
+            )
         else:
-            raise LoggedError(
-                f"Unknown network type {self.network_settings['type']}.")
+            raise LoggedError(f"Unknown network type {self.network_settings['type']}.")
 
         self.input_parameters = set(self.network.parameters)
 
         self.log_data = self.network_settings.get("log", False)
 
+        self.log.info(f"Loaded CosmoPowerDerived from directory {self.network_path}")
         self.log.info(
-            f"Loaded CosmoPowerDerived from directory {self.network_path}")
-        self.log.info(
-            f"CosmoPowerDerived will expect the parameters {self.input_parameters}")
+            f"CosmoPowerDerived will expect the parameters {self.input_parameters}"
+        )
         self.log.info(
             f"CosmoPowerDerived can provide the following parameters: \
-                                                            {self.get_can_provide()}.")
+                                                            {self.get_can_provide()}."
+        )
 
     def translate_param(self, p):
         return self.renames.get(p, p)
@@ -339,11 +341,10 @@ class CosmoPowerDerived(Theory):
         # } | {
         #     self.translate_param(p): [params[p]] for p in params
         # }
-        input_params = {**{
-            p: [params[p]] for p in params
-        }, **{
-            self.translate_param(p): [params[p]] for p in params
-        }}
+        input_params = {
+            **{p: [params[p]] for p in params},
+            **{self.translate_param(p): [params[p]] for p in params},
+        }
 
         if self.log_data:
             data = self.network.ten_to_predictions_np(input_params)[0, :]
@@ -378,5 +379,10 @@ class CosmoPowerDerived(Theory):
         return requirements
 
     def get_can_provide(self) -> Iterable[str]:
-        return set([par for par in self.derived_parameters
-                    if (len(par) > 0 and not par == "_")])
+        return set(
+            [
+                par
+                for par in self.derived_parameters
+                if (len(par) > 0 and not par == "_")
+            ]
+        )

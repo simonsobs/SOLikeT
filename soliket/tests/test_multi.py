@@ -18,8 +18,10 @@ def test_multi(test_cosmology_params):
 
     camb_options = {"extra_args": {"lens_potential_accuracy": 1}}
 
-    fg_params = {"a_tSZ": {"prior": {"min": 3.0, "max": 3.6}},
-                 "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}}}
+    fg_params = {
+        "a_tSZ": {"prior": {"min": 3.0, "max": 3.6}},
+        "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}},
+    }
     mflike_params = {**test_cosmology_params, **nuisance_params}
     mflike_params.update(fg_params)
 
@@ -28,24 +30,31 @@ def test_multi(test_cosmology_params):
     info = {
         "likelihood": {
             "soliket.gaussian.MultiGaussianLikelihood": {
-                "components": ["soliket.mflike.TestMFLike", "soliket.LensingLikelihood"],
+                "components": [
+                    "soliket.mflike.TestMFLike",
+                    "soliket.LensingLikelihood",
+                ],
                 "options": [mflike_options, lensing_options],
                 "stop_at_error": True,
             }
         },
-        "theory": {"camb": camb_options,
-                   "soliket.TheoryForge_MFLike": {'stop_at_error': True},
-                   "soliket.Foreground": {"stop_at_error": True},
-                   "soliket.BandPass": {"stop_at_error": True}},
+        "theory": {
+            "camb": camb_options,
+            "soliket.TheoryForge_MFLike": {"stop_at_error": True},
+            "soliket.Foreground": {"stop_at_error": True},
+            "soliket.BandPass": {"stop_at_error": True},
+        },
         "params": {**mflike_params},
     }
 
     info1 = {
         "likelihood": {"soliket.mflike.TestMFLike": mflike_options},
-        "theory": {"camb": camb_options,
-                   "soliket.TheoryForge_MFLike": {'stop_at_error': True},
-                   "soliket.Foreground": {"stop_at_error": True},
-                   "soliket.BandPass": {"stop_at_error": True}},
+        "theory": {
+            "camb": camb_options,
+            "soliket.TheoryForge_MFLike": {"stop_at_error": True},
+            "soliket.Foreground": {"stop_at_error": True},
+            "soliket.BandPass": {"stop_at_error": True},
+        },
         "params": {**mflike_params},
     }
 

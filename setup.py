@@ -26,7 +26,7 @@ For more information, see:
   https://soliket.readthedocs.io/en/latest/developers.html#checking-code-in-development
 """
 
-if 'test' in sys.argv:
+if "test" in sys.argv:
     print(TEST_HELP)
     sys.exit(1)
 
@@ -44,7 +44,7 @@ For more information, see:
   https://soliket.readthedocs.io/en/latest/developers.html#documentation
 """
 
-if 'build_docs' in sys.argv or 'build_sphinx' in sys.argv:
+if "build_docs" in sys.argv or "build_sphinx" in sys.argv:
     print(DOCS_HELP)
     sys.exit(1)
 
@@ -59,5 +59,9 @@ except Exception:
     version = '{version}'
 """.lstrip()
 
-setup(use_scm_version={'write_to': os.path.join('soliket', 'version.py'),
-                       'write_to_template': VERSION_TEMPLATE})
+setup(
+    use_scm_version={
+        "write_to": os.path.join("soliket", "version.py"),
+        "write_to_template": VERSION_TEMPLATE,
+    }
+)

@@ -127,10 +127,11 @@ class BandPass(Theory):
     external_bandpass: dict
 
     def initialize(self):
-
-        self.expected_params_bp = ["bandint_shift_LAT_93",
-                                   "bandint_shift_LAT_145",
-                                   "bandint_shift_LAT_225"]
+        self.expected_params_bp = [
+            "bandint_shift_LAT_93",
+            "bandint_shift_LAT_145",
+            "bandint_shift_LAT_225",
+        ]
 
         self.exp_ch = None
         # self.eff_freqs = None
@@ -148,28 +149,36 @@ class BandPass(Theory):
 
         self.bandint_external_bandpass = bool(self.external_bandpass)
         if self.bandint_external_bandpass:
-            path = os.path.normpath(os.path.join(self.data_folder,
-                                                 self.external_bandpass["path"]))
+            path = os.path.normpath(
+                os.path.join(self.data_folder, self.external_bandpass["path"])
+            )
             arrays = os.listdir(path)
             self._init_external_bandpass_construction(path, arrays)
 
-        if (not self.read_from_sacc and not self.use_top_hat_band
-                and not self.bandint_external_bandpass):
+        if (
+            not self.read_from_sacc
+            and not self.use_top_hat_band
+            and not self.bandint_external_bandpass
+        ):
             raise LoggedError(
-                self.log, "fill the dictionaries in the yaml file for"
-                          "either reading the passband from sacc file (mflike default)"
-                          "or an external passband or building a top-hat one!"
+                self.log,
+                "fill the dictionaries in the yaml file for"
+                "either reading the passband from sacc file (mflike default)"
+                "or an external passband or building a top-hat one!",
             )
 
     def initialize_with_params(self):
         # Check that the parameters are the right ones
         differences = are_different_params_lists(
-            self.input_params, self.expected_params_bp,
-            name_A="given", name_B="expected")
+            self.input_params,
+            self.expected_params_bp,
+            name_A="given",
+            name_B="expected",
+        )
         if differences:
             raise LoggedError(
-                self.log, "Configuration error in parameters: %r.",
-                differences)
+                self.log, "Configuration error in parameters: %r.", differences
+            )
 
     def must_provide(self, **requirements):
         # bandint_freqs is required by Foreground
@@ -177,8 +186,9 @@ class BandPass(Theory):
         # Assign those from Foreground
         if "bandint_freqs" in requirements:
             self.bands = requirements["bandint_freqs"]["bands"]
-            self.exp_ch = [k.replace("_s0", "") for k in self.bands.keys()
-                           if "_s0" in k]
+            self.exp_ch = [
+                k.replace("_s0", "") for k in self.bands.keys() if "_s0" in k
+            ]
 
     def calculate(self, state, want_derived=False, **params_values_dict):
         r"""
@@ -231,7 +241,7 @@ class BandPass(Theory):
         data_are_monofreq = False
         bandint_freqs = []
         for ifr, fr in enumerate(self.exp_ch):
-            bandpar = 'bandint_shift_' + str(fr)
+            bandpar = "bandint_shift_" + str(fr)
             bands = self.bands[f"{fr}_s0"]
             nu_ghz, bp = np.asarray(bands["nu"]), np.asarray(bands["bandpass"])
             if self.use_top_hat_band:
@@ -240,19 +250,25 @@ class BandPass(Theory):
                     self.bandint_width = np.full_like(
                         self.exp_ch, self.bandint_width, dtype=float
                     )
-                if self.bandint_nsteps > 1 and np.any(np.array(self.bandint_width) == 0):
+                if self.bandint_nsteps > 1 and np.any(
+                    np.array(self.bandint_width) == 0
+                ):
                     raise LoggedError(
-                        self.log, "One band has width = 0, \
-                                    set a positive width and run again"
+                        self.log,
+                        "One band has width = 0, \
+                                    set a positive width and run again",
                     )
                 # Compute central frequency given bandpass
                 fr = nu_ghz @ bp / bp.sum()
                 if self.bandint_nsteps > 1:
-                    bandlow = fr * (1 - self.bandint_width[ifr] * .5)
-                    bandhigh = fr * (1 + self.bandint_width[ifr] * .5)
-                    nub = np.linspace(bandlow + params[bandpar],
-                                      bandhigh + params[bandpar],
-                                      self.bandint_nsteps, dtype=float)
+                    bandlow = fr * (1 - self.bandint_width[ifr] * 0.5)
+                    bandhigh = fr * (1 + self.bandint_width[ifr] * 0.5)
+                    nub = np.linspace(
+                        bandlow + params[bandpar],
+                        bandhigh + params[bandpar],
+                        self.bandint_nsteps,
+                        dtype=float,
+                    )
                     tranb = _cmb2bb(nub)
                     tranb_norm = np.trapz(_cmb2bb(nub), nub)
                     bandint_freqs.append([nub, tranb / tranb_norm])
@@ -313,7 +329,9 @@ class BandPass(Theory):
             if not hasattr(bp, "__len__"):
                 bandint_freqs.append(nub)
                 bandint_freqs = np.asarray(bandint_freqs)
-                self.log.info("bandpass is delta function, no band integration performed")
+                self.log.info(
+                    "bandpass is delta function, no band integration performed"
+                )
             else:
                 trans_norm = np.trapz(bp * _cmb2bb(nub), nub)
                 trans = bp / trans_norm * _cmb2bb(nub)

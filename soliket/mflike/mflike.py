@@ -51,17 +51,19 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         self.spec_meta = []
 
         # Set path to data
-        if ((not getattr(self, "path", None)) and
-                (not getattr(self, "packages_path", None))):
-            raise LoggedError(self.log,
-                              "No path given to MFLike data. "
-                              "Set the likelihood property "
-                              "'path' or 'packages_path'"
-                              )
+        if (not getattr(self, "path", None)) and (
+            not getattr(self, "packages_path", None)
+        ):
+            raise LoggedError(
+                self.log,
+                "No path given to MFLike data. "
+                "Set the likelihood property "
+                "'path' or 'packages_path'",
+            )
         # If no path specified, use the modules path
-        data_file_path = os.path.normpath(getattr(self, "path", None) or
-                                          os.path.join(self.packages_path,
-                                                       "data"))
+        data_file_path = os.path.normpath(
+            getattr(self, "path", None) or os.path.join(self.packages_path, "data")
+        )
 
         self.data_folder = os.path.join(data_file_path, self.data_folder)
         if not os.path.exists(self.data_folder):
@@ -99,12 +101,14 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         # mflike requires cmbfg_dict from theoryforge
         # cmbfg_dict requires some params to be computed
         reqs = dict()
-        reqs["cmbfg_dict"] = {"ell": np.arange(2, 2001),
-        # "ell": self.l_bpws,
-                              "requested_cls": self.requested_cls,
-                              "lcuts": self.lcuts,
-                              "exp_ch": self.experiments,
-                              "bands": self.bands}
+        reqs["cmbfg_dict"] = {
+            "ell": np.arange(2, 2001),
+            # "ell": self.l_bpws,
+            "requested_cls": self.requested_cls,
+            "lcuts": self.lcuts,
+            "exp_ch": self.experiments,
+            "bands": self.bands,
+        }
         return reqs
 
     def _get_theory(self, **params_values):
@@ -130,7 +134,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         logp += self.logp_const
         self.log.debug(
             "Log-likelihood value computed "
-            "= {} (Χ² = {})".format(logp, -2 * (logp - self.logp_const)))
+            "= {} (Χ² = {})".format(logp, -2 * (logp - self.logp_const))
+        )
         return logp
 
     def prepare_data(self, verbose=False):
@@ -143,6 +148,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         the shape of the indices array, lmin, lmax.
         """
         import sacc
+
         data = self.data
         # Read data
         input_fname = os.path.join(self.data_folder, self.input_file)
@@ -153,8 +159,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         s_b = s
         if self.cov_Bbl_file:
             if self.cov_Bbl_file != self.input_file:
-                cov_Bbl_fname = os.path.join(self.data_folder,
-                                             self.cov_Bbl_file)
+                cov_Bbl_fname = os.path.join(self.data_folder, self.cov_Bbl_file)
                 s_b = sacc.Sacc.load_fits(cov_Bbl_fname)
                 cbbl_extra = True
 
@@ -164,19 +169,19 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             raise KeyError("You must provide a list of default cuts")
 
         # Translation betwen TEB and sacc C_ell types
-        pol_dict = {"T": "0",
-                    "E": "e",
-                    "B": "b"}
-        ppol_dict = {"TT": "tt",
-                     "EE": "ee",
-                     "TE": "te",
-                     "ET": "te",
-                     "BB": "bb",
-                     "EB": "eb",
-                     "BE": "eb",
-                     "TB": "tb",
-                     "BT": "tb",
-                     "BB": "bb"}
+        pol_dict = {"T": "0", "E": "e", "B": "b"}
+        ppol_dict = {
+            "TT": "tt",
+            "EE": "ee",
+            "TE": "te",
+            "ET": "te",
+            "BB": "bb",
+            "EB": "eb",
+            "BE": "eb",
+            "TB": "tb",
+            "BT": "tb",
+            "BB": "bb",
+        }
 
         def get_cl_meta(spec):
             """
@@ -191,11 +196,9 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             # Experiments/frequencies
             exp_1, exp_2 = spec["experiments"]
             # Read off polarization channel combinations
-            pols = spec.get("polarizations",
-                            default_cuts["polarizations"]).copy()
+            pols = spec.get("polarizations", default_cuts["polarizations"]).copy()
             # Read off scale cuts
-            scls = spec.get("scales",
-                            default_cuts["scales"]).copy()
+            scls = spec.get("scales", default_cuts["scales"]).copy()
 
             # For the same two channels, do not include ET and TE, only TE
             if exp_1 == exp_2:
@@ -208,8 +211,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             else:
                 # Symmetrization
                 if ("TE" in pols) and ("ET" in pols):
-                    symm = spec.get("symmetrize",
-                                    default_cuts["symmetrize"])
+                    symm = spec.get("symmetrize", default_cuts["symmetrize"])
                 else:
                     symm = False
 
@@ -260,16 +262,19 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
             for pol in pols:
                 tname_1, tname_2, dtype = get_sacc_names(pol, exp_1, exp_2)
                 lmin, lmax = scls[pol]
-                ind = s.indices(dtype,  # Power spectrum type
-                                (tname_1, tname_2),  # Channel combinations
-                                ell__gt=lmin, ell__lt=lmax)  # Scale cuts
+                ind = s.indices(
+                    dtype,  # Power spectrum type
+                    (tname_1, tname_2),  # Channel combinations
+                    ell__gt=lmin,
+                    ell__lt=lmax,
+                )  # Scale cuts
                 indices += list(ind)
 
                 # Note that data in the cov_Bbl file may be in different order.
                 if cbbl_extra:
-                    ind_b = s_b.indices(dtype,
-                                        (tname_1, tname_2),
-                                        ell__gt=lmin, ell__lt=lmax)
+                    ind_b = s_b.indices(
+                        dtype, (tname_1, tname_2), ell__gt=lmin, ell__lt=lmax
+                    )
                     indices_b += list(ind_b)
 
                 if symm and pol == "ET":
@@ -309,8 +314,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                 # loop over data["spectra"].
                 ls, cls, ind = s.get_ell_cl(dtype, tname_1, tname_2, return_ind=True)
                 if cbbl_extra:
-                    ind_b = s_b.indices(dtype,
-                                        (tname_1, tname_2))
+                    ind_b = s_b.indices(dtype, (tname_1, tname_2))
                     ws = s_b.get_bandpower_windows(ind_b)
                 else:
                     ws = s.get_bandpower_windows(ind)
@@ -324,10 +328,8 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                 if (pol in ["TE", "ET"]) and symm:
                     pol2 = pol[::-1]
                     pols.remove(pol2)
-                    tname_1, tname_2, dtype = get_sacc_names(pol2,
-                                                             exp_1, exp_2)
-                    ind2 = s.indices(dtype,
-                                     (tname_1, tname_2))
+                    tname_1, tname_2, dtype = get_sacc_names(pol2, exp_1, exp_2)
+                    ind2 = s.indices(dtype, (tname_1, tname_2))
                     cls2 = s.get_ell_cl(dtype, tname_1, tname_2)[1]
                     cls = 0.5 * (cls + cls2)
 
@@ -335,8 +337,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                         mat_compress[index_sofar + i, j1] = 0.5
                         mat_compress[index_sofar + i, j2] = 0.5
                     if cbbl_extra:
-                        ind2_b = s_b.indices(dtype,
-                                             (tname_1, tname_2))
+                        ind2_b = s_b.indices(dtype, (tname_1, tname_2))
                         for i, (j1, j2) in enumerate(zip(ind_b, ind2_b)):
                             mat_compress_b[index_sofar + i, j1] = 0.5
                             mat_compress_b[index_sofar + i, j2] = 0.5
@@ -348,23 +349,24 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                             mat_compress_b[index_sofar + i, j1] = 1
                 # The fields marked with # below aren't really used, but
                 # we store them just in case.
-                self.spec_meta.append({"ids": (index_sofar +
-                                               np.arange(cls.size,
-                                                         dtype=int)),
-                                       "pol": ppol_dict[pol],
-                                       "hasYX_xsp": pol in ["ET", "BE", "BT"],  # For symm
-                                       "t1": exp_1,
-                                       "t2": exp_2,
-                                       "leff": ls,
-                                       "cl_data": cls,
-                                       "bpw": ws})
+                self.spec_meta.append(
+                    {
+                        "ids": (index_sofar + np.arange(cls.size, dtype=int)),
+                        "pol": ppol_dict[pol],
+                        "hasYX_xsp": pol in ["ET", "BE", "BT"],  # For symm
+                        "t1": exp_1,
+                        "t2": exp_2,
+                        "leff": ls,
+                        "cl_data": cls,
+                        "bpw": ws,
+                    }
+                )
                 index_sofar += cls.size
         if not cbbl_extra:
             mat_compress_b = mat_compress
         # Put data and covariance in the right order.
         self.data_vec = np.dot(mat_compress, s.mean)
-        self.cov = np.dot(mat_compress_b,
-                          s_b.covariance.covmat.dot(mat_compress_b.T))
+        self.cov = np.dot(mat_compress_b, s_b.covariance.covmat.dot(mat_compress_b.T))
         self.inv_cov = np.linalg.inv(self.cov)
         self.logp_const = np.log(2 * np.pi) * (-len(self.data_vec) / 2)
         self.logp_const -= 0.5 * np.linalg.slogdet(self.cov)[1]
@@ -400,30 +402,35 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
         ps_vec = np.zeros_like(self.data_vec)
         DlsObs = dict()
         # Rescale l_bpws because cmbfg spectra start from first element of l_bpws (l=2)
-        ell = self.l_bpws - self.l_bpws[0]
-        ell = np.arange(2,1999)
+        if self.l_bpws[-1] <= self.lmax_theory:
+            ell = self.l_bpws - self.l_bpws[0]
+        else:
+            ell = np.arange(self.l_bpws[0], self.lmax_theory)
 
         for m0 in self.spec_meta:
             p0 = m0["pol"]
             i0 = m0["ids"]
             w0 = m0["bpw"].weight.T
 
-            if p0 in ['tt', 'ee', 'bb']:
-                DlsObs[p0, m0['t1'], m0['t2']] = cmbfg[p0, m0['t1'], m0['t2']][ell]
+            if p0 in ["tt", "ee", "bb"]:
+                DlsObs[p0, m0["t1"], m0["t2"]] = cmbfg[p0, m0["t1"], m0["t2"]][ell]
             else:  # ['te','tb','eb']
-                if m0['hasYX_xsp']:  # not symmetrizing
-                    DlsObs[p0, m0['t2'], m0['t1']] = cmbfg[p0, m0['t2'], m0['t1']][ell]
+                if m0["hasYX_xsp"]:  # not symmetrizing
+                    DlsObs[p0, m0["t2"], m0["t1"]] = cmbfg[p0, m0["t2"], m0["t1"]][ell]
                 else:
-                    DlsObs[p0, m0['t1'], m0['t2']] = cmbfg[p0, m0['t1'], m0['t2']][ell]
+                    DlsObs[p0, m0["t1"], m0["t2"]] = cmbfg[p0, m0["t1"], m0["t2"]][ell]
                 #
-                if self.defaults['symmetrize']:  # we average TE and ET (as for data)
-                    DlsObs[p0, m0['t1'], m0['t2']] += cmbfg[p0, m0['t2'], m0['t1']][ell]
-                    DlsObs[p0, m0['t1'], m0['t2']] *= 0.5
+                if self.defaults["symmetrize"]:  # we average TE and ET (as for data)
+                    DlsObs[p0, m0["t1"], m0["t2"]] += cmbfg[p0, m0["t2"], m0["t1"]][ell]
+                    DlsObs[p0, m0["t1"], m0["t2"]] *= 0.5
 
-            dls_obs = DlsObs[p0, m0["t2"], m0["t1"]] if m0["hasYX_xsp"] \
-                       else DlsObs[p0, m0["t1"], m0["t2"]]
+            dls_obs = (
+                DlsObs[p0, m0["t2"], m0["t1"]]
+                if m0["hasYX_xsp"]
+                else DlsObs[p0, m0["t1"], m0["t2"]]
+            )
 
-            clt = w0[:,ell] @ dls_obs
+            clt = w0[:, ell] @ dls_obs
             ps_vec[i0] = clt
 
         return ps_vec

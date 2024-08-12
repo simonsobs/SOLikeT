@@ -3,7 +3,7 @@ import sys
 
 
 def pytest_collection_modifyitems(config, items):
-    if sys.platform.startswith('win'):
+    if sys.platform.startswith("win"):
         skip_on_windows = pytest.mark.skip(reason="Skipped on Windows")
         for item in items:
             if "require_ccl" in item.keywords:
