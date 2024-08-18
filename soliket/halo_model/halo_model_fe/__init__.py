@@ -1,5 +1,5 @@
-from .halo_model_fe import paramfile_halomod
+from .halo_model_fe import HaloModel_fe
 
 __all__ = {
-    "paramfile_halomod"
+    "HaloModel_fe"
 }

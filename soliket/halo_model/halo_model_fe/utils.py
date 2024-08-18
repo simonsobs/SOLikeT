@@ -54,7 +54,8 @@ class u_p_nfw_hmf_bias:
         lnk = np.log(k)
         uW = self.W(rk)
         integ = rest * uW ** 2
-        sigm = (0.5 / np.pi ** 2) * scipy.integrate.simps(integ, x=lnk, axis=-1)
+        sigm = (0.5 / np.pi ** 2) * trapz(integ, x=lnk, axis=-1) ####################################### gz
+        #sigm = (0.5 / np.pi ** 2) * scipy.integrate.simps(integ, x=lnk, axis=-1)
         return np.sqrt(sigm)
 
     # sigma depends on z from the linear power spectrum
@@ -128,7 +129,10 @@ class u_p_nfw_hmf_bias:
         inte = w * dw * rest
         lnk = np.log(k)
         s = self.sigma(rad, red, zeta)
-        return scipy.integrate.simps(inte, x=lnk, axis=-1, even="avg") / (
+        #return scipy.integrate.simps(inte, x=lnk, axis=-1, even="avg") / (
+           # np.pi ** 2 * s ** 2
+        #)
+        return trapz(inte, x=lnk, axis=-1) / (
             np.pi ** 2 * s ** 2
         )
 

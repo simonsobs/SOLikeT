@@ -1,10 +1,10 @@
 import numpy as np
 from cobaya.theory import Theory
-from utils import *
-from HODS import *
-from power_spectrum import *
-from lin_matterPS import * 
-from cosmology import *
+from .utils import *
+from .HODS import *
+from .power_spectrum import *
+from .lin_matterPS import * 
+from .cosmology import *
 
 class HaloModel(Theory):
     _logz = np.linspace(-3, np.log10(1100), 150)
@@ -37,7 +37,8 @@ class HaloModel(Theory):
 class HaloModel_fe(HaloModel):
     def initialize(self):
         super().initialize()
-        self.logmass = np.linspace(self.Mmin, self.mmax, self.nm)
+        self.logmass = np.linspace(self.Mmin, self.Mmax, self.nm)
+        #self.k = np.linspace(0, self.kmax, 1)
         self.clust_param = {'sigma_EP': self.sigma_EP,
                             'sigma_LP': self.sigma_LP,
                             'scale_EP': self.scale_EP,
@@ -48,8 +49,8 @@ class HaloModel_fe(HaloModel):
                             'LogMmin_LP': self.LogMmin_LP,
                             'Dc': self.Dc,
                             }
-        self.isinstance_200 = u_p_nfw_hmf_bias(self.k, self._get_Pk_mm_lin(), self.logmass, self.z, self.Dc)
-        self.instance_HOD = hod_ngal(self.logmass, self.z, self.clust_param, self.instance_200)
+        #self.instance_200 = u_p_nfw_hmf_bias(self.k, self._get_Pk_mm_lin(), self.logmass, self.z, self.Dc)
+        #self.instance_HOD = hod_ngal(self.logmass, self.z, self.clust_param, self.instance_200)
 
     def must_provide(self, **requirements):
 
@@ -79,10 +80,16 @@ class HaloModel_fe(HaloModel):
                            }
         return needs
 
-    def calculate(self, state: dict):
+    def calculate(self, state: dict, want_derived: bool = True,
+                  **params_values_dict):
+        Pk_mm_lin = self._get_Pk_mm_lin()
+
+        self.instance_200 = u_p_nfw_hmf_bias(self.k, Pk_mm_lin, self.logmass, self.z, self.Dc)
+        self.instance_HOD = hod_ngal(self.logmass, self.z, self.clust_param, self.instance_200)
+
         spectra = mm_gg_mg_spectra(
                     self.k,
-                    self._get_Pk_mm_lin(),
+                    Pk_mm_lin,
                     self.logmass,
                     self.z,
                     self.instance_HOD,
