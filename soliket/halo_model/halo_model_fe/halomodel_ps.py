@@ -18,8 +18,7 @@ read_matterPS  = settings['options']['read_matterPS']
 #redshift_path  = settings['options']['redshift']
 gal_mod        = settings['options']['two_populations']
 ps_computation = settings['options']['power_spectra']
-redshift = np.linspace(settings['options']['zmin'], settings['options']['zmax'], settings['options']['nz'])
-print(redshift)
+redshift       = np.linspace(settings['options']['zmin'], settings['options']['zmax'], settings['options']['nz'])
 #redshift       = np.loadtxt(redshift_path)
 
 if gal_mod == True:
@@ -45,13 +44,15 @@ default_lin_matter_PS = './tabulated/matterPS_Planck18.txt'
 cosmo_param = cosmo_param(redshift, cosmological_param, cosmo, default_lin_matter_PS)
 
 h, dV_dz = cosmo_param.compute_params()
+kmax     = settings['options']['kmax']
 
 if read_matterPS == True:
     k_array, Pk_array = cosmo_param.read_matter_PS()
 else:
-    compute_PS = matter_PS(redshift, h, cosmo_param, cosmological_param)
+    compute_PS = matter_PS(redshift, h, kmax, cosmo_param, cosmological_param)
     k_array = compute_PS.lin_matter_PS()[0]
     Pk_array = compute_PS.lin_matter_PS()[2]
+print(k_array)
 
 
 #----------------------------------------------------------------------------------------------------------------------------
@@ -75,7 +76,6 @@ instance_HOD = hod_ngal(mh, redshift, clust_param, instance_200)
 #----------------------------------------------------------------------------------------------------------------------------
 #------------------------------------------------Power spectra computation---------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------
-
 spectra = mm_gg_mg_spectra(
         k_array,
         Pk_array,

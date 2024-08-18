@@ -11,6 +11,8 @@ options:
     zmin: 0 
     zmax: 3
     nz: 10
+    
+    kmax: 10.0
 
     Mmin: 11
     Mmax: 15
