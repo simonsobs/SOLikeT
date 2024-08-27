@@ -58,7 +58,7 @@ def test_multi(test_cosmology_params):
     info = {
         "likelihood": {
             "soliket.gaussian.MultiGaussianLikelihood": {
-                "components": ["mflike.MFLike", "soliket.LensingLikelihood"],
+                "components": ["mflike.TTTEEE", "soliket.LensingLikelihood"],
                 "options": [mflike_options, lensing_options],
                 "stop_at_error": True,
             }
@@ -69,7 +69,7 @@ def test_multi(test_cosmology_params):
     }
 
     info1 = {
-        "likelihood": {"mflike.MFLike": mflike_options},
+        "likelihood": {"mflike.TTTEEE": mflike_options},
         "theory": {"camb": camb_options,
                    "mflike.BandpowerForeground": {"stop_at_error": True}},
         "params": mflike_params,

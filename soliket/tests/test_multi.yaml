@@ -5,7 +5,7 @@ debug: True
 likelihood:
   soliket.gaussian.MultiGaussianLikelihood:
     components:
-      - mflike.MFLike
+      - mflike.TTTEEE
       - soliket.LensingLikelihood
     options:
       - input_file: LAT_simu_sacc_00044.fits
