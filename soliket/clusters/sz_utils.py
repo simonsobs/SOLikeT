@@ -26,7 +26,7 @@ rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) \
                         / G_CGS * MPC2CM / MSUN_CGS
 
 
-def gaussian(xx, mu, sig, noNorm=False):
+def gaussian(xx, mu, sig, noNorm=False) -> np.ndarray:
     if noNorm:
         return np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig ** 2.0))
     else:
@@ -42,7 +42,7 @@ class szutils:
         # self.rho_crit0H100 = (3. / (8. * np.pi) * \
         #                           (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
 
-    def P_Yo(self, LgY, M, z, param_vals, Ez_fn, Da_fn):
+    def P_Yo(self, LgY, M, z, param_vals, Ez_fn, Da_fn) -> np.ndarray:
         H0 = param_vals["H0"]
 
         Ma = np.outer(M, np.ones(len(LgY[0, :])))
@@ -65,13 +65,12 @@ class szutils:
         # print ("M,z,y~",M[ind],z,Ytilde[ind,0])
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
-        ans = (
+        return (
                 1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) *
                 np.exp(numer / (2.0 * param_vals["scat"] ** 2))
         )
-        return ans
 
-    def P_Yo_vec(self, LgY, M, z, param_vals, Ez_fn, Da_fn):
+    def P_Yo_vec(self, LgY, M, z, param_vals, Ez_fn, Da_fn) -> np.ndarray:
         H0 = param_vals["H0"]
         # Ma = np.outer(M, np.ones(len(LgY[0, :])))
 
@@ -90,19 +89,18 @@ class szutils:
         Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
 
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
-        ans = (
+        return (
                 1.0 / (param_vals["scat"] * np.sqrt(2 * np.pi)) *
                 np.exp(numer / (2.0 * param_vals["scat"] ** 2))
         )
-        return ans
 
-    def Y_erf(self, Y, Ynoise):
+    def Y_erf(self, Y, Ynoise) -> np.ndarray:
         qmin = self.Survey.qmin
         ans = Y * 0.0
         ans[Y - qmin * Ynoise > 0] = 1.0
         return ans
 
-    def P_of_gt_SN(self, LgY, MM, zz, Ynoise, param_vals, Ez_fn, Da_fn):
+    def P_of_gt_SN(self, LgY, MM, zz, Ynoise, param_vals, Ez_fn, Da_fn) -> np.ndarray:
         Y = 10 ** LgY
 
         sig_tr = np.outer(np.ones([MM.shape[0], MM.shape[1]]), self.Y_erf(Y, Ynoise))
@@ -114,46 +112,42 @@ class szutils:
 
         P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, MM, zz, param_vals, Ez_fn, Da_fn))
 
-        ans = trapezoid(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10)
-        return ans
+        return trapezoid(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10)
 
-    def PfuncY(self, YNoise, M, z_arr, param_vals, Ez_fn, Da_fn):
+    def PfuncY(self, YNoise, M, z_arr, param_vals, Ez_fn, Da_fn) -> np.ndarray:
         LgY = self.LgY
 
-        P_func = np.outer(M, np.zeros([len(z_arr)]))
         M_arr = np.outer(M, np.ones([len(z_arr)]))
 
-        P_func = self.P_of_gt_SN(LgY, M_arr, z_arr, YNoise, param_vals, Ez_fn, Da_fn)
-        return P_func
+        return self.P_of_gt_SN(LgY, M_arr, z_arr, YNoise, param_vals, Ez_fn, Da_fn)
 
-    def P_of_Y_per(self, LgY, MM, zz, Y_c, Y_err, param_vals):
+    def P_of_Y_per(self, LgY, MM, zz, Y_c, Y_err, param_vals) -> np.ndarray:
         P_Y_sig = np.outer(np.ones(len(MM)), self.Y_prob(Y_c, LgY, Y_err))
 
         LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
         LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
 
         P_Y = np.nan_to_num(self.P_Yo(LgYa2, MM, zz, param_vals))
-        ans = trapezoid(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1) * np.log(10)
 
-        return ans
+        return trapezoid(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1) * np.log(10)
 
-    def Y_prob(self, Y_c, LgY, YNoise):
+    def Y_prob(self, Y_c, LgY, YNoise) -> np.ndarray:
         Y = 10 ** LgY
 
-        ans = gaussian(Y, Y_c, YNoise)
-        return ans
+        return gaussian(Y, Y_c, YNoise)
 
-    def Pfunc_per(self, MM, zz, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
+    def Pfunc_per(self, MM, zz, Y_c, Y_err, param_vals, Ez_fn, Da_fn) -> np.ndarray:
         LgY = self.LgY
         LgYa = np.outer(np.ones(len(MM)), LgY)
 
         P_Y_sig = self.Y_prob(Y_c, LgY, Y_err)
         P_Y = np.nan_to_num(self.P_Yo(LgYa, MM, zz, param_vals, Ez_fn, Da_fn))
-        ans = trapezoid(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
 
-        return ans
+        return trapezoid(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
 
-    def Pfunc_per_parallel(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
+    def Pfunc_per_parallel(
+        self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn, Da_fn
+    ) -> np.ndarray:
         # LgY = self.LgY
         # LgYa = np.outer(np.ones(Marr.shape[0]), LgY)
 
@@ -172,11 +166,9 @@ class szutils:
         P_Y_sig = self.Y_prob(Y_c, self.LgY, Y_err)
         P_Y = np.nan_to_num(self.P_Yo(self.LgY, Marr, zarr, param_vals, Ez_fn, Da_fn))
 
-        ans = trapezoid(P_Y * P_Y_sig, x=self.LgY, axis=2)
+        return trapezoid(P_Y * P_Y_sig, x=self.LgY, axis=2)
 
-        return ans
-
-    def Pfunc_per_zarr(self, MM, z_c, Y_c, Y_err, int_HMF, param_vals):
+    def Pfunc_per_zarr(self, MM, z_c, Y_c, Y_err, param_vals) -> np.ndarray:
         LgY = self.LgY
 
         # old was z_arr
@@ -185,9 +177,7 @@ class szutils:
         # M200 = np.outer(MM, np.zeros([len(z_arr)]))
         # zarr = np.outer(np.ones([len(M)]), z_arr)
 
-        P_func = self.P_of_Y_per(LgY, MM, z_c, Y_c, Y_err, param_vals)
-
-        return P_func
+        return self.P_of_Y_per(LgY, MM, z_c, Y_c, Y_err, param_vals)
 
 
 ###
@@ -389,7 +379,7 @@ def y0FromLogM500(
 
     """
 
-    if type(Mpivot) == str:
+    if isinstance(Mpivot, str):
         raise Exception(
             "Mpivot is a string - check Mpivot in your .yml config file:\
              use, e.g., 3.0e+14 (not 3e14 or 3e+14)"

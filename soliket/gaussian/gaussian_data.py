@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
 from cobaya.likelihoods.base_classes import _fast_chi_square
 
@@ -16,34 +16,34 @@ class GaussianData:
 
     _fast_chi_squared = _fast_chi_square()
 
-    def __init__(self, name, x: Sequence, y: Sequence[float], cov: np.ndarray,
-                 ncovsims: Optional[int] = None):
+    def __init__(self, name: str, x: Sequence[float], y: Sequence[float], cov: np.ndarray,
+                 ncovsims: Optional[int] = None) -> None:
 
-        self.name = str(name)
-        self.ncovsims = ncovsims
+        self.name: str = str(name)
+        self.ncovsims: Optional[int] = ncovsims
 
         if not (len(x) == len(y) and cov.shape == (len(x), len(x))):
             raise ValueError(f"Incompatible shapes! x={len(x)}, y={len(y)}, \
                                cov={cov.shape}")
 
-        self.x = x
-        self.y = np.ascontiguousarray(y)
-        self.cov = cov
-        self.eigenevalues = np.linalg.eigvalsh(cov)
+        self.x: Sequence[float] = x
+        self.y: np.ndarray = np.ascontiguousarray(y)
+        self.cov: np.ndarray = cov
+        self.eigenevalues: np.ndarray = np.linalg.eigvalsh(cov)
         if self.eigenevalues.min() <= 0:
             raise ValueError("Covariance is not positive definite!")
 
-        self.inv_cov = np.linalg.inv(self.cov)
+        self.inv_cov: np.ndarray = np.linalg.inv(self.cov)
         if ncovsims is not None:
             hartlap_factor = (self.ncovsims - len(x) - 2) / (self.ncovsims - 1)
             self.inv_cov *= hartlap_factor
         log_det = np.log(self.eigenevalues).sum()
         self.norm_const = -(np.log(2 * np.pi) * len(x) + log_det) / 2
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.x)
 
-    def loglike(self, theory):
+    def loglike(self, theory: np.ndarray) -> float:
         delta = self.y - theory
         return -0.5 * self._fast_chi_squared(self.inv_cov, delta) + self.norm_const
 
@@ -60,7 +60,11 @@ class MultiGaussianData(GaussianData):
         Cross-covariances, keyed by (name1, name2) tuples.
     """
 
-    def __init__(self, data_list, cross_covs=None):
+    def __init__(
+        self,
+        data_list: List[GaussianData],
+        cross_covs: Optional[Dict[Tuple[str, str], np.ndarray]] = None,
+    ) -> None:
 
         if cross_covs is None:
             cross_covs = {}
@@ -86,44 +90,47 @@ class MultiGaussianData(GaussianData):
                 else:
                     cross_covs[key] = np.zeros((len(d1), len(d2)))
 
-        self.data_list = data_list
-        self.lengths = [len(d) for d in data_list]
-        self.names = [d.name for d in data_list]
-        self.cross_covs = cross_covs
+        self.data_list: List[GaussianData] = data_list
+        self.lengths: List[int] = [len(d) for d in data_list]
+        self.names: List[str] = [d.name for d in data_list]
+        self.cross_covs: Dict[Tuple[str, str], np.ndarray] = cross_covs
 
-        self._data = None
+        self._data: Optional[np.ndarray] = None
 
     @property
-    def data(self):
+    def data(self) -> GaussianData:
         if self._data is None:
             self._assemble_data()
         return self._data
 
-    def loglike(self, theory):
+    def loglike(self, theory: np.ndarray) -> float:
         return self.data.loglike(theory)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.data.name
 
     @property
-    def inv_cov(self):
+    def inv_cov(self) -> np.ndarray:
         return self.data.inv_cov
 
     @property
-    def cov(self):
+    def cov(self) -> np.ndarray:
         return self.data.cov
 
     @property
-    def norm_const(self):
+    def norm_const(self) -> float:
         return self.data.norm_const
 
     @property
-    def labels(self):
-        return [x for y in [[name] * len(d) for
-                            name, d in zip(self.names, self.data_list)] for x in y]
+    def labels(self) -> List[str]:
+        return [
+            x
+            for y in [[name] * len(d) for name, d in zip(self.names, self.data_list)]
+            for x in y
+        ]
 
-    def _index_range(self, name):
+    def _index_range(self, name: str) -> Tuple[int, int]:
         if name not in self.names:
             raise ValueError(f"{name} not in {self.names}!")
 
@@ -135,13 +142,13 @@ class MultiGaussianData(GaussianData):
             i0 += length
         return i0, i1
 
-    def _slice(self, *names):
+    def _slice(self, *names: str) -> slice:
         if isinstance(names, str):
             names = [names]
 
         return np.s_[tuple(slice(*self._index_range(n)) for n in names)]
 
-    def _assemble_data(self):
+    def _assemble_data(self) -> None:
         x = np.concatenate([d.x for d in self.data_list])
         y = np.concatenate([d.y for d in self.data_list])
 
@@ -154,7 +161,7 @@ class MultiGaussianData(GaussianData):
 
         self._data = GaussianData(" + ".join(self.names), x, y, cov)
 
-    def plot_cov(self, **kwargs):
+    def plot_cov(self, **kwargs) -> None:
         import holoviews as hv
 
         data = [
@@ -163,5 +170,6 @@ class MultiGaussianData(GaussianData):
             for j, lj in zip(range(len(self.data)), self.labels)
         ]
 
-        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800,
-                                     invert_yaxis=True, xrotation=90)
+        return hv.HeatMap(data).opts(
+            tools=["hover"], width=800, height=800, invert_yaxis=True, xrotation=90
+        )

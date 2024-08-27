@@ -5,6 +5,8 @@ Used internally by the xcorr likelihood to compute angular power spectra of diff
  probes under the Limber approximation.
 """
 
+from typing import Callable, Dict, Optional, Tuple
+from cobaya.theory import Provider
 import numpy as np
 
 try:
@@ -16,7 +18,15 @@ from soliket.constants import C_HMPC
 oneover_chmpc = 1. / C_HMPC
 
 
-def mag_bias_kernel(provider, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_arr):
+def mag_bias_kernel(
+    provider: Provider,
+    dndz: np.ndarray,
+    s1: float,
+    zatchi: Callable[[np.ndarray], np.ndarray],
+    chi_arr: np.ndarray,
+    chiprime_arr: np.ndarray,
+    zprime_arr: np.ndarray
+) -> np.ndarray:
     """Calculates magnification bias kernel."""
 
     dndzprime = np.interp(zprime_arr, dndz[:, 0], dndz[:, 1], left=0, right=0)
@@ -38,11 +48,24 @@ def mag_bias_kernel(provider, dndz, s1, zatchi, chi_arr, chiprime_arr, zprime_ar
     return W_mu
 
 
-def do_limber(ell_arr, provider, dndz1, dndz2, s1, s2, pk, b1_HF, b2_HF,
-              alpha_auto, alpha_cross,
-              chi_grids,
-              # use_zeff=True,
-              Nchi=50, dndz1_mag=None, dndz2_mag=None, normed=False):
+def do_limber(
+    ell_arr: np.ndarray,
+    provider: Provider,
+    dndz1: np.ndarray,
+    dndz2: np.ndarray,
+    s1: float,
+    s2: float,
+    pk: Callable[[float, np.ndarray], np.ndarray],
+    b1_HF: float,
+    b2_HF: float,
+    alpha_auto: float,
+    alpha_cross: float,
+    chi_grids: Dict[str, np.ndarray],
+    Nchi: int = 50,
+    dndz1_mag: Optional[np.ndarray] = None,
+    dndz2_mag: Optional[np.ndarray] = None,
+    normed: bool = False
+) -> Tuple[np.ndarray, np.ndarray]:
     zatchi = chi_grids['zatchi']
     # chiatz = chi_grids['chiatz']
     chi_arr = chi_grids['chival']

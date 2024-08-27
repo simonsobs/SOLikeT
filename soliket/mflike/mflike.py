@@ -25,11 +25,12 @@ This is a scheme of how ``MFLike`` and ``TheoryForge_MFLike`` are interfaced:
    :width: 400
 """
 import os
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import numpy as np
 from cobaya.likelihoods.base_classes import InstallableLikelihood
 from cobaya.log import LoggedError
+from cobaya.theory import Provider
 
 from soliket.gaussian import GaussianData, GaussianLikelihood
 
@@ -44,11 +45,12 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
     cov_Bbl_file: Optional[str]
     data: dict
     defaults: dict
+    provider: Provider
 
     def initialize(self):
         # Set default values to data member not initialized via yaml file
-        self.l_bpws = None
-        self.spec_meta = []
+        self.l_bpws: Optional[np.ndarray] = None
+        self.spec_meta: Optional[list] = []
 
         # Set path to data
         if ((not getattr(self, "path", None)) and
@@ -75,19 +77,21 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                     self.data_folder,
                 )
 
-        self.requested_cls = [p.lower() for p in self.defaults["polarizations"]]
+        self.requested_cls: List[str] = [
+            p.lower() for p in self.defaults["polarizations"]
+        ]
         for x in ["et", "eb", "bt"]:
             if x in self.requested_cls:
                 self.requested_cls.remove(x)
 
         # Read data
         self.prepare_data()
-        self.lmax_theory = self.lmax_theory or 9000
+        self.lmax_theory: int = self.lmax_theory or 9000
         self.log.debug(f"Maximum multipole value: {self.lmax_theory}")
 
         self.log.info("Initialized!")
 
-    def get_requirements(self):
+    def get_requirements(self) -> dict:
         r"""
         Passes the fields ``ell``, ``requested_cls``, ``lcuts``,
         ``exp_ch`` (list of array names) and ``bands``
@@ -106,15 +110,15 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                               "bands": self.bands}
         return reqs
 
-    def _get_theory(self, **params_values):
+    def _get_theory(self, **params_values: dict) -> np.ndarray:
         cmbfg_dict = self.provider.get_cmbfg_dict()
         return self._get_power_spectra(cmbfg_dict)
 
-    def logp(self, **params_values):
+    def logp(self, **params_values: dict) -> float:
         cmbfg_dict = self.provider.get_cmbfg_dict()
         return self.loglike(cmbfg_dict)
 
-    def loglike(self, cmbfg_dict):
+    def loglike(self, cmbfg_dict: dict) -> float:
         r"""
         Computes the gaussian log-likelihood
 
@@ -177,7 +181,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                      "BT": "tb",
                      "BB": "bb"}
 
-        def get_cl_meta(spec):
+        def get_cl_meta(spec: dict) -> Tuple[str, str, List[str], dict, bool]:
             """
             Lower-level function of `prepare_data`.
             For each of the entries of the `spectra` section of the
@@ -214,7 +218,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
             return exp_1, exp_2, pols, scls, symm
 
-        def get_sacc_names(pol, exp_1, exp_2):
+        def get_sacc_names(pol: str, exp_1: str, exp_2: str) -> Tuple[str, str, str]:
             r"""
             Lower-level function of `prepare_data`.
             Translates the polarization combination and channel
@@ -387,7 +391,7 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
 
         self.data = GaussianData("mflike", self.ell_vec, self.data_vec, self.cov)
 
-    def _get_power_spectra(self, cmbfg):
+    def _get_power_spectra(self, cmbfg: dict) -> np.ndarray:
         r"""
         Get :math:`D_{\ell}` from the theory component
         already modified by ``theoryforge_MFLike``

@@ -32,9 +32,10 @@ If you want to add your own halo model, you can do so by inheriting from the
 function (have a look at the simple pyhalomodel model for ideas).
 """
 
+from typing import Dict, Optional
 import numpy as np
 import pyhalomodel as halo
-from cobaya.theory import Theory
+from cobaya.theory import Provider, Theory
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
 
@@ -45,31 +46,29 @@ class HaloModel(Theory):
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10**_logz
     _default_z_sampling[0] = 0
+    provider: Provider
 
-    def initialize(self):
+    def initialize(self) -> None:
         self._var_pairs = set()
         self._required_results = {}
 
     # def must_provide(self, **requirements):
     #     options = requirements.get("halo_model") or {}
 
-    def _get_Pk_mm_lin(self):
+    def _get_Pk_mm_lin(self) -> np.ndarray:
         for pair in self._var_pairs:
             self.k, self.z, Pk_mm = \
                 self.provider.get_Pk_grid(var_pair=pair, nonlinear=False)
 
         return Pk_mm
 
-    def get_Pk_mm_grid(self):
-
+    def get_Pk_mm_grid(self) -> np.ndarray:
         return self.current_state["Pk_mm_grid"]
 
-    def get_Pk_gg_grid(self):
-
+    def get_Pk_gg_grid(self) -> np.ndarray:
         return self.current_state["Pk_gg_grid"]
 
-    def get_Pk_gm_grid(self):
-
+    def get_Pk_gm_grid(self) -> np.ndarray:
         return self.current_state["Pk_gm_grid"]
 
 
@@ -81,17 +80,15 @@ class HaloModel_pyhm(HaloModel):
     <https://github.com/alexander-mead/pyhalomodel>`_ code.
     """
 
-    def initialize(self):
+    def initialize(self) -> None:
         super().initialize()
         self.Ms = np.logspace(np.log10(self.Mmin), np.log10(self.Mmax), self.nM)
 
-    def get_requirements(self):
-
+    def get_requirements(self) -> Dict[str, Optional[None]]:
         return {"omegam": None}
 
-    def must_provide(self, **requirements):
-
-        options = requirements.get("halo_model") or {}
+    def must_provide(self, **requirements) -> dict:
+        options: dict = requirements.get("halo_model") or {}
         self._var_pairs.update(
             set((x, y) for x, y in
                 options.get("vars_pairs", [("delta_tot", "delta_tot")])))
@@ -116,13 +113,12 @@ class HaloModel_pyhm(HaloModel):
                            "R": np.linspace(0.14, 66, 256) # list of radii required
                            }
 
-
         return needs
 
     def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict):
+                  **params_values_dict) -> None:
 
-        Pk_mm_lin = self._get_Pk_mm_lin()
+        Pk_mm_lin: np.ndarray = self._get_Pk_mm_lin()
 
         # now wish to interpolate sigma_R to these Rs
         zinterp, rinterp, sigmaRinterp = self.provider.get_sigma_R()
@@ -157,7 +153,7 @@ class HaloModel_pyhm(HaloModel):
         # state['Pk_gm_grid'] = Pk_hm['g-m']
         # state['Pk_gg_grid'] = Pk_hm['g-g']
 
-    def _win_NFW(self, k, rv, c):
+    def _win_NFW(self, k: np.ndarray, rv: np.ndarray, c: np.ndarray) -> np.ndarray:
         from scipy.special import sici
         rs = rv / c
         kv = np.outer(k, rv)

@@ -5,6 +5,7 @@ r"""
 
 """
 
+from typing import Optional, Tuple, Dict
 from importlib import import_module
 
 import numpy as np
@@ -13,7 +14,9 @@ from cobaya.likelihoods.one import one
 from scipy.stats import binned_statistic as binnedstat
 
 
-def binner(ls, cls, bin_edges):
+def binner(
+    ls: np.ndarray, cls: np.ndarray, bin_edges: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     r"""
     Simple function intended for binning :math:`\ell`-by-:math:`\ell` data into
     band powers with a top hat window function.
@@ -42,7 +45,7 @@ def binner(ls, cls, bin_edges):
     return cents, bin_means
 
 
-def get_likelihood(name, options=None):
+def get_likelihood(name: str, options: Optional[dict] = None) -> Likelihood:
     parts = name.split(".")
     module = import_module(".".join(parts[:-1]))
     t = getattr(module, parts[-1])
@@ -64,7 +67,7 @@ class OneWithCls(one):
     """
     lmax = 10000
 
-    def get_requirements(self):
+    def get_requirements(self) -> Dict[str, Dict[str, int]]:
         return {"Cl": {"pp": self.lmax,
                        "tt": self.lmax,
                        "te": self.lmax,

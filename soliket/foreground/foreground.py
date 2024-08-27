@@ -48,11 +48,11 @@ assuming just a Dirac delta at the effective frequencies ``eff_freqs``.
 """
 
 import os
-from typing import Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from cobaya.log import LoggedError
-from cobaya.theory import Theory
+from cobaya.theory import Provider, Theory
 from cobaya.tools import are_different_params_lists
 
 
@@ -61,6 +61,7 @@ class Foreground(Theory):
     foregrounds: dict
     eff_freqs: Optional[list]
     exp_ch: Optional[list]
+    provider: Provider
 
     # Initializes the foreground model. It sets the SED and reads the templates
     def initialize(self):
@@ -77,11 +78,11 @@ class Foreground(Theory):
                                    "a_c", "beta_c", "a_s", "a_gtt", "a_gte", "a_gee",
                                    "a_psee", "a_pste", "xi", "T_d"]
 
-        self.requested_cls = self.spectra["polarizations"]
-        self.lmin = self.spectra["lmin"]
-        self.lmax = self.spectra["lmax"]
-        self.exp_ch = self.spectra["exp_ch"]
-        self.eff_freqs = self.spectra["eff_freqs"]
+        self.requested_cls: List[str] = self.spectra["polarizations"]
+        self.lmin: int = self.spectra["lmin"]
+        self.lmax: int = self.spectra["lmax"]
+        self.exp_ch: List[str] = self.spectra["exp_ch"]
+        self.eff_freqs: List[float] = self.spectra["eff_freqs"]
 
         if hasattr(self.eff_freqs, "__len__"):
             if not len(self.exp_ch) == len(self.eff_freqs):
@@ -92,16 +93,19 @@ class Foreground(Theory):
 
         # self.bands to be filled with passbands read from sacc file
         # if mflike is used
-        self.bands = {f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]}
-                      for iexpc, expc in enumerate(self.exp_ch)}
+        self.bands: Dict[str, Dict[str, List[float]]] = {
+            f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]}
+            for iexpc, expc in enumerate(self.exp_ch)
+        }
 
-        template_path = os.path.join(os.path.dirname(os.path.abspath(fgp.__file__)),
-                                     'data')
-        cibc_file = os.path.join(template_path, 'cl_cib_Choi2020.dat')
+        template_path: str = os.path.join(
+            os.path.dirname(os.path.abspath(fgp.__file__)), 'data'
+        )
+        cibc_file: str = os.path.join(template_path, 'cl_cib_Choi2020.dat')
 
         # set pivot freq and multipole
-        self.fg_nu_0 = self.foregrounds["normalisation"]["nu_0"]
-        self.fg_ell_0 = self.foregrounds["normalisation"]["ell_0"]
+        self.fg_nu_0: float = self.foregrounds["normalisation"]["nu_0"]
+        self.fg_ell_0: float = self.foregrounds["normalisation"]["ell_0"]
 
         # We don't seem to be using this
         # cirrus = fgc.FactorizedCrossSpectrum(fgf.PowerLaw(), fgp.PowerLaw())
@@ -114,7 +118,7 @@ class Foreground(Theory):
         self.dust = fgc.FactorizedCrossSpectrum(fgf.ModifiedBlackBody(), fgp.PowerLaw())
         self.tSZ_and_CIB = fgc.SZxCIB_Choi2020()
 
-        self.components = self.foregrounds["components"]
+        self.components: List[str] = self.foregrounds["components"]
 
     def initialize_with_params(self):
         # Check that the parameters are the right ones
@@ -127,13 +131,15 @@ class Foreground(Theory):
                 differences)
 
     # Gets the actual power spectrum of foregrounds given the passed parameters
-    def _get_foreground_model(self,
-                              requested_cls=None,
-                              ell=None,
-                              exp_ch=None,
-                              bandint_freqs=None,
-                              eff_freqs=None,
-                              **fg_params):
+    def _get_foreground_model(
+        self,
+        requested_cls: Optional[List[str]] = None,
+        ell: Optional[np.ndarray] = None,
+        exp_ch: Optional[List[str]] = None,
+        bandint_freqs: Optional[np.ndarray] = None,
+        eff_freqs: Optional[np.ndarray] = None,
+        **fg_params: dict
+    ) -> dict:
         r"""
         Gets the foreground power spectra for each component computed by ``fgspectra``.
         The computation assumes the bandpass transmissions from the ``BandPass`` class
@@ -296,7 +302,7 @@ class Foreground(Theory):
                             fg_dict[s, "all", f1, f2] += fg_dict[s, comp, f1, f2]
         return fg_dict
 
-    def must_provide(self, **requirements):
+    def must_provide(self, **requirements: dict) -> dict:
         # fg_dict is required by theoryforge
         # and requires some params to be computed
         # Assign those from theoryforge
@@ -311,14 +317,15 @@ class Foreground(Theory):
             self.bands = req.get("bands", self.bands)
             self.exp_ch = req.get("exp_ch", self.exp_ch)
             return {"bandint_freqs": {"bands": self.bands}}
+        return {}
 
-    def get_bandpasses(self, **params):
+    def get_bandpasses(self, **params: dict) -> np.ndarray:
         """
         Gets bandpass transmissions from the ``BandPass`` class.
         """
         return self.provider.get_bandint_freqs()
 
-    def calculate(self, state, want_derived=False, **params_values_dict):
+    def calculate(self, state: dict, want_derived=False, **params_values_dict: dict):
         """
         Fills the ``state`` dictionary of the ``Foreground`` Theory class
         with the foreground spectra, computed using the bandpass
@@ -349,7 +356,7 @@ class Foreground(Theory):
                                                       bandint_freqs=self.bandint_freqs,
                                                       **fg_params)
 
-    def get_fg_dict(self):
+    def get_fg_dict(self) -> dict:
         """
         Returns the ``state`` dictionary of fogreground spectra
         """

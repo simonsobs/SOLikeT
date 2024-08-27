@@ -87,7 +87,7 @@ possible bandpass shift for that channel.
 """
 
 import os
-from typing import Optional
+from typing import List, Optional, Union
 
 import numpy as np
 from cobaya.log import LoggedError
@@ -100,7 +100,7 @@ from soliket.constants import T_CMB, h_Planck, k_Boltzmann
 # Numerical factors not included, it needs proper normalization when used.
 
 
-def _cmb2bb(nu):
+def _cmb2bb(nu: np.ndarray) -> np.ndarray:
     r"""
     Computes the conversion factor :math:`\frac{\partial B_{\nu}}{\partial T}`
     from CMB thermodynamic units to differential source intensity.
@@ -132,9 +132,9 @@ class BandPass(Theory):
                                    "bandint_shift_LAT_145",
                                    "bandint_shift_LAT_225"]
 
-        self.exp_ch = None
-        # self.eff_freqs = None
-        self.bands = None
+        self.exp_ch: Optional[List[str]] = None
+        # self.eff_freqs: Optional[list] = None
+        self.bands: dict = None
 
         # To read passbands stored in the sacc files
         # default for mflike
@@ -171,7 +171,7 @@ class BandPass(Theory):
                 self.log, "Configuration error in parameters: %r.",
                 differences)
 
-    def must_provide(self, **requirements):
+    def must_provide(self, **requirements: dict):
         # bandint_freqs is required by Foreground
         # and requires some params to be computed
         # Assign those from Foreground
@@ -180,7 +180,7 @@ class BandPass(Theory):
             self.exp_ch = [k.replace("_s0", "") for k in self.bands.keys()
                            if "_s0" in k]
 
-    def calculate(self, state, want_derived=False, **params_values_dict):
+    def calculate(self, state: dict, want_derived=False, **params_values_dict: dict):
         r"""
         Adds the bandpass transmission to the ``state`` dictionary of the
         BandPass Theory class.
@@ -198,7 +198,7 @@ class BandPass(Theory):
 
         state["bandint_freqs"] = self.bandint_freqs
 
-    def get_bandint_freqs(self):
+    def get_bandint_freqs(self) -> dict:
         """
         Returns the ``state`` dictionary of bandpass transmissions
         """
@@ -206,7 +206,9 @@ class BandPass(Theory):
 
     # Takes care of the bandpass construction. It returns a list of nu-transmittance for
     # each frequency or an array with the effective freqs.
-    def _bandpass_construction(self, **params):
+    def _bandpass_construction(
+        self, **params: dict
+    ) -> Union[np.ndarray, List[np.ndarray]]:
         r"""
         Builds the bandpass transmission
         :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T}
@@ -277,7 +279,7 @@ class BandPass(Theory):
 
         return bandint_freqs
 
-    def _init_external_bandpass_construction(self, path, exp_ch):
+    def _init_external_bandpass_construction(self, path: str, exp_ch: List[str]):
         """
         Initializes the passband reading for ``_external_bandpass_construction``.
 
@@ -290,7 +292,7 @@ class BandPass(Theory):
             nu_ghz, bp = np.loadtxt(path + "/" + expc, usecols=(0, 1), unpack=True)
             self.external_bandpass.append([expc, nu_ghz, bp])
 
-    def _external_bandpass_construction(self, **params):
+    def _external_bandpass_construction(self, **params: dict) -> List[np.ndarray]:
         r"""
         Builds bandpass transmission
         :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T}

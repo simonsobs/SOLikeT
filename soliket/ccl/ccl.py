@@ -79,8 +79,8 @@ the likelihood.
 # https://cobaya.readthedocs.io/en/devel/theories_and_dependencies.html
 
 import numpy as np
-from typing import Sequence
-from cobaya.theory import Theory
+from typing import Dict, Sequence
+from cobaya.theory import Provider, Theory
 from cobaya.tools import LoggedError
 
 
@@ -92,6 +92,7 @@ class CCL(Theory):
     kmax: float
     z: np.ndarray
     nonlinear: bool
+    provider: Provider
 
     def initialize(self) -> None:
         try:
@@ -125,7 +126,7 @@ class CCL(Theory):
              np.atleast_1d(self.z))))
 
         # Dictionary of the things CCL needs from CAMB/CLASS
-        needs = {}
+        needs: Dict[str, dict] = {}
 
         if self.kmax:
             self.nonlinear = self.nonlinear or options.get('nonlinear', False)
@@ -156,7 +157,7 @@ class CCL(Theory):
         return []
 
     def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict):
+                  **params_values_dict) -> None:
         # calculate the general CCL cosmo object which likelihoods can then use to get
         # what they need (likelihoods should cache results appropriately)
         # get our requirements from self.provider
@@ -231,5 +232,5 @@ class CCL(Theory):
         for required_result, method in self._required_results.items():
             state['CCL'][required_result] = method(cosmo)
 
-    def get_CCL(self):
+    def get_CCL(self) -> dict:
         return self._current_state['CCL']

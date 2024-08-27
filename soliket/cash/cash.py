@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 import numpy as np
 from cobaya.likelihood import Likelihood
 from .cash_data import CashCData
@@ -9,25 +9,24 @@ from .cash_data import CashCData
 
 class CashCLikelihood(Likelihood):
     name: str = "Cash-C"
-    datapath = Optional[str]
+    datapath: Optional[str] = None
 
-    def initialize(self):
-
+    def initialize(self) -> None:
         x, N = self._get_data()
         self.data = CashCData(self.name, N)
 
-    def _get_data(self):
+    def _get_data(self) -> Tuple[np.ndarray, np.ndarray]:
         data = np.loadtxt(self.datapath, unpack=False)
         N = data[:, -1]  # assume data stored like column_stack([z, q, N])
         x = data[:, :-1]
         return x, N
 
-    def _get_theory(self, **kwargs):
+    def _get_theory(self, **kwargs: dict) -> np.ndarray:
         if "cash_test_logp" in kwargs:
             return np.arange(kwargs["cash_test_logp"])
         else:
             raise NotImplementedError
 
-    def logp(self, **params_values):
+    def logp(self, **params_values: dict) -> float:
         theory = self._get_theory(**params_values)
         return self.data.loglike(theory)

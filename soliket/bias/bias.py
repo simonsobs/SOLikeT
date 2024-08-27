@@ -26,24 +26,27 @@ If you want to add your own bias model, you can do so by inheriting from the
 function (have a look at the linear bias model for ideas).
 """
 
+from typing import Dict, Set, Tuple
+
 import numpy as np
-from cobaya.theory import Theory
+from cobaya.theory import Provider, Theory
 
 
 class Bias(Theory):
     """Parent class for bias models."""
 
+    provider: Provider
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10 ** _logz
     _default_z_sampling[0] = 0
 
-    def initialize(self):
-        self._var_pairs = set()
+    def initialize(self) -> None:
+        self._var_pairs: Set[Tuple[str, str]] = set()
 
-    def get_requirements(self):
+    def get_requirements(self) -> Dict[str, dict]:
         return {}
 
-    def must_provide(self, **requirements):
+    def must_provide(self, **requirements: dict) -> Dict[str, dict]:
         options = requirements.get("linear_bias") or {}
 
         self.kmax = max(self.kmax, options.get("kmax", self.kmax))
@@ -52,7 +55,7 @@ class Bias(Theory):
              np.atleast_1d(self.z))))
 
         # Dictionary of the things needed from CAMB/CLASS
-        needs = {}
+        needs: Dict[str, dict] = {}
 
         self.nonlinear = self.nonlinear or options.get("nonlinear", False)
         self._var_pairs.update(
@@ -69,7 +72,7 @@ class Bias(Theory):
         assert len(self._var_pairs) < 2, "Bias doesn't support other Pk yet"
         return needs
 
-    def _get_Pk_mm(self):
+    def _get_Pk_mm(self) -> np.ndarray:
         self.k, self.z, Pk_mm = \
             self.provider.get_Pk_grid(var_pair=list(self._var_pairs)[0],
                                       nonlinear=self.nonlinear)
@@ -90,7 +93,7 @@ class Linear_bias(Bias):
     """
 
     def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict):
+                  **params_values_dict) -> None:
         Pk_mm = self._get_Pk_mm()
 
         state["Pk_gg_grid"] = params_values_dict["b_lin"] ** 2. * Pk_mm

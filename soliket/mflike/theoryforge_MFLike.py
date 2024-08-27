@@ -53,11 +53,11 @@ They have to be named as ``cal/calT/calE/alpha`` + ``_``  + experiment_channel s
 
 """
 
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 from cobaya.log import LoggedError
-from cobaya.theory import Theory
+from cobaya.theory import Provider, Theory
 from cobaya.tools import are_different_params_lists
 
 
@@ -68,24 +68,25 @@ class TheoryForge_MFLike(Theory):
     eff_freqs: list
     spectra: dict
     systematics_template: dict
+    provider: Provider
 
     def initialize(self):
 
-        self.lmin = self.spectra["lmin"]
-        self.lmax = self.spectra["lmax"]
+        self.lmin: int = self.spectra["lmin"]
+        self.lmax: int = self.spectra["lmax"]
         self.ell = np.arange(self.lmin, self.lmax + 1)
 
         # State requisites to the theory code
         # Which lmax for theory CMB
         # Note this must be greater than lmax above to avoid approx errors
-        self.lmax_boltzmann = self.lmax + 500
+        self.lmax_boltzmann: int = self.lmax + 500
 
         # Which lmax for theory FG
         # This can be larger than lmax boltzmann
-        self.lmax_fg = self.lmax + 500
+        self.lmax_fg: int = self.lmax + 500
 
         # Which spectra to consider
-        self.requested_cls = self.spectra["polarizations"]
+        self.requested_cls: List[str] = self.spectra["polarizations"]
 
         # Set lmax for theory CMB requirements
         self.lcuts = {k: self.lmax_boltzmann for k in self.requested_cls}
@@ -128,7 +129,7 @@ class TheoryForge_MFLike(Theory):
                 self.log, "Configuration error in parameters: %r.",
                 differences)
 
-    def must_provide(self, **requirements):
+    def must_provide(self, **requirements: dict) -> dict:
         # cmbfg_dict is required by mflike
         # and requires some params to be computed
         # Assign required params from mflike
@@ -155,10 +156,10 @@ class TheoryForge_MFLike(Theory):
                            "exp_ch": self.exp_ch, "bands": self.bands}
         return reqs
 
-    def get_cmb_theory(self, **params):
+    def get_cmb_theory(self, **params: dict) -> dict:
         return self.provider.get_Cl(ell_factor=True)
 
-    def get_foreground_theory(self, **params):
+    def get_foreground_theory(self, **params: dict) -> dict:
         return self.provider.get_fg_dict()
 
     def calculate(self, state, want_derived=False, **params_values_dict):
@@ -171,10 +172,10 @@ class TheoryForge_MFLike(Theory):
         state["cmbfg_dict"] = self.get_modified_theory(Dls_cut,
                                                        fg_dict, **params_values_nocosmo)
 
-    def get_cmbfg_dict(self):
+    def get_cmbfg_dict(self) -> dict:
         return self.current_state["cmbfg_dict"]
 
-    def get_modified_theory(self, Dls, fg_dict, **params):
+    def get_modified_theory(self, Dls: dict, fg_dict: dict, **params: dict) -> dict:
         r"""
         Takes the theory :math:`D_{\ell}`, sums it to the total
         foreground power spectrum (possibly computed with bandpass
@@ -212,7 +213,7 @@ class TheoryForge_MFLike(Theory):
 
         return cmbfg_dict
 
-    def _get_calibrated_spectra(self, dls_dict, **nuis_params):
+    def _get_calibrated_spectra(self, dls_dict: dict, **nuis_params: dict) -> dict:
         r"""
         Calibrates the spectra through calibration factors at
         the map level:
@@ -266,7 +267,7 @@ class TheoryForge_MFLike(Theory):
     # alpha_LAT_145, etc..
     ###########################################################################
 
-    def _get_rotated_spectra(self, dls_dict, **nuis_params):
+    def _get_rotated_spectra(self, dls_dict: dict, **nuis_params: dict) -> dict:
         r"""
         Rotates the polarization spectra through polarization angles:
 
@@ -319,7 +320,7 @@ class TheoryForge_MFLike(Theory):
             syl.ReadTemplateFromFile(rootname=self.systematics_template["rootname"])
         self.dltempl_from_file = templ_from_file(ell=self.ell)
 
-    def _get_template_from_file(self, dls_dict, **nuis_params):
+    def _get_template_from_file(self, dls_dict: dict, **nuis_params: dict) -> dict:
         r"""
         Adds the systematics template, modulated by ``nuis_params['templ_freq']``
         parameters, to the :math:`D_{\ell}`.

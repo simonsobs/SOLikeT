@@ -8,6 +8,8 @@ Based on the original xcorr code [1]_ used in Krolewski et al (2021) [2]_.
 
 """
 
+from typing import Optional, Tuple
+from cobaya.theory import Provider
 import numpy as np
 import sacc
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
@@ -60,6 +62,8 @@ class XcorrLikelihood(GaussianLikelihood):
 
     """
 
+    provider: Provider
+
     def initialize(self):
         name: str = "Xcorr"  # noqa F841
         self.log.info('Initialising.')
@@ -81,8 +85,8 @@ class XcorrLikelihood(GaussianLikelihood):
 
         else:
 
-            self.k_tracer_name: Optional[str]  # noqa F821
-            self.gc_tracer_name: Optional[str]  # noqa F821
+            self.k_tracer_name: Optional[str]
+            self.gc_tracer_name: Optional[str]
             # tracer_combinations: Optional[str] # TODO: implement with keep_selection
 
             self.sacc_data = self._get_sacc_data()
@@ -94,18 +98,18 @@ class XcorrLikelihood(GaussianLikelihood):
             self.ngal = self.sacc_data['ngal']
 
         # TODO is this resolution limit on zarray a CAMB problem?
-        self.nz: Optional[int]  # noqa F821
+        self.nz: Optional[int]
         assert self.nz <= 149, "CAMB limitations requires nz <= 149"
         self.zarray = np.linspace(self.dndz[:, 0].min(), self.dndz[:, 0].max(), self.nz)
         self.zbgdarray = np.concatenate([self.zarray, [1100]]) # TODO: unfix zstar
-        self.Nchi: Optional[int]  # noqa F821
-        self.Nchi_mag: Optional[int]  # noqa F821
+        self.Nchi: Optional[int]
+        self.Nchi_mag: Optional[int]
 
-        #self.use_zeff: Optional[bool]  # noqa F821
+        #self.use_zeff: Optional[bool]
 
-        self.Pk_interp_kmax: Optional[float]  # noqa F821
+        self.Pk_interp_kmax: Optional[float]
 
-        self.high_ell: Optional[float]  # noqa F821
+        self.high_ell: Optional[float]
         self.ell_range = np.linspace(1, self.high_ell, int(self.high_ell + 1))
 
         # TODO expose these defaults
@@ -115,7 +119,7 @@ class XcorrLikelihood(GaussianLikelihood):
         self.data = GaussianData(self.name, self.x, self.y, self.cov)
 
 
-    def get_requirements(self):
+    def get_requirements(self) -> dict:
         return {
                 'Cl': {'lmax': self.high_ell,
                         'pp': self.high_ell},
@@ -141,15 +145,16 @@ class XcorrLikelihood(GaussianLikelihood):
                 'ns': None
                 }
 
-    def _bin(self, theory_cl, lmin, lmax):
-        binned_theory_cl = np.zeros_like(lmin)
+    def _bin(
+        self, theory_cl: np.ndarray, lmin: np.ndarray, lmax: np.ndarray
+    ) -> np.ndarray:
+        binned_theory_cl: np.ndarray = np.zeros_like(lmin)
         for i in range(len(lmin)):
             binned_theory_cl[i] = np.mean(theory_cl[(self.ell_range >= lmin[i])
                                                      & (self.ell_range < lmax[i])])
         return binned_theory_cl
 
-    def _get_sacc_data(self, **params_values):
-
+    def _get_sacc_data(self, **params_values: dict) -> dict:
         data_sacc = sacc.Sacc.load_fits(self.datapath)
 
         # TODO: would be better to use keep_selection
@@ -179,7 +184,9 @@ class XcorrLikelihood(GaussianLikelihood):
         return data
 
 
-    def _get_data(self, **params_values):
+    def _get_data(
+        self, **params_values: dict
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
         data_auto = np.loadtxt(self.auto_file)
         data_cross = np.loadtxt(self.cross_file)
@@ -199,7 +206,7 @@ class XcorrLikelihood(GaussianLikelihood):
 
         return x, y, dy
 
-    def _setup_chi(self):
+    def _setup_chi(self) -> dict:
 
         chival = self.provider.get_comoving_radial_distance(self.zarray)
         zatchi = Spline(chival, self.zarray)
@@ -225,7 +232,7 @@ class XcorrLikelihood(GaussianLikelihood):
 
         return chi_result
 
-    def _get_theory(self, **params_values):
+    def _get_theory(self, **params_values: dict) -> np.ndarray:
 
         setup_chi_out = self._setup_chi()
 
