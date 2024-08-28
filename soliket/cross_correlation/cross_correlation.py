@@ -16,8 +16,11 @@ import sacc
 from cobaya.log import LoggedError
 from cobaya.theory import Provider
 
-from pyccl import Tracer
-from soliket import CCL
+try:
+    from pyccl import Tracer
+    from soliket import CCL
+except ImportError:
+    raise ImportError("Could not import ccl. Install pyccl to use ccl.")
 from soliket.gaussian import GaussianData, GaussianLikelihood
 
 

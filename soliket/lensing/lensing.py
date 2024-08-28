@@ -21,7 +21,10 @@ from cobaya.log import LoggedError
 from cobaya.model import get_model
 from cobaya.theory import Provider
 
-from soliket import CCL
+try:
+    from soliket import CCL
+except ImportError:
+    raise ImportError("Could not import ccl. Install pyccl to use ccl.")
 from soliket.ps import BinnedPSLikelihood
 
 
