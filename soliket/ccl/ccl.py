@@ -79,19 +79,23 @@ the likelihood.
 # https://cobaya.readthedocs.io/en/devel/theories_and_dependencies.html
 
 import numpy as np
-from typing import Dict, Sequence
+from typing import Dict, List, Optional, Sequence, Union
 from cobaya.theory import Provider, Theory
 from cobaya.tools import LoggedError
+
+from soliket.utils import check_yaml_types
 
 
 class CCL(Theory):
     """A theory code wrapper for CCL."""
+    kmax: Union[int, float]
+    nonlinear: bool
+    z: Union[float, List[float], np.ndarray]
+    extra_args: Optional[dict]
+
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10 ** _logz
     _default_z_sampling[0] = 0
-    kmax: float
-    z: np.ndarray
-    nonlinear: bool
     provider: Provider
 
     def initialize(self) -> None:
@@ -101,6 +105,13 @@ class CCL(Theory):
             raise LoggedError(self.log, "Could not import ccl. Install pyccl to use ccl.")
         else:
             self.ccl = ccl
+
+        check_yaml_types(self, {
+            "kmax": (int, float),
+            "nonlinear": bool,
+            "z": (float, List[float], np.ndarray),
+            "extra_args": dict,
+        })
 
         self._var_pairs = set()
         self._required_results = {}

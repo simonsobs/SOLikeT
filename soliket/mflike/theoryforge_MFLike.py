@@ -53,24 +53,41 @@ They have to be named as ``cal/calT/calE/alpha`` + ``_``  + experiment_channel s
 
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy as np
 from cobaya.log import LoggedError
 from cobaya.theory import Provider, Theory
 from cobaya.tools import are_different_params_lists
 
+from soliket.utils import check_yaml_types
+
 
 class TheoryForge_MFLike(Theory):
     # attributes set from .yaml
     data_folder: Optional[str]
-    exp_ch: list
-    eff_freqs: list
+    exp_ch: List[str]
+    eff_freqs: List[Union[int, float]]
     spectra: dict
     systematics_template: dict
+    params: dict
     provider: Provider
 
     def initialize(self):
+        check_yaml_types(self, {
+            "data_folder": str,
+            "exp_ch": List[str],
+            "eff_freqs": (List[int], List[float]),
+            "spectra": dict,
+            "systematics_template": dict,
+            "params": dict,
+        })
+
+        check_yaml_types(self.spectra, {
+            "lmin": int,
+            "lmax": int,
+            "polarizations": List[str],
+        })
 
         self.lmin: int = self.spectra["lmin"]
         self.lmax: int = self.spectra["lmax"]

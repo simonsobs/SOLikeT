@@ -26,14 +26,22 @@ If you want to add your own bias model, you can do so by inheriting from the
 function (have a look at the linear bias model for ideas).
 """
 
-from typing import Dict, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 from cobaya.theory import Provider, Theory
 
+from soliket.utils import check_yaml_types
+
 
 class Bias(Theory):
     """Parent class for bias models."""
+
+    kmax: Union[int, float]
+    nonlinear: bool
+    z: Union[float, List[float], np.ndarray]
+    extra_args: Optional[dict]
+    params: dict
 
     provider: Provider
     _logz = np.linspace(-3, np.log10(1100), 150)
@@ -41,6 +49,12 @@ class Bias(Theory):
     _default_z_sampling[0] = 0
 
     def initialize(self) -> None:
+        check_yaml_types(self, {
+            "kmax": (int, float),
+            "nonlinear": bool,
+            "z": (float, List[float], np.ndarray),
+            "extra_args": dict,
+        })
         self._var_pairs: Set[Tuple[str, str]] = set()
 
     def get_requirements(self) -> Dict[str, dict]:
@@ -91,6 +105,12 @@ class Linear_bias(Bias):
 
     Has one free parameter, :math:`b_\mathrm{lin}` (``b_lin``).
     """
+
+    params: dict
+
+    def initialize(self) -> None:
+        check_yaml_types(self, {"params": Dict[str, Any]})
+        super().initialize()
 
     def calculate(self, state: dict, want_derived: bool = True,
                   **params_values_dict) -> None:

@@ -25,7 +25,7 @@ This is a scheme of how ``MFLike`` and ``TheoryForge_MFLike`` are interfaced:
    :width: 400
 """
 import os
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from cobaya.likelihoods.base_classes import InstallableLikelihood
@@ -33,6 +33,7 @@ from cobaya.log import LoggedError
 from cobaya.theory import Provider
 
 from soliket.gaussian import GaussianData, GaussianLikelihood
+from soliket.utils import check_yaml_types
 
 
 class MFLike(GaussianLikelihood, InstallableLikelihood):
@@ -45,9 +46,31 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
     cov_Bbl_file: Optional[str]
     data: dict
     defaults: dict
+    lmax_theory: Optional[int]
+    data: dict
     provider: Provider
 
     def initialize(self):
+        check_yaml_types(self, {
+            "data_folder": str,
+            "input_file": str,
+            "cov_Bbl_file": str,
+            "data": dict,
+            "defaults": dict,
+            "lmax_theory": int,
+        })
+
+        check_yaml_types(self.data, {
+            "experiments": List[str],
+            "spectra": List[dict],
+        })
+
+        check_yaml_types(self.defaults, {
+            "polarizations": List[str],
+            "scales": Dict[str, List[int]],
+            "symmetrize": bool,
+        })
+
         # Set default values to data member not initialized via yaml file
         self.l_bpws: Optional[np.ndarray] = None
         self.spec_meta: Optional[list] = []

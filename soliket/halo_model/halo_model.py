@@ -32,16 +32,22 @@ If you want to add your own halo model, you can do so by inheriting from the
 function (have a look at the simple pyhalomodel model for ideas).
 """
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Union
 import numpy as np
 import pyhalomodel as halo
 from cobaya.theory import Provider, Theory
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
 
+from soliket.utils import check_yaml_types
+
 
 class HaloModel(Theory):
     """Abstract parent class for implementing Halo Models."""
+
+    kmax: Union[int, float]
+    z: Union[float, List[float], np.ndarray]
+    extra_args: Optional[dict]
 
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10**_logz
@@ -49,6 +55,11 @@ class HaloModel(Theory):
     provider: Provider
 
     def initialize(self) -> None:
+        check_yaml_types(self, {
+            "kmax": (int, float),
+            "z": (float, List[float], np.ndarray),
+            "extra_args": dict,
+        })
         self._var_pairs = set()
         self._required_results = {}
 
@@ -80,7 +91,20 @@ class HaloModel_pyhm(HaloModel):
     <https://github.com/alexander-mead/pyhalomodel>`_ code.
     """
 
+    hmf_name: str
+    hmf_Dv: float
+    Mmin: float
+    Mmax: float
+    nM: int
+
     def initialize(self) -> None:
+        check_yaml_types(self, {
+            "hmf_name": str,
+            "hmf_Dv": float,
+            "Mmin": float,
+            "Mmax": float,
+            "nM": int
+        })
         super().initialize()
         self.Ms = np.logspace(np.log10(self.Mmin), np.log10(self.Mmax), self.nM)
 
