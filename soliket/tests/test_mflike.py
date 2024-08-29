@@ -1,6 +1,7 @@
 """
 Make sure that this returns the same result as original mflike.MFLike from LAT_MFlike repo
 """
+import copy
 import os
 
 import camb
@@ -76,6 +77,107 @@ class Test_mflike:
             debug=True,
             no_set_global=True,
         )
+
+    def test_mflike_with_wrong_types(self):
+
+        base_case = {
+            "data_folder": "data",
+            "input_file": "input.txt",
+            "cov_Bbl_file": "cov.txt",
+            "data": {
+                "experiments": ["exp1"],
+                "spectra": [{}],
+            },
+            "defaults": {
+                "polarizations": ["pol1"],
+                "scales": {"scale1": [1, 2]},
+                "symmetrize": True,
+            },
+            "lmax_theory": 2500,
+        }
+
+        wrong_main_cases = {
+            "data_folder": 123,
+            "input_file": 123,
+            "cov_Bbl_file": 123,
+            "data": "not_a_dict",
+            "defaults": "not_a_dict",
+            "lmax_theory": "not_an_int",
+        }
+
+        wrong_data_cases = {
+            "experiments": "not_a_list",
+            "spectra": "not_a_list",
+        }
+
+        wrong_defaults_cases = {
+            "polarizations": "not_a_list",
+            "scales": "not_a_dict",
+            "symmetrize": "not_a_bool",
+        }
+
+        for key, wrong_value in wrong_main_cases.items():
+            case = copy.deepcopy(base_case)
+            case[key] = wrong_value
+            with pytest.raises(TypeError):
+                _ = TestMFLike(**case)
+
+        for key, wrong_value in wrong_data_cases.items():
+            case = copy.deepcopy(base_case)
+            case["data"][key] = wrong_value
+            with pytest.raises(TypeError):
+                _ = TestMFLike(**case)
+
+        for key, wrong_value in wrong_defaults_cases.items():
+            case = copy.deepcopy(base_case)
+            case["defaults"][key] = wrong_value
+            with pytest.raises(TypeError):
+                _ = TestMFLike(**case)
+
+
+    def test_theoryforge_with_wrong_types(self):
+        from soliket.mflike import TheoryForge_MFLike
+
+        base_case = {
+            "data_folder": "data",
+            "exp_ch": ["exp1"],
+            "eff_freqs": (1, 2),
+            "spectra": {
+                "lmin": 30,
+                "lmax": 2000,
+                "polarizations": ["pol1"]
+            },
+            "systematics_template": {},
+            "params": {}
+        }
+
+        wrong_type_cases_main = {
+            "data_folder": 123,
+            "exp_ch": "not_a_list",
+            "eff_freqs": "not_a_tuple",
+            "spectra": "not_a_dict",
+            "systematics_template": "not_a_dict",
+            "params": "not_a_dict"
+        }
+
+        wrong_type_cases_spectra = {
+            "lmin": "not_an_int",
+            "lmax": "not_an_int",
+            "polarizations": "not_a_list"
+        }
+
+        for key, wrong_value in wrong_type_cases_main.items():
+            case = copy.deepcopy(base_case)
+            case[key] = wrong_value
+            with pytest.raises(TypeError):
+                _ = TheoryForge_MFLike(**case)
+
+        for key, wrong_value in wrong_type_cases_spectra.items():
+            case = copy.deepcopy(base_case)
+            case["spectra"][key] = wrong_value
+            with pytest.raises(TypeError):
+                _ = TheoryForge_MFLike(**case)
+
 
     @pytest.mark.usefixtures("test_cosmology_params")
     def test_mflike(self, test_cosmology_params):

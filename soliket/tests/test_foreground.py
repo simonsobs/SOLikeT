@@ -1,7 +1,9 @@
+import copy
 import os
 
 import numpy as np
 from cobaya.model import get_model
+import pytest
 
 foreground_params = {
     "a_tSZ": 3.3044404448917724,
@@ -23,6 +25,70 @@ foreground_params = {
 
 def test_foreground_import():
     from soliket.foreground import Foreground  # noqa F401
+
+
+def test_wrong_types():
+    from soliket.foreground import Foreground
+
+    base_case = {"spectra": {
+        "polarizations": ["a", "b", "c"],
+        "lmin": 1,
+        "lmax": 2,
+        "exp_ch": ["A", "B", "C"],
+        "eff_freqs": [1, 2, 3],
+    }, "foregrounds": {
+        "components": {"a": ["b", "c"], "d": ["e", "f"]},
+        "normalisation": {"nu_0": 1.0, "ell_0": 2, "T_CMB": 3.0},
+    }, "params": {}}
+
+    wrong_main_cases = {
+        "spectra": "not_a_dict",
+        "foregrounds": "not_a_dict",
+        "params": "not_a_dict",
+    }
+
+    wrong_spectra_cases = {
+        "polarizations": "not_a_list",
+        "lmin": "not_an_int",
+        "lmax": "not_an_int",
+        "exp_ch": "not_a_list",
+        "eff_freqs": "not_a_list",
+    }
+
+    wrong_foregrounds_cases = {
+        "components": "not_a_dict",
+        "normalisation": "not_a_dict",
+    }
+
+    wrong_normalization_cases = {
+        "nu_0": "not_a_float",
+        "ell_0": "not_an_int",
+        "T_CMB": "not_a_float",
+    }
+
+    for key, wrong_value in wrong_main_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = Foreground(**case)
+
+    for key, wrong_value in wrong_spectra_cases.items():
+        case = copy.deepcopy(base_case)
+        case["spectra"][key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = Foreground(**case)
+
+    for key, wrong_value in wrong_foregrounds_cases.items():
+        case = copy.deepcopy(base_case)
+        case["foregrounds"][key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = Foreground(**case)
+
+    for key, wrong_value in wrong_normalization_cases.items():
+        case = copy.deepcopy(base_case)
+        case["foregrounds"]["normalisation"][key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = Foreground(**case)
 
 
 def test_foreground_model(evaluate_one_info):

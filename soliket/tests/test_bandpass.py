@@ -1,5 +1,7 @@
+import copy
 import numpy as np
 from cobaya.model import get_model
+import pytest
 
 from soliket.constants import T_CMB, h_Planck, k_Boltzmann
 
@@ -24,6 +26,32 @@ def _cmb2bb(nu):
 # noinspection PyUnresolvedReferences
 def test_bandpass_import():
     from soliket.bandpass import BandPass  # noqa F401
+
+
+def test_wrong_types():
+    from soliket.bandpass import BandPass
+
+    base_case = {
+        "data_folder": "valid_path",
+        "read_from_sacc": True,
+        "top_hat_band": {},
+        "external_bandpass": {},
+        "params": {}
+    }
+
+    wrong_type_cases = {
+        "data_folder": 12345,
+        "read_from_sacc": "not_a_bool",
+        "top_hat_band": "not_a_dict",
+        "external_bandpass": "not_a_dict",
+        "params": "not_a_dict"
+    }
+
+    for key, wrong_value in wrong_type_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = BandPass(**case)
 
 
 def test_bandpass_model(evaluate_one_info):

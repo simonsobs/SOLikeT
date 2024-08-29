@@ -1,5 +1,6 @@
 # pytest -k xcorr -v --pdb .
 
+import copy
 import numpy as np
 import pytest
 from cobaya.model import get_model
@@ -74,6 +75,43 @@ def get_demo_xcorr_model(theory):
     info = yaml_load(info_yaml)
     model = get_model(info)
     return model
+
+
+def test_wrong_types():
+    from soliket.xcorr import XcorrLikelihood
+
+    base_case = {
+        "auto_file": "auto",
+        "cross_file": "cross",
+        "dndz_file": "dndz",
+        "datapath": "path",
+        "k_tracer_name": "k_tracer",
+        "gc_tracer_name": "gc_tracer",
+        "high_ell": 1000,
+        "nz": 10,
+        "Nchi": 100,
+        "Nchi_mag": 100,
+        "Pk_interp_kmax": 1.0,
+        "b1": 1.0,
+        "s1": 1.0,
+    }
+
+    wrong_type_cases = {
+        "auto_file": 123,
+        "cross_file": 123,
+        "dndz_file": 123,
+        "datapath": 123,
+        "k_tracer_name": 123,
+        "gc_tracer_name": 123,
+        "high_ell": "not_an_int",
+        "nz": "not_an_int"
+    }
+
+    for key, wrong_value in wrong_type_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            XcorrLikelihood(**case)
 
 
 @pytest.mark.skip(reason="Under development")
