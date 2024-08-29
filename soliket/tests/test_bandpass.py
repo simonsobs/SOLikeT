@@ -77,7 +77,7 @@ def test_bandpass_top_hat(evaluate_one_info):
                          "nsteps": 3,
                          "bandwidth": 0.5},
                      "external_bandpass": {},
-                     "read_from_sacc": {},
+                     "read_from_sacc": False,
                      },
     }
 
@@ -125,7 +125,7 @@ def test_bandpass_external_file(request, evaluate_one_info):
                      "top_hat_band": {},
                      "external_bandpass": {
                          "path": "test_bandpass"},
-                     "read_from_sacc": {},
+                     "read_from_sacc": False,
                      },
     }
 
