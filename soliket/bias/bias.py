@@ -26,12 +26,10 @@ If you want to add your own bias model, you can do so by inheriting from the
 function (have a look at the linear bias model for ideas).
 """
 
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
-from cobaya.theory import Provider, Theory
-
-from soliket.utils import check_yaml_types
+from cobaya.theory import Theory
 
 
 class Bias(Theory):
@@ -43,22 +41,56 @@ class Bias(Theory):
     extra_args: Optional[dict]
     params: dict
 
-    provider: Provider
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10 ** _logz
     _default_z_sampling[0] = 0
 
     def initialize(self) -> None:
-        check_yaml_types(self, {
-            "kmax": (int, float),
-            "nonlinear": bool,
-            "z": (float, List[float], np.ndarray),
-            "extra_args": dict,
-        })
+        self.validate_attributes({k: getattr(self, k) for k in self.get_annotations()})
         self._var_pairs: Set[Tuple[str, str]] = set()
 
     def get_requirements(self) -> Dict[str, dict]:
         return {}
+
+    def _validate_type(self, expected_type, value):
+        if hasattr(expected_type, "__origin__"):
+            origin = expected_type.__origin__
+            args = expected_type.__args__
+
+            if origin is Union:
+                return any(self._validate_type(t, value) for t in args)
+            elif origin is Optional:
+                return value is None or self._validate_type(args[0], value)
+            elif origin is list:
+                return all(self._validate_type(args[0], item) for item in value)
+            elif origin is dict:
+                return all(
+                    self._validate_type(args[0], k) and self._validate_type(args[1], v)
+                    for k, v in value.items()
+                )
+            elif origin is tuple:
+                return len(args) == len(value) and all(
+                    self._validate_type(t, v) for t, v in zip(args, value)
+                )
+            else:
+                return isinstance(value, origin)
+        else:
+            return isinstance(value, expected_type)
+
+    def _validate_attribute(self, name, value, annotations):
+        if name in annotations:
+            expected_type = annotations[name]
+            if expected_type is float:
+                expected_type = Union[int, float]
+            if not self._validate_type(expected_type, value):
+                msg = f"Attribute '{name}' must be of type \
+                        {expected_type}, not {type(value)}"
+                raise TypeError(msg)
+
+    def validate_attributes(self, attributes: dict):
+        annotations = self.get_annotations()
+        for name, value in attributes.items():
+            self._validate_attribute(name, value, annotations)
 
     def must_provide(self, **requirements: dict) -> Dict[str, dict]:
         options = requirements.get("linear_bias") or {}
@@ -109,7 +141,7 @@ class Linear_bias(Bias):
     params: dict
 
     def initialize(self) -> None:
-        check_yaml_types(self, {"params": Dict[str, Any]})
+        self.validate_attributes({k: getattr(self, k) for k in self.get_annotations()})
         super().initialize()
 
     def calculate(self, state: dict, want_derived: bool = True,
