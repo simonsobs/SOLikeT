@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 import pandas as pd
 from cobaya.likelihood import Likelihood
 
@@ -8,7 +8,7 @@ from .poisson_data import PoissonData
 class PoissonLikelihood(Likelihood):
     name: str = "Poisson"
     data_path: Optional[str] = None
-    columns: Optional[list[str]] = None
+    columns: Optional[List[str]] = None
 
     def initialize(self) -> None:
         catalog = self._get_catalog()

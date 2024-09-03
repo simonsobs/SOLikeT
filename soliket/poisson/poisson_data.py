@@ -1,4 +1,4 @@
-from typing import Optional, Callable, Dict
+from typing import List, Optional, Callable, Dict
 import pandas as pd
 import numpy as np
 
@@ -8,7 +8,7 @@ class PoissonData:
         self,
         name: str,
         catalog: pd.DataFrame,
-        columns: list[str],
+        columns: List[str],
         samples: Optional[Dict[str, np.ndarray]] = None,
     ) -> None:
         self.name = str(name)
