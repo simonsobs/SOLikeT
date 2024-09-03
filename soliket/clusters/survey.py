@@ -8,7 +8,8 @@ specific survey.
 """
 
 import os
-from typing import Any, List, Optional, Tuple, TypeAlias, Union
+from typing import Any, List, Optional, Tuple, Union
+from typing_extensions import TypeAlias
 
 import astropy.io.fits as pyfits
 import astropy.table as atpy
