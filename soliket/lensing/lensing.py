@@ -21,10 +21,6 @@ from cobaya.log import LoggedError
 from cobaya.model import get_model
 from cobaya.theory import Provider
 
-try:
-    from soliket import CCL
-except ImportError:
-    raise ImportError("Could not import ccl. Install pyccl to use ccl.")
 from soliket.ps import BinnedPSLikelihood
 
 
@@ -65,6 +61,11 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     # flag about whether CCL should be used to compute the cmb lensing power spectrum
     pp_ccl: bool = False
     provider: Provider
+
+    try:
+        from soliket import CCL
+    except ImportError:
+        raise ImportError("Could not import ccl. Install pyccl to use ccl.")
 
     fiducial_params: ClassVar = {
         "ombh2": 0.02219218,

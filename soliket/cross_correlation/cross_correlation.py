@@ -18,11 +18,6 @@ import sacc
 from cobaya.log import LoggedError
 from cobaya.theory import Provider
 
-try:
-    from pyccl import Tracer
-    from soliket import CCL
-except ImportError:
-    raise ImportError("Could not import ccl. Install pyccl to use ccl.")
 from soliket.gaussian import GaussianData, GaussianLikelihood
 
 
@@ -35,6 +30,12 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     use_spectra: Union[str, List[Tuple[str, str]]]
     ncovsims: Optional[int]
     provider: Provider
+
+    try:
+        from pyccl import Tracer
+        from soliket import CCL
+    except ImportError:
+        raise ImportError("Could not import ccl. Install pyccl to use ccl.")
 
 
     def initialize(self):
@@ -208,6 +209,12 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
     m_nuisance_mode: Optional[str]
     ia_mode: Optional[str]
     params: dict
+
+    try:
+        from pyccl import Tracer
+        from soliket import CCL
+    except ImportError:
+        raise ImportError("Could not import ccl. Install pyccl to use ccl.")
 
     def initialize(self):
         check_yaml_types(self, {
