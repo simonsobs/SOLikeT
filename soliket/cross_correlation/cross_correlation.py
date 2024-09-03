@@ -5,7 +5,7 @@ data. Makes use of the cobaya CCL module for handling tracers and Limber integra
 :Authors: Pablo Lemos, Ian Harrison.
 """
 
-from typing import ClassVar, Dict, List, Optional, Tuple, Union
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 from soliket.utils import check_yaml_types
@@ -18,6 +18,7 @@ import sacc
 from cobaya.log import LoggedError
 from cobaya.theory import Provider
 
+from soliket.ccl import CCL
 from soliket.gaussian import GaussianData, GaussianLikelihood
 
 
@@ -30,13 +31,6 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     use_spectra: Union[str, List[Tuple[str, str]]]
     ncovsims: Optional[int]
     provider: Provider
-
-    try:
-        from pyccl import Tracer
-        from soliket import CCL
-    except ImportError:
-        raise ImportError("Could not import ccl. Install pyccl to use ccl.")
-
 
     def initialize(self):
         check_yaml_types(self, {
@@ -82,7 +76,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     def _get_nz(
         self,
         z: np.ndarray,
-        tracer: Tracer,
+        tracer: Any,
         tracer_name: str,
         **params_values: dict
     ) -> np.ndarray:
@@ -210,12 +204,6 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
     ia_mode: Optional[str]
     params: dict
 
-    try:
-        from pyccl import Tracer
-        from soliket import CCL
-    except ImportError:
-        raise ImportError("Could not import ccl. Install pyccl to use ccl.")
-
     def initialize(self):
         check_yaml_types(self, {
             "params": dict,
@@ -256,7 +244,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
     def _get_tracer(
         self, ccl: CCL, cosmo: dict, tracer_name: str, params_values: dict
-    ) -> Tracer:
+    ):
         tracer_data = self.sacc_data.tracers[tracer_name]
         if tracer_data.quantity == "cmb_convergence":
             return ccl.CMBLensingTracer(cosmo, z_source=self.provider.get_param('zstar'))
