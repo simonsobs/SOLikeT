@@ -9,7 +9,6 @@ specific survey.
 
 import os
 from typing import Any, List, Optional, Tuple, Union
-from typing_extensions import TypeAlias
 
 import astropy.io.fits as pyfits
 import astropy.table as atpy
@@ -20,7 +19,7 @@ from astropy.wcs import WCS
 from scipy import interpolate
 
 # TODO: Placeholder for the NemoConfig type
-NemoConfig: TypeAlias = Any
+NemoConfig = Any
 
 
 def read_clust_cat(
