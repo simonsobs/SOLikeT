@@ -77,42 +77,42 @@ def get_demo_xcorr_model(theory):
 
 
 @pytest.mark.skip(reason="Under development")
-@pytest.mark.parametrize("theory", ["camb"])# , "classy"])
+@pytest.mark.parametrize("theory", ["camb"])  # , "classy"])
 def test_xcorr(theory):
-
-    params = {'b1': 1.0, 's1': 0.4}
+    params = {"b1": 1.0, "s1": 0.4}
 
     model = get_demo_xcorr_model(theory)
 
     lnl = model.loglike(params)[0]
     assert np.isfinite(lnl)
 
-    xcorr_lhood = model.likelihood['soliket.XcorrLikelihood']
+    xcorr_lhood = model.likelihood["soliket.XcorrLikelihood"]
 
     setup_chi_out = xcorr_lhood._setup_chi()
 
-    Pk_interpolator = xcorr_lhood.provider.get_Pk_interpolator(("delta_nonu",
-                                                                "delta_nonu"),
-                                                             extrap_kmax=1.e8,
-                                                             nonlinear=False).P
+    Pk_interpolator = xcorr_lhood.provider.get_Pk_interpolator(
+        ("delta_nonu", "delta_nonu"), extrap_kmax=1.0e8, nonlinear=False
+    ).P
 
     from soliket.xcorr.limber import do_limber
 
-    cl_gg, cl_kappag = do_limber(xcorr_lhood.ell_range,
-                                   xcorr_lhood.provider,
-                                   xcorr_lhood.dndz,
-                                   xcorr_lhood.dndz,
-                                   params['s1'],
-                                   params['s1'],
-                                   Pk_interpolator,
-                                   params['b1'],
-                                   params['b1'],
-                                   xcorr_lhood.alpha_auto,
-                                   xcorr_lhood.alpha_cross,
-                                   setup_chi_out,
-                                   Nchi=xcorr_lhood.Nchi,
-                                   dndz1_mag=xcorr_lhood.dndz,
-                                   dndz2_mag=xcorr_lhood.dndz)
+    cl_gg, cl_kappag = do_limber(
+        xcorr_lhood.ell_range,
+        xcorr_lhood.provider,
+        xcorr_lhood.dndz,
+        xcorr_lhood.dndz,
+        params["s1"],
+        params["s1"],
+        Pk_interpolator,
+        params["b1"],
+        params["b1"],
+        xcorr_lhood.alpha_auto,
+        xcorr_lhood.alpha_cross,
+        setup_chi_out,
+        Nchi=xcorr_lhood.Nchi,
+        dndz1_mag=xcorr_lhood.dndz,
+        dndz2_mag=xcorr_lhood.dndz,
+    )
 
     ell_load = xcorr_lhood.data.x
     cl_load = xcorr_lhood.data.y
@@ -128,36 +128,48 @@ def test_xcorr(theory):
 
     # Nell_unwise_g = np.ones_like(cl_gg) \
     #                         / (xcorr_lhood.ngal * (60 * 180 / np.pi)**2)
-    Nell_obs_unwise_g = np.ones_like(cl_obs_gg) \
-                            / (xcorr_lhood.ngal * (60 * 180 / np.pi)**2)
+    Nell_obs_unwise_g = np.ones_like(cl_obs_gg) / (
+        xcorr_lhood.ngal * (60 * 180 / np.pi) ** 2
+    )
 
     import pyccl as ccl
-    h2 = (xcorr_lhood.provider.get_param('H0') / 100)**2
 
-    cosmo = ccl.Cosmology(Omega_c=xcorr_lhood.provider.get_param('omch2') / h2,
-                          Omega_b=xcorr_lhood.provider.get_param('ombh2') / h2,
-                          h=xcorr_lhood.provider.get_param('H0') / 100,
-                          n_s=xcorr_lhood.provider.get_param('ns'),
-                          A_s=xcorr_lhood.provider.get_param('As'),
-                          Omega_k=xcorr_lhood.provider.get_param('omk'),
-                          Neff=xcorr_lhood.provider.get_param('nnu'),
-                          matter_power_spectrum='linear')
+    h2 = (xcorr_lhood.provider.get_param("H0") / 100) ** 2
 
-    g_bias_zbz = (xcorr_lhood.dndz[:, 0],
-                  params['b1'] * np.ones(len(xcorr_lhood.dndz[:, 0])))
-    mag_bias_zbz = (xcorr_lhood.dndz[:, 0],
-                    params['s1'] * np.ones(len(xcorr_lhood.dndz[:, 0])))
+    cosmo = ccl.Cosmology(
+        Omega_c=xcorr_lhood.provider.get_param("omch2") / h2,
+        Omega_b=xcorr_lhood.provider.get_param("ombh2") / h2,
+        h=xcorr_lhood.provider.get_param("H0") / 100,
+        n_s=xcorr_lhood.provider.get_param("ns"),
+        A_s=xcorr_lhood.provider.get_param("As"),
+        Omega_k=xcorr_lhood.provider.get_param("omk"),
+        Neff=xcorr_lhood.provider.get_param("nnu"),
+        matter_power_spectrum="linear",
+    )
 
-    tracer_g = ccl.NumberCountsTracer(cosmo,
-                                      has_rsd=False,
-                                      dndz=xcorr_lhood.dndz.T,
-                                      bias=g_bias_zbz,
-                                      mag_bias=mag_bias_zbz)
+    g_bias_zbz = (
+        xcorr_lhood.dndz[:, 0],
+        params["b1"] * np.ones(len(xcorr_lhood.dndz[:, 0])),
+    )
+    mag_bias_zbz = (
+        xcorr_lhood.dndz[:, 0],
+        params["s1"] * np.ones(len(xcorr_lhood.dndz[:, 0])),
+    )
+
+    tracer_g = ccl.NumberCountsTracer(
+        cosmo,
+        has_rsd=False,
+        dndz=xcorr_lhood.dndz.T,
+        bias=g_bias_zbz,
+        mag_bias=mag_bias_zbz,
+    )
 
     tracer_k = ccl.CMBLensingTracer(cosmo, z_source=1100)
 
     cl_gg_ccl = ccl.cells.angular_cl(cosmo, tracer_g, tracer_g, xcorr_lhood.ell_range)
-    cl_kappag_ccl = ccl.cells.angular_cl(cosmo, tracer_k, tracer_g, xcorr_lhood.ell_range)
+    cl_kappag_ccl = ccl.cells.angular_cl(
+        cosmo, tracer_k, tracer_g, xcorr_lhood.ell_range
+    )
 
     assert np.allclose(cl_gg_ccl, cl_gg)
     assert np.allclose(cl_kappag_ccl, cl_kappag)

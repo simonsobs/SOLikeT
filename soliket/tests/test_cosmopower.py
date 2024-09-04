@@ -59,29 +59,31 @@ info_dict = {
                 "omch2": "omega_cdm",
                 "ns": "n_s",
                 "logA": "ln10^{10}A_s",
-                "tau": "tau_reio"
-            }
+                "tau": "tau_reio",
+            },
         }
     },
 }
 
 
-@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason="test requires cosmopower")
 def test_cosmopower_import(request):
     from soliket.cosmopower import CosmoPower  # noqa F401
 
 
-@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason="test requires cosmopower")
 def test_cosmopower_theory(request):
-    info_dict['theory']['soliket.CosmoPower']['network_path'] = \
-        os.path.join(request.config.rootdir, 'soliket/cosmopower/data/CP_paper')
-    model_fiducial = get_model(info_dict)   # noqa F841
+    info_dict["theory"]["soliket.CosmoPower"]["network_path"] = os.path.join(
+        request.config.rootdir, "soliket/cosmopower/data/CP_paper"
+    )
+    model_fiducial = get_model(info_dict)  # noqa F841
 
 
-@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason="test requires cosmopower")
 def test_cosmopower_loglike(request):
-    info_dict['theory']['soliket.CosmoPower']['network_path'] = \
-        os.path.join(request.config.rootdir, 'soliket/cosmopower/data/CP_paper')
+    info_dict["theory"]["soliket.CosmoPower"]["network_path"] = os.path.join(
+        request.config.rootdir, "soliket/cosmopower/data/CP_paper"
+    )
     model_cp = get_model(info_dict)
 
     logL_cp = float(model_cp.loglikes({})[0])
@@ -89,35 +91,27 @@ def test_cosmopower_loglike(request):
     assert np.isclose(logL_cp, -295.139)
 
 
-@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason="test requires cosmopower")
 def test_cosmopower_against_camb(request):
-
-    info_dict['theory'] = {'camb': {'stop_at_error': True}}
+    info_dict["theory"] = {"camb": {"stop_at_error": True}}
     model_camb = get_model(info_dict)
     logL_camb = float(model_camb.loglikes({})[0])
-    camb_cls = model_camb.theory['camb'].get_Cl()
+    camb_cls = model_camb.theory["camb"].get_Cl()
 
-    info_dict['theory'] = {
+    info_dict["theory"] = {
         "soliket.CosmoPower": {
             "stop_at_error": True,
-            "extra_args": {'lmax': camb_cls['ell'].max()},
-            'network_path': os.path.join(request.config.rootdir,
-                                         'soliket/cosmopower/data/CP_paper'),
+            "extra_args": {"lmax": camb_cls["ell"].max()},
+            "network_path": os.path.join(
+                request.config.rootdir, "soliket/cosmopower/data/CP_paper"
+            ),
             "network_settings": {
-                "tt": {
-                    "type": "NN",
-                    "log": True,
-                    "filename": "cmb_TT_NN"
-                },
-                "ee": {
-                    "type": "NN",
-                    "log": True,
-                    "filename": "cmb_EE_NN"
-                },
+                "tt": {"type": "NN", "log": True, "filename": "cmb_TT_NN"},
+                "ee": {"type": "NN", "log": True, "filename": "cmb_EE_NN"},
                 "te": {
                     "type": "PCAplusNN",
                     "log": False,
-                    "filename": "cmb_TE_PCAplusNN"
+                    "filename": "cmb_TE_PCAplusNN",
                 },
             },
             "renames": {
@@ -125,16 +119,16 @@ def test_cosmopower_against_camb(request):
                 "omch2": "omega_cdm",
                 "ns": "n_s",
                 "logA": "ln10^{10}A_s",
-                "tau": "tau_reio"
-            }
+                "tau": "tau_reio",
+            },
         }
     }
 
     model_cp = get_model(info_dict)
     logL_cp = float(model_cp.loglikes({})[0])
-    cp_cls = model_cp.theory['soliket.CosmoPower'].get_Cl()
+    cp_cls = model_cp.theory["soliket.CosmoPower"].get_Cl()
 
-    nanmask = ~np.isnan(cp_cls['tt'])
+    nanmask = ~np.isnan(cp_cls["tt"])
 
-    assert np.allclose(cp_cls['tt'][nanmask], camb_cls['tt'][nanmask], rtol=1.e-2)
-    assert np.isclose(logL_camb, logL_cp, rtol=1.e-1)
+    assert np.allclose(cp_cls["tt"][nanmask], camb_cls["tt"][nanmask], rtol=1.0e-2)
+    assert np.isclose(logL_camb, logL_cp, rtol=1.0e-1)

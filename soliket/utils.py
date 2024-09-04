@@ -65,8 +65,12 @@ class OneWithCls(one):
     lmax = 10000
 
     def get_requirements(self):
-        return {"Cl": {"pp": self.lmax,
-                       "tt": self.lmax,
-                       "te": self.lmax,
-                       "ee": self.lmax,
-                       "bb": self.lmax, }}
+        return {
+            "Cl": {
+                "pp": self.lmax,
+                "tt": self.lmax,
+                "te": self.lmax,
+                "ee": self.lmax,
+                "bb": self.lmax,
+            }
+        }

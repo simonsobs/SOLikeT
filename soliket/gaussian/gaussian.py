@@ -55,10 +55,10 @@ class MultiGaussianLikelihood(GaussianLikelihood):
     cross_cov_path: Optional[str] = None
 
     def __init__(self, info=empty_dict, **kwargs):
-
-        if 'components' in info:
-            self.likelihoods = [get_likelihood(*kv) for kv in zip(info['components'],
-                                                                  info['options'])]
+        if "components" in info:
+            self.likelihoods = [
+                get_likelihood(*kv) for kv in zip(info["components"], info["options"])
+            ]
 
         default_info = merge_info(*[like.get_defaults() for like in self.likelihoods])
         default_info.update(info)
@@ -71,7 +71,7 @@ class MultiGaussianLikelihood(GaussianLikelihood):
         data_list = [like.data for like in self.likelihoods]
         self.data = MultiGaussianData(data_list, self.cross_cov)
 
-        self.log.info('Initialized.')
+        self.log.info("Initialized.")
 
     def initialize_with_provider(self, provider):  # pragma: no cover
         for like in self.likelihoods:
@@ -88,8 +88,7 @@ class MultiGaussianLikelihood(GaussianLikelihood):
     def _get_theory(self, **kwargs):
         return np.concatenate([like._get_theory(**kwargs) for like in self.likelihoods])
 
-    def get_requirements(self): # pragma: no cover
-
+    def get_requirements(self):  # pragma: no cover
         # Reqs with arguments like 'lmax', etc. may have to be carefully treated here to
         # merge
         reqs = {}

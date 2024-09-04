@@ -35,6 +35,7 @@ function (have a look at the simple pyhalomodel model for ideas).
 import numpy as np
 import pyhalomodel as halo
 from cobaya.theory import Theory
+
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
 
@@ -55,28 +56,26 @@ class HaloModel(Theory):
 
     def _get_Pk_mm_lin(self):
         for pair in self._var_pairs:
-            self.k, self.z, Pk_mm = \
-                self.provider.get_Pk_grid(var_pair=pair, nonlinear=False)
+            self.k, self.z, Pk_mm = self.provider.get_Pk_grid(
+                var_pair=pair, nonlinear=False
+            )
 
         return Pk_mm
 
     def get_Pk_mm_grid(self):
-
         return self.current_state["Pk_mm_grid"]
 
     def get_Pk_gg_grid(self):
-
         return self.current_state["Pk_gg_grid"]
 
     def get_Pk_gm_grid(self):
-
         return self.current_state["Pk_gm_grid"]
 
 
 class HaloModel_pyhm(HaloModel):
     """Halo Model wrapping the simple pyhalomodel code of Asgari, Mead & Heymans (2023)
 
-    We include this simple halo model for the non-linear matter-matter power spectrum with 
+    We include this simple halo model for the non-linear matter-matter power spectrum with
     NFW profiles. This is calculated via the `pyhalomodel
     <https://github.com/alexander-mead/pyhalomodel>`_ code.
     """
@@ -86,42 +85,46 @@ class HaloModel_pyhm(HaloModel):
         self.Ms = np.logspace(np.log10(self.Mmin), np.log10(self.Mmax), self.nM)
 
     def get_requirements(self):
-
         return {"omegam": None}
 
     def must_provide(self, **requirements):
-
         options = requirements.get("halo_model") or {}
         self._var_pairs.update(
-            set((x, y) for x, y in
-                options.get("vars_pairs", [("delta_tot", "delta_tot")])))
+            set(
+                (x, y)
+                for x, y in options.get("vars_pairs", [("delta_tot", "delta_tot")])
+            )
+        )
 
         self.kmax = max(self.kmax, options.get("kmax", self.kmax))
-        self.z = np.unique(np.concatenate(
-                            (np.atleast_1d(options.get("z", self._default_z_sampling)),
-                            np.atleast_1d(self.z))))
+        self.z = np.unique(
+            np.concatenate(
+                (
+                    np.atleast_1d(options.get("z", self._default_z_sampling)),
+                    np.atleast_1d(self.z),
+                )
+            )
+        )
 
         needs = {}
 
         needs["Pk_grid"] = {
-                "vars_pairs": self._var_pairs,
-                "nonlinear": (False, False),
-                "z": self.z,
-                "k_max": self.kmax
-            }
+            "vars_pairs": self._var_pairs,
+            "nonlinear": (False, False),
+            "z": self.z,
+            "k_max": self.kmax,
+        }
 
-        needs["sigma_R"] = {"vars_pairs": self._var_pairs,
-                           "z": self.z,
-                           "k_max": self.kmax,
-                           "R": np.linspace(0.14, 66, 256) # list of radii required
-                           }
-
+        needs["sigma_R"] = {
+            "vars_pairs": self._var_pairs,
+            "z": self.z,
+            "k_max": self.kmax,
+            "R": np.linspace(0.14, 66, 256),  # list of radii required
+        }
 
         return needs
 
-    def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict):
-
+    def calculate(self, state: dict, want_derived: bool = True, **params_values_dict):
         Pk_mm_lin = self._get_Pk_mm_lin()
 
         # now wish to interpolate sigma_R to these Rs
@@ -133,32 +136,45 @@ class HaloModel_pyhm(HaloModel):
 
         # for sure we could avoid the for loop with some thought
         for iz, zeval in enumerate(self.z):
-            hmod = halo.model(zeval, self.provider.get_param('omegam'),
-                              name=self.hmf_name, Dv=self.hmf_Dv)
+            hmod = halo.model(
+                zeval,
+                self.provider.get_param("omegam"),
+                name=self.hmf_name,
+                Dv=self.hmf_Dv,
+            )
 
             Rs = hmod.Lagrangian_radius(self.Ms)
             rvs = hmod.virial_radius(self.Ms)
 
-            cs = 7.85 * (self.Ms / 2e12)**-0.081 * (1. + zeval)**-0.71
+            cs = 7.85 * (self.Ms / 2e12) ** -0.081 * (1.0 + zeval) ** -0.71
             Uk = self._win_NFW(self.k, rvs, cs)
-            matter_profile = halo.profile.Fourier(self.k, self.Ms, Uk,
-                                                  amplitude=self.Ms,
-                                                  normalisation=hmod.rhom,
-                                                  mass_tracer=True)
+            matter_profile = halo.profile.Fourier(
+                self.k,
+                self.Ms,
+                Uk,
+                amplitude=self.Ms,
+                normalisation=hmod.rhom,
+                mass_tracer=True,
+            )
 
-            Pk_2h, Pk_1h, Pk_hm = hmod.power_spectrum(self.k, Pk_mm_lin[iz],
-                                                      self.Ms, sigmaRs(zeval, Rs)[0],
-                                                      {'m': matter_profile},
-                                                      verbose=False)
+            Pk_2h, Pk_1h, Pk_hm = hmod.power_spectrum(
+                self.k,
+                Pk_mm_lin[iz],
+                self.Ms,
+                sigmaRs(zeval, Rs)[0],
+                {"m": matter_profile},
+                verbose=False,
+            )
 
-            output_Pk_hm_mm[iz] = Pk_hm['m-m']
+            output_Pk_hm_mm[iz] = Pk_hm["m-m"]
 
-        state['Pk_mm_grid'] = output_Pk_hm_mm
+        state["Pk_mm_grid"] = output_Pk_hm_mm
         # state['Pk_gm_grid'] = Pk_hm['g-m']
         # state['Pk_gg_grid'] = Pk_hm['g-g']
 
     def _win_NFW(self, k, rv, c):
         from scipy.special import sici
+
         rs = rv / c
         kv = np.outer(k, rv)
         ks = np.outer(k, rs)
@@ -167,6 +183,6 @@ class HaloModel_pyhm(HaloModel):
         f1 = np.cos(ks) * (Cisv - Cis)
         f2 = np.sin(ks) * (Sisv - Sis)
         f3 = np.sin(kv) / (ks + kv)
-        f4 = np.log(1. + c) - c / (1. + c)
+        f4 = np.log(1.0 + c) - c / (1.0 + c)
         Wk = (f1 + f2 - f3) / f4
         return Wk

@@ -23,7 +23,7 @@ class ToyLikelihood(PSLikelihood):
         x = np.arange(self.n)
         if self.cov is None:
             cov = make_spd_matrix(self.n) * self.off_diag_amp
-            cov += np.diag(np.ones(self.n) * self.sigma ** 2)
+            cov += np.diag(np.ones(self.n) * self.sigma**2)
         else:
             cov = self.cov
 
@@ -72,7 +72,9 @@ def test_toy():
     like2 = get_likelihood(lhood, info2)
     like3 = get_likelihood(lhood, info3)
 
-    assert np.isclose(multilike1.logp(), sum([likex.logp() for
-                                              likex in [like1, like2, like3]]))
-    assert not np.isclose(multilike2.logp(), sum([likex.logp() for
-                                                  likex in [like1, like2, like3]]))
+    assert np.isclose(
+        multilike1.logp(), sum([likex.logp() for likex in [like1, like2, like3]])
+    )
+    assert not np.isclose(
+        multilike2.logp(), sum([likex.logp() for likex in [like1, like2, like3]])
+    )

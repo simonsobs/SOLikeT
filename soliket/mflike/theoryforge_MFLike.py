@@ -70,7 +70,6 @@ class TheoryForge_MFLike(Theory):
     systematics_template: dict
 
     def initialize(self):
-
         self.lmin = self.spectra["lmin"]
         self.lmax = self.spectra["lmax"]
         self.ell = np.arange(self.lmin, self.lmax + 1)
@@ -93,23 +92,33 @@ class TheoryForge_MFLike(Theory):
         if hasattr(self.eff_freqs, "__len__"):
             if not len(self.exp_ch) == len(self.eff_freqs):
                 raise LoggedError(
-                    self.log, "list of effective frequency has to have"
-                              "same length as list of channels!"
+                    self.log,
+                    "list of effective frequency has to have"
+                    "same length as list of channels!",
                 )
 
         # self.bands to be filled with passbands read from sacc file
         # if mflike is used
-        self.bands = {f"{expc}_s0": {'nu': [self.eff_freqs[iexpc]], 'bandpass': [1.]}
-                      for iexpc, expc in enumerate(self.exp_ch)}
+        self.bands = {
+            f"{expc}_s0": {"nu": [self.eff_freqs[iexpc]], "bandpass": [1.0]}
+            for iexpc, expc in enumerate(self.exp_ch)
+        }
 
-        self.expected_params_nuis = ["cal_LAT_93", "cal_LAT_145", "cal_LAT_225",
-                                     "calT_LAT_93", "calE_LAT_93",
-                                     "calT_LAT_145", "calE_LAT_145",
-                                     "calT_LAT_225", "calE_LAT_225",
-                                     "calG_all",
-                                     "alpha_LAT_93", "alpha_LAT_145",
-                                     "alpha_LAT_225",
-                                     ]
+        self.expected_params_nuis = [
+            "cal_LAT_93",
+            "cal_LAT_145",
+            "cal_LAT_225",
+            "calT_LAT_93",
+            "calE_LAT_93",
+            "calT_LAT_145",
+            "calE_LAT_145",
+            "calT_LAT_225",
+            "calE_LAT_225",
+            "calG_all",
+            "alpha_LAT_93",
+            "alpha_LAT_145",
+            "alpha_LAT_225",
+        ]
 
         self.use_systematics_template = bool(self.systematics_template)
 
@@ -121,12 +130,15 @@ class TheoryForge_MFLike(Theory):
     def initialize_with_params(self):
         # Check that the parameters are the right ones
         differences = are_different_params_lists(
-            self.input_params, self.expected_params_nuis,
-            name_A="given", name_B="expected")
+            self.input_params,
+            self.expected_params_nuis,
+            name_A="given",
+            name_B="expected",
+        )
         if differences:
             raise LoggedError(
-                self.log, "Configuration error in parameters: %r.",
-                differences)
+                self.log, "Configuration error in parameters: %r.", differences
+            )
 
     def must_provide(self, **requirements):
         # cmbfg_dict is required by mflike
@@ -136,8 +148,8 @@ class TheoryForge_MFLike(Theory):
         if "cmbfg_dict" in requirements:
             req = requirements["cmbfg_dict"]
             self.ell = req.get("ell", self.ell)
-            #self.log.info('%d', self.ell[0])
-            #self.log.info('%d', self.ell[-1])
+            # self.log.info('%d', self.ell[0])
+            # self.log.info('%d', self.ell[-1])
             self.requested_cls = req.get("requested_cls", self.requested_cls)
             self.lcuts = req.get("lcuts", self.lcuts)
             self.exp_ch = req.get("exp_ch", self.exp_ch)
@@ -150,9 +162,12 @@ class TheoryForge_MFLike(Theory):
         reqs = dict()
         # Be sure that CMB is computed at lmax > lmax_data (lcuts from mflike here)
         reqs["Cl"] = {k: max(c, self.lmax_boltzmann + 1) for k, c in self.lcuts.items()}
-        reqs["fg_dict"] = {"requested_cls": self.requested_cls,
-                           "ell": self.ell,
-                           "exp_ch": self.exp_ch, "bands": self.bands}
+        reqs["fg_dict"] = {
+            "requested_cls": self.requested_cls,
+            "ell": self.ell,
+            "exp_ch": self.exp_ch,
+            "bands": self.bands,
+        }
         return reqs
 
     def get_cmb_theory(self, **params):
@@ -163,13 +178,15 @@ class TheoryForge_MFLike(Theory):
 
     def calculate(self, state, want_derived=False, **params_values_dict):
         Dls = self.get_cmb_theory(**params_values_dict)
-        #self.Dls = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}
+        # self.Dls = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}
         Dls_cut = {s: Dls[s][self.ell] for s, _ in self.lcuts.items()}
-        params_values_nocosmo = {k: params_values_dict[k] for k in (
-            self.expected_params_nuis)}
+        params_values_nocosmo = {
+            k: params_values_dict[k] for k in (self.expected_params_nuis)
+        }
         fg_dict = self.get_foreground_theory(**params_values_nocosmo)
-        state["cmbfg_dict"] = self.get_modified_theory(Dls_cut,
-                                                       fg_dict, **params_values_nocosmo)
+        state["cmbfg_dict"] = self.get_modified_theory(
+            Dls_cut, fg_dict, **params_values_nocosmo
+        )
 
     def get_cmbfg_dict(self):
         return self.current_state["cmbfg_dict"]
@@ -197,8 +214,7 @@ class TheoryForge_MFLike(Theory):
         for f1 in self.exp_ch:
             for f2 in self.exp_ch:
                 for s in self.requested_cls:
-                    cmbfg_dict[s, f1, f2] = (Dls[s] +
-                                             fg_dict[s, 'all', f1, f2])
+                    cmbfg_dict[s, f1, f2] = Dls[s] + fg_dict[s, "all", f1, f2]
 
         # Apply alm based calibration factors
         cmbfg_dict = self._get_calibrated_spectra(cmbfg_dict, **nuis_params)
@@ -245,15 +261,21 @@ class TheoryForge_MFLike(Theory):
 
         cal_pars = {}
         if "tt" in self.requested_cls or "te" in self.requested_cls:
-            cal = (nuis_params["calG_all"] *
-                   np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calT_{exp}"]
-                             for exp in self.exp_ch]))
+            cal = nuis_params["calG_all"] * np.array(
+                [
+                    nuis_params[f"cal_{exp}"] * nuis_params[f"calT_{exp}"]
+                    for exp in self.exp_ch
+                ]
+            )
             cal_pars["t"] = 1 / cal
 
         if "ee" in self.requested_cls or "te" in self.requested_cls:
-            cal = (nuis_params["calG_all"] *
-                   np.array([nuis_params[f"cal_{exp}"] * nuis_params[f"calE_{exp}"]
-                             for exp in self.exp_ch]))
+            cal = nuis_params["calG_all"] * np.array(
+                [
+                    nuis_params[f"cal_{exp}"] * nuis_params[f"calE_{exp}"]
+                    for exp in self.exp_ch
+                ]
+            )
             cal_pars["e"] = 1 / cal
 
         calib = syl.Calibration_alm(ell=self.ell, spectra=dls_dict)
@@ -315,8 +337,9 @@ class TheoryForge_MFLike(Theory):
 
         # decide where to store systematics template.
         # Currently stored inside syslibrary package
-        templ_from_file = \
-            syl.ReadTemplateFromFile(rootname=self.systematics_template["rootname"])
+        templ_from_file = syl.ReadTemplateFromFile(
+            rootname=self.systematics_template["rootname"]
+        )
         self.dltempl_from_file = templ_from_file(ell=self.ell)
 
     def _get_template_from_file(self, dls_dict, **nuis_params):
@@ -333,13 +356,16 @@ class TheoryForge_MFLike(Theory):
         # templ_pars=[nuis_params['templ_'+str(fr)] for fr in self.exp_ch]
         # templ_pars currently hard-coded
         # but ideally should be passed as input nuisance
-        templ_pars = {cls: np.zeros((len(self.exp_ch), len(self.exp_ch)))
-                      for cls in self.requested_cls}
+        templ_pars = {
+            cls: np.zeros((len(self.exp_ch), len(self.exp_ch)))
+            for cls in self.requested_cls
+        }
 
         for cls in self.requested_cls:
             for i1, f1 in enumerate(self.exp_ch):
                 for i2, f2 in enumerate(self.exp_ch):
-                    dls_dict[cls, f1, f2] += (templ_pars[cls][i1][i2] *
-                                              self.dltempl_from_file[cls, f1, f2])
+                    dls_dict[cls, f1, f2] += (
+                        templ_pars[cls][i1][i2] * self.dltempl_from_file[cls, f1, f2]
+                    )
 
         return dls_dict

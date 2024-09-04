@@ -95,7 +95,14 @@ def test_foreground_compute(evaluate_one_info):
 
     fg_model = lhood.provider.get_fg_dict()
     fg_model_test = get_fg(
-        exp_ch, eff_freqs, ell, ell_0, nu_0, requested_cls, components, evaluate_one_info
+        exp_ch,
+        eff_freqs,
+        ell,
+        ell_0,
+        nu_0,
+        requested_cls,
+        components,
+        evaluate_one_info,
     )
 
     for k in fg_model_test.keys():

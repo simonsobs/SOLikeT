@@ -6,12 +6,14 @@ from soliket.constants import T_CMB, h_Planck, k_Boltzmann
 bandpass_params = {
     "bandint_shift_LAT_93": 0.0,
     "bandint_shift_LAT_145": 0.0,
-    "bandint_shift_LAT_225": 0.0
+    "bandint_shift_LAT_225": 0.0,
 }
 
-bands = {"LAT_93_s0": {"nu": [93], "bandpass": [1.]},
-         "LAT_145_s0": {"nu": [145], "bandpass": [1.]},
-         "LAT_225_s0": {"nu": [225], "bandpass": [1.]}}
+bands = {
+    "LAT_93_s0": {"nu": [93], "bandpass": [1.0]},
+    "LAT_145_s0": {"nu": [145], "bandpass": [1.0]},
+    "LAT_225_s0": {"nu": [225], "bandpass": [1.0]},
+}
 exp_ch = [k.replace("_s0", "") for k in bands.keys()]
 
 
@@ -30,9 +32,10 @@ def test_bandpass_model(evaluate_one_info):
     from soliket.bandpass import BandPass
 
     evaluate_one_info["params"] = bandpass_params
-    evaluate_one_info["theory"] = {"bandpass": {
-        "external": BandPass,
-    },
+    evaluate_one_info["theory"] = {
+        "bandpass": {
+            "external": BandPass,
+        },
     }
     model = get_model(evaluate_one_info)  # noqa F841
 
@@ -47,18 +50,17 @@ def test_bandpass_read_from_sacc(evaluate_one_info):
     }
 
     model = get_model(evaluate_one_info)
-    model.add_requirements({"bandint_freqs": {"bands": bands}
-                            })
+    model.add_requirements({"bandint_freqs": {"bands": bands}})
 
-    model.logposterior(evaluate_one_info['params'])  # force computation of model
+    model.logposterior(evaluate_one_info["params"])  # force computation of model
 
-    lhood = model.likelihood['one']
+    lhood = model.likelihood["one"]
 
     bandpass = lhood.provider.get_bandint_freqs()
 
     bandint_freqs = np.empty_like(exp_ch, dtype=float)
     for ifr, fr in enumerate(exp_ch):
-        bandpar = 'bandint_shift_' + fr
+        bandpar = "bandint_shift_" + fr
         bandint_freqs[ifr] = (
             np.asarray(bands[fr + "_s0"]["nu"]) + evaluate_one_info["params"][bandpar]
         )
@@ -72,21 +74,19 @@ def test_bandpass_top_hat(evaluate_one_info):
     # now testing top-hat construction
     evaluate_one_info["params"] = bandpass_params
     evaluate_one_info["theory"] = {
-        "bandpass": {"external": BandPass,
-                     "top_hat_band": {
-                         "nsteps": 3,
-                         "bandwidth": 0.5},
-                     "external_bandpass": {},
-                     "read_from_sacc": {},
-                     },
+        "bandpass": {
+            "external": BandPass,
+            "top_hat_band": {"nsteps": 3, "bandwidth": 0.5},
+            "external_bandpass": {},
+            "read_from_sacc": {},
+        },
     }
 
     model = get_model(evaluate_one_info)
-    model.add_requirements({"bandint_freqs": {"bands": bands}
-                            })
-    model.logposterior(evaluate_one_info['params'])  # force computation of model
+    model.add_requirements({"bandint_freqs": {"bands": bands}})
+    model.logposterior(evaluate_one_info["params"])  # force computation of model
 
-    lhood = model.likelihood['one']
+    lhood = model.likelihood["one"]
 
     bandpass = lhood.provider.get_bandint_freqs()
 
@@ -94,15 +94,18 @@ def test_bandpass_top_hat(evaluate_one_info):
     nsteps = evaluate_one_info["theory"]["bandpass"]["top_hat_band"]["nsteps"]
     bandwidth = evaluate_one_info["theory"]["bandpass"]["top_hat_band"]["bandwidth"]
     for ifr, fr in enumerate(exp_ch):
-        bandpar = 'bandint_shift_' + fr
+        bandpar = "bandint_shift_" + fr
         bd = bands[f"{fr}_s0"]
         nu_ghz, bp = np.asarray(bd["nu"]), np.asarray(bd["bandpass"])
         fr = nu_ghz @ bp / bp.sum()
-        bandlow = fr * (1 - bandwidth * .5)
-        bandhigh = fr * (1 + bandwidth * .5)
-        nub = np.linspace(bandlow + evaluate_one_info["params"][bandpar],
-                          bandhigh + evaluate_one_info["params"][bandpar],
-                          nsteps, dtype=float)
+        bandlow = fr * (1 - bandwidth * 0.5)
+        bandhigh = fr * (1 + bandwidth * 0.5)
+        nub = np.linspace(
+            bandlow + evaluate_one_info["params"][bandpar],
+            bandhigh + evaluate_one_info["params"][bandpar],
+            nsteps,
+            dtype=float,
+        )
         tranb = _cmb2bb(nub)
         tranb_norm = np.trapz(_cmb2bb(nub), nub)
         bandint_freqs.append([nub, tranb / tranb_norm])
@@ -115,33 +118,34 @@ def test_bandpass_external_file(request, evaluate_one_info):
 
     from soliket.bandpass import BandPass
 
-    filepath = os.path.join(request.config.rootdir,
-                            "soliket/tests/data/")
+    filepath = os.path.join(request.config.rootdir, "soliket/tests/data/")
     # now testing reading from external file
     evaluate_one_info["params"] = bandpass_params
     evaluate_one_info["theory"] = {
-        "bandpass": {"external": BandPass,
-                     "data_folder": f"{filepath}",
-                     "top_hat_band": {},
-                     "external_bandpass": {
-                         "path": "test_bandpass"},
-                     "read_from_sacc": {},
-                     },
+        "bandpass": {
+            "external": BandPass,
+            "data_folder": f"{filepath}",
+            "top_hat_band": {},
+            "external_bandpass": {"path": "test_bandpass"},
+            "read_from_sacc": {},
+        },
     }
 
     model = get_model(evaluate_one_info)
-    model.add_requirements({"bandint_freqs": {"bands": bands}
-                            })
+    model.add_requirements({"bandint_freqs": {"bands": bands}})
 
-    model.logposterior(evaluate_one_info['params'])  # force computation of model
+    model.logposterior(evaluate_one_info["params"])  # force computation of model
 
-    lhood = model.likelihood['one']
+    lhood = model.likelihood["one"]
 
     bandpass = lhood.provider.get_bandint_freqs()
 
-    path = os.path.normpath(os.path.join(
-        evaluate_one_info["theory"]["bandpass"]["data_folder"],
-        evaluate_one_info["theory"]["bandpass"]["external_bandpass"]["path"]))
+    path = os.path.normpath(
+        os.path.join(
+            evaluate_one_info["theory"]["bandpass"]["data_folder"],
+            evaluate_one_info["theory"]["bandpass"]["external_bandpass"]["path"],
+        )
+    )
 
     arrays = os.listdir(path)
     external_bandpass = []

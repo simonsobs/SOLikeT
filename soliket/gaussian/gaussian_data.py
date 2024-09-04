@@ -5,8 +5,9 @@ from cobaya.likelihoods.base_classes import _fast_chi_square
 
 class GaussianData:
     """
-     Named multivariate gaussian data
+    Named multivariate gaussian data
     """
+
     name: str  # name identifier for the data
     x: Sequence  # labels for each data point
     y: np.ndarray  # data point values
@@ -16,15 +17,22 @@ class GaussianData:
 
     _fast_chi_squared = _fast_chi_square()
 
-    def __init__(self, name, x: Sequence, y: Sequence[float], cov: np.ndarray,
-                 ncovsims: Optional[int] = None):
-
+    def __init__(
+        self,
+        name,
+        x: Sequence,
+        y: Sequence[float],
+        cov: np.ndarray,
+        ncovsims: Optional[int] = None,
+    ):
         self.name = str(name)
         self.ncovsims = ncovsims
 
         if not (len(x) == len(y) and cov.shape == (len(x), len(x))):
-            raise ValueError(f"Incompatible shapes! x={len(x)}, y={len(y)}, \
-                               cov={cov.shape}")
+            raise ValueError(
+                f"Incompatible shapes! x={len(x)}, y={len(y)}, \
+                               cov={cov.shape}"
+            )
 
         self.x = x
         self.y = np.ascontiguousarray(y)
@@ -61,7 +69,6 @@ class MultiGaussianData(GaussianData):
     """
 
     def __init__(self, data_list, cross_covs=None):
-
         if cross_covs is None:
             cross_covs = {}
 
@@ -120,8 +127,11 @@ class MultiGaussianData(GaussianData):
 
     @property
     def labels(self):
-        return [x for y in [[name] * len(d) for
-                            name, d in zip(self.names, self.data_list)] for x in y]
+        return [
+            x
+            for y in [[name] * len(d) for name, d in zip(self.names, self.data_list)]
+            for x in y
+        ]
 
     def _index_range(self, name):
         if name not in self.names:
@@ -163,5 +173,6 @@ class MultiGaussianData(GaussianData):
             for j, lj in zip(range(len(self.data)), self.labels)
         ]
 
-        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800,
-                                     invert_yaxis=True, xrotation=90)
+        return hv.HeatMap(data).opts(
+            tools=["hover"], width=800, height=800, invert_yaxis=True, xrotation=90
+        )
