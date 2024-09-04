@@ -12,6 +12,7 @@
 # f_sky: sky fraction
 
 
+from turtle import position
 from cobaya.theory import Theory
 # from cobaya.conventions import _packages_path
 _packages_path = 'packages_path'
@@ -59,6 +60,8 @@ class CIBxKAPPA_Likelihood(GaussianLikelihood):
         self.debug_index = 1
         comm = MPI.COMM_WORLD
         self.rank = comm.Get_rank()
+        self.debug_theoryvector = []
+        self.debug_unbinned_theory = []
 
         super().initialize()
 
@@ -100,31 +103,42 @@ class CIBxKAPPA_Likelihood(GaussianLikelihood):
             full_ells = np.arange(self.lmax+1)
             interp_Cls_unbinned = np.interp(full_ells, ells_theory, Cls_unbinned)
 
+            #Get Mode-Coupling Matrix
+            mcm_path = ''
+            for possible_mcm_path in self.mcms_paths_list:
+                if freq_list[iCl] not in possible_mcm_path:
+                    continue
+                else:
+                    mcm_path = possible_mcm_path
+
             #Confirm Mode-Coupling Matrix 
-            if freq_list[iCl] not in self.mcms_paths_list[iCl]:
-                raise ValueError(f"Your mcms are in the wrong order, beginning with '{self.mcms_paths_list[iCl]}'. They must be in order of ascending frequency.")
+            if not mcm_path:
+                raise ValueError(f"I need the mcm for {freq_list[iCl]} GHz but it's not in the provided path names, which are '{self.mcms_paths_list}'.")
 
             #Bin Theory Vector
             # for mock data, the data ells are the binned theory ells, so there's already perfect syncronization with the theory Cl's
-            theoryvector_binned.append( yalm.binTheory(interp_Cls_unbinned, self.mcms_paths_list[iCl]) )
+            theoryvector_binned.append( yalm.binTheory(interp_Cls_unbinned, mcm_path) )
 
         #Create large, Multifreq Theory Vector
         theoryvector = np.array(theoryvector_binned).flatten()
 
         #Debugging
-        debugfname = self.data_directory + 'mcmcresults/steps/' + f'steps_Cls_{self.rank}_{self.debug_index}.npy'
-        # if not os.path.isfile(debugfname):
-        #     np.savetxt(debugfname, [theoryvector])
-        # else:
-        #     # import pdb; pdb.set_trace()
-        #     all_theoryCls = np.loadtxt(debugfname)
-        #     if all_theoryCls.ndim == 1:
-        #         np.savetxt(debugfname, np.stack( (all_theoryCls, theoryvector) ))
-        #     elif all_theoryCls.ndim == 2: 
-        #         np.savetxt(debugfname, np.concatenate( (all_theoryCls, theoryvector[None, :]) ))
-        #     else:
-        #         raise ValueError('something has gone horribly wrong with saving the previous spectra!')
-        np.save(debugfname, theoryvector)
+        self.debug_theoryvector.append(theoryvector)
+        if not self.debug_index % 100:
+            debugfname = self.data_directory + 'mcmcresults/steps/' + f'steps_Cls_delta_{self.rank}_{self.debug_index}.npy'
+            np.save(debugfname, np.array(self.debug_theoryvector))
+
+        # # if not os.path.isfile(debugfname):
+        # #     np.savetxt(debugfname, [theoryvector])
+        # # else:
+        # #     # import pdb; pdb.set_trace()
+        # #     all_theoryCls = np.loadtxt(debugfname)
+        # #     if all_theoryCls.ndim == 1:
+        # #         np.savetxt(debugfname, np.stack( (all_theoryCls, theoryvector) ))
+        # #     elif all_theoryCls.ndim == 2: 
+        # #         np.savetxt(debugfname, np.concatenate( (all_theoryCls, theoryvector[None, :]) ))
+        # #     else:
+        # #         raise ValueError('something has gone horribly wrong with saving the previous spectra!')
         self.debug_index += 1
 
         return theoryvector
