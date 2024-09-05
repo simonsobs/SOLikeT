@@ -3,8 +3,6 @@ from cobaya.theory import Theory
 from .utils import u_p_nfw_hmf_bias
 from .HODS import hod_ngal
 from .power_spectrum import mm_gg_mg_spectra
-from .lin_matterPS import * 
-from .cosmology import *
 
 
 class HaloModel(Theory):
