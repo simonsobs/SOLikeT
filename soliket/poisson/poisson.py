@@ -10,6 +10,8 @@ class PoissonLikelihood(Likelihood):
     data_path: Optional[str] = None
     columns: Optional[List[str]] = None
 
+    enforce_types: bool = True
+
     def initialize(self) -> None:
         catalog = self._get_catalog()
         if self.columns is None:

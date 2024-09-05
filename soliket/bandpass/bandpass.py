@@ -125,8 +125,10 @@ class BandPass(Theory):
     data_folder: Optional[str]
     read_from_sacc: bool
     top_hat_band: Optional[dict]
-    external_bandpass: Optional[dict]
+    external_bandpass: Optional[Union[dict, list]]
     params: dict
+
+    enforce_types: bool = True
 
     def initialize(self):
         check_yaml_types(self, {

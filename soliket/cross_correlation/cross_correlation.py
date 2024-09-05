@@ -200,7 +200,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
     _allowable_tracers: ClassVar[List[str]] = ["cmb_convergence", "galaxy_shear"]
 
     z_nuisance_mode: Optional[Union[str, bool]]
-    m_nuisance_mode: Optional[str]
+    m_nuisance_mode: Optional[Union[str, bool]]
     ia_mode: Optional[str]
     params: dict
 

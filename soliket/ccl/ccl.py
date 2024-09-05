@@ -93,6 +93,8 @@ class CCL(Theory):
     z: Union[float, List[float], np.ndarray]
     extra_args: Optional[dict]
 
+    enforce_types: bool = True
+
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10 ** _logz
     _default_z_sampling[0] = 0

@@ -19,6 +19,8 @@ class GaussianLikelihood(Likelihood):
     ncovsims: Optional[int] = None
     provider: Provider
 
+    enforce_types: bool = True
+
     def initialize(self) -> None:
         x, y = self._get_data()
         cov = self._get_cov()

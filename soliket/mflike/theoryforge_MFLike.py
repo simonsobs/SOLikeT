@@ -73,6 +73,8 @@ class TheoryForge_MFLike(Theory):
     params: dict
     provider: Provider
 
+    enforce_types: bool = True
+
     def initialize(self):
         check_yaml_types(self, {
             "data_folder": str,

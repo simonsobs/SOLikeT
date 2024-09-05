@@ -63,6 +63,8 @@ class Foreground(Theory):
     foregrounds: dict
     params: dict
 
+    enforce_types: bool = True
+
     eff_freqs: Optional[list]
     exp_ch: Optional[list]
     provider: Provider
