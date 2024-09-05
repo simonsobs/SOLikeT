@@ -55,7 +55,7 @@ class u_p_nfw_hmf_bias:
         lnk = np.log(k)
         uW = self.W(rk)
         integ = rest * uW ** 2
-        sigm = (0.5 / np.pi ** 2) * trapz(integ, x=lnk, axis=-1) ####################################### gz
+        sigm = (0.5 / np.pi ** 2) * trapz(integ, x=lnk, axis=-1) 
         #sigm = (0.5 / np.pi ** 2) * scipy.integrate.simps(integ, x=lnk, axis=-1)
         return np.sqrt(sigm)
 
@@ -325,7 +325,8 @@ class u_p_nfw_hmf_bias:
 
     def dn_dm(self, red, zeta):
         rad = self.mass_to_radius()
-        return self.fsigma(rad, red, zeta) * self.mean_density() * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2 #using un-normalized T08 hmf
+        return (self.fsigma(rad, red, zeta) * self.mean_density() 
+                * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2) 
 
     def dn_dlnm(self, red, zeta):
         return self.mh * self.dn_dm(red, zeta)
