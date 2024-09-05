@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Sequence, Tuple
 import numpy as np
-from cobaya.likelihoods.base_classes import _fast_chi_square
+from cobaya import functions
 
 
 class GaussianData:
@@ -14,7 +14,7 @@ class GaussianData:
     inv_cov: np.ndarray  # inverse covariance matrix
     ncovsims: Optional[int]  # number of simulations used to estimate covariance
 
-    _fast_chi_squared = _fast_chi_square()
+    _fast_chi_squared = staticmethod(functions.chi_squared)
 
     def __init__(self, name: str, x: Sequence[float], y: Sequence[float], cov: np.ndarray,
                  ncovsims: Optional[int] = None) -> None:
