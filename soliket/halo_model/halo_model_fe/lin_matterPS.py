@@ -22,7 +22,8 @@ class matter_PS:
         pars.set_cosmology(H0=par_h, ombh2=par_omega_b, omch2=par_omega_m - par_omega_b, 
                            tau=self.cosmological_param['tau'])
         pars.InitPower.set_params(ns=self.cosmological_param['ns'], 
-                                  As=self.cosmological_param['As'], pivot_scalar=self.cosmological_param['pivot_scalar'])
+                                  As=self.cosmological_param['As'], 
+                                  pivot_scalar=self.cosmological_param['pivot_scalar'])
         pars.set_matter_power(redshifts=self.redshift, kmax=self.kmax)
 
         pars.NonLinear = model.NonLinear_none

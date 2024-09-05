@@ -26,8 +26,8 @@ class cosmo_param:
 
         D_a = cosmo.angular_diameter_distance(self.redshift).value
         D_h = c / H_0
-        dV_dz = D_h * ((1 + self.redshift) ** 2 * D_a ** 2) / np.sqrt(om_l + 
-                                                                      (1 + self.redshift) ** 3 * om_m) / h ** -3
+        dV_dz = (D_h * ((1 + self.redshift) ** 2 * D_a ** 2) / 
+                 np.sqrt(om_l + (1 + self.redshift) ** 3 * om_m) / h ** -3)
 
         self.om_b = om_b
         self.om_m = om_m

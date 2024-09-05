@@ -11,6 +11,7 @@ from numpy import trapz
 
 cosmo = Planck18
 
+
 class u_p_nfw_hmf_bias:
     def __init__(self, k_array, Pk_array, mh, redshift, delta_h):
         self.k_array = k_array
@@ -129,9 +130,6 @@ class u_p_nfw_hmf_bias:
         inte = w * dw * rest
         lnk = np.log(k)
         s = self.sigma(rad, red, zeta)
-        #return scipy.integrate.simps(inte, x=lnk, axis=-1, even="avg") / (
-           # np.pi ** 2 * s ** 2
-        #)
         return trapz(inte, x=lnk, axis=-1) / (
             np.pi ** 2 * s ** 2
         )
@@ -327,7 +325,6 @@ class u_p_nfw_hmf_bias:
 
     def dn_dm(self, red, zeta):
         rad = self.mass_to_radius()
-        #return self.gsigma(rad, red, zeta) * self.mean_density() * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2 #using normalized T08 hmf
         return self.fsigma(rad, red, zeta) * self.mean_density() * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2 #using un-normalized T08 hmf
 
     def dn_dlnm(self, red, zeta):
