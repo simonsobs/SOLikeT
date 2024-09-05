@@ -121,10 +121,12 @@ class mm_gg_mg_spectra:
                                       * self.instance_HOD.ngal_LP_200c))
 
                 Pk_2h_EP[k, :] = (self.Pk_array[:, k] 
-                                  * (trapz(intmass_2h_EP[k, :, :], self.mass, axis=-1)) ** 2 
+                                  * (trapz(intmass_2h_EP[k, :, :], 
+                                           self.mass, axis=-1)) ** 2 
                                   / self.instance_HOD.ngal_EP_200c ** 2) 
                 Pk_2h_LP[k, :] = (self.Pk_array[:, k] 
-                                  * (trapz(intmass_2h_LP[k, :, :], self.mass, axis=-1)) ** 2 
+                                  * (trapz(intmass_2h_LP[k, :, :], 
+                                           self.mass, axis=-1)) ** 2 
                                   / self.instance_HOD.ngal_LP_200c ** 2)
                 Pk_2h_mix[k, :] = (self.Pk_array[:, k] 
                                    * (trapz(intmass_2h_EP[k, :, :], self.mass, axis=-1) 
