@@ -10,7 +10,7 @@ class PoissonData:
         catalog: pd.DataFrame,
         columns: List[str],
         samples: Optional[Dict[str, np.ndarray]] = None,
-    ) -> None:
+    ):
         self.name = str(name)
 
         self.catalog = pd.DataFrame(catalog)[columns]

@@ -98,7 +98,7 @@ class CCL(Theory):
     _default_z_sampling[0] = 0
     provider: Provider
 
-    def initialize(self) -> None:
+    def initialize(self):
         try:
             import pyccl as ccl
         except ImportError:
@@ -161,7 +161,7 @@ class CCL(Theory):
         return []
 
     def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict) -> None:
+                  **params_values_dict):
         # calculate the general CCL cosmo object which likelihoods can then use to get
         # what they need (likelihoods should cache results appropriately)
         # get our requirements from self.provider

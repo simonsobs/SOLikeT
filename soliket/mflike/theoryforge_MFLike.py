@@ -132,7 +132,7 @@ class TheoryForge_MFLike(Theory):
                 self.log, "Configuration error in parameters: %r.",
                 differences)
 
-    def must_provide(self, **requirements: dict) -> dict:
+    def must_provide(self, **requirements) -> dict:
         # cmbfg_dict is required by mflike
         # and requires some params to be computed
         # Assign required params from mflike
@@ -159,10 +159,10 @@ class TheoryForge_MFLike(Theory):
                            "exp_ch": self.exp_ch, "bands": self.bands}
         return reqs
 
-    def get_cmb_theory(self, **params: dict) -> dict:
+    def get_cmb_theory(self, **params) -> dict:
         return self.provider.get_Cl(ell_factor=True)
 
-    def get_foreground_theory(self, **params: dict) -> dict:
+    def get_foreground_theory(self, **params) -> dict:
         return self.provider.get_fg_dict()
 
     def calculate(self, state, want_derived=False, **params_values_dict):
@@ -178,7 +178,7 @@ class TheoryForge_MFLike(Theory):
     def get_cmbfg_dict(self) -> dict:
         return self.current_state["cmbfg_dict"]
 
-    def get_modified_theory(self, Dls: dict, fg_dict: dict, **params: dict) -> dict:
+    def get_modified_theory(self, Dls: dict, fg_dict: dict, **params) -> dict:
         r"""
         Takes the theory :math:`D_{\ell}`, sums it to the total
         foreground power spectrum (possibly computed with bandpass

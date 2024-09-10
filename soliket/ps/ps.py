@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 from cobaya.theory import Provider
 import numpy as np
 
@@ -12,13 +12,13 @@ class PSLikelihood(GaussianLikelihood):
     lmax: int = 6000
     provider: Provider
 
-    def get_requirements(self) -> Dict[str, Dict[str, int]]:
+    def get_requirements(self) -> Dict[str, Dict[str, Any]]:
         return {"Cl": {self.kind: self.lmax}}
 
     def _get_Cl(self) -> Dict[str, np.ndarray]:
         return self.provider.get_Cl(ell_factor=True)
 
-    def _get_theory(self, **params_values: dict) -> np.ndarray:
+    def _get_theory(self, **params_values) -> np.ndarray:
         cl_theory = self._get_Cl()
         return cl_theory[self.kind][:self.lmax]
 
@@ -26,7 +26,7 @@ class PSLikelihood(GaussianLikelihood):
 class BinnedPSLikelihood(PSLikelihood):
     binning_matrix_path: str = ""
 
-    def initialize(self) -> None:
+    def initialize(self):
         self.binning_matrix = self._get_binning_matrix()
         self.bin_centers = self.binning_matrix.dot(
             np.arange(self.binning_matrix.shape[1])
@@ -45,6 +45,6 @@ class BinnedPSLikelihood(PSLikelihood):
     def _get_data(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.bin_centers, np.loadtxt(self.datapath)
 
-    def _get_theory(self, **params_values: dict) -> np.ndarray:
+    def _get_theory(self, **params_values) -> np.ndarray:
         cl_theory: Dict[str, np.ndarray] = self._get_Cl()
         return self.binning_matrix.dot(cl_theory[self.kind][:self.lmax])

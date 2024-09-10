@@ -32,7 +32,7 @@ If you want to add your own halo model, you can do so by inheriting from the
 function (have a look at the simple pyhalomodel model for ideas).
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import pyhalomodel as halo
 from cobaya.theory import Provider, Theory
@@ -54,7 +54,7 @@ class HaloModel(Theory):
     _default_z_sampling[0] = 0
     provider: Provider
 
-    def initialize(self) -> None:
+    def initialize(self):
         self._var_pairs = set()
         self._required_results = {}
 
@@ -92,11 +92,11 @@ class HaloModel_pyhm(HaloModel):
     Mmax: float
     nM: int
 
-    def initialize(self) -> None:
+    def initialize(self):
         super().initialize()
         self.Ms = np.logspace(np.log10(self.Mmin), np.log10(self.Mmax), self.nM)
 
-    def get_requirements(self) -> Dict[str, Optional[None]]:
+    def get_requirements(self) -> Dict[str, Any]:
         return {"omegam": None}
 
     def must_provide(self, **requirements) -> dict:
@@ -128,7 +128,7 @@ class HaloModel_pyhm(HaloModel):
         return needs
 
     def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict) -> None:
+                  **params_values_dict):
 
         Pk_mm_lin: np.ndarray = self._get_Pk_mm_lin()
 

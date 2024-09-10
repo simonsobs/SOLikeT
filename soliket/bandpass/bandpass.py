@@ -173,7 +173,7 @@ class BandPass(Theory):
                 self.log, "Configuration error in parameters: %r.",
                 differences)
 
-    def must_provide(self, **requirements: dict):
+    def must_provide(self, **requirements):
         # bandint_freqs is required by Foreground
         # and requires some params to be computed
         # Assign those from Foreground
@@ -209,7 +209,7 @@ class BandPass(Theory):
     # Takes care of the bandpass construction. It returns a list of nu-transmittance for
     # each frequency or an array with the effective freqs.
     def _bandpass_construction(
-        self, **params: dict
+        self, **params
     ) -> Union[np.ndarray, List[np.ndarray]]:
         r"""
         Builds the bandpass transmission
@@ -294,7 +294,9 @@ class BandPass(Theory):
             nu_ghz, bp = np.loadtxt(path + "/" + expc, usecols=(0, 1), unpack=True)
             self.external_bandpass.append([expc, nu_ghz, bp])
 
-    def _external_bandpass_construction(self, **params: dict) -> List[np.ndarray]:
+    def _external_bandpass_construction(
+        self, **params
+    ) -> Union[np.ndarray, List[np.ndarray]]:
         r"""
         Builds bandpass transmission
         :math:`\frac{\frac{\partial B_{\nu+\Delta \nu}}{\partial T}

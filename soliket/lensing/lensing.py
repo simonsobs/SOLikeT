@@ -211,7 +211,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         self.binning_matrix = binning_matrix
         return binning_matrix
 
-    def _get_theory(self, **params_values: dict) -> np.ndarray:
+    def _get_theory(self, **params_values) -> np.ndarray:
         r"""
         Generate binned theory vector of :math:`\kappa \kappa` with correction terms.
 

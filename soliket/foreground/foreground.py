@@ -306,7 +306,7 @@ class Foreground(Theory):
                             fg_dict[s, "all", f1, f2] += fg_dict[s, comp, f1, f2]
         return fg_dict
 
-    def must_provide(self, **requirements: dict) -> dict:
+    def must_provide(self, **requirements) -> dict:
         # fg_dict is required by theoryforge
         # and requires some params to be computed
         # Assign those from theoryforge
@@ -323,7 +323,7 @@ class Foreground(Theory):
             return {"bandint_freqs": {"bands": self.bands}}
         return {}
 
-    def get_bandpasses(self, **params: dict) -> np.ndarray:
+    def get_bandpasses(self, **params) -> np.ndarray:
         """
         Gets bandpass transmissions from the ``BandPass`` class.
         """

@@ -112,11 +112,11 @@ class MFLike(GaussianLikelihood, InstallableLikelihood):
                               "bands": self.bands}
         return reqs
 
-    def _get_theory(self, **params_values: dict) -> np.ndarray:
+    def _get_theory(self, **params_values) -> np.ndarray:
         cmbfg_dict = self.provider.get_cmbfg_dict()
         return self._get_power_spectra(cmbfg_dict)
 
-    def logp(self, **params_values: dict) -> float:
+    def logp(self, **params_values) -> float:
         cmbfg_dict = self.provider.get_cmbfg_dict()
         return self.loglike(cmbfg_dict)
 

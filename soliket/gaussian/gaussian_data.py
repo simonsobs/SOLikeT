@@ -17,7 +17,7 @@ class GaussianData:
     _fast_chi_squared = staticmethod(functions.chi_squared)
 
     def __init__(self, name: str, x: Sequence[float], y: Sequence[float], cov: np.ndarray,
-                 ncovsims: Optional[int] = None) -> None:
+                 ncovsims: Optional[int] = None):
 
         self.name: str = str(name)
         self.ncovsims: Optional[int] = ncovsims
@@ -64,7 +64,7 @@ class MultiGaussianData(GaussianData):
         self,
         data_list: List[GaussianData],
         cross_covs: Optional[Dict[Tuple[str, str], np.ndarray]] = None,
-    ) -> None:
+    ):
 
         if cross_covs is None:
             cross_covs = {}
@@ -148,7 +148,7 @@ class MultiGaussianData(GaussianData):
 
         return np.s_[tuple(slice(*self._index_range(n)) for n in names)]
 
-    def _assemble_data(self) -> None:
+    def _assemble_data(self):
         x = np.concatenate([d.x for d in self.data_list])
         y = np.concatenate([d.y for d in self.data_list])
 
@@ -161,7 +161,7 @@ class MultiGaussianData(GaussianData):
 
         self._data = GaussianData(" + ".join(self.names), x, y, cov)
 
-    def plot_cov(self, **kwargs) -> None:
+    def plot_cov(self, **kwargs):
         import holoviews as hv
 
         data = [

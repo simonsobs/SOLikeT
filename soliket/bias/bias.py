@@ -26,7 +26,7 @@ If you want to add your own bias model, you can do so by inheriting from the
 function (have a look at the linear bias model for ideas).
 """
 
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
 from cobaya.theory import Theory
@@ -47,13 +47,13 @@ class Bias(Theory):
     _default_z_sampling = 10 ** _logz
     _default_z_sampling[0] = 0
 
-    def initialize(self) -> None:
+    def initialize(self):
         self._var_pairs: Set[Tuple[str, str]] = set()
 
-    def get_requirements(self) -> Dict[str, dict]:
+    def get_requirements(self) -> Dict[str, Any]:
         return {}
 
-    def must_provide(self, **requirements: dict) -> Dict[str, dict]:
+    def must_provide(self, **requirements) -> Dict[str, Any]:
         options = requirements.get("linear_bias") or {}
 
         self.kmax = max(self.kmax, options.get("kmax", self.kmax))
@@ -62,7 +62,7 @@ class Bias(Theory):
              np.atleast_1d(self.z))))
 
         # Dictionary of the things needed from CAMB/CLASS
-        needs: Dict[str, dict] = {}
+        needs = {}
 
         self.nonlinear = self.nonlinear or options.get("nonlinear", False)
         self._var_pairs.update(
@@ -103,7 +103,7 @@ class Linear_bias(Bias):
     params: dict
 
     def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict) -> None:
+                  **params_values_dict):
         Pk_mm = self._get_Pk_mm()
 
         state["Pk_gg_grid"] = params_values_dict["b_lin"] ** 2. * Pk_mm

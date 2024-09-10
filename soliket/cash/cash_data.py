@@ -31,7 +31,7 @@ class CashCData:
 
     def __init__(
             self, name: str, N: Union[np.ndarray, float], usestirling: bool = True
-    ) -> None:
+    ):
         self.name = str(name)
         self.data = N
         self.usestirling = usestirling
