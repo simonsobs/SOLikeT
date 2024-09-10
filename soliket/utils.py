@@ -5,7 +5,7 @@ r"""
 
 """
 
-from typing import Optional, Tuple, Dict, Union, get_args, get_origin
+from typing import Optional, Tuple, Dict
 from importlib import import_module
 
 import numpy as np
@@ -73,50 +73,3 @@ class OneWithCls(one):
                        "te": self.lmax,
                        "ee": self.lmax,
                        "bb": self.lmax, }}
-
-
-def check_collection_type(value, expected_type, name):
-    origin_type = get_origin(expected_type)
-    if origin_type is list:
-        if isinstance(value, list):
-            item_type = get_args(expected_type)[0]
-            for item in value:
-                check_type(item, item_type, f"{name} item")
-            return True
-    elif origin_type is dict:
-        if isinstance(value, dict):
-            key_type, val_type = get_args(expected_type)
-            for key, val in value.items():
-                check_type(key, key_type, f"{name} key")
-                check_type(val, val_type, f"{name} value")
-            return True
-    return False
-
-
-def check_type(value, expected_types, name: str) -> None:
-    if not isinstance(expected_types, tuple):
-        expected_types = (expected_types,)
-
-    if value is None:
-        return
-
-    for expected_type in expected_types:
-        origin_type = get_origin(expected_type)
-        if origin_type is None:
-            if isinstance(value, expected_type):
-                return
-        elif check_collection_type(value, expected_type, name):
-            return
-
-    msg = f"{name} must be of type {expected_types}, not {type(value)}"
-    raise TypeError(msg)
-
-
-def check_yaml_types(
-    instance, attributes: Dict[str, Union[type, Tuple[type, ...]]]
-) -> None:
-    for attr_name, expected_types in attributes.items():
-        value = getattr(instance, attr_name, None)
-        if value is None and isinstance(instance, dict):
-            value = instance.get(attr_name, None)
-        check_type(value, expected_types, attr_name)

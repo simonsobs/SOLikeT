@@ -95,7 +95,6 @@ from cobaya.theory import Theory
 from cobaya.tools import are_different_params_lists
 
 from soliket.constants import T_CMB, h_Planck, k_Boltzmann
-from soliket.utils import check_yaml_types
 
 # Converts from cmb units to brightness.
 # Numerical factors not included, it needs proper normalization when used.
@@ -131,14 +130,6 @@ class BandPass(Theory):
     enforce_types: bool = True
 
     def initialize(self):
-        check_yaml_types(self, {
-            "data_folder": str,
-            "read_from_sacc": bool,
-            "top_hat_band": dict,
-            "external_bandpass": dict,
-            "params": dict,
-        })
-
         self.expected_params_bp = ["bandint_shift_LAT_93",
                                    "bandint_shift_LAT_145",
                                    "bandint_shift_LAT_225"]

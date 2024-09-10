@@ -55,8 +55,6 @@ from cobaya.log import LoggedError
 from cobaya.theory import Provider, Theory
 from cobaya.tools import are_different_params_lists
 
-from soliket.utils import check_yaml_types
-
 
 class Foreground(Theory):
     spectra: dict
@@ -79,33 +77,6 @@ class Foreground(Theory):
         from fgspectra import cross as fgc
         from fgspectra import frequency as fgf
         from fgspectra import power as fgp
-
-        check_yaml_types(self, {
-            "spectra": dict,
-            "foregrounds": dict,
-            "params": dict,
-        })
-
-        check_yaml_types(
-            self.spectra,
-            {
-                "polarizations": List[str],
-                "lmin": int,
-                "lmax": int,
-                "exp_ch": List[str],
-                "eff_freqs": List[float]
-            },
-        )
-
-        check_yaml_types(
-            self.foregrounds,
-            {"components": Dict[str, list], "normalisation": dict},
-        )
-
-        check_yaml_types(
-            self.foregrounds["normalisation"],
-            {"nu_0": float, "ell_0": int, "T_CMB": float},
-        )
 
         self.expected_params_fg = ["a_tSZ", "a_kSZ", "a_p", "beta_p",
                                    "a_c", "beta_c", "a_s", "a_gtt", "a_gte", "a_gee",

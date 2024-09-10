@@ -39,8 +39,6 @@ from cobaya.theory import Provider, Theory
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
 
-from soliket.utils import check_yaml_types
-
 
 class HaloModel(Theory):
     """Abstract parent class for implementing Halo Models."""
@@ -57,11 +55,6 @@ class HaloModel(Theory):
     provider: Provider
 
     def initialize(self) -> None:
-        check_yaml_types(self, {
-            "kmax": (int, float),
-            "z": (float, List[float], np.ndarray),
-            "extra_args": dict,
-        })
         self._var_pairs = set()
         self._required_results = {}
 
@@ -100,13 +93,6 @@ class HaloModel_pyhm(HaloModel):
     nM: int
 
     def initialize(self) -> None:
-        check_yaml_types(self, {
-            "hmf_name": str,
-            "hmf_Dv": float,
-            "Mmin": float,
-            "Mmax": float,
-            "nM": int
-        })
         super().initialize()
         self.Ms = np.logspace(np.log10(self.Mmin), np.log10(self.Mmax), self.nM)
 

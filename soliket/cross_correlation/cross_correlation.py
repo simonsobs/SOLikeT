@@ -8,7 +8,6 @@ data. Makes use of the cobaya CCL module for handling tracers and Limber integra
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 import numpy as np
 
-from soliket.utils import check_yaml_types
 
 try:
     from numpy import trapezoid
@@ -33,11 +32,6 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     provider: Provider
 
     def initialize(self):
-        check_yaml_types(self, {
-            "datapath": str,
-            "use_spectra": (str, List[tuple]),
-            "ncovsims": int,
-        })
 
         self._get_sacc_data()
         self._check_tracers()
@@ -156,10 +150,6 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
     _allowable_tracers: ClassVar[List[str]] = ['cmb_convergence', 'galaxy_density']
     params: dict
 
-    def initialize(self):
-        check_yaml_types(self, {"params": dict})
-        super().initialize()
-
     def _get_theory(self, **params_values: dict) -> np.ndarray:
         ccl, cosmo = self._get_CCL_results()
 
@@ -203,15 +193,6 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
     m_nuisance_mode: Optional[Union[str, bool]]
     ia_mode: Optional[str]
     params: dict
-
-    def initialize(self):
-        check_yaml_types(self, {
-            "params": dict,
-            "z_nuisance_mode": (str, bool),
-            "m_nuisance_mode": bool,
-            "ia_mode": str,
-        })
-        super().initialize()
 
     def _get_theory(self, **params_values: dict) -> np.ndarray:
         ccl, cosmo = self._get_CCL_results()

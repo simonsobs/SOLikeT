@@ -14,7 +14,7 @@ import numpy as np
 import sacc
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
-from soliket.utils import binner, check_yaml_types
+from soliket.utils import binner
 from soliket.gaussian import GaussianData, GaussianLikelihood
 
 from .limber import do_limber
@@ -78,22 +78,6 @@ class XcorrLikelihood(GaussianLikelihood):
     provider: Provider
 
     def initialize(self):
-        check_yaml_types(self, {
-            "auto_file": str,
-            "cross_file": str,
-            "dndz_file": str,
-            "datapath": str,
-            "k_tracer_name": str,
-            "gc_tracer_name": str,
-            "high_ell": int,
-            "nz": int,
-            "Nchi": int,
-            "Nchi_mag": int,
-            "Pk_interp_kmax": (int, float),
-            "b1": (int, float),
-            "s1": (int, float)
-        })
-
         name: str = "Xcorr"  # noqa F841
         self.log.info('Initialising.')
 

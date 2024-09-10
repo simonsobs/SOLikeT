@@ -60,8 +60,6 @@ from cobaya.log import LoggedError
 from cobaya.theory import Provider, Theory
 from cobaya.tools import are_different_params_lists
 
-from soliket.utils import check_yaml_types
-
 
 class TheoryForge_MFLike(Theory):
     # attributes set from .yaml
@@ -76,20 +74,6 @@ class TheoryForge_MFLike(Theory):
     enforce_types: bool = True
 
     def initialize(self):
-        check_yaml_types(self, {
-            "data_folder": str,
-            "exp_ch": List[str],
-            "eff_freqs": (List[int], List[float]),
-            "spectra": dict,
-            "systematics_template": dict,
-            "params": dict,
-        })
-
-        check_yaml_types(self.spectra, {
-            "lmin": int,
-            "lmax": int,
-            "polarizations": List[str],
-        })
 
         self.lmin: int = self.spectra["lmin"]
         self.lmax: int = self.spectra["lmax"]
