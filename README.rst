@@ -27,14 +27,17 @@ Installation
 
 For a set of detailed requirements and installation instructions for different machines (e.g. NERSC, M1 Mac), please see `the installation page <INSTALL.rst>`_.
 
-A preferred and convenient way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <soliket-tests.yml>`_. After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a locally cloned version of SOLikeT using pip::
+A preferred and convenient way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <soliket-tests.yml>`_. After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a the latest released version of SOLikeT using pip::
+
+  conda env create -f soliket-tests.yml
+  conda activate soliket-tests
+  pip install soliket
+
+You can alternatively clone a local version of the in-development code and install it in editable mode::
 
   git clone https://github.com/simonsobs/soliket
   cd soliket
-  conda env create -f soliket-tests.yml
-  conda activate soliket-tests
   pip install -e .
-
 
 Running an Example
 ==================
@@ -43,7 +46,7 @@ SOLikeT is a collection of modules for use within the Cobaya cosmological infere
 
 SOLikeT examples and explanatory notebooks are under construction, but will be run using standard [yaml](https://en.wikipedia.org/wiki/YAML) format (which can in turn be read in as Python dictionaries). The examples will be run using something similar to::
 
-  cobaya-run soliket-example.yml
+  cobaya-run examples/example_1.yaml
 
 
 Developing SOLikeT Theories and Likelihoods

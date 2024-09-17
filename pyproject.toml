@@ -1,6 +1,5 @@
 [project]
 name = "soliket"
-# version = "0.1.dev1"
 dynamic = ['version']
 authors = [
 	{name = "Simons Observatory"}
@@ -11,10 +10,10 @@ requires-python = ">=3.8, <3.12"
 license = {text = "MIT"}
 dependencies = [
     "requests",
-    'importlib-metadata; python_version<"3.8"',
     "numpy",
     "scipy>=1.6",
     "pandas", # to remove
+    "pytest-cov",
     "astropy",
     "cobaya",
     "sacc",
@@ -62,12 +61,11 @@ include = [
 "*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
 
 [tool.setuptools_scm]
-version_file = "soliket/version.py"
+version_file = "soliket/_version.py"
 
 [project.optional-dependencies]
 all = [
     "cosmopower",
-    "pyccl",
     "tensorflow_probability<0.22",
 ]
 docs = [
@@ -104,4 +102,9 @@ exclude_lines = [
     "pragma: py{ignore_python_version}",
     # Don't complain about IPython completion helper
     "def _ipython_key_completions_",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "require_ccl",
 ]

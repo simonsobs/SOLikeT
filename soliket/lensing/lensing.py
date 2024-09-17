@@ -1,4 +1,4 @@
-r"""
+"""
 .. module:: lensing
 
 :Synopsis: Gaussian Likelihood for CMB Lensing for Simons Observatory
@@ -20,9 +20,6 @@ from cobaya.log import LoggedError
 from cobaya.model import get_model
 
 from soliket.ps import BinnedPSLikelihood
-
-# from cobaya.install import NotInstalledError
-
 
 
 class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
@@ -46,6 +43,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     Likelihood install itself at run time. Please see the cobaya documentation for more
     information about installable likelihoods.
     """
+
     _url = "https://portal.nersc.gov/project/act/jia_qu/lensing_like/likelihood.tar.gz"
     install_options = {"download_url": _url}
     data_folder = "LensingLikelihood/"
@@ -109,7 +107,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         Cls = self._get_fiducial_Cls()
 
         # Set the fiducial spectra
-        self.ls = np.arange(0, self.lmax)
+        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
         self.fcltt = Cls["tt"][0: self.lmax]
         self.fclpp = Cls["pp"][0: self.lmax]
         self.fclee = Cls["ee"][0: self.lmax]
@@ -156,7 +154,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         :return: Dictionary ``Cl`` of lmax for each spectrum type.
         """
-        if self.pp_ccl == False:
+        if self.pp_ccl is False:
             return {
                 "Cl": {
                     "pp": self.theory_lmax,
@@ -207,7 +205,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         return binning_matrix
 
     def _get_theory(self, **params_values):
-        """
+        r"""
         Generate binned theory vector of :math:`\kappa \kappa` with correction terms.
 
         :param params_values: Dictionary of cosmological parameters.
@@ -216,7 +214,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         """
         cl = self.provider.get_Cl(ell_factor=False)
 
-        if self.pp_ccl == False:
+        if self.pp_ccl is False:
             Cl_theo = cl["pp"][0: self.lmax]
             ls = self.ls
             Clkk_theo = (ls * (ls + 1)) ** 2 * Cl_theo * 0.25
