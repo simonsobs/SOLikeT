@@ -14,6 +14,7 @@ fuzzywuzzy
 astropy
 getdist
 cobaya
+pyccl >= 3.0; platform_system!='Windows'
 sacc
 fgspectra>=1.1.0
 syslibrary
