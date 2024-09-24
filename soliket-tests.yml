@@ -10,7 +10,7 @@ dependencies:
   - compilers
   - make
   - cmake
-  - pyccl >= 3.0; platform_system!='Windows'
+  - pyccl>=3.0 # [platform != win32]
   - swig
   - gsl
   - fftw
