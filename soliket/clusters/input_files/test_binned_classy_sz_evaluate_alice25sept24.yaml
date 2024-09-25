@@ -1,0 +1,302 @@
+output: /Users/boris/Work/CLASS-SZ/SO-SZ/SOLikeT/soliket/chains/alice25sept24
+
+likelihood:
+  bao.sdss_dr7_mgs: # SDSS MGS 
+    # path: /cosmo/moyer/Desktop/SOLikeT/cobaya_packages/data/
+  bao.sdss_dr12_consensus_bao: # Boss DR11 like likelihood
+    # path: /cosmo/moyer/Desktop/SOLikeT/cobaya_packages/data/
+  bao.sixdf_2011_bao: #F. Beutler et al 6dF likelihood
+  #soliket.sz_binned_cluster_counts.binned_cc.binned_cc_likelihood:
+  soliket.BinnedClusterLikelihood :
+    #tcat_file: 'SZ_cat.txt'
+    #snrcut: 6.
+    #experiment: 'Planck'
+
+    # bin_z_min_cluster_counts : 0.0
+    # bin_z_max_cluster_counts : 1.0
+    # bin_dz_cluster_counts : 0.1
+    # bin_dlog10_snr: 0.25
+    debug: True
+    verbose: True
+    stop_at_error: True
+    theorypred:
+      choose_theory: classy_sz
+
+
+
+
+theory:
+
+  classy_szfast.classy_sz.classy_sz:
+     use_class_sz_fast_mode : 1
+     stop_at_error: true
+     extra_args:
+          #cosmo_model : 3 # w cdm 0= Lambda cdm 1= nuCDM 2 = 
+          non_linear: 'halofit'
+          output : 'sz_cluster_counts'
+          mass function : 'T08M500c'
+
+          has_selection_function : 1
+          experiment : 0 # Planck
+          y_m_relation : 0
+
+          SZ_cat_file: /Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class-sz/class_sz_auxiliary_files/excludes/tsz/planck_szcounts/SZ_cat.txt
+          sz_selection_function_ylims_file: /Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class-sz/class_sz_auxiliary_files/excludes/tsz/planck_szcounts/SZ_ylims.txt  
+          sz_selection_function_skyfracs_file: /Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class-sz/class_sz_auxiliary_files/excludes/tsz/planck_szcounts/SZ_skyfracs.txt
+          sz_selection_function_thetas_file: /Users/boris/Work/CLASS-SZ/SO-SZ/class_sz/class-sz/class_sz_auxiliary_files/excludes/tsz/planck_szcounts/SZ_thetas.txt
+
+          #signal-to-noise_cut-off_for_survey_cluster_completeness: 6.0
+          #m_pivot_ym : 6e14 
+          
+          signal-to-noise_cut-off_for_survey_cluster_completeness : 6.0
+          use_planck_binned_proba : 1
+          use_skyaveraged_noise : 0 # changer de 1 à 0 suite aux conseil de Boris
+
+          M_min : 5e11
+          M_max : 5e15
+
+          z_min: 0.
+          z_max: 1.0
+
+          # bin_z_min_cluster_counts : 0.
+          # bin_z_max_cluster_counts : 2.
+          # bin_dz_cluster_counts : 0.1
+          #
+          #
+          tau_reio: 0.054 # planck 2018 value (in abstract of 1807.06209)
+          YHe: BBN
+
+          # 1 massive neutrino (planck 2018 baseline)
+          N_ur: 2.0328
+          N_ncdm: 1
+          m_ncdm: 0.06
+          T_ncdm: 0.71611
+
+          #
+          # #3 massive neutrinos
+          # N_ur : 0.00641
+          # N_ncdm : 1
+          # deg_ncdm : 3
+          # m_ncdm : 0.02
+          # T_ncdm : 0.71611
+
+
+
+          #
+          # HMF_prescription_NCDM: 'CDM'
+
+          # verbose parameters for debugging
+          input_verbose : 0
+          background_verbose: 0
+          perturbations_verbose: 0
+          # class_sz_verbose  : 0
+
+          # X ray mass bias (if applicable)
+          # B : 1.25
+
+
+          bin_z_min_cluster_counts : 0.0
+          bin_z_max_cluster_counts : 1.0
+          bin_dz_cluster_counts : 0.1
+          bin_dlog10_snr: 0.25
+
+          dlny : 0.1
+          lnymin : -30
+          lnymax : -2
+          sigmaM_ym : 0.075 #dispersion intrinsèque relation d'échelle
+          alpha_ym : 1.789
+          ystar_ym : -0.186
+
+          dlnM_cluster_count_completeness_grid : 0.1
+
+
+          cluster_count_completeness_grid_z_cutoff_low : 0.2
+          cluster_count_completeness_grid_z_cutoff_mid : 0.5
+          dz_cluster_count_completeness_grid_low_z : 0.01
+          dz_cluster_count_completeness_grid_mid_z : 0.01
+          dz_cluster_count_completeness_grid_high_z : 0.1
+
+          #mass_epsrel_cluster_counts : 1e-3
+          #mass_epsabs_cluster_counts : 1e-30
+
+          #redshift_epsrel_cluster_counts : 1e-3
+          #redshift_epsabs_cluster_counts : 1e-30
+
+
+
+          #
+          #
+          # # tabulation of mass function:
+          n_z_dndlnM : 80
+          n_m_dndlnM : 80
+          #
+          # # computation of mass function
+          # # (grid in mass and redshifts for sigma and dsigma)
+          ndim_masses : 80
+          ndim_redshifts : 80
+          #
+          # pk setup for computation of sigma and dsigma
+          k_per_decade_class_sz : 20.
+          k_min_for_pk_class_sz : 1e-3
+          k_max_for_pk_class_sz : 1e1
+
+          P_k_max_h/Mpc : 1e1
+
+          class_sz_verbose: 0
+
+
+params:
+
+  H0:
+    prior:
+      min: 50.
+      max: 80.
+    ref:
+      dist: norm
+      loc: 68
+      scale: 0.1
+    proposal: 0.1
+  logA:
+    prior:
+      min: 1.61
+      max: 4
+    ref:
+      dist: norm
+      loc: 2.87
+      scale: 0.01
+    proposal: 0.01
+    # drop: true
+    latex: \log(10^{10} A_\mathrm{s})
+  # A_s:
+  #   value: 'lambda logA: 1e-10*np.exp(logA)'
+  #   latex: A_\mathrm{s}
+  n_s:
+    prior:
+      min: 0.8
+      max: 1.2
+    ref:
+      dist: norm
+      loc: 0.964
+      scale: 0.01
+    proposal: 0.01
+    latex: n_\mathrm{s}
+  B:
+    prior:
+      min: 1.0
+      max: 2.0
+    ref:
+      dist: norm
+      loc: 1.25
+      scale: 0.02
+    proposal: 0.02
+    latex: B
+  # sigmaM_ym : 
+  #   prior:
+  #     min: 0
+  #     max: 1
+  #   ref:
+  #     dist: norm
+  #     loc: 0.075
+  #     scale: 0.1
+  #   proposal: 0.1
+
+  # alpha_ym : 
+  #   prior:
+  #     min: 1
+  #     max: 3
+  #   ref:
+  #     dist: norm
+  #     loc: 1.789
+  #     scale: 0.1
+  #   proposal: 0.1
+
+  # ystar_ym : 
+  #   prior:
+  #     min: -1
+  #     max: 0
+  #   ref:
+  #     dist: norm
+  #     loc: -0.186
+  #     scale: 0.1
+  #   proposal: 0.1
+  #B:
+  #  prior:
+  #    min: 1.
+  #    max: 2.
+  #  ref:
+  #    dist: norm
+  #    loc: 1.71
+  #    scale: 0.02
+  #  proposal: 0.02
+  #  latex: B
+  omega_b:
+    prior:
+      min: 0.005 #avant 0.01933
+      max: 0.02533 # avanr 0.02533
+    ref:
+      dist: norm
+      loc: 0.0224
+      scale: 0.005
+    proposal: 0.005
+    latex: \Omega_\mathrm{b}h^2
+  omega_cdm:
+    prior:
+      min: 0.001 #avant 0.08
+      max: 0.99 # avant 0.2
+    ref:
+      dist: norm
+      loc: 0.125
+      scale: 0.005
+    proposal: 0.005
+    latex: \Omega_\mathrm{c}h^2
+
+  # F_sz:
+  #   derived: 'lambda sigma8, Omega_m, B, H0: (sigma8/0.8)*(Omega_m/0.3)**0.35*(B/1.25)**-0.35*(H0/70.)**-0.20'
+  #   latex: F_\mathrm{sz}
+  #sigma8:
+  #  latex: \sigma_8
+  Omega_m:
+    latex: \Omega_\mathrm{m}
+
+prior:
+  omega_b_prior:  'lambda omega_b: stats.norm.logpdf(omega_b, loc=0.022, scale=0.002)'
+  n_s_prior: 'lambda n_s: stats.norm.logpdf(n_s, loc=0.964, scale=0.014)'
+  B_prior: 'lambda B: stats.norm.logpdf(B, loc=1.2820,scale=0.17)'
+  # sigmaM_ym_prior : 'lambda sigmaM_ym: stats.norm.logpdf(sigmaM_ym, loc=0.075, scale=0.01)'
+  # alpha_ym_prior : 'lambda alpha_ym: stats.norm.logpdf(alpha_ym, loc=1.789, scale=0.08)'
+  # ystar_ym_prior : 'lambda ystar_ym: stats.norm.logpdf(ystar_ym, loc=-0.186, scale=0.02)'
+  
+ 
+
+sampler:
+  #settings for covmat see https://cobaya.readthedocs.io/en/latest/sampler_mcmc.html
+  # mcmc:
+  #   #covmat: /archeops/moyer/Desktop/cosmopo/class_sz_unbinned_cluster_counts_planck.covmat
+  #   #remettre la bonne covmat de cette analyse plus tard?
+  #   Rminus1_stop: 0.5 # remettre à 0.01 apres?
+  #   #Rminus1_cl_stop : 0.4
+  #   burn_in: 100
+  #   # drag: true
+  #   proposal_scale: 1.2
+  #   learn_proposal: True
+  #   #learn_every: 40
+  #   learn_proposal_Rminus1_max: 2.
+  #   learn_proposal_Rminus1_max_early: 80.0
+  #   max_tries : 1000
+
+  evaluate:
+    override:
+      # #parameter values:
+      omega_cdm: 0.125
+      omega_b: 0.0224
+      logA: 2.95
+      n_s: 0.96
+      H0: 69.
+      B: 1.25
+      # theta_MC_100: 1.043612
+
+
+
+
+debug : False
+timing: true

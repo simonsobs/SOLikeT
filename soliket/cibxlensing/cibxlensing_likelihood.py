@@ -19,7 +19,7 @@ _packages_path = 'packages_path'
 from soliket.gaussian import GaussianLikelihood
 import numpy as np
 import os
-from scipy.ndimage.interpolation import shift
+from scipy.ndimage import shift
 from typing import Optional, Sequence
 from pkg_resources import resource_filename
 import logging

@@ -121,3 +121,6 @@ soliket/clusters/notebooks/ongoing/*
 
 # cibxlensing
 soliket/cibxlensing/chains
+
+soliket/clusters/chains
+soliket/chains
