@@ -23,7 +23,7 @@ class PoissonLikelihood(Likelihood):
         raise NotImplementedError
 
     def logp(self, **kwargs):
-        pk_intp = self.theory.get_Pk_interpolator()
+        pk_intp = self.provider.get_Pk_interpolator()
         rate_densities = self._get_rate_fn(pk_intp, **kwargs)
         n_expected = self._get_n_expected(pk_intp, **kwargs)
         return self.data.loglike(rate_densities, n_expected)

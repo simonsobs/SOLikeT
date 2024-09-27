@@ -188,7 +188,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
         delN2D = np.zeros((len(zarr), Nq))
 
         # integrate over mass
-        dndzz = integrate.simpson(intgr[None, :,:]*cc, x=self.lnmarr, axis=2)
+        dndzz = integrate.simpson(intgr[None, ...]*cc, x=self.lnmarr, axis=2)
 
         # integrate over fine z bins and sum over in larger z bins
         for i in range(len(zarr)):
@@ -314,8 +314,8 @@ class BinnedClusterLikelihood(CashCLikelihood):
                         arg = get_erf_diff(yy0, noise[i], qmin, qmax, qcut, dof=self.selfunc['debiasDOF'])
 
                     cc = np.float32(arg * skyfracs[i])
-                    arg0 = np.float32((lnyy[:, None,None] - mu[i])/(np.sqrt(2.)*scatter))
-                    args = fac * np.exp(np.float32(-arg0**2.)) * cc[:, None,None]
+                    arg0 = np.float32((lnyy[:, None, None] - mu[i])/(np.sqrt(2.)*scatter))
+                    args = fac * np.exp(np.float32(-arg0**2.)) * cc[:, None, None]
 
                     # truncation for debiasing:
                     qtab_filter = yy0 / noise[i]
@@ -323,7 +323,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
                     qtab_filter[qtab_filter >= self.selfunc['debias_cutoff']] = 1.
                     # end truncation for debiasing.
 
-                    comp += integrate.simpson(np.float32(args)*qtab_filter[:,None,None], x=lnyy, axis=0)
+                    comp += integrate.simpson(np.float32(args)*qtab_filter[:, None, None], x=lnyy, axis=0)
 
             comp[comp < 0.] = 0.
             comp[comp > 1.] = 1.
@@ -454,7 +454,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         if self.selfunc['method'] == 'injection':
             Pfunc = self.Pfunc_inj(marr, zz, **kwargs)
-            Pfunc = np.repeat(Pfunc[:,:, np.newaxis], Ynoise.shape[0], axis=2)
+            Pfunc = np.repeat(Pfunc[..., np.newaxis], Ynoise.shape[0], axis=2)
         else:
             Pfunc = self.PfuncY(Ynoise, marr, zz, kwargs)
 
@@ -465,7 +465,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
                 zcut_arr = np.arange(zcut)
                 Ntot = np.sum(np.delete(Nz, zcut_arr, 0))
             else:
-                Nz = integrate.simpson(dndlnm * Pfunc[:,:,index], self.lnmarr[:, None], axis=0)
+                Nz = integrate.simpson(dndlnm * Pfunc[..., index], self.lnmarr[:, None], axis=0)
                 Ntot += integrate.simpson(Nz * dVdz, x=zz) * frac
 
         self.log.info("Total predicted N = {}".format(Ntot))
@@ -531,13 +531,22 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             Pfunc_ind = self.Pfunc_per(tile_index, marr, c_z, c_y, c_yerr, kwargs).T
             dn_dlnm = np.squeeze(dndlnm_intp(c_z, self.lnmarr))
             dVdz = get_dVdz(self, c_z, dVdz_interp=True)
-            ans = integrate.simpson(dn_dlnm * Pfunc_ind * dVdz[None,:], x=self.lnmarr[:,None], axis=0)
-            #ans = integrate.simpson(dn_dlnm * Pfunc_ind * dVdz[None,:] * self.skyfracs.sum(), x=self.lnmarr[:,None], axis=0)
+
+            if self.selfunc['bias_handler'] == 'theory':
+
+                skyfracs = self.skyfracs / self.skyfracs.sum()
+                ans = 0
+                for index, frac in enumerate(skyfracs):
+                    ans += integrate.simpson(dn_dlnm[None, ...] * Pfunc_ind[index,...] * dVdz[None, None, :] * frac, x=self.lnmarr[None, :, None], axis=1)
+
+            else:
+                ans = integrate.simpson(dn_dlnm * Pfunc_ind * dVdz[None, :], x=self.lnmarr[:, None], axis=0)
+
             return ans
 
         return Prob_per_cluster
 
-    def P_Yo(self, tile_index, LgY, marr, z, params):
+    def P_Yo(self, tile_index, LgY, Ynoise, marr, z, params):
 
         if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
             marr_ymmd = convert_masses(self, marr, z)
@@ -550,13 +559,19 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
 
         Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=True, tile_index=tile_index, **params)
 
-        Ytilde = np.repeat(Ytilde[:,:, np.newaxis], LgY.shape[-1], axis=2)
-        LgY = np.repeat(LgY[np.newaxis, :,:], Ytilde.shape[0], axis=0)
+        Ytilde = np.repeat(Ytilde[..., np.newaxis], LgY.shape[-1], axis=2)
+        LgY = np.repeat(LgY[np.newaxis, ...], Ytilde.shape[0], axis=0)
+
+        if self.selfunc['bias_handler'] == 'theory':
+            Ytilde = np.repeat(Ytilde[..., np.newaxis], Ynoise.shape[0], axis=3)
+            LgY = np.repeat(LgY[..., np.newaxis], Ynoise.shape[0], axis=3)
+
+            trueSNR = Ytilde / Ynoise[None, None, None, :]
+            opt_bias_corr_factor = _opt_bias_func(trueSNR, params['opt_bias_A'], params['opt_bias_B'])
+            Ytilde = Ytilde * opt_bias_corr_factor
 
         Y = np.exp(LgY)
-
         numer = -1.0 * (np.log(Y / Ytilde)) ** 2
-
         ans = (
                 1.0 / (params["scatter_sz"] * np.sqrt(2 * np.pi)) *
                 np.exp(numer / (2.0 * params["scatter_sz"] ** 2))
@@ -577,8 +592,8 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         Y = np.exp(LgY).T
         Ytilde = get_y0(self, marr_ymmd, z, marr_500c, use_Q=True, Ez_interp=False, **params)
 
-        Y = np.repeat(Y[np.newaxis, :,:,:], Ytilde.shape[0], axis=0)
-        Ytilde = np.repeat(Ytilde[:, np.newaxis, :,:], Y.shape[1], axis=1)
+        Y = np.repeat(Y[np.newaxis, ...], Ytilde.shape[0], axis=0)
+        Ytilde = np.repeat(Ytilde[:, np.newaxis, ...], Y.shape[1], axis=1)
 
         if self.selfunc['bias_handler'] == 'theory':
             trueSNR = Ytilde / Ynoise[:, None, None, None]
@@ -611,7 +626,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             qcut = np.outer(np.ones(np.shape(Ytilde)), self.qcut)
             qcut_a = np.reshape(qcut, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
 
-            Ynoise = np.outer(Ynoise, np.ones(np.shape(Ytilde[0,:,:])))
+            Ynoise = np.outer(Ynoise, np.ones(np.shape(Ytilde[0, ...])))
             Ynoise_a = np.reshape(Ynoise, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
 
             if self.selfunc['bias_handler'] == 'theory':
@@ -649,7 +664,7 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             qtab_filter[qtab_filter >= self.selfunc['debias_cutoff']] = 1.
             # end truncation for debiasing.
 
-            ans = integrate.simpson(P_Y * sig_thresh * qtab_filter[None,None,:,:], x=LgY, axis=2) #* np.log(10) # why log10?
+            ans = integrate.simpson(P_Y * sig_thresh * qtab_filter[None, None, ...], x=LgY, axis=2) #* np.log(10) # why log10?
 
         return ans
 
@@ -665,6 +680,9 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
         return ans
 
     def Pfunc_per(self, tile_index, marr, z, Y_c, Y_err, params):
+
+        Ynoise = self.noise
+
         if params["scatter_sz"] == 0:
             if self.theorypred['md_hmf'] != self.theorypred['md_ym']:
                 marr_ymmd = convert_masses(self, marr, z)
@@ -680,8 +698,21 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             # P_Y_sig = np.nan_to_num(self.Y_prob(Y_c[:, None], LgYtilde, Y_err[:, None]))
             # ans = P_Y_sig
 
-            ans = np.nan_to_num(get_erf(Ytilde, Y_err[:, None], self.qcut)) # dN/dz
+            if self.selfunc['bias_handler'] == 'theory':
 
+                Ytilde = np.repeat(Ytilde[..., np.newaxis], Ynoise.shape[-1], axis=2)
+
+                Ynoise = np.outer(Ynoise, np.ones(np.shape(Ytilde[..., 0])))
+                Ynoise_a = np.reshape(Ynoise, (Ytilde.shape[0], Ytilde.shape[1], Ytilde.shape[2]))
+
+                trueSNR = Ytilde / Ynoise_a
+                opt_bias_corr_factor = _opt_bias_func(trueSNR, params['opt_bias_A'], params['opt_bias_B'])
+                Ytilde = Ytilde * opt_bias_corr_factor
+
+                ans = np.nan_to_num(get_erf(Ytilde, Y_err[:, None, None], self.qcut))
+
+            else:
+                ans = np.nan_to_num(get_erf(Ytilde, Y_err[:, None], self.qcut))
         else:
             LgY = self.lny
             Y = np.exp(LgY)
@@ -690,10 +721,22 @@ class UnbinnedClusterLikelihood(PoissonLikelihood):
             P_Y_sig = np.nan_to_num(get_erf(Y, Y_err[:, None], self.qcut))
             #P_Y_sig = self.Y_prob(Y_c[:, None], LgY, Y_err[:, None])
 
-            P_Y = np.nan_to_num(self.P_Yo(tile_index, LgYa, marr, z, params))
-            P_Y_sig = np.repeat(P_Y_sig[:, np.newaxis, :], P_Y.shape[1], axis=1)
-            LgY = LgY[None, None, :]
-            ans = integrate.simpson(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=2)
+            if self.selfunc['bias_handler'] == 'theory':
+
+                P_Y = np.nan_to_num(self.P_Yo(tile_index, LgYa, Ynoise, marr, z, params))
+
+                P_Y_sig = np.repeat(P_Y_sig[:, np.newaxis, :], P_Y.shape[1], axis=1)
+                LgY = LgY[None, None, :]
+
+                P_Y_sig = np.repeat(P_Y_sig[..., np.newaxis], Ynoise.shape[0], axis=3)
+                LgY = np.repeat(LgY[..., np.newaxis], Ynoise.shape[0], axis=3)
+                ans = integrate.simpson(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=2)
+
+            else:
+                P_Y = np.nan_to_num(self.P_Yo(tile_index, LgYa, Ynoise, marr, z, params))
+                P_Y_sig = np.repeat(P_Y_sig[:, np.newaxis, :], P_Y.shape[1], axis=1)
+                LgY = LgY[None, None, :]
+                ans = integrate.simpson(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=2)
 
         return ans
 
@@ -760,6 +803,27 @@ def initialize_common(self):
     cat_tsz_signal = cat_tab['fixed_y_c'].data.astype(float)
     cat_tsz_signal_err = cat_tab['fixed_err_y_c'].data.astype(float)
     cat_tile_name = np.array(cat_tab['tileName'].data, dtype = str)
+
+    # #----------------------- zcut 
+    keep = zcat < self.binning['z']['zmax']
+    qcat = qcat[keep]
+    cat_tsz_signal = cat_tsz_signal[keep]
+    cat_tsz_signal_err = cat_tsz_signal_err[keep]
+    cat_tile_name = cat_tile_name[keep]
+    zcat = zcat[keep]   
+    # #----------------------- zcut
+
+
+    # #----------------------- split 
+    # if self.selfunc['split'] == 'east': 
+    #     RAcat = cat_tab['RADeg'].data.astype(float)
+    #     keep = RAcat/15. > 12.
+    #     zcat = zcat[keep]
+    #     qcat = qcat[keep]
+    #     cat_tsz_signal = cat_tsz_signal[keep]
+    #     cat_tsz_signal_err = cat_tsz_signal_err[keep]
+    #     cat_tile_name = cat_tile_name[keep]
+    # #----------------------- split 
 
     # Optimization bias handler
     if self.selfunc['bias_handler'] not in ['theory', 'catalog']:
@@ -1458,7 +1522,7 @@ def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=False, tile_index=Non
     else:
         splQ = 1.
 
-    y0 = A0 * (Ez ** 2.) * (mb / Mpivot) ** (1. + B0) * splQ
+    y0 = A0 * (Ez ** C0) * (mb / Mpivot) ** (1. + B0) * splQ
     y0[y0 <= 0] = 1e-9
 
     return y0

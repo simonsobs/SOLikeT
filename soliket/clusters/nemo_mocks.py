@@ -93,10 +93,9 @@ def make_nemo_mock(configdict):
 def get_nemo_pred(configdict, zbins):
 
 	selFn=completeness.SelFn(configdict['path2selFn'], SNRCut = configdict['predSNRCut'], zStep = configdict['selFnZStep'],
-								enableDrawSample = configdict['makeMock'], massFunction = configdict['massFunc'],
-								applyRelativisticCorrection = configdict['relativisticCorrection'],
+								 massFunction = configdict['massFunc'], applyRelativisticCorrection = configdict['relativisticCorrection'],
 								rhoType = configdict['rhoType'], delta = configdict['delta'], method=configdict['method'],
-								QSource=configdict['QSource'])
+								QSource=configdict['QSource']) #enableDrawSample = configdict['makeMock'],
 
 	predMz=selFn.compMz*selFn.mockSurvey.clusterCount
 	#TODO: Ask Matt where the minimal mass comes from
