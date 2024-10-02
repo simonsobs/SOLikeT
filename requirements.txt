@@ -13,7 +13,7 @@ dill
 fuzzywuzzy
 astropy
 getdist
-cobaya
+cobaya @ git+https://github.com/ggalloni/cobaya.git@checking_types
 pyccl >= 3.0; platform_system!='Windows'
 sacc
 fgspectra>=1.1.0
