@@ -22,8 +22,8 @@ jobs:
 
           - name: oldest supported versions
             os: ubuntu-latest
-            python-version: '3.8'
-            toxenv: py38-test-oldest
+            python-version: '3.9'
+            toxenv: py39-test-oldest
 
           - name: macOS latest
             os: macos-latest
