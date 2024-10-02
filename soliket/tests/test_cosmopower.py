@@ -1,6 +1,7 @@
 """
 Check that CosmoPower gives the correct Planck CMB power spectrum.
 """
+import copy
 import os
 
 import numpy as np
@@ -69,6 +70,33 @@ info_dict = {
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_import(request):
     from soliket.cosmopower import CosmoPower  # noqa F401
+
+
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
+def test_wrong_types():
+    from soliket.cosmopower import CosmoPower
+
+    base_case = {
+        "network_path": "valid_path", 
+        "network_settings": {}, 
+        "stop_at_error": True, 
+        "renames": {}, 
+        "extra_args": {}
+    }
+
+    wrong_type_cases = {
+        "network_path": 12345,
+        "network_settings": "not_a_dict",
+        "stop_at_error": "not_a_bool",
+        "renames": "not_a_dict",
+        "extra_args": "not_a_dict"
+    }
+
+    for key, wrong_value in wrong_type_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = CosmoPower(**case)
 
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
