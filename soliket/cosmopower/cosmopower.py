@@ -110,7 +110,7 @@ else:
 class CosmoPower(BoltzmannBase):
     """A CosmoPower Network wrapper for Cobaya."""
 
-    enforce_types: bool = True
+    _enforce_types: bool = True
 
     def initialize(self):
 

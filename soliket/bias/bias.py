@@ -41,7 +41,7 @@ class Bias(Theory):
     extra_args: Optional[dict]
     params: dict
 
-    enforce_types: bool = True
+    _enforce_types: bool = True
 
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10 ** _logz
@@ -99,7 +99,7 @@ class Linear_bias(Bias):
     Has one free parameter, :math:`b_\mathrm{lin}` (``b_lin``).
     """
 
-    enforce_types: bool = True
+    _enforce_types: bool = True
     params: dict
 
     def calculate(self, state: dict, want_derived: bool = True,
