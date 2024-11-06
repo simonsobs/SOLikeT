@@ -11,7 +11,7 @@ dill
 fuzzywuzzy
 astropy
 getdist
-cobaya @ git+https://github.com/ggalloni/cobaya.git@checking_types
+cobaya @ git+https://github.com/CobayaSampler/cobaya.git@action_types
 pyccl
 sacc
 fgspectra>=1.1.0
