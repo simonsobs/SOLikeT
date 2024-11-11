@@ -15,7 +15,7 @@ dependencies = [
     "pandas", # to remove
     "pytest-cov",
     "astropy",
-    "cobaya @ git+https://github.com/CobayaSampler/cobaya.git@action_types",
+    "cobaya @ git+https://github.com/CobayaSampler/cobaya.git@master",
     "sacc",
     "fgspectra >= 1.1.0",
     "pyccl >= 3.0; platform_system!='Windows'",
