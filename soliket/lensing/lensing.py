@@ -12,13 +12,16 @@ data download.
 """
 
 import os
+from typing import ClassVar, Tuple
 
 import numpy as np
 import sacc
 from cobaya.likelihoods.base_classes import InstallableLikelihood
 from cobaya.log import LoggedError
 from cobaya.model import get_model
+from cobaya.theory import Provider
 
+from soliket.ccl import CCL
 from soliket.ps import BinnedPSLikelihood
 
 
@@ -44,19 +47,23 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     information about installable likelihoods.
     """
 
-    _url = "https://portal.nersc.gov/project/act/jia_qu/lensing_like/likelihood.tar.gz"
-    install_options = {"download_url": _url}
-    data_folder = "LensingLikelihood/"
-    data_filename = "clkk_reconstruction_sim.fits"
+    _url: str = (
+        "https://portal.nersc.gov/project/act/jia_qu/lensing_like/"
+        "likelihood.tar.gz"
+    )
+    install_options: ClassVar = {"download_url": _url}
+    data_folder: str = "LensingLikelihood/"
+    data_filename: str = "clkk_reconstruction_sim.fits"
 
-    kind = "pp"
-    sim_number = 0
-    lmax = 3000
-    theory_lmax = 10000
+    kind: str = "pp"
+    sim_number: int = 0
+    lmax: int = 3000
+    theory_lmax: int = 10000
     # flag about whether CCL should be used to compute the cmb lensing power spectrum
-    pp_ccl = False
+    pp_ccl: bool = False
+    provider: Provider
 
-    fiducial_params = {
+    fiducial_params: ClassVar = {
         "ombh2": 0.02219218,
         "omch2": 0.1203058,
         "H0": 67.02393,
@@ -130,7 +137,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         super().initialize()
 
-    def _get_fiducial_Cls(self):
+    def _get_fiducial_Cls(self) -> dict:
         """
         Obtain a set of fiducial ``Cls`` from theory provider (e.g. ``camb``).
         Fiducial ``Cls`` are used to compute correction terms for the theory vector.
@@ -148,7 +155,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         Cls = model_fiducial.provider.get_Cl(ell_factor=False)
         return Cls
 
-    def get_requirements(self):
+    def get_requirements(self) -> dict:
         """
         Set ``lmax`` for theory ``Cls``
 
@@ -178,24 +185,24 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
                 "zstar": None
             }
 
-    def _get_CCL_results(self):
+    def _get_CCL_results(self) -> Tuple[CCL, dict]:
         cosmo_dict = self.provider.get_CCL()
         return cosmo_dict["ccl"], cosmo_dict["cosmo"]
 
-    def _get_data(self):
+    def _get_data(self) -> Tuple[np.ndarray, np.ndarray]:
         bin_centers, bandpowers, cov = \
             self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
         self.x = bin_centers
         self.y = bandpowers
         return bin_centers, self.y
 
-    def _get_cov(self):
+    def _get_cov(self) -> np.ndarray:
         bin_centers, bandpowers, cov = \
             self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
         self.cov = cov
         return cov
 
-    def _get_binning_matrix(self):
+    def _get_binning_matrix(self) -> np.ndarray:
 
         bin_centers, bandpowers, cov, ind = \
             self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True, return_ind=True)
@@ -204,7 +211,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         self.binning_matrix = binning_matrix
         return binning_matrix
 
-    def _get_theory(self, **params_values):
+    def _get_theory(self, **params_values) -> np.ndarray:
         r"""
         Generate binned theory vector of :math:`\kappa \kappa` with correction terms.
 

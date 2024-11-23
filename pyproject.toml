@@ -15,7 +15,7 @@ dependencies = [
     "pandas", # to remove
     "pytest-cov",
     "astropy",
-    "cobaya",
+    "cobaya @ git+https://github.com/CobayaSampler/cobaya.git@master",
     "sacc",
     "fgspectra >= 1.1.0",
     "pyccl >= 3.0; platform_system!='Windows'",
@@ -23,7 +23,8 @@ dependencies = [
     "camb",
     "getdist",
     "syslibrary>=0.2.0",
-    "mflike>=1.0.0"
+    "mflike>=1.0.0",
+    "typing_extensions; python_version == '3.9'",
 ]
 
 [project.urls]
