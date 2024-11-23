@@ -23,7 +23,8 @@ dependencies = [
     "camb",
     "getdist",
     "syslibrary>=0.2.0",
-    "mflike>=1.0.0"
+    "mflike>=1.0.0",
+    "typing_extensions; python_version == '3.9'",
 ]
 
 [project.urls]
