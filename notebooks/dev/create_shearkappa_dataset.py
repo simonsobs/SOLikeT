@@ -12,7 +12,7 @@ from cobaya.yaml import yaml_load_file
 from cobaya.install import install
 from cobaya.model import get_model
 
-info = yaml_load_file('run_shearkappa.yaml')
+info = yaml_load_file('run_shearkappa_fiducial.yaml')
 
 fiducial_cosmo = yaml_load_file('params_cosmo_smooth_fiducial.yaml')
 fiducial_sys = yaml_load_file('params_shearkappanuisance_smooth_fiducial.yaml')
@@ -46,7 +46,7 @@ nell_win = len(ells_win)
 
 # for i in range(n_ell):
 #     wins[i, i * delta_ell : (i + 1) * delta_ell] = 1.0 * win_norm
-    
+
 # Well = sacc.BandpowerWindow(ells_win, wins.T)
 
 # s_win = sacc.Sacc.load_fits('../../../../act-x-des/desgamma-x-actkappa/data/UNBLINDED_ACTPlanck_tSZfree_ACTDR4-kappa_DESY3-gamma_data_simCov.fits')
@@ -226,7 +226,7 @@ for par in info['params']:
         param_values[par] = info['params'][par]['value']
     except KeyError:
         try:
-            param_values[par] = info['params'][par]['value']
+            param_values[par] = info['params'][par]['value']['loc']
         except:
             try:
                 param_values[par] = info['params'][par]['value']
