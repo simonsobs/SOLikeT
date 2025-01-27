@@ -14,6 +14,12 @@ from cobaya.model import get_model
 
 info = yaml_load_file('run_shearkappa_fiducial.yaml')
 
+fiducial_cosmo = yaml_load_file('params_cosmo_smooth_fiducial.yaml')
+fiducial_sys = yaml_load_file('params_shearkappanuisance_smooth_fiducial.yaml')
+
+fiducial_params = {**fiducial_cosmo, **fiducial_sys}
+info['params'] = fiducial_params
+
 # here we will adopt a nominal cosmology to populate the sacc file
 # before replacing with the spectra we just computed within soliket
 # we also use the nominal cosmology for constructing a Gaussian covmat

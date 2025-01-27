@@ -11,8 +11,15 @@ from cobaya.model import get_model
 # read in the cobaya info
 info = yaml_load_file('run_mflike_fiducial.yaml')
 
+fiducial_cosmo = yaml_load_file('params_cosmo_smooth_fiducial.yaml')
+fiducial_fg = yaml_load_file('params_mflikefg_smooth_fiducial.yaml')
+fiducial_sys = yaml_load_file('params_mflikesyst_smooth_fiducial.yaml')
+
+fiducial_params = {**fiducial_cosmo, **fiducial_fg, **fiducial_sys}
+info['params'] = fiducial_params
+
 # ensure all components are installed
-install(info)
+# install(info)
 
 # force model computation at fiducial parameters
 model = get_model(info)

@@ -18,25 +18,65 @@ eta_IA:
   # value: 1.66
 gs_des_bin1_deltaz:
   latex: \Delta z_{1}
-  value: 0.0
+  prior:
+    dist: norm
+    loc: 0.0
+    scale: 0.018
+  proposal: 0.1
+  ref: 0.0
 gs_des_bin2_deltaz:
   latex: \Delta z_{2}
-  value: 0.0
+  prior:
+    dist: norm
+    loc: 0.0
+    scale: 0.015
+  proposal: 0.1
+  ref: 0.0
 gs_des_bin3_deltaz:
   latex: \Delta z_{3}
-  value: 0.0
+  prior:
+    dist: norm
+    loc: 0.0
+    scale: 0.011
+  proposal: 0.1
+  ref: 0.0
 gs_des_bin4_deltaz:
   latex: \Delta z_{4}
-  value: 0.0
+  prior:
+    dist: norm
+    loc: 0.0
+    scale: 0.017
+  proposal: 0.1
+  ref: 0.0
 gs_des_bin1_m:
   latex: m_{1}
-  value: 0.0
+  prior:
+    dist: norm
+    loc: -0.006
+    scale: 0.009
+  proposal: 0.02
+  ref: 0.0
 gs_des_bin2_m:
   latex: m_{2}
-  value: 0.0
+  prior:
+    dist: norm
+    loc: -0.020
+    scale: 0.008
+  proposal: 0.02
+  ref: 0.0
 gs_des_bin3_m:
   latex: m_{3}
-  value: 0.0
+  prior:
+    dist: norm
+    loc: -0.024
+    scale: 0.008
+  proposal: 0.02
+  ref: 0.0
 gs_des_bin4_m:
   latex: m_{4}
-  value: 0.0
+  prior:
+    dist: norm
+    loc: -0.037
+    scale: 0.008
+  proposal: 0.02
+  ref: 0.0
