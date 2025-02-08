@@ -1,4 +1,4 @@
-from .lensing import LensingLiteLikelihood, LensingLikelihood  # noqa: F401
+# from .lensing import LensingLiteLikelihood, LensingLikelihood  # noqa: F401
 from .gaussian import GaussianLikelihood, MultiGaussianLikelihood  # noqa: F401
 from .ps import PSLikelihood, BinnedPSLikelihood  # noqa: F401
 # try:
@@ -14,6 +14,7 @@ from .bandpass import BandPass
 from .cibxlensing import CIBxKAPPA_Likelihood
 
 try:
+    from .lensing import LensingLiteLikelihood, LensingLikelihood  # noqa: F401
     import pyccl as ccl  # noqa: F401
     from .ccl import CCL  # noqa: F401
     from .cross_correlation import GalaxyKappaLikelihood, ShearKappaLikelihood  # noqa: F401, E501
