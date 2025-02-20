@@ -19,3 +19,4 @@ sacc
 fgspectra>=1.1.0
 syslibrary
 pyhalomodel
+mflike
