@@ -3,7 +3,7 @@ from cobaya.tools import resolve_packages_path
 packages_path = resolve_packages_path()
 
 
-def test_import():
+def test_mflike_import():
 
     import mflike  # noqa: F401
 
@@ -12,7 +12,7 @@ def test_import():
     from mflike import TTTEEE, TT, EE, TE # noqa: F401
 
 
-def test_install(request):
+def test_mflike_install(request):
     from cobaya.install import install
 
     mflike_options = {
