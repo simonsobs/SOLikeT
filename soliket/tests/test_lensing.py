@@ -30,7 +30,7 @@ def test_lensing_like(request):
         {"likelihood": {"soliket.lensing.LensingLikelihood": None}},
         path=packages_path,
         skip_global=False,
-        force=True,
+        force=False,
         debug=True,
         no_set_global=True,
     )
@@ -55,7 +55,7 @@ def test_lensing_ccl_limber(request):
         {"likelihood": {"soliket.lensing.LensingLikelihood": None}},
         path=packages_path,
         skip_global=False,
-        force=True,
+        force=False,
         debug=True,
         no_set_global=True,
     )
