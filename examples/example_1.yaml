@@ -14,11 +14,11 @@ output: output/example_1
 # Note that MFLike is a Cobaya `installable likelihood`.
 # When running this yaml file, or calling `cobaya-install example_1.yaml` the required
 # installable components will automatically be downloaded and installed. 
-# Note that for the mflike.MFLike likelihood we are required to calculate:
+# Note that for the mflike.TTTEEE likelihood we are required to calculate:
 # - CMB theory power spectra (from CAMB theory below)
 # - Multi-frequency passband-integrated foregrounds (from mflike.BandpowerForeground theory below)
 likelihood:
-  mflike.MFLike:
+  mflike.TTTEEE:
     package_install: pip
     input_file: LAT_simu_sacc_00044.fits
     cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits

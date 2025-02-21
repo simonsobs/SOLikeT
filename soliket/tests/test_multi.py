@@ -38,6 +38,28 @@ nuisance_params = {
 }
 
 
+def test_lensing_and_mflike_installations():
+    import mflike
+
+    from soliket import LensingLikelihood
+
+    is_installed = LensingLikelihood.is_installed(
+        path=packages_path,
+    )
+    assert is_installed is True, (
+        "LensingLikelihood is not installed! Please install it using "
+        "'cobaya-install soliket.LensingLikelihood'"
+    )
+
+    is_installed = mflike.TTTEEE.is_installed(
+        path=packages_path,
+    )
+    assert is_installed is True, (
+        "mflike.TTTEEE is not installed! Please install it using "
+        "'cobaya-install mflike.TTTEEE'"
+    )
+
+
 def test_multi(test_cosmology_params):
     lensing_options = {"theory_lmax": 5000}
 
