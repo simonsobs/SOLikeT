@@ -162,14 +162,29 @@ class MultiGaussianData(GaussianData):
         self._data = GaussianData(" + ".join(self.names), x, y, cov)
 
     def plot_cov(self, **kwargs):
-        import holoviews as hv
+        import matplotlib.pyplot as plt
 
-        data = [
-            (f"{li}: {self.data.x[i]}", f"{lj}: {self.data.x[j]}", self.cov[i, j])
-            for i, li in zip(range(len(self.data)), self.labels)
-            for j, lj in zip(range(len(self.data)), self.labels)
+        labels = [
+            f"{label}: {value:.2f}" for label, value in zip(self.labels, self.data.x)
         ]
 
-        return hv.HeatMap(data).opts(
-            tools=["hover"], width=800, height=800, invert_yaxis=True, xrotation=90
+        x_indices = np.arange(len(labels) + 1)
+        y_indices = np.arange(len(labels) + 1)
+
+        _, ax = plt.subplots(figsize=(10, 8))
+        heatmap = ax.pcolormesh(
+            x_indices, y_indices, self.cov, cmap="viridis", shading="auto"
         )
+
+        ax.set_xticks(x_indices[:-1] + 0.5)
+        ax.set_yticks(y_indices[:-1] + 0.5)
+        ax.set_xticklabels(labels, rotation=90)
+        ax.set_yticklabels(labels)
+
+        ax.invert_yaxis()
+
+        plt.colorbar(heatmap, ax=ax)
+
+        plt.show()
+
+        return heatmap
