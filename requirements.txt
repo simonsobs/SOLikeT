@@ -18,4 +18,5 @@ sacc
 fgspectra>=1.1.0
 syslibrary
 pyhalomodel
+typing_extensions; python_version == '3.9'
 mflike

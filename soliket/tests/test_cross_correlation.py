@@ -1,3 +1,4 @@
+import copy
 import os
 import pytest
 import numpy as np
@@ -25,6 +26,50 @@ def test_galaxykappa_import():
 
 def test_shearkappa_import():
     from soliket.cross_correlation import ShearKappaLikelihood  # noqa F401
+
+
+def test_galaxykappa_with_wrong_types(request):
+    from soliket.cross_correlation import GalaxyKappaLikelihood
+
+    base_case = {
+        "datapath": "valid_path", "use_spectra": ["valid"], "ncovsims": 5, "params": {}
+    }
+    wrong_type_cases = {
+        "datapath": 12345,
+        "use_spectra": 12345,
+        "ncovsims": "not_an_int",
+        "params": "not_a_dict"
+    }
+
+    for key, wrong_value in wrong_type_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = GalaxyKappaLikelihood(**case)
+
+
+def test_shearkappa_with_wrong_types(request):
+    from soliket.cross_correlation import ShearKappaLikelihood
+
+    base_case = {
+        "datapath": "valid_path", "use_spectra": ["valid"], "ncovsims": 5, "params": {}, 
+        "z_nuisance_mode": "valid_str", "m_nuisance_mode": True, "ia_mode": "valid_str"
+    }
+    wrong_type_cases = {
+        "datapath": 12345,
+        "use_spectra": 12345,
+        "ncovsims": "not_an_int",
+        "params": "not_a_dict",
+        "z_nuisance_mode": 12345,
+        "m_nuisance_mode": "not_a_bool",
+        "ia_mode": 12345
+    }
+
+    for key, wrong_value in wrong_type_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = ShearKappaLikelihood(**case)
 
 
 def test_galaxykappa_model(request, evaluate_one_info, test_cosmology_params):
