@@ -150,7 +150,9 @@ class ClusterLikelihood(PoissonLikelihood):
         )  # self.provider.get_Hubble(self.zarr) / self.provider.get_param("H0")
         om = self._get_om()
 
-        return mf.HMF(om, Ez, pk=pks * h ** 3, kh=self.k / h, zarr=self.zarr)
+        hmf = mf.HMF(om, Ez, pk=pks * h ** 3, kh=self.k / h, zarr=self.zarr)
+
+        return hmf
 
     def _get_param_vals(self, **kwargs) -> Dict[str, float]:
         # Read in scaling relation parameters
