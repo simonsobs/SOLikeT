@@ -79,21 +79,26 @@ the likelihood.
 # https://cobaya.readthedocs.io/en/devel/theories_and_dependencies.html
 
 import numpy as np
-from typing import Sequence
-from cobaya.theory import Theory
+from typing import Dict, List, Optional, Sequence, Union
+from cobaya.theory import Provider, Theory
 from cobaya.tools import LoggedError
 
 
 class CCL(Theory):
     """A theory code wrapper for CCL."""
+    kmax: Union[int, float]
+    nonlinear: bool
+    z: Union[float, List[float], np.ndarray]
+    extra_args: Optional[dict]
+
+    _enforce_types: bool = True
+
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10 ** _logz
     _default_z_sampling[0] = 0
-    kmax: float
-    z: np.ndarray
-    nonlinear: bool
+    provider: Provider
 
-    def initialize(self) -> None:
+    def initialize(self):
         try:
             import pyccl as ccl
         except ImportError:
@@ -125,7 +130,7 @@ class CCL(Theory):
              np.atleast_1d(self.z))))
 
         # Dictionary of the things CCL needs from CAMB/CLASS
-        needs = {}
+        needs: Dict[str, dict] = {}
 
         if self.kmax:
             self.nonlinear = self.nonlinear or options.get('nonlinear', False)
@@ -231,5 +236,5 @@ class CCL(Theory):
         for required_result, method in self._required_results.items():
             state['CCL'][required_result] = method(cosmo)
 
-    def get_CCL(self):
+    def get_CCL(self) -> dict:
         return self._current_state['CCL']

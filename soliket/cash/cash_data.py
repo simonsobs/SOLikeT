@@ -1,8 +1,13 @@
+from typing import Union
 import numpy as np
 from scipy.special import factorial
 
 
-def cash_c_logpdf(theory, data, usestirling=True):
+def cash_c_logpdf(
+    theory: Union[np.ndarray, float],
+    data: Union[np.ndarray, float],
+    usestirling: bool = True
+) -> float:
     data = np.asarray(data, dtype=int)
 
     ln_fac = np.zeros_like(data, dtype=float)
@@ -24,13 +29,15 @@ class CashCData:
     """Named multi-dimensional Cash-C distributed data
     """
 
-    def __init__(self, name, N, usestirling=True):
+    def __init__(
+            self, name: str, N: Union[np.ndarray, float], usestirling: bool = True
+    ):
         self.name = str(name)
         self.data = N
         self.usestirling = usestirling
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
 
-    def loglike(self, theory):
+    def loglike(self, theory: Union[np.ndarray, float]) -> float:
         return cash_c_logpdf(theory, self.data)

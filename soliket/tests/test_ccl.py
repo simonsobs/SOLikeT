@@ -1,6 +1,7 @@
 """
 Check that CCL works correctly.
 """
+import copy
 import numpy as np
 import pytest
 from cobaya.likelihood import Likelihood
@@ -43,6 +44,24 @@ def test_ccl_import():
     Test whether we can import pyCCL.
     """
     import pyccl  # noqa F401
+
+
+def test_wrong_types():
+    from soliket.ccl import CCL
+
+    base_case = {"kmax": 0.1, "nonlinear": True, "z": 0.5, "extra_args": {}}
+    wrong_type_cases = {
+        "kmax": "not_a_float",
+        "nonlinear": "not_a_bool",
+        "z": "not_a_float_or_list",
+        "extra_args": "not_a_dict"
+    }
+
+    for key, wrong_value in wrong_type_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = CCL(**case)
 
 
 def test_ccl_cobaya(evaluate_one_info, test_cosmology_params):

@@ -5,6 +5,7 @@ Parameters and functions used internally by the cluster likelihood for the Tinke
 
 """
 
+from typing import Optional, Tuple, Union
 import numpy as np
 from scipy.integrate import simpson
 from scipy.interpolate import InterpolatedUnivariateSpline as iuSpline
@@ -26,7 +27,9 @@ tinker_data = np.transpose([[float(x) for x in line.split()]
 tinker_splines = None
 
 
-def tinker_params_spline(delta, z=None):
+def tinker_params_spline(
+    delta: float, z: Optional[Union[float, np.ndarray]] = None
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     global tinker_splines
     if tinker_splines is None:
         tinker_splines = []
@@ -50,7 +53,9 @@ def tinker_params_spline(delta, z=None):
     return A, a, b, c
 
 
-def tinker_params_analytic(delta, z=None):
+def tinker_params_analytic(
+    delta: Union[float, np.ndarray], z: Optional[Union[float, np.ndarray]] = None
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     alpha = None
     if np.asarray(delta).ndim == 0:  # scalar delta.
         A0, a0, b0, c0 = [p[0] for p in
@@ -87,21 +92,25 @@ def tinker_params_analytic(delta, z=None):
 tinker_params = tinker_params_spline
 
 
-def tinker_f(sigma, params):
+def tinker_f(
+    sigma: Union[float, np.ndarray], params: Tuple[float, float, float, float]
+) -> Union[float, np.ndarray]:
     A, a, b, c = params
     return A * ((sigma / b) ** -a + 1) * np.exp(-c / sigma ** 2)
 
 
 # Sigma-evaluation, and top-hat functions.
 
-def radius_from_mass(M, rho):
+def radius_from_mass(
+    M: Union[float, np.ndarray], rho: Union[float, np.ndarray]
+) -> Union[float, np.ndarray]:
     """
     Convert mass M to radius R assuming density rho.
     """
     return (3. * M / (4. * np.pi * rho)) ** (1 / 3.)
 
 
-def top_hatf(kR):
+def top_hatf(kR: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
     """
     Returns the Fourier transform of the spherical top-hat function
     evaluated at a given k*R.
@@ -114,7 +123,9 @@ def top_hatf(kR):
     return out
 
 
-def sigma_sq_integral(R_grid, power_spt, k_val):
+def sigma_sq_integral(
+    R_grid: np.ndarray, power_spt: np.ndarray, k_val: np.ndarray
+) -> np.ndarray:
     """
     Determines the sigma^2 parameter over the m-z grid by integrating over k.
     Notes:
@@ -132,7 +143,15 @@ def sigma_sq_integral(R_grid, power_spt, k_val):
     return simpson(to_integ / (2 * np.pi ** 2), x=k_val, axis=0)
 
 
-def dn_dlogM(M, z, rho, delta, k, P, comoving=False):
+def dn_dlogM(
+    M: np.ndarray,
+    z: np.ndarray,
+    rho: np.ndarray,
+    delta: Union[float, np.ndarray],
+    k: np.ndarray,
+    P: np.ndarray,
+    comoving: bool = False
+) -> np.ndarray:
     """
     M      is  (nM)  or  (nM, nz)
     z      is  (nz)
