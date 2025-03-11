@@ -12,7 +12,7 @@ sampler:
 
 output: chains/mflike_shearkappa
 
-theory: !defaults [theory_camb, theory_ccl, theory_bandpass, theory_foregrounds, theory_theoryforge]
+theory: !defaults [theory_camb, theory_ccl, theory_BandpowerForeground]
 # theory: !defaults [theory_cosmopower, theory_bandpass, theory_foregrounds, theory_theoryforge]
 
 priors: !defaults [prior_mflikecosmo_smooth, priors_mflikesyst_smooth]

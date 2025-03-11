@@ -1,6 +1,6 @@
 debug: False
 
-theory: !defaults [theory_camb, theory_bandpass, theory_foregrounds, theory_theoryforge]
+theory: !defaults [theory_camb, theory_BandpowerForeground]
 
 likelihood: !defaults [like_mflike]
 

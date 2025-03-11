@@ -26,38 +26,38 @@ model = get_model(info)
 model.loglikes()
 
 # extract CMB + FG spectra
-cmbfg = model.components[5].current_state["cmbfg_dict"]
+Dl = model.components[2].get_Cl(ell_factor=True)
+fg_totals = model.components[3].get_fg_totals()
+
+#need to define this to pass params as a single dictionary to get modified theory below
+params = {**cosmo_params,**fg_params}
+params = {**params, **nuisance_params}
+
+mflike = model.components[0]
+dls = {s: Dl[s][mflike.l_bpws] for s, _ in mflike.lcuts.items()}
+#combine CMB and FG and add svstematics
+DlsObs = mflike.get_modified_theory(dls, fg_totals, **params)
 
 # construct a sacc file
-DlsObs = dict()
-# Note we rescale l_bpws because cmbfg spectra start from l=2
-ell = model.components[0].l_bpws - 2
 ps_dic = {}
+ps_vec = np.zeros_like(model.components[0].data_vec)
 
 for m in model.components[0].spec_meta:
     p = m["pol"]
-    i = m["ids"]
-    w = m["bpw"].weight.T
+    ids = m["ids"]
+    w = m["bpw"]
     t1 = m["t1"]
     t2 = m["t2"]
-    if(t1+"x"+t2 not in ps_dic.keys()):
+    
+    #print(p, ids, t1, t2)
+    if (t1+"x"+t2 not in ps_dic.keys ()):
         ps_dic[t1+"x"+t2]={"lbin": m["leff"]}
-
-    if p in ['tt', 'ee', 'bb']:
-        DlsObs[p,  m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
-    else:  # ['te','tb','eb']
-        if m['hasYX_xsp']:  # not symmetrizing
-            DlsObs[p,  m['t1'], m['t2']] = cmbfg[p, m['t2'], m['t1']][ell]
-        else:
-            DlsObs[p,  m['t1'], m['t2']] = cmbfg[p, m['t1'], m['t2']][ell]
-#
-        if model.components[0].defaults['symmetrize']:  # we average TE and ET (as for data)
-            DlsObs[p,  m['t1'], m['t2']] += cmbfg[p, m['t2'], m['t1']][ell]
-            DlsObs[p,  m['t1'], m['t2']] *= 0.5
-
-    clt = w @ DlsObs[p, m["t1"], m["t2"]]
-    #print(t1+"x"+t2,p,clt)
-    ps_dic[t1+"x"+t2].update({p: clt})
+        
+    dls_obs = DlsObs[p, m["t2"], m["t1"]] if m["hasYX_xsp"] else DlsObs[p, m["t1"], m["t2"]]
+    for i, nonzero, weights in zip (m["ids"], w.nonzeros, w.sliced_weights):
+        ps_vec[i] = weights @ dls_obs[nonzero]
+        
+    ps_dic[t1+"x"+t2].update({p: ps_vec[ids]})
 
 namedir = './data/'
 
