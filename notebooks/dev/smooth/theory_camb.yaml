@@ -1,0 +1,8 @@
+camb:
+  extra_args:
+    lens_potential_accuracy: 1
+    WantTransfer: True
+    Transfer.high_precision: True
+    Transfer.kmax: 1.2
+    neutrino_hierarchy: normal
+  stop_at_error: True
