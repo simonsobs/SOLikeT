@@ -8,15 +8,14 @@ specific survey.
 """
 
 import os
-import numpy as np
 
-from scipy import interpolate
 import astropy.io.fits as pyfits
-
+import astropy.table as atpy
+import numpy as np
+from astropy.io import fits
 # from astLib import astWCS
 from astropy.wcs import WCS
-from astropy.io import fits
-import astropy.table as atpy
+from scipy import interpolate
 
 
 def read_clust_cat(fitsfile, qmin):

@@ -1,20 +1,10 @@
 import numpy as np
-
+import pytest
 from cobaya.model import get_model
 
-fiducial_params = {
-    "ombh2": 0.02225,
-    "omch2": 0.1198,
-    "H0": 67.3,
-    "tau": 0.06,
-    "As": 2.2e-9,
-    "ns": 0.96,
-    "mnu": 0.06,
-    "nnu": 3.046,
-}
+pytestmark = pytest.mark.require_ccl
 
-info_fiducial = {
-    "params": fiducial_params,
+clusters_like_and_theory = {
     "likelihood": {"soliket.ClusterLikelihood": {"stop_at_error": True}},
     "theory": {
         "camb": {
@@ -32,27 +22,33 @@ info_fiducial = {
 }
 
 
-def test_clusters_model():
+def test_clusters_model(evaluate_one_info, test_cosmology_params):
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info.update(clusters_like_and_theory)
 
-    model_fiducial = get_model(info_fiducial) # noqa F841
+    model_fiducial = get_model(evaluate_one_info)  # noqa F841
 
 
-def test_clusters_loglike():
+def test_clusters_loglike(evaluate_one_info, test_cosmology_params):
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info.update(clusters_like_and_theory)
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(evaluate_one_info)
 
     lnl = model_fiducial.loglikes({})[0]
 
-    assert np.isclose(lnl, -854.89406321, rtol=1.e-3, atol=1.e-5)
+    assert np.isclose(lnl, -847.22462272, rtol=1.e-3, atol=1.e-5)
 
 
-def test_clusters_n_expected():
+def test_clusters_n_expected(evaluate_one_info, test_cosmology_params):
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info.update(clusters_like_and_theory)
 
-    model_fiducial = get_model(info_fiducial)
+    model_fiducial = get_model(evaluate_one_info)
 
     lnl = model_fiducial.loglikes({})[0]
 
     like = model_fiducial.likelihood["soliket.ClusterLikelihood"]
 
-    assert np.isfinite(lnl)
+    assert np.isclose(lnl, -847.22462272, rtol=1.e-3, atol=1.e-5)
     assert like._get_n_expected() > 40

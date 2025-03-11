@@ -6,10 +6,15 @@ data. Makes use of the cobaya CCL module for handling tracers and Limber integra
 """
 
 import numpy as np
-from ..gaussian import GaussianData, GaussianLikelihood
+
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid
+import sacc
 from cobaya.log import LoggedError
 
-import sacc
+from soliket.gaussian import GaussianData, GaussianLikelihood
 
 
 class CrossCorrelationLikelihood(GaussianLikelihood):
@@ -58,7 +63,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
             bias = params_values['{}_deltaz'.format(tracer_name)]
             nz_biased = tracer.get_dndz(z - bias)
 
-        # nz_biased /= np.trapz(nz_biased, z)
+        # nz_biased /= np.trapezoid(nz_biased, z)
 
         return nz_biased
 
@@ -198,7 +203,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                 elif self.ia_mode == 'nla':
                     A_IA = params_values['A_IA']
                     eta_IA = params_values['eta_IA']
-                    z0_IA = np.trapz(z_tracer1 * nz_tracer1)
+                    z0_IA = trapezoid(z_tracer1 * nz_tracer1)
 
                     ia_z = (z_tracer1, A_IA * ((1 + z_tracer1) / (1 + z0_IA)) ** eta_IA)
                 elif self.ia_mode == 'nla-perbin':
@@ -238,7 +243,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                 elif self.ia_mode == 'nla':
                     A_IA = params_values['A_IA']
                     eta_IA = params_values['eta_IA']
-                    z0_IA = np.trapz(z_tracer2 * nz_tracer2)
+                    z0_IA = trapezoid(z_tracer2 * nz_tracer2)
 
                     ia_z = (z_tracer2, A_IA * ((1 + z_tracer2) / (1 + z0_IA)) ** eta_IA)
                 elif self.ia_mode == 'nla-perbin':

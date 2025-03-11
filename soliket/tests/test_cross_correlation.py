@@ -1,102 +1,93 @@
-import numpy as np
 import os
-from soliket.ccl import CCL
+import pytest
+import numpy as np
 from cobaya.model import get_model
+from soliket.ccl import CCL
+
+pytestmark = pytest.mark.require_ccl
 
 
 gammakappa_sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
 gkappa_sacc_file = 'soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits'
 
-cosmo_params = {"Omega_c": 0.25, "Omega_b": 0.05, "h": 0.67, "n_s": 0.96}
-
-info = {
-    "params": {
-        "omch2": cosmo_params["Omega_c"] * cosmo_params["h"] ** 2.0,
-        "ombh2": cosmo_params["Omega_b"] * cosmo_params["h"] ** 2.0,
-        "H0": cosmo_params["h"] * 100,
-        "ns": cosmo_params["n_s"],
-        "As": 2.2e-9,
-        "tau": 0,
-        # "b1": 1,
-        # "s1": 0.4,
-    },
-    "theory": {"camb": None, "ccl": {"external": CCL, "nonlinear": False}},
-    "debug": False,
-    "stop_at_error": True,
+cross_correlation_params = {
+    "b1": 1.0,
+    "s1": 0.4,
+}
+cross_correlation_theory = {
+    "camb": None,
+    "ccl": {"external": CCL, "nonlinear": False},
 }
 
 
 def test_galaxykappa_import():
-
-    from soliket.cross_correlation import GalaxyKappaLikelihood # noqa F401
+    from soliket.cross_correlation import GalaxyKappaLikelihood  # noqa F401
 
 
 def test_shearkappa_import():
+    from soliket.cross_correlation import ShearKappaLikelihood  # noqa F401
 
-    from soliket.cross_correlation import ShearKappaLikelihood # noqa F401
 
-
-def test_galaxykappa_model(request):
-
+def test_galaxykappa_model(request, evaluate_one_info, test_cosmology_params):
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
-    info["params"]["b1"] = 2.
-    info["params"]["s1"] = 0.4
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["params"].update(cross_correlation_params)
+    evaluate_one_info["theory"] = cross_correlation_theory
 
-    info["likelihood"] = {
+    evaluate_one_info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
                                   "datapath": os.path.join(request.config.rootdir,
                                                            gkappa_sacc_file)}}
 
-    model = get_model(info) # noqa F841
+    model = get_model(evaluate_one_info)  # noqa F841
 
 
-def test_shearkappa_model(request):
-
+def test_shearkappa_model(request, evaluate_one_info, test_cosmology_params):
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    # clear out the galaxykappa params if they've been added
-    info["params"].pop("b1", None)
-    info["params"].pop("s1", None)
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["theory"] = cross_correlation_theory
 
-    info["likelihood"] = {"ShearKappaLikelihood":
-                          {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir,
-                                                    gammakappa_sacc_file)}}
+    evaluate_one_info["likelihood"] = {"ShearKappaLikelihood":
+                                           {"external": ShearKappaLikelihood,
+                                            "datapath":
+                                                os.path.join(request.config.rootdir,
+                                                             gammakappa_sacc_file)}}
 
-    model = get_model(info) # noqa F841
+    model = get_model(evaluate_one_info)  # noqa F841
 
 
-def test_galaxykappa_like(request):
-
+def test_galaxykappa_like(request, evaluate_one_info, test_cosmology_params):
     from soliket.cross_correlation import GalaxyKappaLikelihood
 
-    info["params"]["b1"] = 2.
-    info["params"]["s1"] = 0.4
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["params"].update(cross_correlation_params)
+    evaluate_one_info["theory"] = cross_correlation_theory
 
-    info["likelihood"] = {
+    evaluate_one_info["likelihood"] = {
         "GalaxyKappaLikelihood": {"external": GalaxyKappaLikelihood,
                                   "datapath": os.path.join(request.config.rootdir,
                                                            gkappa_sacc_file),
                                   "use_spectra": [('gc_cmass', 'ck_actdr4')]}}
 
-
-    model = get_model(info)
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], 174.013, atol=0.2, rtol=0.0)
+    assert np.isclose(loglikes[0], 173.69192885580344, atol=0.2, rtol=0.0)
 
 
-def test_shearkappa_like(request):
-
+def test_shearkappa_like(request, evaluate_one_info):
     from soliket.cross_correlation import ShearKappaLikelihood
+
+    evaluate_one_info["theory"] = cross_correlation_theory
 
     rootdir = request.config.rootdir
 
     cs82_file = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
     test_datapath = os.path.join(rootdir, cs82_file)
 
-    info["likelihood"] = {
+    evaluate_one_info["likelihood"] = {
         "ShearKappaLikelihood": {"external": ShearKappaLikelihood,
                                  "datapath": test_datapath}
     }
@@ -104,48 +95,53 @@ def test_shearkappa_like(request):
     # Cosmological parameters for the test data, digitized from
     # Fig. 3 and Eq. 8 of Hall & Taylor (2014).
     # See https://github.com/simonsobs/SOLikeT/pull/58 for validation plots
-    info['params'] = {"omch2": 0.118,  # Planck + lensing + WP + highL
-                      "ombh2": 0.0222,
-                      "H0": 68.0,
-                      "ns": 0.962,
-                      "As": 2.1e-9,
-                      "tau": 0.094,
-                      "mnu": 0.0,
-                      "nnu": 3.046}
+    evaluate_one_info['params'] = {
+        "omch2": 0.118,  # Planck + lensing + WP + highL
+        "ombh2": 0.0222,
+        "H0": 68.0,
+        "ns": 0.962,
+        "As": 2.1e-9,
+        "tau": 0.094,
+        "mnu": 0.0,
+        "nnu": 3.046
+    }
 
-    model = get_model(info)
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
     assert np.isclose(loglikes, 637.64473666)
 
 
-def test_shearkappa_tracerselect(request):
+def test_shearkappa_tracerselect(request, evaluate_one_info, test_cosmology_params):
+    import copy
 
     from soliket.cross_correlation import ShearKappaLikelihood
-    import copy
+
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["theory"] = cross_correlation_theory
 
     rootdir = request.config.rootdir
 
     test_datapath = os.path.join(rootdir, gammakappa_sacc_file)
 
-    info["likelihood"] = {
+    evaluate_one_info["likelihood"] = {
         "ShearKappaLikelihood": {"external": ShearKappaLikelihood,
                                  "datapath": test_datapath,
                                  'use_spectra': 'all'}
     }
 
-    info_onebin = copy.deepcopy(info)
+    info_onebin = copy.deepcopy(evaluate_one_info)
     info_onebin['likelihood']['ShearKappaLikelihood']['use_spectra'] = \
-                                                            [('gs_des_bin1', 'ck_act')]
+        [('gs_des_bin1', 'ck_act')]
 
-    info_twobin = copy.deepcopy(info)
+    info_twobin = copy.deepcopy(evaluate_one_info)
     info_twobin['likelihood']['ShearKappaLikelihood']['use_spectra'] = \
-                                                                [
-                                                                ('gs_des_bin1', 'ck_act'),
-                                                                ('gs_des_bin3', 'ck_act'),
-                                                                ]
+        [
+            ('gs_des_bin1', 'ck_act'),
+            ('gs_des_bin3', 'ck_act'),
+        ]
 
-    model = get_model(info)
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
     lhood = model.likelihood['ShearKappaLikelihood']
@@ -171,16 +167,17 @@ def test_shearkappa_tracerselect(request):
                        lhood_twobin.data.y)
 
 
-def test_shearkappa_hartlap(request):
-
+def test_shearkappa_hartlap(request, evaluate_one_info):
     from soliket.cross_correlation import ShearKappaLikelihood
+
+    evaluate_one_info["theory"] = cross_correlation_theory
 
     rootdir = request.config.rootdir
 
     cs82_file = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
     test_datapath = os.path.join(rootdir, cs82_file)
 
-    info["likelihood"] = {
+    evaluate_one_info["likelihood"] = {
         "ShearKappaLikelihood": {"external": ShearKappaLikelihood,
                                  "datapath": test_datapath}
     }
@@ -188,123 +185,147 @@ def test_shearkappa_hartlap(request):
     # Cosmological parameters for the test data, digitized from
     # Fig. 3 and Eq. 8 of Hall & Taylor (2014).
     # See https://github.com/simonsobs/SOLikeT/pull/58 for validation plots
-    info['params'] = {"omch2": 0.118,  # Planck + lensing + WP + highL
-                      "ombh2": 0.0222,
-                      "H0": 68.0,
-                      "ns": 0.962,
-                      # "As": 2.1e-9,
-                      "As": 2.5e-9, # offset the theory to upweight inv_cov in loglike
-                      "tau": 0.094,
-                      "mnu": 0.0,
-                      "nnu": 3.046}
+    evaluate_one_info['params'] = \
+        {"omch2": 0.118,  # Planck + lensing + WP + highL
+         "ombh2": 0.0222,
+         "H0": 68.0,
+         "ns": 0.962,
+         # "As": 2.1e-9,
+         "As": 2.5e-9,  # offset the theory to upweight inv_cov in loglike
+         "tau": 0.094,
+         "mnu": 0.0,
+         "nnu": 3.046}
 
-    model = get_model(info)
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    info["likelihood"]["ShearKappaLikelihood"]["ncovsims"] = 5
+    evaluate_one_info["likelihood"]["ShearKappaLikelihood"]["ncovsims"] = 5
 
-    model = get_model(info)
+    model = get_model(evaluate_one_info)
     loglikes_hartlap, derived = model.loglikes()
 
     assert np.isclose(np.abs(loglikes - loglikes_hartlap), 0.0010403,
                       rtol=1.e-5, atol=1.e-5)
 
 
-def test_shearkappa_deltaz(request):
-
+def test_shearkappa_deltaz(request, evaluate_one_info, test_cosmology_params):
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood":
-                          {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir,
-                                                    gammakappa_sacc_file),
-                           "z_nuisance_mode": "deltaz"}}
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["theory"] = cross_correlation_theory
 
-    model = get_model(info) # noqa F841
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "z_nuisance_mode": "deltaz"}}
+
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -7910.043704938653, atol=0.2, rtol=0.0)
 
 
-def test_shearkappa_m(request):
-
+def test_shearkappa_m(request, evaluate_one_info, test_cosmology_params):
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood":
-                          {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir,
-                                                    gammakappa_sacc_file),
-                           "m_nuisance_mode": True}}
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["theory"] = cross_correlation_theory
 
-    model = get_model(info) # noqa F841
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "m_nuisance_mode": True}}
+
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -3737.5531377692337, atol=0.2, rtol=0.0)
 
 
-def test_shearkappa_ia_nla_noevo(request):
-
+def test_shearkappa_ia_nla_noevo(request, evaluate_one_info, test_cosmology_params):
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood":
-                          {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir,
-                                                    gammakappa_sacc_file),
-                           "ia_mode": 'nla-noevo'}}
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["theory"] = cross_correlation_theory
 
-    model = get_model(info) # noqa F841
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "ia_mode": 'nla-noevo'}}
+
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -111712.15660832982, atol=0.2, rtol=0.0)
 
 
-def test_shearkappa_ia_nla(request):
-
+def test_shearkappa_ia_nla(request, evaluate_one_info, test_cosmology_params):
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood":
-                          {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir,
-                                                    gammakappa_sacc_file),
-                           "ia_mode": 'nla'}}
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["theory"] = cross_correlation_theory
 
-    info["params"]["eta_IA"] = 1.7
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "ia_mode": 'nla'}}
 
-    model = get_model(info) # noqa F841
+    evaluate_one_info["params"]["eta_IA"] = 1.7
+
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -114145.55021412153, atol=0.2, rtol=0.0)
 
 
-def test_shearkappa_ia_perbin(request):
-
+def test_shearkappa_ia_perbin(request, evaluate_one_info, test_cosmology_params):
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood":
-                          {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir,
-                                                    gammakappa_sacc_file),
-                           "ia_mode": 'nla-perbin'}}
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["theory"] = cross_correlation_theory
 
-    model = get_model(info) # noqa F841
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file),
+              "ia_mode": 'nla-perbin'}}
+
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -100164.38521295182, atol=0.2, rtol=0.0)
 
 
-def test_shearkappa_hmcode(request):
-
+def test_shearkappa_hmcode(request, evaluate_one_info, test_cosmology_params):
     from soliket.cross_correlation import ShearKappaLikelihood
 
-    info["likelihood"] = {"ShearKappaLikelihood":
-                          {"external": ShearKappaLikelihood,
-                           "datapath": os.path.join(request.config.rootdir,
-                                                    gammakappa_sacc_file)}}
-    info["theory"] = {"camb": {'extra_args': {'halofit_version': 'mead2020_feedback',
-                                              'HMCode_logT_AGN': 7.8}},
-                      "ccl": {"external": CCL, "nonlinear": False}}
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info["theory"] = cross_correlation_theory
 
-    model = get_model(info) # noqa F841
+    evaluate_one_info["likelihood"] = \
+        {"ShearKappaLikelihood":
+             {"external": ShearKappaLikelihood,
+              "datapath": os.path.join(request.config.rootdir,
+                                       gammakappa_sacc_file)}}
+    evaluate_one_info["theory"] = {
+        "camb": {
+            'extra_args': {
+                'halofit_version': 'mead2020_feedback', 'HMCode_logT_AGN': 7.8
+            }
+        },
+        "ccl": {"external": CCL, "nonlinear": False}
+    }
+
+    model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isfinite(loglikes)
+    assert np.isclose(loglikes[0], -20679.897354035915, atol=0.2, rtol=0.0)

@@ -1,8 +1,9 @@
-import numpy as np
-import pandas as pd
 from functools import partial
 
-from soliket.poisson_data import PoissonData
+import numpy as np
+import pandas as pd
+
+from soliket.poisson import PoissonData
 
 x_min = 0
 x_max = 10

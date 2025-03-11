@@ -1,8 +1,7 @@
-import pytest
 import numpy as np
-
-from cobaya.yaml import yaml_load
+import pytest
 from cobaya.model import get_model
+from cobaya.yaml import yaml_load
 
 try:
     import classy  # noqa F401

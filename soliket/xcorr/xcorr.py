@@ -10,11 +10,11 @@ Based on the original xcorr code [1]_ used in Krolewski et al (2021) [2]_.
 
 import numpy as np
 import sacc
-
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
-from ..gaussian import GaussianData, GaussianLikelihood
-from .. import utils
+from soliket import utils
+from soliket.gaussian import GaussianData, GaussianLikelihood
+
 from .limber import do_limber
 
 

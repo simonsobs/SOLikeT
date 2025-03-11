@@ -2,9 +2,9 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 # NOTE: The configuration for the package, including the name, version, and
-# other information are set in the setup.cfg file.
+# other information are set in the pyproject.toml file.
 
-import os
+import sys, os
 
 from setuptools import setup
 
@@ -16,14 +16,37 @@ TEST_HELP = """
 Note: running tests is no longer done using 'python setup.py test'. Instead
 you will need to run:
     tox -e test
-If you don't already have tox-conda installed, you can install it with:
-    pip install tox-conda
-If you only want to run part of the test suite, you can also pass pytest
-args through directly following a '--':
-    tox -e test -- -k name_of_my_test
+If you don't already have tox installed, you can install it with:
+    pip install tox
+If you only want to run part of the test suite, you can also use pytest
+directly with::
+    pip install -e .[test]
+    pytest
 For more information, see:
-  https://github.com/simonsobs/SOLikeT#running-tests
+  https://soliket.readthedocs.io/en/latest/developers.html#checking-code-in-development
 """
+
+if 'test' in sys.argv:
+    print(TEST_HELP)
+    sys.exit(1)
+
+DOCS_HELP = """
+Note: building the documentation is no longer done using
+'python setup.py build_docs'. Instead you will need to run:
+    tox -e build_docs
+If you don't already have tox installed, you can install it with:
+    pip install tox
+You can also build the documentation with Sphinx directly using::
+    pip install -e .[docs]
+    cd docs
+    make html
+For more information, see:
+  https://soliket.readthedocs.io/en/latest/developers.html#documentation
+"""
+
+if 'build_docs' in sys.argv or 'build_sphinx' in sys.argv:
+    print(DOCS_HELP)
+    sys.exit(1)
 
 VERSION_TEMPLATE = """
 # Note that we need to fall back to the hard-coded version if either
@@ -36,5 +59,5 @@ except Exception:
     version = '{version}'
 """.lstrip()
 
-setup(use_scm_version={'write_to': os.path.join('.', 'version.py'),
+setup(use_scm_version={'write_to': os.path.join('soliket', 'version.py'),
                        'write_to_template': VERSION_TEMPLATE})

@@ -22,27 +22,37 @@ jobs:
 
           - name: oldest supported versions
             os: ubuntu-latest
-            python-version: '3.8'
-            toxenv: py38-test-oldest
+            python-version: '3.9'
+            toxenv: py39-test-oldest
 
-          - name: macOS 11
-            os: macos-11
+          - name: macOS latest
+            os: macos-latest
             python-version: '3.11'
             toxenv: py311-test-latest
+
+          - name: Windows latest
+            os: windows-latest
+            python-version: '3.11'
+            toxenv: py311-test-latest
+            env:
+              PYTHONIOENCODING: utf-8
+              PYTHONUTF8: 1
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Install Conda w/ Python ${{ matrix.python-version }}
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: false
+          activate-environment: soliket-tests
+          environment-file: soliket-tests.yml
           python-version: ${{ matrix.python-version }}
           channels: conda-forge
       - name: Install Dependencies
         shell: bash -el {0}
         run: |
-          pip install tox-conda
+          pip install tox
       - name: Run Tests
         shell: bash -el {0}
         run: |

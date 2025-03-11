@@ -33,10 +33,10 @@ function (have a look at the simple pyhalomodel model for ideas).
 """
 
 import numpy as np
+import pyhalomodel as halo
+from cobaya.theory import Theory
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
-from cobaya.theory import Theory
-import pyhalomodel as halo
 
 
 class HaloModel(Theory):

@@ -1,20 +1,21 @@
 numpy
-scipy
+scipy>=1.6
 pandas
+pytest-cov
 scikit-learn
 pyyaml
 py-bobyqa
 packaging
 tqdm
-tensorflow<2.14
 portalocker
 dill
 fuzzywuzzy
 astropy
 getdist
 cobaya
-pyccl
+pyccl == 3.2.0; platform_system!='Windows'
 sacc
 fgspectra>=1.1.0
 syslibrary
 pyhalomodel
+mflike

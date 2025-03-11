@@ -2,12 +2,12 @@
 Check that CosmoPower gives the correct Planck CMB power spectrum.
 """
 import os
-import pytest
+
 import numpy as np
-
+import pytest
 from cobaya.model import get_model
-from soliket.cosmopower import HAS_COSMOPOWER
 
+from soliket.cosmopower.cosmopower import HAS_COSMOPOWER
 
 fiducial_params = {
     "ombh2": 0.0224,
@@ -67,17 +67,21 @@ info_dict = {
 
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
+def test_cosmopower_import(request):
+    from soliket.cosmopower import CosmoPower  # noqa F401
+
+
+@pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_theory(request):
     info_dict['theory']['soliket.CosmoPower']['network_path'] = \
-        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower/CP_paper/CMB')
-
+        os.path.join(request.config.rootdir, 'soliket/cosmopower/data/CP_paper')
     model_fiducial = get_model(info_dict)   # noqa F841
 
 
 @pytest.mark.skipif(not HAS_COSMOPOWER, reason='test requires cosmopower')
 def test_cosmopower_loglike(request):
     info_dict['theory']['soliket.CosmoPower']['network_path'] = \
-        os.path.join(request.config.rootdir, 'soliket/data/CosmoPower/CP_paper/CMB')
+        os.path.join(request.config.rootdir, 'soliket/cosmopower/data/CP_paper')
     model_cp = get_model(info_dict)
 
     logL_cp = float(model_cp.loglikes({})[0])
@@ -98,7 +102,7 @@ def test_cosmopower_against_camb(request):
             "stop_at_error": True,
             "extra_args": {'lmax': camb_cls['ell'].max()},
             'network_path': os.path.join(request.config.rootdir,
-                                         'soliket/data/CosmoPower/CP_paper/CMB'),
+                                         'soliket/cosmopower/data/CP_paper'),
             "network_settings": {
                 "tt": {
                     "type": "NN",

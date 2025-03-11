@@ -2,8 +2,11 @@
 Check that CCL works correctly.
 """
 import numpy as np
-from cobaya.model import get_model
+import pytest
 from cobaya.likelihood import Likelihood
+from cobaya.model import get_model
+
+pytestmark = pytest.mark.require_ccl
 
 
 class CheckLike(Likelihood):
@@ -11,25 +14,16 @@ class CheckLike(Likelihood):
     This is a mock likelihood that simply forces soliket.CCL to calculate
     a CCL object.
     """
+
     def logp(self, **params_values):
-        ccl = self.provider.get_CCL() # noqa F841
+        ccl = self.provider.get_CCL()  # noqa F841
         return -1.0
 
     def get_requirements(self):
         return {"CCL": None}
 
-fiducial_params = {
-    "ombh2": 0.0224,
-    "omch2": 0.122,
-    "cosmomc_theta": 104e-4,
-    "tau": 0.065,
-    "ns": 0.9645,
-    "logA": 3.07,
-    "As": {"value": "lambda logA: 1e-10*np.exp(logA)"}
-}
 
-info_dict = {
-    "params": fiducial_params,
+ccl_like_and_theory = {
     "likelihood": {
         "checkLike": {"external": CheckLike}
     },
@@ -44,27 +38,33 @@ info_dict = {
 }
 
 
-def test_ccl_import(request):
+def test_ccl_import():
     """
     Test whether we can import pyCCL.
     """
-    import pyccl # noqa F401
+    import pyccl  # noqa F401
 
 
-def test_ccl_cobaya(request):
+def test_ccl_cobaya(evaluate_one_info, test_cosmology_params):
     """
     Test whether we can call CCL from cobaya.
     """
-    model = get_model(info_dict)
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info.update(ccl_like_and_theory)
+
+    model = get_model(evaluate_one_info)
     model.loglikes()
 
 
-def test_ccl_distances(request):
+def test_ccl_distances(evaluate_one_info, test_cosmology_params):
     """
     Test whether the calculated angular diameter distance & luminosity distances
     in CCL have the correct relation.
     """
-    model = get_model(info_dict)
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info.update(ccl_like_and_theory)
+
+    model = get_model(evaluate_one_info)
     model.loglikes({})
     cosmo = model.provider.get_CCL()["cosmo"]
 
@@ -77,11 +77,14 @@ def test_ccl_distances(request):
     assert np.allclose(da * (1.0 + z) ** 2.0, dl)
 
 
-def test_ccl_pk(request):
+def test_ccl_pk(evaluate_one_info, test_cosmology_params):
     """
     Test whether non-linear Pk > linear Pk in expected regimes.
     """
-    model = get_model(info_dict)
+    evaluate_one_info["params"] = test_cosmology_params
+    evaluate_one_info.update(ccl_like_and_theory)
+
+    model = get_model(evaluate_one_info)
     model.loglikes({})
     cosmo = model.provider.get_CCL()["cosmo"]
 

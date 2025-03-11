@@ -1,1 +1,5 @@
-from .xcorr import XcorrLikelihood # noqa F401
+from .xcorr import XcorrLikelihood
+
+__all__ = [
+    "XcorrLikelihood",
+]

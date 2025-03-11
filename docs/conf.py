@@ -15,6 +15,8 @@ for module in MOCK_MODULES:
 
 import soliket # noqa F401
 
+__all__ = ['soliket']
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 

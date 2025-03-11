@@ -12,6 +12,25 @@ We have provided a conda environment defined in `soliket-tests.yml <https://gith
 
    $ conda env create --file soliket-tests.yml
 
+You can then install the `latest released version of SOLikeT from PyPI <https://pypi.org/project/soliket/>`_ into this environment:
+
+::
+
+   $ conda activate soliket-tests
+   $ pip install soliket
+
+Installing in editable mode for development
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you wish to actively develop the code you can instead install the in-development version of SOLikeT from the github repository in editable mode:
+
+::
+
+   $ git clone https://github.com/simonsobs/soliket
+   $ cd soliket
+   $ pip install -e .
+
+
 Optional: Install CosmoPower
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation).
@@ -22,8 +41,8 @@ Unless using an M1 Mac this should be easily achievable with::
 
 If you wish to install it using your own system tools (including new M1 Mac) some useful information is provided below.
 
-Harder Way: Preparing your own conda environment
-----------------------------------
+Harder Way: Preparing your own environment
+------------------------------------------
 
 **CREATE VIRTUAL CONDA ENV TO RUN COBAYA**
 Based on `cobaya documentation <https://cobaya.readthedocs.io/en/latest/cluster_amazon.html>`_.

@@ -1,0 +1,105 @@
+debug: False
+
+# Choose a sampler.
+# Running the evaluate sampler will compute the likelihood
+# only at a single value of parameters
+sampler:
+  evaluate: null
+
+# Specify the output location and file prefix
+output: output/example_1
+
+# Specify which Likelihoods we would like to use
+# Any options for the Likelihood will use their default values unless specified here
+# Note that MFLike is a Cobaya `installable likelihood`.
+# When running this yaml file, or calling `cobaya-install example_1.yaml` the required
+# installable components will automatically be downloaded and installed. 
+# Note that for the mflike.TTTEEE likelihood we are required to calculate:
+# - CMB theory power spectra (from CAMB theory below)
+# - Multi-frequency passband-integrated foregrounds (from mflike.BandpowerForeground theory below)
+likelihood:
+  mflike.TTTEEE:
+    package_install: pip
+    input_file: LAT_simu_sacc_00044.fits
+    cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
+
+# Specify the Theory codes which will compute observables to be compared with the data
+# in the Likelihood.
+# Here we specify the CAMB Einstein-Boltzmann code, with a number of choices made on
+# precision and neutrino model.
+theory:
+  camb:
+    extra_args:
+      lens_potential_accuracy: 1
+      WantTransfer: True
+      Transfer.high_precision: True
+      Transfer.kmax: 1.2
+      num_nu_massless: 1.044
+      num_nu_massive: 2
+      nu_mass_eigenstates: 2
+      # We use the minimal normal ordering case: massless lightest state, m2 and m3
+      # computed according to oscilation measurements.
+      nu_mass_fractions: [0.14763410387308012,0.8523658961269198]
+      nu_mass_numbers: [1,1]
+      share_delta_neff: True
+    stop_at_error: True
+
+  mflike.BandpowerForeground:
+    stop_at_error: True
+
+# Specify the parameter values at which to compute the likelihood
+params:
+  H0:
+    latex: H_0
+    value: 67.7
+  logA:
+    # Dropped parameters are sampled but not passed to Likelihood/Theory codes
+    # Here it is As (specified below) which is passed to the Likelihood/Theory code.
+    drop: true
+    latex: \log(10^{10} A_\mathrm{s})
+    value: 3.05
+  As:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+  ombh2:
+    latex: \Omega_\mathrm{b} h^2
+    value: 0.0224
+  omega_de:
+    latex: \Omega_\Lambda
+    # Derived parameters are not sampled but have output values which can be constrained
+    # and plotted. These values can be computed internally by Theory codes (as for omega_de
+    # here which is calculated within camb) or given a lambda function (as fo omegamh2 
+    # below).
+    derived: true
+  omegam:
+    latex: \Omega_\mathrm{m}
+    derived: true
+  omegamh2:
+    derived: 'lambda omegam, H0: omegam*(H0/100)**2'
+    latex: \Omega_\mathrm{m} h^2
+  omch2:
+    latex: \Omega_c h^2
+    value: 0.1202
+  sigma8:
+    latex: \sigma_8
+    derived: true
+  ns:
+    latex: n_s
+    value: 0.9649
+  Alens:
+    latex: A_lens
+    value: 1.0
+  tau:
+    latex: \tau_\mathrm{reio}
+    value: 0.0554
+  mnu1:
+    value: 0.0
+    drop: True
+  mnu2:
+    value: 'lambda: np.sqrt(7.5e-5)'
+    drop: True
+  mnu3:
+    value: 'lambda: np.sqrt(2.5e-3)'
+    drop: True
+  mnu:
+    value: 'lambda mnu1, mnu2 ,mnu3: mnu1 + mnu2 + mnu3'
+    latex: \sum m_\nu
