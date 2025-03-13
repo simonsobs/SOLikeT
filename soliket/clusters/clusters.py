@@ -17,7 +17,6 @@ References
                                                     <https://arxiv.org/abs/0803.2706>`_
 p
 """
-import os
 import numpy as np
 import pandas as pd
 import os
