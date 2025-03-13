@@ -40,7 +40,8 @@ LensingLike: InputDict = {'likelihood':  yaml_load_file('like_LensingLikelihood.
 
 ShearKappaLike: InputDict = {'likelihood':  yaml_load_file('like_shearkappa.yaml'),
                           'params': yaml_load_file('params_cosmo_smooth.yaml') | \
-                                    yaml_load_file('params_shearkappanuisance_smooth.yaml'),
+                                    yaml_load_file(
+                                      'params_shearkappanuisance_smooth.yaml'),
                           'theory': yaml_load_file('theory_camb.yaml') | \
                                     yaml_load_file('theory_ccl.yaml')
                         }
@@ -48,7 +49,8 @@ ShearKappaLike: InputDict = {'likelihood':  yaml_load_file('like_shearkappa.yaml
 joint1 = DataSet(['MFLike', 'LensingLike'], [MFLike, LensingLike])
 joint2 = DataSet(['MFLike', 'ShearKappaLike'], [MFLike, ShearKappaLike])
 joint3 = DataSet(['LensingLike', 'ShearKappaLike'], [LensingLike, ShearKappaLike])
-joint4 = DataSet(['MFLike', 'LensingLike', 'ShearKappaLike'], [MFLike, LensingLike, ShearKappaLike])
+joint4 = DataSet(['MFLike', 'LensingLike', 'ShearKappaLike'], 
+                 [MFLike, LensingLike, ShearKappaLike])
 
 
 groups = {
