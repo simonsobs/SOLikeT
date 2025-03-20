@@ -262,7 +262,7 @@ class u_p_nfw_hmf_bias:
         #B_array = np.array([a["B_%s" % d] for d in delta_virs])
         #d_array = np.array([a["d_%s" % d] for d in delta_virs])
         #e_array = np.array([a["e_%s" % d] for d in delta_virs])
-        #f_array = np.array([a["f_%s" % d] for d in delta_virs])
+        #f_array = np.array([a["f_%s" % d] for d in delta_vi rs])
         #g_array = np.array([a["g_%s" % d] for d in delta_virs])
 
         #B_intfunc = _spline(delta_virs, B_array)
@@ -333,6 +333,7 @@ class u_p_nfw_hmf_bias:
     def dn_dlogm(self, red, zeta):
         return self.mh * self.dn_dm(red, zeta) * np.log(10)
     
+    #redshift threshold above which no redshift dep of the hmf is encoded 
     def max_z_dep(self):
         z_thr = 7.0
         z_dep_arr = []
