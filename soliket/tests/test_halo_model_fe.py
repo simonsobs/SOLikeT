@@ -63,7 +63,4 @@ def test_hm_fe_compute_mm_grid(evaluate_one_info, test_cosmology_params):
     )
 
     assert np.all(np.isfinite(Pk_mm_hm))
-    assert np.isclose(Pk_mm_hm[0, k > 1.0e-4][0], 3118.2290041, rtol=1.0e-3)
-
-
-                      
+    assert np.isclose(Pk_mm_hm[0, k > 1.0e-4][0], 3118.2290041, rtol=1.0e-3)                   
