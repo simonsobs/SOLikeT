@@ -325,7 +325,8 @@ class u_p_nfw_hmf_bias:
 
     def dn_dm(self, red, zeta):
         rad = self.mass_to_radius()
-        return self.fsigma(rad, red, zeta) * self.mean_density() * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2
+        return (self.fsigma(rad, red, zeta) * self.mean_density() 
+                * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2)
 
     def dn_dlnm(self, red, zeta):
         return self.mh * self.dn_dm(red, zeta)
@@ -338,7 +339,7 @@ class u_p_nfw_hmf_bias:
         z_thr = 7.0
         z_dep_arr = []
         for zeta in self.redshift:
-            if zeta<=z_thr:
+            if zeta <= z_thr:
                 z_dep_arr.append(zeta)
         z_dep_arr = np.array(z_dep_arr)
         z_max = np.max(z_dep_arr)
@@ -352,7 +353,7 @@ class u_p_nfw_hmf_bias:
         zeta_max = self.max_z_dep()[1]
         for zeta in range(len(self.redshift)):
             red = self.redshift[zeta]
-            if red<=z_max:
+            if red <= z_max:
                 dndM[zeta] = self.dn_dm(red, zeta)
             else:
                 dndM[zeta] = self.dn_dm(z_max, zeta_max)

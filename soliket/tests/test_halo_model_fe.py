@@ -1,8 +1,10 @@
 import numpy as np
 from cobaya.model import get_model
 
+
 def test_hm_fe_import():
     from soliket.halo_model_fe import HaloModel_fe
+
 
 def test_hm_fe_model(evaluate_one_info, test_cosmology_params):
     from soliket.halo_model_fe import HaloModel_fe
@@ -26,8 +28,6 @@ def test_hm_fe_model(evaluate_one_info, test_cosmology_params):
             }
         }
 
-
-    model = get_model(evaluate_one_info)
 
 def test_hm_fe_compute_mm_grid(evaluate_one_info, test_cosmology_params):
     from soliket.halo_model_fe import HaloModel_fe
@@ -59,11 +59,10 @@ def test_hm_fe_compute_mm_grid(evaluate_one_info, test_cosmology_params):
 
     Pk_mm_hm = lhood.provider.get_Pk_mm_grid()
     k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(
-        var_pair=("delta_tot", "delta_tot"), nonlinear=False
+        var_pair = ("delta_tot", "delta_tot"), nonlinear=False
     )
 
     assert np.all(np.isfinite(Pk_mm_hm))
-    print(Pk_mm_hm[0,k>1.0e-4])
     assert np.isclose(Pk_mm_hm[0, k > 1.0e-4][0], 3118.2290041, rtol=1.0e-3)
 
 
