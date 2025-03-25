@@ -59,7 +59,7 @@ def test_hm_fe_compute_mm_grid(evaluate_one_info, test_cosmology_params):
 
     Pk_mm_hm = lhood.provider.get_Pk_mm_grid()
     k, z, Pk_mm_lin = lhood.provider.get_Pk_grid(
-        var_pair = ("delta_tot", "delta_tot"), nonlinear=False
+        var_pair=("delta_tot", "delta_tot"), nonlinear=False
     )
 
     assert np.all(np.isfinite(Pk_mm_hm))
