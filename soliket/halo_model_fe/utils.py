@@ -239,9 +239,9 @@ class u_p_nfw_hmf_bias:
     def dn_dlogm(self, red, zeta):
         return self.mh * self.dn_dm(red, zeta) * np.log(10)
     
-    #redshift threshold above which no redshift dep of the hmf is encoded 
+    #redshift threshold from Tinker et al. 
     def max_z_dep(self):
-        z_thr = 7.0
+        z_thr = 3.0
         z_dep_arr = []
         for zeta in self.redshift:
             if zeta <= z_thr:
