@@ -57,12 +57,13 @@ class MultiGaussianLikelihood(GaussianLikelihood):
     cross_cov_path: Optional[str] = None
 
     def __init__(self, info=empty_dict, **kwargs):
- 
+
         if 'components' in info:
             self.likelihoods = [get_likelihood(*kv) for kv in zip(info['components'],
                                                                  info['options'])]
 
         default_info = self.get_defaults(input_options=info)
+        default_info.update(info)
         default_info = self.get_modified_defaults(default_info, input_options=info)
 
         super().__init__(info=default_info, **kwargs)
