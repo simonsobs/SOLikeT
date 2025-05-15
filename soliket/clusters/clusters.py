@@ -39,8 +39,8 @@ from ..constants import MPC2CM, MSUN_CGS, G_CGS
 #from classy_sz import Class # TBD: change this import as optional
 
 C_KM_S = 2.99792e5
-MPIVOT_THETA = 3e14 # [Msun]
-rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) / G_CGS * MPC2CM / MSUN_CGS
+MPIVOT_THETA = 3e14 #[Msun]
+rho_crit0H100 = (3. / (8. * np.pi) * (100. * 1.e5) ** 2.) / G_CGS * MPC2CM / MSUN_CGS #[Msun h^2 Mpc^-3]
 
 
 class BinnedClusterLikelihood(CashCLikelihood):
@@ -55,7 +55,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
     debug: bool = False
 
     params = {"tenToA0":None, "B0":None, "C0":None, "scatter_sz":None, "bias_sz":None,
-              "opt_bias_A":None, "opt_bias_B":None}
+              "opt_bias_A":None, "opt_bias_B":None, "opt_bias":None}
 
     def initialize(self):
 
@@ -156,13 +156,13 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
         zarr = self.zarr
         zz = self.zz
-        marr = np.exp(self.lnmarr)
+        marr = np.exp(self.lnmarr) ##### unit check: Msun/h
         Nq = self.Nq
 
         h = self.provider.get_param("H0") / 100.0
 
-        dndlnm = get_dndlnm(self, zz, pk_intp)
-        dVdzdO = get_dVdz(self, zz, dVdz_interp=False)
+        dndlnm = get_dndlnm(self, zz, pk_intp) ##### unit check: Mpc^-3
+        dVdzdO = get_dVdz(self, zz, dVdz_interp=False) ##### unit check: Mpc^3
         surveydeg2 = self.skyfracs.sum()
         intgr = dndlnm * dVdzdO * surveydeg2
         intgr = intgr.T
@@ -173,7 +173,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
             marr_ymmd = marr
 
         if self.theorypred['md_ym'] != '500c':
-            marr_500c = get_m500c(self, marr, zz)
+            marr_500c = get_m500c(self, marr, zz) ##### CHECK
         else:
             marr_500c = marr_ymmd
 
@@ -218,6 +218,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
         # import IPython
         # IPython.embed()
         # sys.exit()
+
 
         return delN2D
 
@@ -281,11 +282,18 @@ class BinnedClusterLikelihood(CashCLikelihood):
             qmax = qbins[kk+1]
 
             opt_bias_corr_factor = np.ones(y0.shape)
-            if self.selfunc['bias_handler'] == 'theory':
+            if self.selfunc['bias_handler'] == 'theory': ##### CHECK 
+                print("!!!!!! choosing theory")
                 for i in range(Npatches):
                     trueSNR = y0[i] / noise[i]
                     opt_bias_corr_factor[i] = _opt_bias_func(trueSNR, params['opt_bias_A'], params['opt_bias_B'])
 
+            ##### opt bias function with one param test       
+            elif self.selfunc['bias_handler'] == 'theory_test':
+                print("!!!!!! choosing theory test")
+                for i in range(Npatches):
+                    trueSNR = y0[i] / noise[i]
+                    opt_bias_corr_factor[i] = _opt_bias_func_DR6(trueSNR, params['opt_bias'])
 
             if scatter == 0.:
 
@@ -306,6 +314,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
                 mu = np.float32(np.log(y0*opt_bias_corr_factor))
                 fac = np.float32(1./np.sqrt(2.*np.pi*scatter**2))
 
+
                 comp = 0.
                 for i in range(Npatches):
                     if compl_mode == 'erf_prod':
@@ -319,9 +328,11 @@ class BinnedClusterLikelihood(CashCLikelihood):
 
                     # truncation for debiasing:
                     qtab_filter = yy0 / noise[i]
+                    #print(qtab_filter.min(), qtab_filter.max())
                     qtab_filter[qtab_filter < self.selfunc['debias_cutoff']] = 0.
                     qtab_filter[qtab_filter >= self.selfunc['debias_cutoff']] = 1.
                     # end truncation for debiasing.
+
 
                     comp += integrate.simpson(np.float32(args)*qtab_filter[:, None, None], x=lnyy, axis=0)
 
@@ -366,6 +377,7 @@ class BinnedClusterLikelihood(CashCLikelihood):
             pk_intp = self.provider.get_Pk_interpolator()
             theory = self._get_theory(pk_intp, **params_values)
             return self.data.loglike(theory)
+
 
 
 class UnbinnedClusterLikelihood(PoissonLikelihood):
@@ -804,6 +816,7 @@ def initialize_common(self):
     cat_tsz_signal_err = cat_tab['fixed_err_y_c'].data.astype(float)
     cat_tile_name = np.array(cat_tab['tileName'].data, dtype = str)
 
+
     # #----------------------- zcut 
     keep = zcat < self.binning['z']['zmax']
     qcat = qcat[keep]
@@ -814,19 +827,8 @@ def initialize_common(self):
     # #----------------------- zcut
 
 
-    # #----------------------- split 
-    # if self.selfunc['split'] == 'east': 
-    #     RAcat = cat_tab['RADeg'].data.astype(float)
-    #     keep = RAcat/15. > 12.
-    #     zcat = zcat[keep]
-    #     qcat = qcat[keep]
-    #     cat_tsz_signal = cat_tsz_signal[keep]
-    #     cat_tsz_signal_err = cat_tsz_signal_err[keep]
-    #     cat_tile_name = cat_tile_name[keep]
-    # #----------------------- split 
-
     # Optimization bias handler
-    if self.selfunc['bias_handler'] not in ['theory', 'catalog']:
+    if self.selfunc['bias_handler'] not in ['theory', 'catalog', 'theory_test']:
         raise NotImplementedError('bias_handler should be either "theory" or "catalog"')
     if self.selfunc['bias_handler'] == 'catalog':
         debiasDOF = self.selfunc['debiasDOF']
@@ -860,7 +862,7 @@ def initialize_common(self):
     self.lnmmin = np.log(self.binning['M']['Mmin'])
     self.lnmmax = np.log(self.binning['M']['Mmax'])
     self.dlnm = self.binning['M']['dlogM']
-    self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm)
+    self.lnmarr = np.arange(self.lnmmin+(self.dlnm/2.), self.lnmmax, self.dlnm) ###### the actual min mass is not Mmin
 
     # Ytrue bins if scatter != 0:
     lnymin = -14.  # ln(1e-6) = -13.8
@@ -871,6 +873,9 @@ def initialize_common(self):
 
     # this is to be consist with szcounts.f90
     self.k = np.logspace(-4, np.log10(4), 200, endpoint=False)
+
+
+
 
     if self.footprint is None:
         self.datafile_rms = self.selfn_dir + os.path.sep + "RMSTab.fits"
@@ -883,6 +888,12 @@ def initialize_common(self):
 
     with fits.open(self.datafile_rms) as in_file:
         file_rms = in_file[1].data
+
+
+
+
+
+
 
     if self.selfunc['resolution'] == 'downsample':
 
@@ -898,13 +909,6 @@ def initialize_common(self):
 
         else:
             self.log.info("Reading in full Q function.")
-
-            # Old  - we want to ultimately remove
-            # tile_info = np.genfromtxt(self.datafile_tile, dtype=str)
-            # tile_area0 = tile_info[:, 1]
-            # zero_index = np.where(tile_area0 == '0.000000')[0]
-            # tile_area = np.delete(tile_info, zero_index, 0)
-            # tile_name = tile_area[:, 0]
 
             tile_name = np.unique(file_rms['tileName'])
             QFit = nm.signals.QFit(QSource=self.selfunc['whichQ'], selFnDir=self.selfn_dir,
@@ -1007,22 +1011,16 @@ def initialize_common(self):
     elif self.selfunc['resolution'] == 'full':
 
         self.log.info('Reading in full Q function.')
-        tile_info = np.genfromtxt(os.path.join(self.data_directory, self.data['tile_file']), dtype=str)
 
-        # removing tiles with zero areas
-        tile_area0 = tile_info[:, 1]
-        zero_index = np.where(tile_area0 == '0.000000')[0]
-        tile_area = np.delete(tile_info, zero_index, 0)
-
-        tile_name = tile_area[:, 0]
-        QFit = nm.signals.QFit(QFitFileName=os.path.join(self.data_directory, self.datafile_Q),
-                                   tileNames=tile_name, QSource=self.selfunc['whichQ'], selFnDir=self.data_directory+'/selFn')
+        tile_name = np.unique(file_rms['tileName'])
+        QFit = nm.signals.QFit(QSource=self.selfunc['whichQ'], selFnDir=self.selfn_dir, tileNames = tile_name)
         Nt = len(tile_name)
         self.log.info("Number of tiles = {}.".format(Nt))
+        self.tname = np.array(file_rms['tileName'], dtype = str) # Avoids potential chararray weirdness
 
-        hdulist = fits.open(os.path.join(self.data_directory, self.datafile_Q))
-        data = hdulist[1].data
-        tt500 = data.field("theta500Arcmin")
+        with fits.open(self.datafile_Q) as hdulist:
+            data = hdulist[1].data
+            tt500 = data.field("theta500Arcmin")
 
         # reading in all Q functions
         allQ = np.zeros((len(tt500), Nt))
@@ -1061,18 +1059,18 @@ def initialize_common(self):
 
         # choosing tile ----------------------------------------------------
 
-        if self.selfunc['tiletest'] == True:
+        # if self.selfunc['tiletest'] == True:
 
-            tile_index = 0
-            # tile_index = slice(120, 123, None)
-            print('Name of tile : ', tile_name[tile_index])
+        #     tile_index = 0
+        #     # tile_index = slice(120, 123, None)
+        #     print('Name of tile : ', tile_name[tile_index])
 
-            self.Q = self.Q[:, tile_index]
-            self.Q = self.Q[:, None]
-            self.noise = np.array([self.noise[tile_index]])
-            self.skyfracs = np.array([self.skyfracs[tile_index]])
-            # self.noise = self.noise[tile_index]
-            # self.skyfracs = self.skyfracs[tile_index]
+        #     self.Q = self.Q[:, tile_index]
+        #     self.Q = self.Q[:, None]
+        #     self.noise = np.array([self.noise[tile_index]])
+        #     self.skyfracs = np.array([self.skyfracs[tile_index]])
+        #     # self.noise = self.noise[tile_index]
+        #     # self.skyfracs = self.skyfracs[tile_index]
 
         #-------------------------------------------------------------------
 
@@ -1140,7 +1138,7 @@ def get_om(both):
     return om
 
 def get_dVdz(both, zarr, dVdz_interp):
-    """dV/dzdOmega"""
+    """dV/dzdOmega""" ##### unit check: Mpc^3
 
     if dVdz_interp:
         Da_intp = interp1d(both.zz, both.provider.get_angular_diameter_distance(both.zz))
@@ -1152,12 +1150,12 @@ def get_dVdz(both, zarr, dVdz_interp):
         H_z = both.provider.get_Hubble(zarr)
 
     dV_dz = (
-        DA_z**2
+        DA_z ** 2
         * (1.0 + zarr) ** 2
         / (H_z / C_KM_S)
     )
     h = both.provider.get_param("H0") / 100.0
-    return dV_dz*h**3
+    return dV_dz * h ** 3.
 
 def get_dndlnm(self, z, pk_intp):
 
@@ -1165,7 +1163,7 @@ def get_dndlnm(self, z, pk_intp):
 
     if self.theorypred['massfunc_mode'] == 'internal':
         h = self.provider.get_param("H0")/100.0
-        Ez = get_Ez(self,z)
+        Ez = get_Ez(self, z, Ez_interp=False)
 
         om = get_om(self)
         rhocrit0 = rho_crit0H100 # [h2 msun Mpc-3]
@@ -1466,12 +1464,12 @@ def get_splQ(self, theta, tile_index=None):
 
     return np.asarray(np.abs(newQ))
 
-def get_theta(self, mass_500c, z, Ez=None, Ez_interp=False):
+def get_theta(self, mass_500c, z, Ez=None, Ez_interp=False): # based on Planck 
 
-    thetastar = 6.997
+    thetastar = 6.997 # arcmin 
     alpha_theta = 1. / 3.
     H0 = self.provider.get_param("H0")
-    h = H0/100.0
+    h = H0 / 100.0
 
     if Ez is None:
         Ez = get_Ez(self, z, Ez_interp)
@@ -1483,6 +1481,7 @@ def get_theta(self, mass_500c, z, Ez=None, Ez_interp=False):
         DAz = DAz[:, None]
     except:
         DAz = DAz
+    # self.provider.get_angular_diameter_distance(self.zz) in Mpc     
     ttstar = thetastar * (H0 / 70.) ** (-2. / 3.)
 
     return ttstar * (mass_500c / MPIVOT_THETA / h) ** alpha_theta * Ez ** (-2. / 3.) * (100. * DAz / 500 / H0) ** (-1.)
@@ -1519,6 +1518,8 @@ def get_y0(self, mass, z, mass_500c, use_Q=True, Ez_interp=False, tile_index=Non
     if use_Q is True:
         theta = get_theta(self, mb_500c, z, Ez)
         splQ = get_splQ(self, theta, tile_index)
+
+
     else:
         splQ = 1.
 
@@ -1532,5 +1533,13 @@ def _opt_bias_func(snr, A, B):
 
     corr = 1. + A/snr + B/(snr**2)
     corr[snr < 2.0] = 1.0
+
+    return corr
+
+def _opt_bias_func_DR6(snr, A):
+    """Return optimization bias correction factor - multiply true y0 by this to get what the cluster finder recovers """
+
+    corr = 1. + 1/np.power(snr, A)
+    corr[snr < 3.0] = 1.0
 
     return corr

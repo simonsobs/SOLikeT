@@ -1,0 +1,121 @@
+# Direction:
+# download sim-kit_NemoCCL_A10tSZ_DR5White_ACT-DR5_tenToA0Tuned from https://astro.ukzn.ac.za/~mjh/ACT/DR5CosmoSims/distribution/
+# put in soliket/clusters/data/advact/DR5CosmoSims directory.
+
+
+# run from SOLikeT/soliket/clusters
+# command:
+# $ cobaya-run input_files/test_binned_lkl_ccl.yaml -f
+output: chains/test/test_binned_dr6
+
+likelihood:
+  soliket.BinnedClusterLikelihood:
+    stop_at_error: True
+    verbose: True
+
+    # Data
+    data:
+      selfn_path: 'data/advact/DR6Sims/sim-kit_NemoCLASS-SZ_A10tSZ_DR6Atmos_fineTruthBins_tenToA0Tuned_scatter_noiseRescaled_ACT-DR6_realisation2/NemoCLASS-SZ_A10tSZ_DR6Atmos_fineTruthBins_tenToA0Tuned_scatter_noiseRescaled_ACT-DR6_realisation2/selFn'
+      cat_file: 'data/advact/DR6Sims/sim-kit_NemoCLASS-SZ_A10tSZ_DR6Atmos_fineTruthBins_tenToA0Tuned_scatter_noiseRescaled_ACT-DR6_realisation2/NemoCLASS-SZ_A10tSZ_DR6Atmos_fineTruthBins_tenToA0Tuned_scatter_noiseRescaled_ACT-DR6_realisation2/NemoCLASS-SZ_A10tSZ_DR6Atmos_fineTruthBins_tenToA0Tuned_scatter_noiseRescaled_ACT-DR6_realisation2_mass.fits'
+      footprint: 'cosmo'
+
+    # Theory
+    theorypred:
+      choose_theory: 'CCL'
+      massfunc_mode: 'ccl'
+      md_hmf: '200c'
+      md_ym: '200c'
+      compl_mode: 'erf_diff'
+      rel_correction: False # Relativistic corrections for tSZ
+
+    # Y-M relation
+    YM:
+      Mpivot: 4.25e14 # Mpivot in Y-M relation
+
+    # Selection function
+    selfunc:
+      SNRcut : 5. # S/N cutoff in number counts
+      # Model for selection function, possibilities are
+      method: 'SNRbased'
+      # method: SNRbased / injection
+      #   SNRbased: completeness based in SNR estimates
+      #   injection: estimate completeness using source injection method from nemo (i.e. no Q)
+      whichQ: 'fit'
+      # whichQ: fit / injection
+      #   fit : using Q fit data
+      #   injection : using Q source injection data
+      resolution: 'downsample' 
+      # resolution: full / downsample
+      #   downsample: average Q and rms map into n dwnsmpl_bins
+      #   full: consider full Q funcs, but rms map is downsampled
+      dwnsmpl_bins: 100 # If resolution=downsample, number of bins to use
+      save_dwsmpld: False # Save downsampled Q and rms to npz file and once it exists read those
+      debiasDOF: 0.
+      debias_cutoff: 2.
+      bias_handler: 'theory_test' # for 1 param or 'theory' for 2 param 
+
+    binning:
+      # redshift bins for number counts
+      z:
+        zmin: 0.
+        zmax: 3.0
+        dz: 0.1
+      # SNR bins for number counts
+      q:
+        log10qmin: 0.6
+        log10qmax: 2.0
+        dlog10q: 0.25 #1.5 for one bin
+      # mass bins for number counts
+      M:
+        Mmin: 5e13
+        Mmax: 1e16
+        dlogM: 0.05
+      # when excluding low redshift bins for lkl, otherwise should be 0
+      exclude_zbin: 0
+
+params:
+  n_s : 0.965
+  Omega_b : 0.049
+  Omega_c : 0.261
+  sigma8 : 0.81
+  tenToA0 : 2.25e-5
+  B0 : 0.08
+  scatter_sz : 0.2
+  bias_sz : 1
+  m_nu : 0.
+  C0: 2.
+
+  opt_bias_A : -0.050878653910331195
+  opt_bias_B : 1.2289192256357637
+  opt_bias : 2.098
+
+  h:
+    prior:
+      min: 0.55
+      max: 0.90
+    latex: h
+
+  Omega_m:
+    derived: 'lambda Omega_b, Omega_c: Omega_b+Omega_c'
+    latex: \Omega_\mathrm{m}
+
+  S8:
+    derived: 'lambda Omega_m, sigma8: sigma8*(Omega_m/0.3)**0.2'
+    latex: \sigma_8 \left(\frac{\Omega_m}{0.3} \right)^{0.2}
+
+  H0:
+    latex: H_0
+
+sampler:
+  evaluate:
+    override:
+      h: 0.68
+
+theory:
+  soliket.clusters.CCL :
+      transfer_function : 'boltzmann_camb'
+      matter_pk : 'halofit'
+      baryons_pk : 'nobaryons'
+      md_hmf : '200c'
+
+stop_at_error: True
