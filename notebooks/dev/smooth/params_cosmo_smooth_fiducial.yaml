@@ -1,0 +1,62 @@
+# cosmomc_theta:
+#   prior:
+#     min: 103.8e-4
+#     max: 104.4e-4
+#   ref: 0.0104108
+#   latex: \theta_mc
+H0:
+  latex: H_0
+  value: 67.7
+logA:
+  drop: true
+  latex: \log(10^{10} A_\mathrm{s})
+  value: 3.05
+As:
+  value: 'lambda logA: 1e-10*np.exp(logA)'
+  derived: true
+ombh2:
+  latex: \Omega_\mathrm{b} h^2
+  value: 0.0224
+  renames:
+  - omegabh2
+omega_de:
+  latex: \Omega_\Lambda
+  derived: true
+  renames:
+  - omegal
+omegam:
+  latex: \Omega_\mathrm{m}
+  derived: true
+omegamh2:
+  derived: 'lambda omegam, H0: omegam*(H0/100)**2'
+  latex: \Omega_\mathrm{m} h^2
+omch2:
+  value: 0.1202
+  latex: \Omega_c h^2
+sigma8:
+  latex: \sigma_8
+  derived: true
+ns:
+  value: 0.9649
+  latex: n_s
+Alens:
+  value: 1.0
+  latex: A_lens
+tau:
+  value: 0.0544
+  latex: \tau
+mnu1:
+  value: 0.0
+  drop: True
+mnu2:
+  value: 'lambda: np.sqrt(7.5e-5)'
+  drop: True
+mnu3:
+  value: 'lambda: np.sqrt(2.5e-3)'
+  drop: True
+mnu:
+  value: 'lambda mnu1, mnu2 ,mnu3: mnu1 + mnu2 + mnu3'
+  latex: \sum m_\nu
+nnu:
+  value: 3.044
+  latex: N_eff

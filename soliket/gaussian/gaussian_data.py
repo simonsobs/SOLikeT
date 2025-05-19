@@ -13,14 +13,17 @@ class GaussianData:
     cov: np.ndarray  # covariance matrix
     inv_cov: np.ndarray  # inverse covariance matrix
     ncovsims: Optional[int]  # number of simulations used to estimate covariance
+    indices: Optional[np.array] #boolean array to trim cross-cov with selected bandpowers
 
     _fast_chi_squared = staticmethod(chi_squared)
 
     def __init__(self, name, x: Sequence, y: Sequence[float], cov: np.ndarray,
-                 ncovsims: Optional[int] = None):
+                 ncovsims: Optional[int] = None, indices: Optional[np.array] = None):
 
         self.name = str(name)
         self.ncovsims = ncovsims
+        self.indices = indices if indices is not None and not all(indices) \
+                               else np.ones(len(x), dtype=bool)
 
         if not (len(x) == len(y) and cov.shape == (len(x), len(x))):
             raise ValueError(f"Incompatible shapes! x={len(x)}, y={len(y)}, \
@@ -29,15 +32,20 @@ class GaussianData:
         self.x = x
         self.y = np.ascontiguousarray(y)
         self.cov = cov
-        self.eigenevalues = np.linalg.eigvalsh(cov)
-        if self.eigenevalues.min() <= 0:
-            raise ValueError("Covariance is not positive definite!")
+        #self.eigenevalues = np.linalg.eigvalsh(cov)
+        #if self.eigenevalues.min() <= 0:
+        #    print(self.eigenevalues)
+        #    raise ValueError("Covariance is not positive definite!")
 
         self.inv_cov = np.linalg.inv(self.cov)
         if ncovsims is not None:
             hartlap_factor = (self.ncovsims - len(x) - 2) / (self.ncovsims - 1)
             self.inv_cov *= hartlap_factor
-        log_det = np.log(self.eigenevalues).sum()
+        #log_det = np.log(self.eigenevalues).sum()
+        sign_log_det, log_det = np.linalg.slogdet(self.cov)
+        if (sign_log_det != 1):
+            raise ValueError(f"Negative or zero determinant: \
+                               sign(det)={sign_log_det}")
         self.norm_const = -(np.log(2 * np.pi) * len(x) + log_det) / 2
 
     def __len__(self):
@@ -65,31 +73,37 @@ class MultiGaussianData(GaussianData):
         if cross_covs is None:
             cross_covs = {}
 
+        self.cross_covs = {}
+
+
         # Ensure all cross-covs are proper shape, and fill with zeros if not present
         for d1 in data_list:
             for d2 in data_list:
                 key = (d1.name, d2.name)
 
                 if d1 == d2:
-                    cross_covs[key] = d1.cov
+                    #cross_covs[key] = d1.cov
+                    self.cross_covs[key] = d1.cov
+                    continue
 
                 rev_key = (d2.name, d1.name)
-                if key in cross_covs:
-                    cov = cross_covs[key]
-                    if not cov.shape == (len(d1), len(d2)):
+
+                if (key not in cross_covs and rev_key not in cross_covs):
+                    self.cross_covs[key] = np.zeros((len(d1), len(d2)))
+                elif key in cross_covs:
+                    self.cross_covs[key] = cross_covs[key][d1.indices, :][:, d2.indices]
+                    if not self.cross_covs[key].shape == (len(d1), len(d2)):
                         raise ValueError(
                             f"Cross-covariance (for {d1.name} x {d2.name}) \
-                              has wrong shape: {cov.shape}!"
+                              has wrong shape: {self.cross_covs[key].shape} \
+                              instead of {len(d1)} x {len(d2)}!"
                         )
-                elif rev_key in cross_covs:
-                    cross_covs[key] = cross_covs[rev_key].T
-                else:
-                    cross_covs[key] = np.zeros((len(d1), len(d2)))
+                    self.cross_covs[rev_key] = self.cross_covs[key].T
+                
 
         self.data_list = data_list
         self.lengths = [len(d) for d in data_list]
         self.names = [d.name for d in data_list]
-        self.cross_covs = cross_covs
 
         self._data = None
 

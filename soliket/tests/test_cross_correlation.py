@@ -6,6 +6,7 @@ from soliket.ccl import CCL
 
 pytestmark = pytest.mark.require_ccl
 
+
 gammakappa_sacc_file = 'soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits'
 gkappa_sacc_file = 'soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits'
 

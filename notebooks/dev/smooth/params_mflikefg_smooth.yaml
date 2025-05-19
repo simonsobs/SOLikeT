@@ -1,0 +1,95 @@
+a_tSZ:
+  prior:
+    min: 1.5
+    max: 5
+  proposal: 0.05
+  ref: 3.30
+  latex: a_\mathrm{tSZ}
+a_kSZ:
+  prior:
+    min: 0.0
+    max: 10
+  proposal: 0.1
+  ref: 1.60
+  latex: a_\mathrm{kSZ}
+a_p:
+  prior:
+    min: 2
+    max: 12
+  proposal: 0.075
+  ref: 6.90
+  latex: a_p
+beta_p:
+  prior:
+    min: 1
+    max: 4.0
+  proposal: 0.03
+  ref: 2.20
+  latex: \beta_p
+a_c:
+  prior:
+    min: 0
+    max: 10
+  proposal: 0.12
+  ref: 4.90
+  latex: a_c
+beta_c:
+  prior:
+    min: 1.
+    max: 4.0
+  proposal: 0.03
+  ref: 2.20
+  latex: \beta_c
+a_s:
+  prior:
+    min: 1.
+    max: 7
+  proposal: 0.01
+  ref: 3.10
+  latex: a_s
+a_gtt:
+  prior:
+    min: 0.0
+    max: 10
+  ref: 2.80
+  proposal: 0.14
+  latex: a_\mathrm{dust}^\mathrm{TT}
+a_gte:
+  prior:
+    max: 11
+    min: 0
+  ref: 0.1
+  proposal: 0.007
+  latex: a_\mathrm{dust}^\mathrm{TE}
+a_gee:
+  prior:
+    max: 5.
+    min: 0.0
+  proposal: 0.0006
+  ref: 0.1
+  latex: a_\mathrm{dust}^\mathrm{EE}
+a_psee:
+  prior:
+    min: 0
+    max: +1
+  proposal: 0.05
+  ref: 0
+  latex: a_\mathrm{ps}^\mathrm{EE}
+a_pste:
+  prior:
+    min: -1
+    max: +1
+  proposal: 0.05
+  ref: 0
+  latex: a_\mathrm{ps}^\mathrm{TE}
+xi:
+  prior:
+    min: 0
+    max: 0.2
+  proposal: 0.05
+  ref: 0.1
+  latex: \xi
+T_d:
+  value: 9.60
+  latex: T_d
+

@@ -1,8 +1,8 @@
 from typing import Optional, Sequence
 
 import numpy as np
-from cobaya.input import merge_info
-from cobaya.likelihood import Likelihood
+from cobaya.input import merge_info, update_info, get_default_info
+from cobaya.likelihood import Likelihood, LikelihoodCollection
 from cobaya.tools import recursive_update
 from cobaya.typing import empty_dict
 
@@ -60,12 +60,27 @@ class MultiGaussianLikelihood(GaussianLikelihood):
 
         if 'components' in info:
             self.likelihoods = [get_likelihood(*kv) for kv in zip(info['components'],
-                                                                  info['options'])]
+                                                                 info['options'])]
 
-        default_info = merge_info(*[like.get_defaults() for like in self.likelihoods])
+        default_info = self.get_defaults(input_options=info)
         default_info.update(info)
+        default_info = self.get_modified_defaults(default_info, input_options=info)
 
         super().__init__(info=default_info, **kwargs)
+
+    @classmethod
+    def get_defaults(cls, return_yaml=False, yaml_expand_defaults=True,
+                 input_options=empty_dict):
+
+        default_info = merge_info(*[get_default_info(like, input_options=info) 
+            for like, info in zip(input_options['components'], input_options['options'])])
+
+        return default_info
+
+    @classmethod
+    def get_modified_defaults(cls, defaults, input_options=empty_dict):
+
+        return defaults
 
     def initialize(self):
         self.cross_cov = CrossCov.load(self.cross_cov_path)
