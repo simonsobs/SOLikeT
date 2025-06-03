@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 import numpy as np
 from cobaya.input import merge_info
@@ -12,9 +12,9 @@ from soliket.gaussian.gaussian_data import GaussianData, MultiGaussianData
 
 class GaussianLikelihood(Likelihood):
     name: str = "Gaussian"
-    datapath: Optional[str] = None
-    covpath: Optional[str] = None
-    ncovsims: Optional[int] = None
+    datapath: str | None = None
+    covpath: str | None = None
+    ncovsims: int | None = None
 
     def initialize(self):
         x, y = self._get_data()
@@ -52,9 +52,9 @@ class CrossCov(dict):
 
 
 class MultiGaussianLikelihood(GaussianLikelihood):
-    components: Optional[Sequence] = None
-    options: Optional[Sequence] = None
-    cross_cov_path: Optional[str] = None
+    components: Sequence | None = None
+    options: Sequence | None = None
+    cross_cov_path: str | None = None
 
     def __init__(self, info=empty_dict, **kwargs):
 

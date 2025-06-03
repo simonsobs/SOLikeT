@@ -41,7 +41,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
             if (self.sacc_data.tracers[tracer_comb[0]].quantity ==
                     self.sacc_data.tracers[tracer_comb[1]].quantity):
                 raise LoggedError(self.log,
-                                  'You have tried to use {0} to calculate an \
+                                  'You have tried to use {} to calculate an \
                                    autocorrelation, but it is a cross-correlation \
                                    likelihood. Please check your tracer selection in the \
                                    ini file.'.format(self.__class__.__name__))
@@ -49,8 +49,8 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
             for tracer in tracer_comb:
                 if self.sacc_data.tracers[tracer].quantity not in self._allowable_tracers:
                     raise LoggedError(self.log,
-                                      'You have tried to use a {0} tracer in \
-                                       {1}, which only allows {2}. Please check your \
+                                      'You have tried to use a {} tracer in \
+                                       {}, which only allows {}. Please check your \
                                        tracer selection in the ini file.\
                                        '.format(self.sacc_data.tracers[tracer].quantity,
                                                 self.__class__.__name__,
@@ -59,7 +59,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     def _get_nz(self, z, tracer, tracer_name, **params_values):
 
         if self.z_nuisance_mode == 'deltaz':
-            bias = params_values['{}_deltaz'.format(tracer_name)]
+            bias = params_values[f'{tracer_name}_deltaz']
             nz_biased = tracer.get_dndz(z - bias)
 
         # nz_biased /= np.trapezoid(nz_biased, z)
@@ -206,7 +206,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
                     ia_z = (z_tracer1, A_IA * ((1 + z_tracer1) / (1 + z0_IA)) ** eta_IA)
                 elif self.ia_mode == 'nla-perbin':
-                    A_IA = params_values['{}_A_IA'.format(sheartracer_name)]
+                    A_IA = params_values[f'{sheartracer_name}_A_IA']
                     ia_z = (z_tracer1, A_IA * np.ones_like(z_tracer1))
                 elif self.ia_mode == 'nla-noevo':
                     A_IA = params_values['A_IA']
@@ -246,7 +246,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
                     ia_z = (z_tracer2, A_IA * ((1 + z_tracer2) / (1 + z0_IA)) ** eta_IA)
                 elif self.ia_mode == 'nla-perbin':
-                    A_IA = params_values['{}_A_IA'.format(sheartracer_name)]
+                    A_IA = params_values[f'{sheartracer_name}_A_IA']
                     ia_z = (z_tracer2, A_IA * np.ones_like(z_tracer2))
                 elif self.ia_mode == 'nla-noevo':
                     A_IA = params_values['A_IA']
@@ -278,7 +278,7 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                 # note this allows wrong calculation, as we can do
                 # shear x shear if the spectra are in the sacc
                 # but then we would want (1 + m1) * (1 + m2)
-                m_bias = params_values['{}_m'.format(sheartracer_name)]
+                m_bias = params_values[f'{sheartracer_name}_m']
                 cl_unbinned = (1 + m_bias) * cl_unbinned
 
             cl_binned = np.dot(w_bins, cl_unbinned)
