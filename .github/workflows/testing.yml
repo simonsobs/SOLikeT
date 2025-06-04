@@ -58,6 +58,8 @@ jobs:
             EXTRAS="$EXTRAS --extra emulator"
           fi
           uv sync --locked ${EXTRAS}
+          export COBAYA_PACKAGES_PATH=~/cobaya-packages
+          uv run cobaya-install --show-packages-path
       - name: Run tests
         run: |
           uv run pytest -vv --durations=5
