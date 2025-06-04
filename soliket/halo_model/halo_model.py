@@ -76,7 +76,7 @@ class HaloModel(Theory):
 class HaloModel_pyhm(HaloModel):
     """Halo Model wrapping the simple pyhalomodel code of Asgari, Mead & Heymans (2023)
 
-    We include this simple halo model for the non-linear matter-matter power spectrum with 
+    We include this simple halo model for the non-linear matter-matter power spectrum with
     NFW profiles. This is calculated via the `pyhalomodel
     <https://github.com/alexander-mead/pyhalomodel>`_ code.
     """
