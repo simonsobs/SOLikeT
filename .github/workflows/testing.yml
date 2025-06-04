@@ -58,10 +58,14 @@ jobs:
             EXTRAS="$EXTRAS --extra emulator"
           fi
           uv sync --locked ${EXTRAS}
-          export COBAYA_PACKAGES_PATH=~/cobaya-packages
-          uv run cobaya-install --show-packages-path
       - name: Run tests
+        env:
+          COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
+          uv run cobaya-install mflike.TTTEEE --no-set-global
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            uv run cobaya-install planck_2018_highl_plik.TTTEEE_lite_native --no-set-global
+          fi
           uv run pytest -vv --durations=5
       - if: contains(matrix.tags, 'cov')
         name: Report Coverage
