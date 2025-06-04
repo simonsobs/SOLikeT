@@ -97,13 +97,7 @@ import numpy as np
 from cobaya.log import LoggedError
 from cobaya.theories.cosmo import BoltzmannBase
 from cobaya.theory import Theory
-
-try:
-    import cosmopower as cp
-except ImportError:
-    HAS_COSMOPOWER = False
-else:
-    HAS_COSMOPOWER = True
+import cosmopower as cp
 
 
 class CosmoPower(BoltzmannBase):
