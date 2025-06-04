@@ -51,6 +51,7 @@ jobs:
           uv python install ${{ matrix.python-version }}
           uv python pin ${{ matrix.python-version }}
       - name: Install SOLikeT dependencies
+        shell: bash
         run: |
           EXTRAS="--extra dev"
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
