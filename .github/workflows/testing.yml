@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: |
           EXTRAS="--extra dev"
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             EXTRAS="$EXTRAS --extra emulator"
           fi
           uv sync --locked ${EXTRAS}
@@ -63,10 +63,10 @@ jobs:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
           uv run cobaya-install mflike.TTTEEE --no-set-global
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             uv run cobaya-install planck_2018_highl_plik.TTTEEE_lite_native --no-set-global
           fi
-          uv run pytest -vv --durations=5
+          uv run pytest -vv --durations=10
       - if: contains(matrix.tags, 'cov')
         name: Report Coverage
         uses: codecov/codecov-action@v3
