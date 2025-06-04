@@ -45,19 +45,22 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install uv
         run: |
           pip install uv
           uv python install ${{ matrix.python-version }}
           uv python pin ${{ matrix.python-version }}
-      - name: Install SOLikeT dependencies
-        shell: bash
+
+      - name: Install SOLikeT dependencies (Linux/macOS)
+        if: matrix.os != 'Windows'
         run: |
-          EXTRAS="--extra dev"
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            EXTRAS="$EXTRAS --extra emulator"
-          fi
-          uv sync --locked ${EXTRAS}
+          uv sync --locked --extra dev --extra emulator
+      - name: Install SOLikeT dependencies (Windows)
+        if: matrix.os == 'Windows'
+        run: |
+          uv sync --locked --extra dev
+
       - name: Run tests
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
@@ -67,6 +70,7 @@ jobs:
             uv run cobaya-install planck_2018_highl_plik.TTTEEE_lite_native --no-set-global
           fi
           uv run pytest -vv --durations=10
+
       - if: contains(matrix.tags, 'cov')
         name: Report Coverage
         uses: codecov/codecov-action@v3
