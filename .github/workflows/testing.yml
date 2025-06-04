@@ -52,11 +52,11 @@ jobs:
           uv python pin ${{ matrix.python-version }}
       - name: Install SOLikeT dependencies
         run: |
-          EXTRAS="--extras dev"
+          EXTRAS="--extra dev"
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            EXTRAS="$EXTRAS --extras emulator"
+            EXTRAS="$EXTRAS --extra emulator"
           fi
-          uv pip sync ${EXTRAS}
+          uv sync --locked ${EXTRAS}
       - name: Run tests
         run: |
           uv run pytest -vv --durations=5

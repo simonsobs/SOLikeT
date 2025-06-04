@@ -21,8 +21,8 @@ jobs:
           uv python pin '3.11'
       - name: Install dev dependencies
         run: |
-          EXTRAS="--extras dev"
-          uv pip sync ${EXTRAS}
+          EXTRAS="--extra dev"
+          uv sync --locked ${EXTRAS}
       - name: Check code style with ruff
         run: |
           set -o errexit
