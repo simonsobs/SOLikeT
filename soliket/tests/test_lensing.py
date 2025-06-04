@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 from cobaya.model import get_model
 from cobaya.tools import resolve_packages_path
 
@@ -44,8 +43,7 @@ def test_lensing_like(request):
     assert np.isclose(loglikes[0], 335.8560097798468, atol=0.2, rtol=0.0)
 
 
-@pytest.mark.require_ccl
-def test_lensing_ccl_limber(request):
+def test_lensing_ccl_limber(check_skip_pyccl):
     """
     Test whether the CMB lensing power spectrum predicted by CCL is the same as with CAMB
     """

@@ -1,8 +1,6 @@
 import numpy as np
-import pytest
 from cobaya.model import get_model
 
-pytestmark = pytest.mark.require_ccl
 
 clusters_like_and_theory = {
     "likelihood": {"soliket.ClusterLikelihood": {"stop_at_error": True}},
@@ -22,14 +20,14 @@ clusters_like_and_theory = {
 }
 
 
-def test_clusters_model(evaluate_one_info, test_cosmology_params):
+def test_clusters_model(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info.update(clusters_like_and_theory)
 
     model_fiducial = get_model(evaluate_one_info)  # noqa F841
 
 
-def test_clusters_loglike(evaluate_one_info, test_cosmology_params):
+def test_clusters_loglike(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info.update(clusters_like_and_theory)
 
@@ -40,7 +38,7 @@ def test_clusters_loglike(evaluate_one_info, test_cosmology_params):
     assert np.isclose(lnl, -847.22462272, rtol=1.e-3, atol=1.e-5)
 
 
-def test_clusters_n_expected(evaluate_one_info, test_cosmology_params):
+def test_clusters_n_expected(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info.update(clusters_like_and_theory)
 
