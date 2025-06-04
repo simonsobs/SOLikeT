@@ -93,8 +93,8 @@ class HaloModel_pyhm(HaloModel):
 
         options = requirements.get("halo_model") or {}
         self._var_pairs.update(
-            set((x, y) for x, y in
-                options.get("vars_pairs", [("delta_tot", "delta_tot")])))
+            {(x, y) for x, y in
+                options.get("vars_pairs", [("delta_tot", "delta_tot")])})
 
         self.kmax = max(self.kmax, options.get("kmax", self.kmax))
         self.z = np.unique(np.concatenate(

@@ -37,7 +37,7 @@ def tinker_params_spline(delta, z=None):
             x = np.hstack((D, D[-1] + 3.))
             y = np.hstack((y, np.polyval(p, x[-1])))
             tinker_splines.append(iuSpline(x, y, k=2))
-    A0, a0, b0, c0 = [ts(np.log(delta)) for ts in tinker_splines]
+    A0, a0, b0, c0 = (ts(np.log(delta)) for ts in tinker_splines)
     if z is None:
         return A0, a0, b0, c0
 
@@ -53,8 +53,8 @@ def tinker_params_spline(delta, z=None):
 def tinker_params_analytic(delta, z=None):
     alpha = None
     if np.asarray(delta).ndim == 0:  # scalar delta.
-        A0, a0, b0, c0 = [p[0] for p in
-                          tinker_params(np.array([delta]), z=None)]
+        A0, a0, b0, c0 = (p[0] for p in
+                          tinker_params(np.array([delta]), z=None))
         if z is not None:
             if delta < 75.:
                 alpha = 1.

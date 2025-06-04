@@ -37,7 +37,7 @@ class ToyLikelihood(PSLikelihood):
 def test_toy():
     n1, n2, n3 = [10, 20, 30]
     full_cov = make_spd_matrix(n1 + n2 + n3, random_state=1234) * 1e-1
-    full_cov += np.diag(np.ones((n1 + n2 + n3)))
+    full_cov += np.diag(np.ones(n1 + n2 + n3))
 
     cov1 = full_cov[:n1, :n1]
     cov2 = full_cov[n1: n1 + n2, n1: n1 + n2]

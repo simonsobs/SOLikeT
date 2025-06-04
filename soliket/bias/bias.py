@@ -56,8 +56,8 @@ class Bias(Theory):
 
         self.nonlinear = self.nonlinear or options.get("nonlinear", False)
         self._var_pairs.update(
-            set((x, y) for x, y in
-                options.get("vars_pairs", [("delta_tot", "delta_tot")])))
+            {(x, y) for x, y in
+                options.get("vars_pairs", [("delta_tot", "delta_tot")])})
 
         needs["Pk_grid"] = {
             "vars_pairs": self._var_pairs or [("delta_tot", "delta_tot")],

@@ -91,7 +91,7 @@ temperature. See the :func:`~soliket.cosmopower.CosmoPower.ell_factor` and
 information on how SOLikeT infers these values.
 """
 import os
-from typing import Iterable, Tuple
+from collections.abc import Iterable
 
 import numpy as np
 from cobaya.log import LoggedError
@@ -116,7 +116,7 @@ class CosmoPower(BoltzmannBase):
             raise LoggedError("No network settings were provided.")
 
         self.networks = {}
-        self.all_parameters = set([])
+        self.all_parameters = set()
 
         for spectype in self.network_settings:
             netdata = {}
@@ -282,7 +282,7 @@ class CosmoPower(BoltzmannBase):
     def get_can_support_parameters(self) -> Iterable[str]:
         return self.all_parameters
 
-    def get_requirements(self) -> Iterable[Tuple[str, str]]:
+    def get_requirements(self) -> Iterable[tuple[str, str]]:
         requirements = []
         for k in self.all_parameters:
             if k in self.renames.values():
@@ -364,7 +364,7 @@ class CosmoPowerDerived(Theory):
     def get_can_support_parameters(self) -> Iterable[str]:
         return self.input_parameters
 
-    def get_requirements(self) -> Iterable[Tuple[str, str]]:
+    def get_requirements(self) -> Iterable[tuple[str, str]]:
         requirements = []
         for k in self.input_parameters:
             if k in self.renames.values():
@@ -378,5 +378,5 @@ class CosmoPowerDerived(Theory):
         return requirements
 
     def get_can_provide(self) -> Iterable[str]:
-        return set([par for par in self.derived_parameters
-                    if (len(par) > 0 and not par == "_")])
+        return {par for par in self.derived_parameters
+                    if (len(par) > 0 and not par == "_")}

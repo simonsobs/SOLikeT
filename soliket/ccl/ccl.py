@@ -79,7 +79,7 @@ the likelihood.
 # https://cobaya.readthedocs.io/en/devel/theories_and_dependencies.html
 
 import numpy as np
-from typing import Sequence
+from collections.abc import Sequence
 from cobaya.theory import Theory
 from cobaya.tools import LoggedError
 
@@ -132,8 +132,8 @@ class CCL(Theory):
             # CCL currently only supports ('delta_tot', 'delta_tot'), but call allow
             # general as placeholder
             self._var_pairs.update(
-                set((x, y) for x, y in
-                    options.get('vars_pairs', [('delta_tot', 'delta_tot')])))
+                {(x, y) for x, y in
+                    options.get('vars_pairs', [('delta_tot', 'delta_tot')])})
 
             needs['Pk_grid'] = {
                 'vars_pairs': self._var_pairs or [('delta_tot', 'delta_tot')],

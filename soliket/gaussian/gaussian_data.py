@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from collections.abc import Sequence
 import numpy as np
 from cobaya.functions import chi_squared
 
@@ -12,12 +12,12 @@ class GaussianData:
     y: np.ndarray  # data point values
     cov: np.ndarray  # covariance matrix
     inv_cov: np.ndarray  # inverse covariance matrix
-    ncovsims: Optional[int]  # number of simulations used to estimate covariance
+    ncovsims: int | None  # number of simulations used to estimate covariance
 
     _fast_chi_squared = staticmethod(chi_squared)
 
     def __init__(self, name, x: Sequence, y: Sequence[float], cov: np.ndarray,
-                 ncovsims: Optional[int] = None):
+                 ncovsims: int | None = None):
 
         self.name = str(name)
         self.ncovsims = ncovsims

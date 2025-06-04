@@ -47,7 +47,7 @@ def test_gaussian():
 
     multi = MultiGaussianData(datalist, cross_cov)
 
-    name1, name2, name3 = [d.name for d in datalist]
+    name1, name2, name3 = (d.name for d in datalist)
     data1, data2, data3 = datalist
 
     assert (multi.cross_covs[(name1, name2)] == multi.cross_covs[(name2, name1)].T).all()
