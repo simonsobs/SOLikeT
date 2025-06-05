@@ -98,7 +98,7 @@ jobs:
           pip install uv
           uv python install '3.11'
           uv python pin '3.11'
-          uv pip compile ./pyproject.toml -o requirements.txt
+          uv pip compile ./pyproject.toml --all-extras -o requirements.txt
       - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: false
