@@ -60,6 +60,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           uv sync --locked --extra dev
+
       - name: Install MFLike
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
@@ -71,6 +72,7 @@ jobs:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
           uv run cobaya-install planck_2018_highl_plik.TTTEEE_lite_native --no-set-global
+
       - name: Run tests
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
@@ -80,3 +82,18 @@ jobs:
       - if: contains(matrix.tags, 'cov')
         name: Report Coverage
         uses: codecov/codecov-action@v3
+
+  test-conda:
+    runs-on: ubuntu-latest
+    name: Conda Test (Python 3.11)
+    steps:
+      - uses: actions/checkout@v3
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-activate-base: false
+          environment-file: soliket-tests.yml
+          activate-environment: soliket-tests
+      - name: Run tests
+        shell: bash -el {0}
+        run: |
+          pytest -vv
