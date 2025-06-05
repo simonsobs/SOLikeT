@@ -64,27 +64,25 @@ class XcorrLikelihood(GaussianLikelihood):
         name: str = "Xcorr"  # noqa F841
         self.log.info("Initialising.")
 
+        self.dndz_file: str | None = None
+        self.auto_file: str | None = None
+        self.cross_file: str | None = None
+        self.k_tracer_name: str | None = None
+        self.gc_tracer_name: str | None = None
+        self.covpath: str | None = None
+
         if self.datapath is None:
-            dndz_file: Optional[str]  # noqa F821
-            auto_file: Optional[str]  # noqa F821
-            cross_file: Optional[str]  # noqa F821
-
             self.dndz = np.loadtxt(self.dndz_file)
-
             self.x, self.y, self.dy = self._get_data()
             if self.covpath is None:
                 self.log.info("No xcorr covariance specified. Using diag(dy^2).")
                 self.cov = np.diag(self.dy**2)
             else:
                 self.cov = self._get_cov()
-
         else:
-            self.k_tracer_name: Optional[str]  # noqa F821
-            self.gc_tracer_name: Optional[str]  # noqa F821
-            # tracer_combinations: Optional[str] # TODO: implement with keep_selection
+            # tracer_combinations: str | None = None # TODO: implement with keep_selection
 
             self.sacc_data = self._get_sacc_data()
-
             self.x = self.sacc_data["x"]
             self.y = self.sacc_data["y"]
             self.cov = self.sacc_data["cov"]
@@ -92,18 +90,18 @@ class XcorrLikelihood(GaussianLikelihood):
             self.ngal = self.sacc_data["ngal"]
 
         # TODO is this resolution limit on zarray a CAMB problem?
-        self.nz: Optional[int]  # noqa F821
+        self.nz: int | None = None
         assert self.nz <= 149, "CAMB limitations requires nz <= 149"
         self.zarray = np.linspace(self.dndz[:, 0].min(), self.dndz[:, 0].max(), self.nz)
         self.zbgdarray = np.concatenate([self.zarray, [1100]])  # TODO: unfix zstar
-        self.Nchi: Optional[int]  # noqa F821
-        self.Nchi_mag: Optional[int]  # noqa F821
+        self.Nchi: int | None = None
+        self.Nchi_mag: int | None = None
 
-        # self.use_zeff: Optional[bool]  # noqa F821
+        # self.use_zeff: bool | None = None
 
-        self.Pk_interp_kmax: Optional[float]  # noqa F821
+        self.Pk_interp_kmax: float | None = None
 
-        self.high_ell: Optional[float]  # noqa F821
+        self.high_ell: float | None = None
         self.ell_range = np.linspace(1, self.high_ell, int(self.high_ell + 1))
 
         # TODO expose these defaults
