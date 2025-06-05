@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  COBAYA_PACKAGES_PATH: ./cobaya_packages
+
 jobs:
   test:
     name: ${{ matrix.name }}
@@ -41,37 +44,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install uv
+      - name: Install SOLikeT dependencies and likelihoods
         run: |
           pip install uv
-          uv python install ${{ matrix.python-version }}
-          uv python pin ${{ matrix.python-version }}
-
-      - name: Install SOLikeT dependencies (Linux/macOS)
-        if: matrix.os != 'windows-latest'
-        run: |
-          uv sync --locked --extra dev --extra emulator
-      - name: Install SOLikeT dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          uv sync --locked --extra dev
-
-      - name: Install MFLike
-        env:
-          COBAYA_PACKAGES_PATH: ./cobaya_packages
-        run: |
-          uv run cobaya-install mflike.TTTEEE --no-set-global
-      - name: Install Planck 2018 HighL Plik Lite Native (Linux)
-        if: matrix.os != 'windows-latest'
-        env:
-          COBAYA_PACKAGES_PATH: ./cobaya_packages
-        run: |
-          uv run cobaya-install planck_2018_highl_plik.TTTEEE_lite_native --no-set-global
+          bash ci_scripts/install_deps.sh --extras dev emulator --python ${{ matrix.python-version }}
 
       - name: Run tests
         env:
@@ -96,8 +78,6 @@ jobs:
       - name: Install uv and export requirements
         run: |
           pip install uv
-          uv python install '3.11'
-          uv python pin '3.11'
           uv pip compile ./pyproject.toml --all-extras -o requirements.txt
       - uses: conda-incubator/setup-miniconda@v3
         with:
