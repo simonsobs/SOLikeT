@@ -88,6 +88,17 @@ jobs:
     name: Conda Test (Python 3.11)
     steps:
       - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install uv and export requirements
+        run: |
+          pip install uv
+          uv python install '3.11'
+          uv python pin '3.11'
+          uv pip freeze > requirements.txt
       - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: false
