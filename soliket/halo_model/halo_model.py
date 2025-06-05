@@ -12,9 +12,9 @@
 Usage
 -----
 
-Halo Models for calculating non-linear power spectra for use in large scale structure 
-and lensing likelihoods. The abstract HaloModel base class should be built on with 
-specific model implementations. HaloModels can be added as theory codes alongside others 
+Halo Models for calculating non-linear power spectra for use in large scale structure
+and lensing likelihoods. The abstract HaloModel base class should be built on with
+specific model implementations. HaloModels can be added as theory codes alongside others
 in your run settings. e.g.:
 
 .. code-block:: yaml
@@ -35,6 +35,7 @@ function (have a look at the simple pyhalomodel model for ideas).
 import numpy as np
 import pyhalomodel as halo
 from cobaya.theory import Theory
+
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
 
@@ -50,26 +51,20 @@ class HaloModel(Theory):
         self._var_pairs = set()
         self._required_results = {}
 
-    # def must_provide(self, **requirements):
-    #     options = requirements.get("halo_model") or {}
-
     def _get_Pk_mm_lin(self):
         for pair in self._var_pairs:
-            self.k, self.z, Pk_mm = \
-                self.provider.get_Pk_grid(var_pair=pair, nonlinear=False)
-
-        return Pk_mm
+            self.k, self.z, pk_mm = self.provider.get_Pk_grid(
+                var_pair=pair, nonlinear=False
+            )
+        return pk_mm
 
     def get_Pk_mm_grid(self):
-
         return self.current_state["Pk_mm_grid"]
 
     def get_Pk_gg_grid(self):
-
         return self.current_state["Pk_gg_grid"]
 
     def get_Pk_gm_grid(self):
-
         return self.current_state["Pk_gm_grid"]
 
 
@@ -83,90 +78,109 @@ class HaloModel_pyhm(HaloModel):
 
     def initialize(self):
         super().initialize()
-        self.Ms = np.logspace(np.log10(self.Mmin), np.log10(self.Mmax), self.nM)
+        self.Ms: np.ndarray = np.logspace(
+            np.log10(self.Mmin), np.log10(self.Mmax), self.nM
+        )
 
     def get_requirements(self):
-
         return {"omegam": None}
 
     def must_provide(self, **requirements):
-
         options = requirements.get("halo_model") or {}
         self._var_pairs.update(
-            {(x, y) for x, y in
-                options.get("vars_pairs", [("delta_tot", "delta_tot")])})
+            {(x, y) for x, y in options.get("vars_pairs", [("delta_tot", "delta_tot")])}
+        )
 
         self.kmax = max(self.kmax, options.get("kmax", self.kmax))
-        self.z = np.unique(np.concatenate(
-                            (np.atleast_1d(options.get("z", self._default_z_sampling)),
-                            np.atleast_1d(self.z))))
+        self.z = np.unique(
+            np.concatenate(
+                (
+                    np.atleast_1d(options.get("z", self._default_z_sampling)),
+                    np.atleast_1d(self.z),
+                )
+            )
+        )
 
         needs = {}
 
         needs["Pk_grid"] = {
-                "vars_pairs": self._var_pairs,
-                "nonlinear": (False, False),
-                "z": self.z,
-                "k_max": self.kmax
-            }
+            "vars_pairs": self._var_pairs,
+            "nonlinear": (False, False),
+            "z": self.z,
+            "k_max": self.kmax,
+        }
 
-        needs["sigma_R"] = {"vars_pairs": self._var_pairs,
-                           "z": self.z,
-                           "k_max": self.kmax,
-                           "R": np.linspace(0.14, 66, 256) # list of radii required
-                           }
-
+        needs["sigma_R"] = {
+            "vars_pairs": self._var_pairs,
+            "z": self.z,
+            "k_max": self.kmax,
+            "R": np.linspace(0.14, 66, 256),  # list of radii required
+        }
 
         return needs
 
-    def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict):
-
-        Pk_mm_lin = self._get_Pk_mm_lin()
+    def calculate(self, state: dict, want_derived: bool = True, **params_values_dict):
+        pk_mm_lin = self._get_Pk_mm_lin()
 
         # now wish to interpolate sigma_R to these Rs
-        zinterp, rinterp, sigmaRinterp = self.provider.get_sigma_R()
-        # sigmaRs = PowerSpectrumInterpolator(zinterp, rinterp, sigma_R)
-        sigmaRs = RectBivariateSpline(zinterp, rinterp, sigmaRinterp)
+        zinterp, rinterp, sigma_r_interp = self.provider.get_sigma_R()
+        sigma_rs = RectBivariateSpline(zinterp, rinterp, sigma_r_interp)
 
-        output_Pk_hm_mm = np.empty([len(self.z), len(self.k)])
+        output_pk_hm_mm = np.empty([len(self.z), len(self.k)])
 
-        # for sure we could avoid the for loop with some thought
-        for iz, zeval in enumerate(self.z):
-            hmod = halo.model(zeval, self.provider.get_param('omegam'),
-                              name=self.hmf_name, Dv=self.hmf_Dv)
+        for iz, z_eval in enumerate(self.z):
+            hmod = halo.model(
+                z_eval,
+                self.provider.get_param("omegam"),
+                name=self.hmf_name,
+                Dv=self.hmf_Dv,
+            )
 
-            Rs = hmod.Lagrangian_radius(self.Ms)
-            rvs = hmod.virial_radius(self.Ms)
+            lagrangian_radii = hmod.Lagrangian_radius(self.Ms)
+            virial_radii = hmod.virial_radius(self.Ms)
 
-            cs = 7.85 * (self.Ms / 2e12)**-0.081 * (1. + zeval)**-0.71
-            Uk = self._win_NFW(self.k, rvs, cs)
-            matter_profile = halo.profile.Fourier(self.k, self.Ms, Uk,
-                                                  amplitude=self.Ms,
-                                                  normalisation=hmod.rhom,
-                                                  mass_tracer=True)
+            concentrations = 7.85 * (self.Ms / 2e12) ** -0.081 * (1.0 + z_eval) ** -0.71
+            uk = self._win_NFW(self.k, virial_radii, concentrations)
+            matter_profile = halo.profile.Fourier(
+                self.k,
+                self.Ms,
+                uk,
+                amplitude=self.Ms,
+                normalisation=hmod.rhom,
+                mass_tracer=True,
+            )
 
-            Pk_2h, Pk_1h, Pk_hm = hmod.power_spectrum(self.k, Pk_mm_lin[iz],
-                                                      self.Ms, sigmaRs(zeval, Rs)[0],
-                                                      {'m': matter_profile},
-                                                      verbose=False)
+            pk_2h, pk_1h, pk_hm = hmod.power_spectrum(
+                self.k,
+                pk_mm_lin[iz],
+                self.Ms,
+                sigma_rs(z_eval, lagrangian_radii)[0],
+                {"m": matter_profile},
+                verbose=False,
+            )
 
-            output_Pk_hm_mm[iz] = Pk_hm['m-m']
+            output_pk_hm_mm[iz] = pk_hm["m-m"]
 
-        state['Pk_mm_grid'] = output_Pk_hm_mm
-        # state['Pk_gm_grid'] = Pk_hm['g-m']
-        # state['Pk_gg_grid'] = Pk_hm['g-g']
+        state["Pk_mm_grid"] = output_pk_hm_mm
+        # state['Pk_gm_grid'] = pk_hm['g-m']
+        # state['Pk_gg_grid'] = pk_hm['g-g']
 
-    def _win_NFW(self, k, rv, c):
+    def _win_NFW(
+        self,
+        k: np.ndarray,
+        virial_radius: np.ndarray,
+        concentration: np.ndarray,
+    ) -> np.ndarray:
         from scipy.special import sici
-        rs = rv / c
-        kv = np.outer(k, rv)
+
+        rs = virial_radius / concentration
+        kv = np.outer(k, virial_radius)
         ks = np.outer(k, rs)
-        Sisv, Cisv = sici(ks + kv)
-        Sis, Cis = sici(ks)
-        f1 = np.cos(ks) * (Cisv - Cis)
-        f2 = np.sin(ks) * (Sisv - Sis)
+        sisv, cisv = sici(ks + kv)
+        sis, cis = sici(ks)
+        f1 = np.cos(ks) * (cisv - cis)
+        f2 = np.sin(ks) * (sisv - sis)
         f3 = np.sin(kv) / (ks + kv)
-        f4 = np.log(1. + c) - c / (1. + c)
-        Wk = (f1 + f2 - f3) / f4
-        return Wk
+        f4 = np.log(1.0 + concentration) - concentration / (1.0 + concentration)
+        wk = (f1 + f2 - f3) / f4
+        return wk

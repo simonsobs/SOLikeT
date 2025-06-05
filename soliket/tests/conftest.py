@@ -29,9 +29,7 @@ def check_skip_pyccl():
     """
     Check if the pyCCL module can be imported, otherwise skip the tests.
     """
-    pytest.importorskip(
-        modname="pyccl", reason="Couldn't import 'pyccl' module"
-    )
+    pytest.importorskip(modname="pyccl", reason="Couldn't import 'pyccl' module")
 
 
 @pytest.fixture
@@ -50,6 +48,7 @@ def install_planck_lite():
     Install the Planck 2018 high-l multipoles likelihood.
     """
     from cobaya.install import install
+
     install(
         {"likelihood": {"planck_2018_highl_plik.TTTEEE_lite_native": None}},
         path=None,

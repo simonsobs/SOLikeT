@@ -1,4 +1,3 @@
-from typing import Optional
 import numpy as np
 from cobaya.likelihood import Likelihood
 from .cash_data import CashCData
@@ -7,12 +6,12 @@ from .cash_data import CashCData
 # Likelihood for independent Poisson-distributed data
 # (here called Cash-C, see https://arxiv.org/abs/1912.05444)
 
+
 class CashCLikelihood(Likelihood):
     name: str = "Cash-C"
-    datapath = Optional[str]
+    datapath: str | None
 
     def initialize(self):
-
         x, N = self._get_data()
         self.data = CashCData(self.name, N)
 

@@ -86,8 +86,9 @@ from cobaya.tools import LoggedError
 
 class CCL(Theory):
     """A theory code wrapper for CCL."""
+
     _logz = np.linspace(-3, np.log10(1100), 150)
-    _default_z_sampling = 10 ** _logz
+    _default_z_sampling = 10**_logz
     _default_z_sampling[0] = 0
     kmax: float
     z: np.ndarray
@@ -107,46 +108,54 @@ class CCL(Theory):
     def get_requirements(self) -> set:
         # These are currently required to construct a CCL cosmology object.
         # Ultimately CCL should depend only on observable not parameters
-        return {'omch2', 'ombh2'}
+        return {"omch2", "ombh2"}
 
     def must_provide(self, **requirements) -> dict:
         # requirements is dictionary of things requested by likelihoods
         # Note this may be called more than once
 
-        if 'CCL' not in requirements:
+        if "CCL" not in requirements:
             return {}
-        options = requirements.get('CCL') or {}
-        if 'methods' in options:
-            self._required_results.update(options['methods'])
+        options = requirements.get("CCL") or {}
+        if "methods" in options:
+            self._required_results.update(options["methods"])
 
-        self.kmax = max(self.kmax, options.get('kmax', self.kmax))
-        self.z = np.unique(np.concatenate(
-            (np.atleast_1d(options.get("z", self._default_z_sampling)),
-             np.atleast_1d(self.z))))
+        self.kmax = max(self.kmax, options.get("kmax", self.kmax))
+        self.z = np.unique(
+            np.concatenate(
+                (
+                    np.atleast_1d(options.get("z", self._default_z_sampling)),
+                    np.atleast_1d(self.z),
+                )
+            )
+        )
 
         # Dictionary of the things CCL needs from CAMB/CLASS
         needs = {}
 
         if self.kmax:
-            self.nonlinear = self.nonlinear or options.get('nonlinear', False)
+            self.nonlinear = self.nonlinear or options.get("nonlinear", False)
             # CCL currently only supports ('delta_tot', 'delta_tot'), but call allow
             # general as placeholder
             self._var_pairs.update(
-                {(x, y) for x, y in
-                    options.get('vars_pairs', [('delta_tot', 'delta_tot')])})
+                {
+                    (x, y)
+                    for x, y in options.get("vars_pairs", [("delta_tot", "delta_tot")])
+                }
+            )
 
-            needs['Pk_grid'] = {
-                'vars_pairs': self._var_pairs or [('delta_tot', 'delta_tot')],
-                'nonlinear': (True, False) if self.nonlinear else False,
-                'z': self.z,
-                'k_max': self.kmax
+            needs["Pk_grid"] = {
+                "vars_pairs": self._var_pairs or [("delta_tot", "delta_tot")],
+                "nonlinear": (True, False) if self.nonlinear else False,
+                "z": self.z,
+                "k_max": self.kmax,
             }
 
-        needs['Hubble'] = {'z': self.z}
-        needs['comoving_radial_distance'] = {'z': self.z}
+        needs["Hubble"] = {"z": self.z}
+        needs["comoving_radial_distance"] = {"z": self.z}
 
-        needs['fsigma8'] = {'z': self.z}
-        needs['sigma8_z'] = {'z': self.z}
+        needs["fsigma8"] = {"z": self.z}
+        needs["sigma8_z"] = {"z": self.z}
 
         assert len(self._var_pairs) < 2, "CCL doesn't support other Pk yet"
         return needs
@@ -155,8 +164,7 @@ class CCL(Theory):
         # return any nuisance parameters that CCL can support
         return []
 
-    def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict):
+    def calculate(self, state: dict, want_derived: bool = True, **params_values_dict):
         # calculate the general CCL cosmo object which likelihoods can then use to get
         # what they need (likelihoods should cache results appropriately)
         # get our requirements from self.provider
@@ -167,8 +175,8 @@ class CCL(Theory):
         h = H0 / 100
         E_of_z = hubble_z / H0
 
-        Omega_c = self.provider.get_param('omch2') / h ** 2
-        Omega_b = self.provider.get_param('ombh2') / h ** 2
+        Omega_c = self.provider.get_param("omch2") / h**2
+        Omega_b = self.provider.get_param("ombh2") / h**2
         # Array z is sorted in ascending order. CCL requires an ascending scale factor
         # as input
         # Flip the arrays to make them a function of the increasing scale factor.
@@ -178,7 +186,7 @@ class CCL(Theory):
 
         # Array z is sorted in ascending order. CCL requires an ascending scale
         # factor as input
-        a = 1. / (1 + self.z[::-1])
+        a = 1.0 / (1 + self.z[::-1])
         # growth = ccl.background.growth_factor(cosmo, a)
         # fgrowth = ccl.background.growth_rate(cosmo, a)
 
@@ -189,8 +197,9 @@ class CCL(Theory):
                 Pk_lin = np.flip(Pk_lin, axis=0)
 
                 if self.nonlinear:
-                    _, z, Pk_nonlin = self.provider.get_Pk_grid(var_pair=pair,
-                                                                nonlinear=True)
+                    _, z, Pk_nonlin = self.provider.get_Pk_grid(
+                        var_pair=pair, nonlinear=True
+                    )
                     Pk_nonlin = np.flip(Pk_nonlin, axis=0)
 
                     # Create a CCL cosmology object. Because we are giving it background
@@ -201,15 +210,13 @@ class CCL(Theory):
                         h=h,
                         sigma8=0.8,
                         n_s=0.96,
-                        background={'a': a,
-                                    'chi': distance,
-                                    'h_over_h0': E_of_z},
-                        pk_linear={'a': a,
-                                   'k': k,
-                                   'delta_matter:delta_matter': Pk_lin},  # noqa E501
-                        pk_nonlin={'a': a,
-                                   'k': k,
-                                   'delta_matter:delta_matter': Pk_nonlin}  # noqa E501
+                        background={"a": a, "chi": distance, "h_over_h0": E_of_z},
+                        pk_linear={"a": a, "k": k, "delta_matter:delta_matter": Pk_lin},  # noqa E501
+                        pk_nonlin={
+                            "a": a,
+                            "k": k,
+                            "delta_matter:delta_matter": Pk_nonlin,
+                        },  # noqa E501
                     )
 
                 else:
@@ -219,17 +226,13 @@ class CCL(Theory):
                         h=h,
                         sigma8=0.8,
                         n_s=0.96,
-                        background={'a': a,
-                                    'chi': distance,
-                                    'h_over_h0': E_of_z},
-                        pk_linear={'a': a,
-                                   'k': k,
-                                   'delta_matter:delta_matter': Pk_lin}  # noqa E501
+                        background={"a": a, "chi": distance, "h_over_h0": E_of_z},
+                        pk_linear={"a": a, "k": k, "delta_matter:delta_matter": Pk_lin},  # noqa E501
                     )
 
-        state['CCL'] = {'cosmo': cosmo, 'ccl': self.ccl}
+        state["CCL"] = {"cosmo": cosmo, "ccl": self.ccl}
         for required_result, method in self._required_results.items():
-            state['CCL'][required_result] = method(cosmo)
+            state["CCL"][required_result] = method(cosmo)
 
     def get_CCL(self):
-        return self._current_state['CCL']
+        return self._current_state["CCL"]

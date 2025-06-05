@@ -9,10 +9,13 @@ from cobaya.yaml import yaml_load
 packages_path = resolve_packages_path()
 
 
-@pytest.mark.parametrize("lhood",
-                         ["lensing",
-                          "multi",
-                          ])
+@pytest.mark.parametrize(
+    "lhood",
+    [
+        "lensing",
+        "multi",
+    ],
+)
 def test_installation(lhood):
     if lhood == "lensing":
         from soliket import LensingLikelihood
@@ -37,36 +40,42 @@ def test_installation(lhood):
         )
 
 
-@pytest.mark.parametrize("lhood",
-                         ["lensing",
-                          "lensing_lite",
-                          "multi",
-                          # "galaxykappa",
-                          # "shearkappa"
-                          # "xcorr"
-                          ])
+@pytest.mark.parametrize(
+    "lhood",
+    [
+        "lensing",
+        "lensing_lite",
+        "multi",
+        # "galaxykappa",
+        # "shearkappa"
+        # "xcorr"
+    ],
+)
 def test_evaluate(lhood):
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
-    info['sampler'] = {'evaluate': {}}
+    info["sampler"] = {"evaluate": {}}
 
     install(info, path=packages_path, skip_global=True, no_set_global=True)
 
     updated_info, sampler = run(info)
 
 
-@pytest.mark.parametrize("lhood",
-                         ["lensing",
-                          "lensing_lite",
-                          "multi",
-                          # "galaxykappa",
-                          # "shearkappa"
-                          # "xcorr"
-                          ])
+@pytest.mark.parametrize(
+    "lhood",
+    [
+        "lensing",
+        "lensing_lite",
+        "multi",
+        # "galaxykappa",
+        # "shearkappa"
+        # "xcorr"
+    ],
+)
 def test_mcmc(lhood):
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
-    info['sampler'] = {'mcmc': {'max_samples': 10, 'max_tries': 1000}}
+    info["sampler"] = {"mcmc": {"max_samples": 10, "max_tries": 1000}}
 
     install(info, path=packages_path, skip_global=True, no_set_global=True)
 

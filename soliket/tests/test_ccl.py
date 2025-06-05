@@ -1,6 +1,7 @@
 """
 Check that CCL works correctly.
 """
+
 import numpy as np
 from cobaya.likelihood import Likelihood
 from cobaya.model import get_model
@@ -21,17 +22,8 @@ class CheckLike(Likelihood):
 
 
 ccl_like_and_theory = {
-    "likelihood": {
-        "checkLike": {"external": CheckLike}
-    },
-    "theory": {
-        "camb": {
-        },
-        "soliket.CCL": {
-            "kmax": 10.0,
-            "nonlinear": True
-        }
-    }
+    "likelihood": {"checkLike": {"external": CheckLike}},
+    "theory": {"camb": {}, "soliket.CCL": {"kmax": 10.0, "nonlinear": True}},
 }
 
 
