@@ -17,5 +17,4 @@ dependencies:
   - mpi4py
   - camb
   - pip:
-      - -r requirements.txt
       - -e .[dev,emulator] 
