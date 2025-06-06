@@ -97,11 +97,27 @@ class CCL(Theory):
     def initialize(self) -> None:
         try:
             import pyccl as ccl
-        except ImportError:
-            raise LoggedError(self.log, "Could not import ccl. Install pyccl to use ccl.")
-        else:
-            self.ccl = ccl
+        except ImportError as e:
+            msg = str(e)
+            if "libgsl.so.25" in msg:
+                raise RuntimeError(
+                    "Missing GSL library (libgsl.so.25).\n"
+                    "Install GSL 2.7+ (e.g. with conda):\n"
+                    "    conda install -c conda-forge gsl\n"
+                    "or with manual installation."
+                ) from e
+            if "libfftw3.so.3" in msg:
+                raise RuntimeError(
+                    "Missing FFTW library (libfftw3.so.3).\n"
+                    "Install FFTW (e.g. with conda):\n"
+                    "    conda install -c conda-forge fftw\n"
+                    "or with manual installation."
+                ) from e
+            raise LoggedError(
+                self.log, "Could not import ccl. Install pyccl to use ccl."
+            ) from e
 
+        self.ccl = ccl
         self._var_pairs = set()
         self._required_results = {}
 
