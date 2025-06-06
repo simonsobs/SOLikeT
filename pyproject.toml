@@ -87,7 +87,8 @@ select = ["E713", "E703", "E714", "E741", "E10", "E11", "E20", "E22", "E23", "E2
 ignore = []
 
 [tool.ruff.lint.per-file-ignores]
-"*.ipynb" = ["E402"]
+"*/__init__.py" = ["F401"]
+"docs/*" = ["F401"]
 
 [tool.ruff.format]
 quote-style = "double"

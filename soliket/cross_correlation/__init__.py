@@ -3,9 +3,3 @@ from .cross_correlation import (
     GalaxyKappaLikelihood,
     ShearKappaLikelihood,
 )
-
-__all__ = [
-    "CrossCorrelationLikelihood",
-    "GalaxyKappaLikelihood",
-    "ShearKappaLikelihood",
-]
