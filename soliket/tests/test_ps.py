@@ -23,7 +23,7 @@ class ToyLikelihood(PSLikelihood):
         x = np.arange(self.n)
         if self.cov is None:
             cov = make_spd_matrix(self.n) * self.off_diag_amp
-            cov += np.diag(np.ones(self.n) * self.sigma ** 2)
+            cov += np.diag(np.ones(self.n) * self.sigma**2)
         else:
             cov = self.cov
 
@@ -37,19 +37,19 @@ class ToyLikelihood(PSLikelihood):
 def test_toy():
     n1, n2, n3 = [10, 20, 30]
     full_cov = make_spd_matrix(n1 + n2 + n3, random_state=1234) * 1e-1
-    full_cov += np.diag(np.ones((n1 + n2 + n3)))
+    full_cov += np.diag(np.ones(n1 + n2 + n3))
 
     cov1 = full_cov[:n1, :n1]
-    cov2 = full_cov[n1: n1 + n2, n1: n1 + n2]
-    cov3 = full_cov[n1 + n2:, n1 + n2:]
+    cov2 = full_cov[n1 : n1 + n2, n1 : n1 + n2]
+    cov3 = full_cov[n1 + n2 :, n1 + n2 :]
 
     name1, name2, name3 = ["A", "B", "C"]
 
     cross_cov = CrossCov(
         {
-            (name1, name2): full_cov[:n1, n1: n1 + n2],
-            (name1, name3): full_cov[:n1, n1 + n2:],
-            (name2, name3): full_cov[n1: n1 + n2, n1 + n2:],
+            (name1, name2): full_cov[:n1, n1 : n1 + n2],
+            (name1, name3): full_cov[:n1, n1 + n2 :],
+            (name2, name3): full_cov[n1 : n1 + n2, n1 + n2 :],
         }
     )
     tempdir = gettempdir()
@@ -72,7 +72,9 @@ def test_toy():
     like2 = get_likelihood(lhood, info2)
     like3 = get_likelihood(lhood, info3)
 
-    assert np.isclose(multilike1.logp(), sum([likex.logp() for
-                                              likex in [like1, like2, like3]]))
-    assert not np.isclose(multilike2.logp(), sum([likex.logp() for
-                                                  likex in [like1, like2, like3]]))
+    assert np.isclose(
+        multilike1.logp(), sum([likex.logp() for likex in [like1, like2, like3]])
+    )
+    assert not np.isclose(
+        multilike2.logp(), sum([likex.logp() for likex in [like1, like2, like3]])
+    )

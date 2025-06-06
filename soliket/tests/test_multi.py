@@ -71,8 +71,10 @@ def test_multi(test_cosmology_params):
 
     camb_options = {"extra_args": {"lens_potential_accuracy": 1}}
 
-    fg_params = {"a_tSZ": {"prior": {"min": 3.0, "max": 3.6}},
-                 "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}}}
+    fg_params = {
+        "a_tSZ": {"prior": {"min": 3.0, "max": 3.6}},
+        "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}},
+    }
     mflike_params = test_cosmology_params | nuisance_params | fg_params
 
     lensing_params = test_cosmology_params
@@ -85,15 +87,19 @@ def test_multi(test_cosmology_params):
                 "stop_at_error": True,
             }
         },
-        "theory": {"camb": camb_options,
-                   "mflike.BandpowerForeground": {"stop_at_error": True}},
+        "theory": {
+            "camb": camb_options,
+            "mflike.BandpowerForeground": {"stop_at_error": True},
+        },
         "params": mflike_params,
     }
 
     info1 = {
         "likelihood": {"mflike.TTTEEE": mflike_options},
-        "theory": {"camb": camb_options,
-                   "mflike.BandpowerForeground": {"stop_at_error": True}},
+        "theory": {
+            "camb": camb_options,
+            "mflike.BandpowerForeground": {"stop_at_error": True},
+        },
         "params": mflike_params,
     }
 

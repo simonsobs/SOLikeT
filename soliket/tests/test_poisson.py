@@ -10,13 +10,12 @@ x_max = 10
 
 
 def rate_density(x, a):
-    """simple linear rate density
-    """
+    """simple linear rate density"""
     return a * x
 
 
 def n_expected(a):
-    return 0.5 * a * (x_max ** 2 - x_min ** 2)  # integral(rate_density, x_min, x_max)
+    return 0.5 * a * (x_max**2 - x_min**2)  # integral(rate_density, x_min, x_max)
 
 
 def generate_data(a, with_samples=False, unc=0.3, Nk=64):
@@ -27,7 +26,7 @@ def generate_data(a, with_samples=False, unc=0.3, Nk=64):
     u = np.random.random(n)
 
     # From inverting CDF of above normalized density
-    x = np.sqrt(u * (x_max ** 2 - x_min ** 2) + x_min ** 2)
+    x = np.sqrt(u * (x_max**2 - x_min**2) + x_min**2)
 
     if not with_samples:
         return x
@@ -49,8 +48,9 @@ def test_poisson_experiment(a_true=3, N=100, with_samples=False, Nk=64):
                 data = PoissonData("toy_samples", catalog, ["x"], samples=samples)
 
             a_grid = np.arange(0.1, 10, 0.1)
-            lnl = [data.loglike(partial(rate_density, a=a),
-                n_expected(a)) for a in a_grid]
+            lnl = [
+                data.loglike(partial(rate_density, a=a), n_expected(a)) for a in a_grid
+            ]
             a_maxlike = a_grid[np.argmax(lnl)]
 
             a_maxlikes.append(a_maxlike)

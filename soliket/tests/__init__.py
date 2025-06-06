@@ -1,3 +1,3 @@
 import soliket
 
-__all__ = ['soliket']
+__all__ = ["soliket"]
