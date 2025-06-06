@@ -34,173 +34,274 @@ from soliket.constants import (
 rho_crit0H100 = (3.0 / (8.0 * np.pi) * (100.0 * 1.0e5) ** 2.0) / G_CGS * MPC2CM / MSUN_CGS
 
 
-def gaussian(xx, mu, sig, noNorm=False):
-    if noNorm:
-        return np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig**2.0))
+def gaussian(
+    x: np.ndarray, mean: float, sigma: float, no_norm: bool = False
+) -> np.ndarray:
+    """Return a Gaussian or unnormalized Gaussian evaluated at x.
+
+    Args:
+        x: Input array.
+        mean: Mean of the Gaussian.
+        sigma: Standard deviation.
+        no_norm: If True, do not normalize the output.
+
+    Returns:
+        Gaussian evaluated at x.
+    """
+    if no_norm:
+        return np.exp(-1.0 * (x - mean) ** 2 / (2.0 * sigma**2.0))
     else:
         return (
             1.0
-            / (sig * np.sqrt(2 * np.pi))
-            * np.exp(-1.0 * (xx - mu) ** 2 / (2.0 * sig**2.0))
+            / (sigma * np.sqrt(2 * np.pi))
+            * np.exp(-1.0 * (x - mean) ** 2 / (2.0 * sigma**2.0))
         )
 
 
-class szutils:
-    def __init__(self, Survey):
+class SZUtils:
+    """
+    Helper functions for tSZ signal and cluster mass conversions for cluster likelihoods.
+
+    Many methods are adapted from the nemo-sz codebase.
+    The Survey object should provide attributes like Q (filter spline)
+    and qmin (detection threshold).
+    """
+
+    def __init__(self, survey):
+        """Initialize with a survey object providing Q and qmin attributes."""
         self.LgY = np.arange(-6, -2.5, 0.01)
-        self.Survey = Survey
+        self.survey = survey
+        # self.rho_crit0H100 = (
+        #   (3. / (8. * np.pi) * (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
+        # )
 
-        # self.rho_crit0H100 = (3. / (8. * np.pi) * \
-        #                           (100. * 1.e5)**2.) / G_in_cgs * Mpc_in_cm / MSun_in_g
-
-    def P_Yo(self, LgY, M, z, param_vals, Ez_fn, Da_fn):
-        H0 = param_vals["H0"]
-
-        Ma = np.outer(M, np.ones(len(LgY[0, :])))
-
-        Ytilde, theta0, Qfilt = y0FromLogM500(
-            np.log10(param_vals["massbias"] * Ma / (H0 / 100.0)),
+    def p_y_given_mass(
+        self,
+        log_y: np.ndarray,
+        mass: np.ndarray,
+        z: np.ndarray,
+        params: dict,
+        ez_func,
+        da_func,
+    ) -> np.ndarray:
+        """
+        Probability density P(Y|M,z) for tSZ signal Y given mass and redshift.
+        Args:
+            log_y: Log10(Y) grid.
+            mass: Mass array.
+            z: Redshift array.
+            params: Model parameters (must include 'H0', 'massbias', 'scat', 'B0').
+            ez_func: Function Ez(z).
+            da_func: Function Da(z).
+        Returns:
+            Probability density array.
+        """
+        H0 = params["H0"]
+        mass_grid = np.outer(mass, np.ones(len(log_y[0, :])))
+        # y0_from_logm500 returns y_tilde, theta0, q_filt
+        y_tilde, theta0, q_filt = y0_from_logm500(
+            np.log10(params["massbias"] * mass_grid / (H0 / 100.0)),
             z,
-            self.Survey.Q,
-            sigma_int=param_vals["scat"],
-            B0=param_vals["B0"],
-            H0=param_vals["H0"],
-            Ez_fn=Ez_fn,
-            Da_fn=Da_fn,
+            self.survey.Q,
+            sigma_int=params["scat"],
+            B0=params["B0"],
+            H0=params["H0"],
+            Ez_fn=ez_func,
+            Da_fn=da_func,
         )
-        Y = 10**LgY
-
-        # Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
-
-        # ind = 20
-        # print ("M,z,y~",M[ind],z,Ytilde[ind,0])
-
-        numer = -1.0 * (np.log(Y / Ytilde)) ** 2
-        ans = (
+        Y = 10**log_y
+        exponent = -1.0 * (np.log(Y / y_tilde)) ** 2
+        return (
             1.0
-            / (param_vals["scat"] * np.sqrt(2 * np.pi))
-            * np.exp(numer / (2.0 * param_vals["scat"] ** 2))
+            / (params["scat"] * np.sqrt(2 * np.pi))
+            * np.exp(exponent / (2.0 * params["scat"] ** 2))
         )
-        return ans
 
-    def P_Yo_vec(self, LgY, M, z, param_vals, Ez_fn, Da_fn):
-        H0 = param_vals["H0"]
-        # Ma = np.outer(M, np.ones(len(LgY[0, :])))
-
-        Ytilde, theta0, Qfilt = y0FromLogM500(
-            np.log10(param_vals["massbias"] * M / (H0 / 100.0)),
+    def p_y_given_mass_vec(
+        self,
+        log_y: np.ndarray,
+        mass: np.ndarray,
+        z: np.ndarray,
+        params: dict,
+        ez_func,
+        da_func,
+    ) -> np.ndarray:
+        """
+        Vectorized version of p_y_given_mass for 3D log_y arrays.
+        """
+        H0 = params["H0"]
+        y_tilde, theta0, q_filt = y0_from_logm500(
+            np.log10(params["massbias"] * mass / (H0 / 100.0)),
             z,
-            self.Survey.Q,
-            sigma_int=param_vals["scat"],
-            B0=param_vals["B0"],
-            H0=param_vals["H0"],
-            Ez_fn=Ez_fn,
-            Da_fn=Da_fn,
+            self.survey.Q,
+            sigma_int=params["scat"],
+            B0=params["B0"],
+            H0=params["H0"],
+            Ez_fn=ez_func,
+            Da_fn=da_func,
         )
-        Y = 10**LgY
-
-        Ytilde = np.repeat(Ytilde[:, :, np.newaxis], LgY.shape[2], axis=2)
-
-        numer = -1.0 * (np.log(Y / Ytilde)) ** 2
-        ans = (
+        Y = 10**log_y
+        y_tilde = np.repeat(y_tilde[:, :, np.newaxis], log_y.shape[2], axis=2)
+        exponent = -1.0 * (np.log(Y / y_tilde)) ** 2
+        return (
             1.0
-            / (param_vals["scat"] * np.sqrt(2 * np.pi))
-            * np.exp(numer / (2.0 * param_vals["scat"] ** 2))
-        )
-        return ans
-
-    def Y_erf(self, Y, Ynoise):
-        qmin = self.Survey.qmin
-        ans = Y * 0.0
-        ans[Y - qmin * Ynoise > 0] = 1.0
-        return ans
-
-    def P_of_gt_SN(self, LgY, MM, zz, Ynoise, param_vals, Ez_fn, Da_fn):
-        Y = 10**LgY
-
-        sig_tr = np.outer(np.ones([MM.shape[0], MM.shape[1]]), self.Y_erf(Y, Ynoise))
-        sig_thresh = np.reshape(
-            sig_tr, (MM.shape[0], MM.shape[1], len(self.Y_erf(Y, Ynoise)))
+            / (params["scat"] * np.sqrt(2 * np.pi))
+            * np.exp(exponent / (2.0 * params["scat"] ** 2))
         )
 
-        LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
-        LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
+    def detection_mask(self, Y: np.ndarray, Y_noise: np.ndarray) -> np.ndarray:
+        """
+        Return a mask array where Y exceeds the survey detection threshold.
+        """
+        qmin = self.survey.qmin
+        mask = np.zeros_like(Y)
+        mask[Y - qmin * Y_noise > 0] = 1.0
+        return mask
 
-        P_Y = np.nan_to_num(self.P_Yo_vec(LgYa2, MM, zz, param_vals, Ez_fn, Da_fn))
+    def p_y_above_sn(
+        self,
+        log_y: np.ndarray,
+        mass: np.ndarray,
+        z: np.ndarray,
+        Y_noise: np.ndarray,
+        params: dict,
+        ez_func,
+        da_func,
+    ) -> np.ndarray:
+        """
+        Probability of Y above S/N threshold for given mass and redshift.
+        """
+        Y = 10**log_y
+        mask = self.detection_mask(Y, Y_noise)
+        mask_reshaped = np.reshape(
+            np.outer(np.ones([mass.shape[0], mass.shape[1]]), mask),
+            (mass.shape[0], mass.shape[1], len(mask)),
+        )
+        log_y_grid = np.outer(np.ones([mass.shape[0], mass.shape[1]]), log_y)
+        log_y_grid_reshaped = np.reshape(
+            log_y_grid, (mass.shape[0], mass.shape[1], len(log_y))
+        )
+        p_y = np.nan_to_num(
+            self.p_y_given_mass_vec(
+                log_y_grid_reshaped, mass, z, params, ez_func, da_func
+            )
+        )
+        # Use numpy.trapezoid for integration (requires numpy >=1.17)
+        result = trapezoid(p_y * mask_reshaped, x=log_y, axis=2) * np.log(10)
+        return result
 
-        ans = trapezoid(P_Y * sig_thresh, x=LgY, axis=2) * np.log(10)
-        return ans
+    def pfunc_y(
+        self,
+        Y_noise: np.ndarray,
+        mass: np.ndarray,
+        z_arr: np.ndarray,
+        params: dict,
+        ez_func,
+        da_func,
+    ) -> np.ndarray:
+        """
+        Return probability function for Y above S/N for all masses and redshifts.
+        """
+        log_y = self.LgY
+        mass_grid = np.outer(mass, np.ones([len(z_arr)]))
+        return self.p_y_above_sn(
+            log_y, mass_grid, z_arr, Y_noise, params, ez_func, da_func
+        )
 
-    def PfuncY(self, YNoise, M, z_arr, param_vals, Ez_fn, Da_fn):
-        LgY = self.LgY
+    def p_y_per_observed(
+        self,
+        log_y: np.ndarray,
+        mass: np.ndarray,
+        z: np.ndarray,
+        Y_c: float,
+        Y_err: float,
+        params: dict,
+    ) -> np.ndarray:
+        """
+        Probability for observed Y given mass and redshift, marginalized over
+        measurement error.
+        """
+        p_y_sig = np.outer(np.ones(len(mass)), self.y_prob(Y_c, log_y, Y_err))
+        log_y_grid = np.outer(np.ones([mass.shape[0], mass.shape[1]]), log_y)
+        log_y_grid_reshaped = np.reshape(
+            log_y_grid, (mass.shape[0], mass.shape[1], len(log_y))
+        )
+        p_y = np.nan_to_num(self.p_y_given_mass(log_y_grid_reshaped, mass, z, params))
+        # Use numpy.trapezoid for integration (requires numpy >=1.17)
+        result = trapezoid(p_y * p_y_sig, log_y, np.diff(log_y), axis=1) * np.log(10)
+        return result
 
-        P_func = np.outer(M, np.zeros([len(z_arr)]))
-        M_arr = np.outer(M, np.ones([len(z_arr)]))
+    def y_prob(self, Y_c: float, log_y: np.ndarray, Y_noise: float) -> np.ndarray:
+        """
+        Return Gaussian probability for observed Y_c given log_y and noise.
+        """
+        y_val = 10**log_y
+        return gaussian(y_val, Y_c, Y_noise)
 
-        P_func = self.P_of_gt_SN(LgY, M_arr, z_arr, YNoise, param_vals, Ez_fn, Da_fn)
-        return P_func
+    def pfunc_per(
+        self,
+        mass: np.ndarray,
+        z: np.ndarray,
+        Y_c: float,
+        Y_err: float,
+        params: dict,
+        ez_func,
+        da_func,
+    ) -> np.ndarray:
+        """
+        Probability marginalized over measurement error for all masses and redshifts.
+        """
+        log_y = self.LgY
+        log_y_grid = np.outer(np.ones(len(mass)), log_y)
+        p_y_sig = self.y_prob(Y_c, log_y, Y_err)
+        p_y = np.nan_to_num(
+            self.p_y_given_mass(log_y_grid, mass, z, params, ez_func, da_func)
+        )
+        # Use numpy.trapezoid for integration (requires numpy >=1.17)
+        result = trapezoid(p_y * p_y_sig, log_y, np.diff(log_y), axis=1)
+        return result
 
-    def P_of_Y_per(self, LgY, MM, zz, Y_c, Y_err, param_vals):
-        P_Y_sig = np.outer(np.ones(len(MM)), self.Y_prob(Y_c, LgY, Y_err))
+    def pfunc_per_parallel(
+        self,
+        mass: np.ndarray,
+        z: np.ndarray,
+        Y_c: float,
+        Y_err: float,
+        params: dict,
+        ez_func,
+        da_func,
+    ) -> np.ndarray:
+        """
+        Parallelized version of pfunc_per for all masses and redshifts.
+        """
+        p_y_sig = self.y_prob(Y_c, self.LgY, Y_err)
+        p_y = np.nan_to_num(
+            self.p_y_given_mass(self.LgY, mass, z, params, ez_func, da_func)
+        )
+        # Use numpy.trapezoid for integration (requires numpy >=1.17)
+        result = trapezoid(p_y * p_y_sig, x=self.LgY, axis=2)
+        return result
 
-        LgYa = np.outer(np.ones([MM.shape[0], MM.shape[1]]), LgY)
-        LgYa2 = np.reshape(LgYa, (MM.shape[0], MM.shape[1], len(LgY)))
-
-        P_Y = np.nan_to_num(self.P_Yo(LgYa2, MM, zz, param_vals))
-        ans = trapezoid(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1) * np.log(10)
-
-        return ans
-
-    def Y_prob(self, Y_c, LgY, YNoise):
-        Y = 10**LgY
-
-        ans = gaussian(Y, Y_c, YNoise)
-        return ans
-
-    def Pfunc_per(self, MM, zz, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
-        LgY = self.LgY
-        LgYa = np.outer(np.ones(len(MM)), LgY)
-
-        P_Y_sig = self.Y_prob(Y_c, LgY, Y_err)
-        P_Y = np.nan_to_num(self.P_Yo(LgYa, MM, zz, param_vals, Ez_fn, Da_fn))
-        ans = trapezoid(P_Y * P_Y_sig, LgY, np.diff(LgY), axis=1)
-
-        return ans
-
-    def Pfunc_per_parallel(self, Marr, zarr, Y_c, Y_err, param_vals, Ez_fn, Da_fn):
-        # LgY = self.LgY
-        # LgYa = np.outer(np.ones(Marr.shape[0]), LgY)
-
-        # LgYa = np.outer(np.ones([Marr.shape[0], Marr.shape[1]]), LgY)
-        # LgYa2 = np.reshape(LgYa, (Marr.shape[0], Marr.shape[1], len(LgY)))
-
-        # Yc_arr = np.outer(np.ones(Marr.shape[0]), Y_c)
-        # Yerr_arr = np.outer(np.ones(Marr.shape[0]), Y_err)
-
-        # Yc_arr = np.repeat(Yc_arr[:, :, np.newaxis], len(LgY), axis=2)
-        # Yerr_arr = np.repeat(Yerr_arr[:, :, np.newaxis], len(LgY), axis=2)
-
-        # P_Y_sig = self.Y_prob(Yc_arr, LgYa2, Yerr_arr)
-        # P_Y = np.nan_to_num(self.P_Yo(LgYa2, Marr, zarr, param_vals, Ez_fn))
-
-        P_Y_sig = self.Y_prob(Y_c, self.LgY, Y_err)
-        P_Y = np.nan_to_num(self.P_Yo(self.LgY, Marr, zarr, param_vals, Ez_fn, Da_fn))
-
-        ans = trapezoid(P_Y * P_Y_sig, x=self.LgY, axis=2)
-
-        return ans
-
-    def Pfunc_per_zarr(self, MM, z_c, Y_c, Y_err, int_HMF, param_vals):
-        LgY = self.LgY
-
+    def pfunc_per_zarr(
+        self,
+        mass: np.ndarray,
+        z_c: np.ndarray,
+        Y_c: float,
+        Y_err: float,
+        int_hmf: np.ndarray,
+        params: dict,
+    ) -> np.ndarray:
+        """
+        Probability marginalized over measurement error for a grid of masses
+        and redshifts.
+        """
+        log_y = self.LgY
         # old was z_arr
-        # P_func = np.outer(MM, np.zeros([len(z_arr)]))
-        # M_arr = np.outer(MM, np.ones([len(z_arr)]))
-        # M200 = np.outer(MM, np.zeros([len(z_arr)]))
-        # zarr = np.outer(np.ones([len(M)]), z_arr)
-
-        P_func = self.P_of_Y_per(LgY, MM, z_c, Y_c, Y_err, param_vals)
-
+        # P_func = np.outer(mass, np.zeros([len(z_arr)]))
+        # M_arr = np.outer(mass, np.ones([len(z_arr)]))
+        # M200 = np.outer(mass, np.zeros([len(z_arr)]))
+        # zarr = np.outer(np.ones([len(mass)]), z_arr)
+        P_func = self.p_y_per_observed(log_y, mass, z_c, Y_c, Y_err, params)
         return P_func
 
 
@@ -252,7 +353,7 @@ def calcQ(theta500Arcmin, tck):
 
 
 # ----------------------------------------------------------------------------------------
-def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
+def calcFRel(z, M500, Ez_fn: interpolate.interp1d, obsFreqGHz=148.0):
     """Calculates relativistic correction to SZ effect at specified frequency, given z,
     M500 in MSun.
 
@@ -384,17 +485,17 @@ def calcFRel(z, M500, obsFreqGHz=148.0, Ez_fn=None):
 
 
 # ----------------------------------------------------------------------------------------
-def y0FromLogM500(
+def y0_from_logm500(
     log10M500,
     z,
     tckQFit,
+    Ez_fn: interpolate.interp1d,
     tenToA0=4.95e-5,
     B0=0.08,
     Mpivot=3e14,
     sigma_int=0.2,
     fRelWeightsDict={148.0: 1.0},
     H0=70.0,
-    Ez_fn=None,
     Da_fn=None,
 ):
     """Predict y0~ given logM500 (in MSun) and redshift. Default scaling relation

@@ -26,7 +26,7 @@ tinker_data = np.transpose(
     ]
 )
 
-tinker_splines = None
+tinker_splines: list[iuSpline] | None = None
 
 
 def tinker_params_spline(delta, z=None):

@@ -34,8 +34,7 @@ class HMF:
 
         self.M = (M_edges[1:] + M_edges[:-1]) / 2.0  # 10**np.arange(13.5, 15.7, 0.02)
 
-        assert len(Ez) == len(zarr), "Ez and z arrays do not match"
-
+        assert len(Ez) == len(self.zarr), "Ez and z arrays do not match"
         self.E_z = Ez
 
         # Initialize rho critical values for usage

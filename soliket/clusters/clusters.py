@@ -27,7 +27,7 @@ from soliket.clusters import massfunc as mf
 from soliket.poisson import PoissonLikelihood
 
 from .survey import SurveyData
-from .sz_utils import szutils, trapezoid
+from .sz_utils import SZUtils, trapezoid
 from cobaya import LoggedError
 
 C_KM_S = 2.99792e5
@@ -105,7 +105,7 @@ class ClusterLikelihood(PoissonLikelihood):
             self.data_path, self.data_name
         )  # , MattMock=False,tiles=False)
 
-        self.szutils = szutils(self.survey)
+        self.szutils = SZUtils(self.survey)
 
         df = pd.DataFrame(
             {
@@ -199,7 +199,7 @@ class ClusterLikelihood(PoissonLikelihood):
             c_yerr = tsz_signal_err
             c_z = z
 
-            Pfunc_ind = self.szutils.Pfunc_per(
+            Pfunc_ind = self.szutils.pfunc_per(
                 HMF.M, c_z, c_y * 1e-4, c_yerr * 1e-4, param_vals, Ez_fn, DA_fn
             )
 
@@ -243,7 +243,7 @@ class ClusterLikelihood(PoissonLikelihood):
         dn_dzdm = HMF.dn_dM(HMF.M, 500.0) * h**4.0  # getting rid of hs
 
         for Yt, frac in zip(self.survey.Ythresh, self.survey.frac_of_survey):
-            Pfunc = self.szutils.PfuncY(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
+            Pfunc = self.szutils.pfunc_y(Yt, HMF.M, z_arr, param_vals, Ez_fn, DA_fn)
             N_z = trapezoid(
                 dn_dzdm * Pfunc, dx=np.diff(HMF.M[:, None] / h, axis=0), axis=0
             )
