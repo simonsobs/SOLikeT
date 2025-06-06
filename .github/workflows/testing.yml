@@ -75,10 +75,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install uv and export requirements
-        run: |
-          pip install uv
-          uv pip compile ./pyproject.toml --all-extras -o requirements.txt
       - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: false
