@@ -1,3 +1,5 @@
+import importlib
+
 import numpy as np
 from cobaya.model import get_model
 
@@ -5,11 +7,11 @@ bias_params = {"b_lin": 1.1}
 
 
 def test_bias_import():
-    from soliket.bias import Bias  # noqa F401
+    _ = importlib.import_module("soliket.bias").Bias
 
 
 def test_linear_bias_import():
-    from soliket.bias import Linear_bias  # noqa F401
+    _ = importlib.import_module("soliket.bias").Linear_bias
 
 
 def test_linear_bias_model(evaluate_one_info, test_cosmology_params):
@@ -19,7 +21,7 @@ def test_linear_bias_model(evaluate_one_info, test_cosmology_params):
     evaluate_one_info["params"].update(bias_params)
     evaluate_one_info["theory"] = {"camb": None, "linear_bias": {"external": Linear_bias}}
 
-    model = get_model(evaluate_one_info)  # noqa F841
+    _ = get_model(evaluate_one_info)
 
 
 def test_linear_bias_compute_grid(evaluate_one_info, test_cosmology_params):

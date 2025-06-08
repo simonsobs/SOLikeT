@@ -228,12 +228,12 @@ class CCL(Theory):
                         sigma8=0.8,
                         n_s=0.96,
                         background={"a": a, "chi": distance, "h_over_h0": E_of_z},
-                        pk_linear={"a": a, "k": k, "delta_matter:delta_matter": Pk_lin},  # noqa E501
+                        pk_linear={"a": a, "k": k, "delta_matter:delta_matter": Pk_lin},
                         pk_nonlin={
                             "a": a,
                             "k": k,
                             "delta_matter:delta_matter": Pk_nonlin,
-                        },  # noqa E501
+                        },
                     )
 
                 else:
@@ -244,7 +244,7 @@ class CCL(Theory):
                         sigma8=0.8,
                         n_s=0.96,
                         background={"a": a, "chi": distance, "h_over_h0": E_of_z},
-                        pk_linear={"a": a, "k": k, "delta_matter:delta_matter": Pk_lin},  # noqa E501
+                        pk_linear={"a": a, "k": k, "delta_matter:delta_matter": Pk_lin},
                     )
 
         state["CCL"] = {"cosmo": cosmo, "ccl": self.ccl}

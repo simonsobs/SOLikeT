@@ -2,6 +2,8 @@
 Check that CCL works correctly.
 """
 
+import importlib
+
 import numpy as np
 from cobaya.likelihood import Likelihood
 from cobaya.model import get_model
@@ -14,7 +16,7 @@ class CheckLike(Likelihood):
     """
 
     def logp(self, **params_values):
-        ccl = self.provider.get_CCL()  # noqa F841
+        _ = self.provider.get_CCL()
         return -1.0
 
     def get_requirements(self):
@@ -31,7 +33,7 @@ def test_ccl_import(check_skip_pyccl):
     """
     Test whether we can import pyCCL.
     """
-    import pyccl  # noqa F401
+    _ = importlib.import_module("pyccl")
 
 
 def test_ccl_cobaya(check_skip_pyccl, evaluate_one_info, test_cosmology_params):

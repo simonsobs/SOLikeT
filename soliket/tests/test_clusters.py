@@ -23,7 +23,7 @@ def test_clusters_model(check_skip_pyccl, evaluate_one_info, test_cosmology_para
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info.update(clusters_like_and_theory)
 
-    model_fiducial = get_model(evaluate_one_info)  # noqa F841
+    _ = get_model(evaluate_one_info)
 
 
 def test_clusters_loglike(check_skip_pyccl, evaluate_one_info, test_cosmology_params):

@@ -2,6 +2,7 @@
 Check that CosmoPower gives the correct Planck CMB power spectrum.
 """
 
+import importlib
 import os
 
 import numpy as np
@@ -65,14 +66,14 @@ info_dict = {
 
 
 def test_cosmopower_import(check_skip_cosmopower):
-    from soliket.cosmopower import CosmoPower  # noqa F401
+    _ = importlib.import_module("soliket.cosmopower").CosmoPower
 
 
 def test_cosmopower_theory(request, check_skip_cosmopower, install_planck_lite):
     info_dict["theory"]["soliket.CosmoPower"]["network_path"] = os.path.join(
         request.config.rootdir, "soliket/cosmopower/data/CP_paper"
     )
-    model_fiducial = get_model(info_dict)  # noqa F841
+    _ = get_model(info_dict)
 
 
 def test_cosmopower_loglike(request, check_skip_cosmopower, install_planck_lite):

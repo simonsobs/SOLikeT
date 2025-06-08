@@ -1,3 +1,5 @@
+import importlib
+
 import numpy as np
 from cobaya.theory import Theory
 
@@ -22,7 +24,7 @@ def toy_data():
 
 
 def test_cash_import():
-    from soliket.cash import CashCLikelihood  # noqa F401
+    _ = importlib.import_module("soliket.cash").CashCLikelihood
 
 
 def test_cash_read_data(request):

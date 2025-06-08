@@ -1,3 +1,4 @@
+import importlib
 import os
 
 import numpy as np
@@ -19,11 +20,11 @@ cross_correlation_theory = {
 
 
 def test_galaxykappa_import():
-    from soliket.cross_correlation import GalaxyKappaLikelihood  # noqa F401
+    _ = importlib.import_module("soliket.cross_correlation").GalaxyKappaLikelihood
 
 
 def test_shearkappa_import():
-    from soliket.cross_correlation import ShearKappaLikelihood  # noqa F401
+    _ = importlib.import_module("soliket.cross_correlation").ShearKappaLikelihood
 
 
 def test_galaxykappa_model(
@@ -42,7 +43,7 @@ def test_galaxykappa_model(
         }
     }
 
-    model = get_model(evaluate_one_info)  # noqa F841
+    _ = get_model(evaluate_one_info)
 
 
 def test_shearkappa_model(
@@ -60,7 +61,7 @@ def test_shearkappa_model(
         }
     }
 
-    model = get_model(evaluate_one_info)  # noqa F841
+    _ = get_model(evaluate_one_info)
 
 
 def test_galaxykappa_like(

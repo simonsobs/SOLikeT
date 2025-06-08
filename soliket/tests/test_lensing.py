@@ -1,3 +1,5 @@
+import importlib
+
 import numpy as np
 from cobaya.model import get_model
 from cobaya.tools import resolve_packages_path
@@ -21,7 +23,7 @@ info["params"] = fiducial_params
 
 
 def test_lensing_import(request):
-    from soliket.lensing import LensingLikelihood  # noqa F401
+    _ = importlib.import_module("soliket.lensing").LensingLikelihood
 
 
 def test_lensing_like(request):

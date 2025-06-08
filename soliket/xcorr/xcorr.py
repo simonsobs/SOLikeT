@@ -61,7 +61,7 @@ class XcorrLikelihood(GaussianLikelihood):
     """
 
     def initialize(self):
-        name: str = "Xcorr"  # noqa F841
+        self.name: str = "Xcorr"
         self.log.info("Initialising.")
 
         self.dndz_file: str | None = None
@@ -252,6 +252,8 @@ class XcorrLikelihood(GaussianLikelihood):
 
         ell_gg, clobs_gg = utils.binner(self.ell_range, cl_gg, bin_edges)
         ell_kappag, clobs_kappag = utils.binner(self.ell_range, cl_kappag, bin_edges)
-        # ell_kappakappa, clobs_kappakappa = utils.binner(self.ell_range, cl_kappakappa, bin_edges) # noqa E501
+        # ell_kappakappa, clobs_kappakappa = utils.binner(
+        #   self.ell_range, cl_kappakappa, bin_edges
+        # )
 
         return np.concatenate([clobs_gg, clobs_kappag])

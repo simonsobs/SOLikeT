@@ -1,18 +1,18 @@
+import importlib
+
 from cobaya.tools import resolve_packages_path
 
 packages_path = resolve_packages_path()
 
 
 def test_mflike_import():
-    import mflike  # noqa: F401
-    from mflike import (  # noqa: F401  # noqa: F401
-        EE,
-        TE,
-        TT,
-        TTTEEE,
-        BandpowerForeground,
-        Foreground,
-    )
+    _ = importlib.import_module("mflike")
+    _ = importlib.import_module("mflike").EE
+    _ = importlib.import_module("mflike").TE
+    _ = importlib.import_module("mflike").TT
+    _ = importlib.import_module("mflike").TTTEEE
+    _ = importlib.import_module("mflike").BandpowerForeground
+    _ = importlib.import_module("mflike").Foreground
 
 
 def test_mflike_install(request):
