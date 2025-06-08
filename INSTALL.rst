@@ -13,6 +13,7 @@ SOLikeT can be installed in a fast and reproducible way using the `uv` package m
 The first step is to clone the SOLikeT repository:
 
 .. code-block:: bash
+   
    git clone https://github.com/simonsobs/soliket
    cd soliket 
 
