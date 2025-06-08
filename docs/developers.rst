@@ -125,37 +125,39 @@ Code Style
 
 All contributions should follow the `PEP8 Style Guide for Python Code <https://www.python.org/dev/peps/pep-0008/>`_. When a PR is created for SOLikeT, a check will be run to make sure your code complies with these recommendations, which are the same as those specified for `Cobaya <https://cobaya.readthedocs.io/>`_. This means the following checks will be made:
 
-::
+.. code-block:: bash
 
   E713,E704,E703,E714,E741,E10,E11,E20,E22,E23,E25,E27,E301,E302,E304,E9,F405,F406,F5,F6,F7,F8,W1,W2,W3,W6
 
 and a line length limit of 90 characters will be applied.
 
-You may find it easier to run this check as locally before raising a PR. This can be done by running:
+This will be run automatically for you at commit time if you have `pre-commit <https://pre-commit.com/>`_ installed, which is highly recommended. To install pre-commit, run:
 
-::
+.. code-block:: bash
 
-  tox -e codestlye
+  pip install pre-commit
+  pre-commit install
 
-in the SOLikeT root directory.
+This will install the pre-commit hooks, and in particular the `ruff <https://docs.astral.sh/ruff/>`_ tool, which will check your code for style issues and formatting before you commit it. You can also run `ruff <https://docs.astral.sh/ruff/>`_ manually with the command:
 
-The `black <https://black.readthedocs.io/en/stable/>`_ tool will also try to automatically format your code to abide by the style guide. It should be used with caution as it is irreversible (without a git revert), and can be run on any python files you create by running:
+.. code-block:: bash
 
-::
-
-  black <py-file-you-created>
-
-it is usually best to then inspect the file and correct any strange choices `black` has made.
+  ruff check --fix . --config ./pyproject.toml
+  ruff format . --config ./pyproject.toml
 
 Unit Tests
 ==========
 
-Pull requests will require existing unit tests to pass before they can be merged. Additionally, new unit tests should be written for all new public methods and functions. Unit tests for each Likelihood and Theory should be placed in the tests directory with a name matching that of the python file in which the class is defined::
+Pull requests will require existing unit tests to pass before they can be merged. Additionally, new unit tests should be written for all new public methods and functions. Unit tests for each Likelihood and Theory should be placed in the tests directory with a name matching that of the python file in which the class is defined
+
+.. code-block:: bash
 
  SOLikeT/soliket/tests/test_my_module.py
 
 
-For Likelihoods we request that there is a test which compares the result of a likelihood calculation to a precomputed expected value which is hard coded in the tests file, to a tolerance of ``1.e-3``::
+For Likelihoods we request that there is a test which compares the result of a likelihood calculation to a precomputed expected value which is hard coded in the tests file, to a tolerance of ``1.e-3``
+
+.. code-block:: bash
 
   assert np.isclose(loglike_just_computed, -25.053, rtol=1.e-3)
 
@@ -167,28 +169,49 @@ Checking code in development
 ----------------------------
 To see if codes you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
 
-If you are using conda, the easiest way to run tests (and the way we run them) is to use tox-conda::
+To run tests, you can use the following command:
 
-  pip install tox
-  tox -e test
+.. code-block:: bash
 
-This will create a fresh virtual environment replicating the one which is used for CI then run the tests (i.e. without touching your current environment). Note that any args after a '--' string will be passed to pytest, so::
+   uv run pytest -vv --durations=10  # using uv
+   pytest -vv --durations=10         # using pip or conda
 
-  tox -e test -- -k my_new_module
+This command will run all tests in the SOLikeT codebase and provide verbose output, including the duration of each test. The `--durations=10` option will show the 10 slowest tests, which can help identify performance bottlenecks.
 
-will only run tests which have names containing the string 'my_new_model', and ::
+If the current environment does not have the required dependencies, `uv` will install them automatically based on the `uv.lock` file, ensuring that you have all the necessary packages to run the tests.
 
-  tox -e test -- -pdb
+You can also test a subset of tests or run specific tests by passing additional arguments to `pytest`. For example, if you want to run only the tests in a specific module, you can do
 
-will start a pdb debug instance when (sorry, *if*) a test fails.
+.. code-block:: bash
+  uv run pytest -vv --durations=10 -k my_new_module
+
+searching for tests that match the string 'my_new_module'.
+
+`uv` provides a very easy but powerful way to test your new feature in depth locally (if you really want to). In fact, you can install different Python versions without needing to set up multiple environments manually. You can install multiple Python version and pin the one you want to test with:
+
+.. code-block:: bash
+
+  uv python install 3.10 # install Python 3.10 or any other version you want to test
+  uv python pin 3.10 # pin the current environment to Python 3.10
+
+Then, provided that the version is compatible with SOLikeT, you can run the tests with that version:
+
+.. code-block:: bash
+
+  uv run pytest -vv --durations=10
+
+`uv` will automatically use the pinned Python version to run the tests, check the `uv.lock` file for the correct dependencies, and ensure that your code is compatible with that version.
 
 Checking environment configuration
 ----------------------------------
-Check SOLikeT is working as intended in a python environment of your own specification (i.e. you have installed SOLikeT not using the soliket-tests conda environment).
+Check SOLikeT is working as intended in a python environment of your own specification (i.e. you have installed SOLikeT without following our guide).
 
-For this you need to make sure all of the required system-level and python dependencies described in `the installation instructions <install.html>`_ are working correctly, then run::
+For this you need to make sure all of the required system-level and python dependencies described in `the installation instructions <install.html>`_ are working correctly, then run
 
-  pytest -v soliket
+.. code-block:: bash
+
+  uv run pytest -vv soliket # or
+  pytest -vv soliket
 
 Good luck!
 

@@ -74,6 +74,14 @@ Write the new code you would like to contribute, remembering to abide by the `Co
   git add file_containing_your_contribution
   git commit -m 'Your clear and descriptive commit message'
 
+In order to maintain code style easily, we highly recommend using `pre-commit` to automatically check and format your code before committing. You can set this up by running:
+
+::
+  pip install pre-commit
+  pre-commit install
+
+This will leverage the hooks defined in the `.pre-commit-config.yaml` file to check your code for style issues with `ruff <https://docs.astral.sh/ruff/>`_.  
+
 *Push* the contributions in your feature branch to your remote fork on GitHub:
 
 ::
@@ -108,7 +116,7 @@ Status checks
 A series of automated checks will be run on your pull request, some of which will be required to pass before it can be merged into the main codebase:
 
   - ``Tests`` (Required) runs the `unit tests`
-  - ``Code Style`` (Required) runs `flake8 <https://flake8.pycqa.org/en/latest/>`__ to check that your code conforms to the `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_ style guidelines. Click "Details" to view any errors.
+  - ``Code Style`` (Required) runs `ruff <https://docs.astral.sh/ruff/>`_ to check that your code conforms to the `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_ style guidelines. Click "Details" to view any errors.
 ..
   _ in four predefined environments; `latest supported versions`, `oldest supported versions`, `macOS latest supported` and `Windows latest supported`. Click "Details" to view the output including any failures.
 
