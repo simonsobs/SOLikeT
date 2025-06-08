@@ -84,6 +84,7 @@ version_file = "soliket/_version.py"
 
 [tool.ruff.lint]
 select = ["E713", "E703", "E714", "E741", "E10", "E11", "E20", "E22", "E23", "E25", "E262", "E27", "E301", "E302", "E304", "E9", "F405", "F406", "F5", "F6", "F7", "F8", "E501", "W191", "F401", "W1", "W292", "W293", "W3"]
+extend-select = ["I"]
 ignore = []
 
 [tool.ruff.lint.per-file-ignores]

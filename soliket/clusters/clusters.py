@@ -19,8 +19,10 @@ p
 """
 
 import os
+
 import numpy as np
 import pandas as pd
+from cobaya import LoggedError
 from scipy.interpolate import interp1d
 
 from soliket.clusters import massfunc as mf
@@ -28,7 +30,6 @@ from soliket.poisson import PoissonLikelihood
 
 from .survey import SurveyData
 from .sz_utils import SZUtils, trapezoid
-from cobaya import LoggedError
 
 C_KM_S = 2.99792e5
 

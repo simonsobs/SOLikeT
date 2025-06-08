@@ -1,7 +1,6 @@
 import numpy as np
 from cobaya.model import get_model
 
-
 clusters_like_and_theory = {
     "likelihood": {"soliket.ClusterLikelihood": {"stop_at_error": True}},
     "theory": {

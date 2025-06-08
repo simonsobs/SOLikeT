@@ -7,7 +7,6 @@ import os
 import numpy as np
 from cobaya.model import get_model
 
-
 fiducial_params = {
     "ombh2": 0.0224,
     "omch2": 0.122,

@@ -1,6 +1,8 @@
 import os
+
 import numpy as np
 from cobaya.model import get_model
+
 from soliket.ccl import CCL
 
 gammakappa_sacc_file = "soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits"

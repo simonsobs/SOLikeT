@@ -78,8 +78,9 @@ the likelihood.
 # https://cobaya.readthedocs.io/en/devel/theory.html
 # https://cobaya.readthedocs.io/en/devel/theories_and_dependencies.html
 
-import numpy as np
 from collections.abc import Sequence
+
+import numpy as np
 from cobaya.theory import Theory
 from cobaya.tools import LoggedError
 

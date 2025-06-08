@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+
 import numpy as np
 from cobaya.functions import chi_squared
 

@@ -1,6 +1,6 @@
 import numpy as np
-from cobaya.tools import resolve_packages_path
 from cobaya.model import get_model
+from cobaya.tools import resolve_packages_path
 
 packages_path = resolve_packages_path()
 
