@@ -13,7 +13,7 @@ dependencies:
   - swig
   - gsl
   - fftw
-  - pyccl==3.2.0
+  - pyccl>=3.1.2
   - cython
   - mpi4py
   - camb
