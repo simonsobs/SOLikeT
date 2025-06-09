@@ -6,23 +6,23 @@ authors = [
 ]
 description = "Likelihood and Theory codes for the Simons Observatory."
 readme = "README.rst"
-requires-python = ">3.9,<3.12"
+requires-python = ">3.9,<3.12" # tensorflow is the limiting factor here
 license = { text = "MIT" }
 
 dependencies = [
-    "requests (>=2.32.3,<3.0.0)",
-    "scipy (>=1.6)",
-    "cobaya (>=3.5.7,<4.0.0)",
-    "sacc (>=1.0.2,<2.0.0)",
-    "fgspectra (>=1.1.0)",
-    "pyhalomodel (>=1.0.2,<2.0.0)",
-    "camb (>=1.6.0,<2.0.0)",
-    "getdist (>=1.6.4,<2.0.0)",
-    "syslibrary (>=0.2.0)",
-    "mflike (>=1.0.0)",
-    "numpy (>=1.24.1,<2.0.0)",
-    "astropy (<7.1.0)",
-    "pyccl==3.2.0 ; sys_platform != 'win32'",
+    "requests (>=2.25.0)", # from sphinx
+    "scipy (>=1.10.0)", # from pyhalomodel
+    "cobaya (>=3.5.5)", # breaking change
+    "sacc (>=0.9)", # from mflike
+    "fgspectra (>=1.3.0)", # from mflike
+    "pyhalomodel (>=1.0.1)", # from python compatibility
+    "camb (>=1.5)", # from cobaya
+    "getdist (>=1.3.1)", # from cobaya
+    "syslibrary (>=0.2.0)", # from mflike
+    "mflike (>=1.0.0)", # breaking change
+    "numpy (>=1.24.1,<2.0.0)", # from pyccl
+    "astropy (>=5.3.4)", # breaking change
+    "pyccl==3.2.0 ; sys_platform != 'win32'", # for stability
 ]
 
 [project.urls]
@@ -31,22 +31,20 @@ Documentation = "https://soliket.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 emulator = [
-    "cosmopower (>=0.2.0,<0.3.0)",
-    "tensorflow-probability (<0.22)",
-    "tensorflow (>=2.12)"
+    "cosmopower (>=0.2.0)", # from tensorflow
+    "tensorflow-probability (>=0.20.1)", # breaking change
+    "tensorflow (>=2.12)" # from python compatibility
 ]
 docs = [
-    "sphinx (<8.2.3)",
-    "sphinx-rtd-theme (>=3.0.2,<4.0.0)",
+    "sphinx",
+    "sphinx-rtd-theme",
 ]
 dev = [
-    "pytest (>=8.4.0,<9.0.0)",
-    "ruff (>=0.11.12,<0.12.0)",
-    "pytest-cov (>=6.1.1,<7.0.0)",
-    "scikit-learn (>=1.6.1,<2.0.0)",
-    "poetry-plugin-export (>=1.9.0,<2.0.0)",
-    "pre-commit>=4.2.0",
-    "pyupgrade>=3.20.0",
+    "pytest (>=6.2.5)", # breaking change
+    "ruff",
+    "pytest-cov",
+    "scikit-learn (>=1.2)", # breaking change
+    "pre-commit",
 ]
 
 [build-system]
