@@ -20,7 +20,7 @@ dependencies = [
     "getdist (>=1.3.1)", # from cobaya
     "syslibrary (>=0.2.0)", # from mflike
     "mflike (>=1.0.0)", # breaking change
-    "numpy (>=1.24.1,<2.0.0)", # from pyhalomodel
+    "numpy (>=1.24.1)", # from pyhalomodel
     "astropy (>=5.3.4)", # breaking change
     "pyccl>=3.1.2 ; sys_platform != 'win32'", # for stability
 ]
