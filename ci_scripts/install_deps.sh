@@ -25,29 +25,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Detect platform
-OS="$(uname | tr '[:upper:]' '[:lower:]')"
-echo "Running install_deps.sh on $OS"
-
-# Filter extras based on OS
-FILTERED_EXTRAS=()
-
-for extra in "${EXTRAS[@]}"; do
-  if [[ "$extra" == "emulator" ]]; then
-    # Only add emulator extra if NOT Windows
-    if [[ "$OS" != msys* && "$OS" != mingw* && "$OS" != cygwin* ]]; then
-      FILTERED_EXTRAS+=("$extra")
-    else
-      echo "Skipping 'emulator' extra on Windows"
-    fi
-  else
-    FILTERED_EXTRAS+=("$extra")
-  fi
-done
-
 # Compose extras string for uv
 EXTRAS_STR=""
-for e in "${FILTERED_EXTRAS[@]}"; do
+for e in "${EXTRAS[@]}"; do
   EXTRAS_STR+="--extra $e "
 done
 
