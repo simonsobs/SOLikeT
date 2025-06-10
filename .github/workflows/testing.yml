@@ -45,8 +45,9 @@ jobs:
               PYTHONIOENCODING: utf-8
               PYTHONUTF8: 1
 
-    # <-- only run if the HEAD commit message does *not* start with "skip-tests"
-    if: ${{ ! startsWith(github.event.head_commit.message, 'skip-tests') }}
+    # Only skip when it's a push AND the commit starts with "skip-tests"
+    if: ${{ !( github.event_name == 'push' && startsWith(github.event.head_commit.message, 'skip-tests') ) }}
+
 
     steps:
       - name: Checkout repository
