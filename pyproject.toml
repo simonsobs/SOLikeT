@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Likelihood and Theory codes for the Simons Observatory."
 readme = "README.rst"
-requires-python = ">3.9,<3.12" # tensorflow is the limiting factor here
+requires-python = ">3.9,<3.13" # 3.13 is conflicting with many dependencies
 license = { text = "MIT" }
 
 dependencies = [
@@ -23,6 +23,7 @@ dependencies = [
     "numpy (>=1.24.1)", # from pyhalomodel
     "astropy (>=5.3.4)", # breaking change
     "pyccl>=3.1.2 ; sys_platform != 'win32'", # for stability
+    "pandas (<2.1.0); python_version >= '3.12'",
 ]
 
 [project.urls]
@@ -31,9 +32,9 @@ Documentation = "https://soliket.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 emulator = [
-    "cosmopower (>=0.2.0)", # from tensorflow
-    "tensorflow-probability (>=0.20.1)", # breaking change
-    "tensorflow (>=2.12)" # from python compatibility
+    "cosmopower (>=0.2.0); python_version < '3.12'", # from tensorflow
+    "tensorflow-probability (>=0.20.1); python_version < '3.12'", # breaking change
+    "tensorflow (>=2.12); python_version < '3.12'", # from python compatibility
 ]
 docs = [
     "sphinx",
