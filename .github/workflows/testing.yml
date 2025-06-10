@@ -46,7 +46,9 @@ jobs:
               PYTHONUTF8: 1
 
     # Only skip when it's a push AND the commit starts with "skip-tests"
-    if: ${{ github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'skip-tests') }}
+    if: |
+      !startsWith(github.event.head_commit.message, '[skip ci]') &&
+      !startsWith(github.event.head_commit.message, '[skipci]')
 
     steps:
       - name: Checkout repository
@@ -75,6 +77,9 @@ jobs:
   test-conda:
     runs-on: ubuntu-latest
     name: Conda Test (Python 3.11)
+    if: |
+      !startsWith(github.event.head_commit.message, '[skip ci]') &&
+      !startsWith(github.event.head_commit.message, '[skipci]')
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python
