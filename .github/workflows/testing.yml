@@ -16,29 +16,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
-        os: [ubuntu-latest]
+        - name: Ubuntu latest py3.13
+          os: ubuntu-latest
+          python-version: '3.13'
 
-        exclude:
-          - python-version: '3.12'
-            os: ubuntu-latest  # prevents duplication of the include above
+        - name: Ubuntu latest py3.12 (cov)
+          os: ubuntu-latest
+          python-version: '3.12'
+          tags: cov
 
-        include:
-          - name: Ubuntu latest py3.12 (cov)
-            os: ubuntu-latest
-            python-version: '3.12'
-            tags: cov
+        - name: Ubuntu latest py3.11
+          os: ubuntu-latest
+          python-version: '3.11'
 
-          - name: macOS latest py3.11
-            os: macos-latest
-            python-version: '3.11'
+        - name: Ubuntu latest py3.10
+          os: ubuntu-latest
+          python-version: '3.10'
 
-          - name: Windows latest py3.11
-            os: windows-latest
-            python-version: '3.11'
-            env:
-              PYTHONIOENCODING: utf-8
-              PYTHONUTF8: 1
+        - name: macOS latest py3.11
+          os: macos-latest
+          python-version: '3.11'
+
+        - name: Windows latest py3.11
+          os: windows-latest
+          python-version: '3.11'
+          env:
+            PYTHONIOENCODING: utf-8
+            PYTHONUTF8: 1
 
     steps:
       - name: Checkout repository
