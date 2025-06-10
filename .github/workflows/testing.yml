@@ -20,8 +20,12 @@ jobs:
 
           - name: latest supported versions
             os: ubuntu-latest
-            python-version: '3.11'
+            python-version: '3.12'
             tags: 'cov'
+
+          - name: latest supported versions with CosmoPower
+            os: ubuntu-latest
+            python-version: '3.11'
 
           - name: oldest supported versions
             os: ubuntu-latest
@@ -30,12 +34,12 @@ jobs:
 
           - name: macOS latest
             os: macos-latest
-            python-version: '3.11'
+            python-version: '3.12'
             tags: ''
 
           - name: Windows latest
             os: windows-latest
-            python-version: '3.11'
+            python-version: '3.12'
             tags: ''
             env:
               PYTHONIOENCODING: utf-8
@@ -67,13 +71,13 @@ jobs:
 
   test-conda:
     runs-on: ubuntu-latest
-    name: Conda Test (Python 3.11)
+    name: Conda Test (Python 3.12)
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
