@@ -6,24 +6,20 @@ authors = [
 ]
 description = "Likelihood and Theory codes for the Simons Observatory."
 readme = "README.rst"
-requires-python = ">3.9,<3.13" # 3.13 is conflicting with many dependencies
+requires-python = ">3.9,<3.14" # 3.14 is conflicting with many dependencies
 license = { text = "MIT" }
 
 dependencies = [
-    "requests (>=2.25.0)", # from sphinx
-    "scipy (>=1.10.0)", # from pyhalomodel
+    "requests (>=2.18)", # from cobaya
+    "scipy (>=1.10.0)", # from distutils
     "cobaya (>=3.5.5)", # breaking change
-    "sacc (>=0.9)", # from mflike
-    "fgspectra (>=1.3.0)", # from mflike
-    "pyhalomodel (>=1.0.1)", # from python compatibility
+    "sacc (>=0.9)",
     "camb (>=1.5)", # from cobaya
     "getdist (>=1.3.1)", # from cobaya
-    "syslibrary (>=0.2.0)", # from mflike
-    "mflike (>=1.0.0)", # breaking change
-    "numpy (>=1.24.1)", # from pyhalomodel
+    "numpy (>=1.22.1); python_version < '3.12'", # breaking change
+    "numpy (>=1.25); python_version >= '3.12'", # from distutils
     "astropy (>=5.3.4)", # breaking change
-    "pyccl>=3.1.2 ; sys_platform != 'win32'", # for stability
-    "pandas (<2.1.0); python_version >= '3.12'",
+    "pandas (<2.1.0); python_version >= '3.12' and python_version < '3.13'",
 ]
 
 [project.urls]
@@ -36,6 +32,17 @@ emulator = [
     "tensorflow-probability (>=0.20.1); python_version < '3.12'", # breaking change
     "tensorflow (>=2.12); python_version < '3.12'", # from python compatibility
 ]
+pyccl = [
+    "pyccl>=3.1.2 ; sys_platform != 'win32' and python_version < '3.13'", # for stability
+]
+pyhalomodel = [
+    "pyhalomodel (>=1.0.1); python_version < '3.13'", # from python compatibility
+]
+mflike = [
+    "mflike (>=1.0.0); python_version < '3.13'", # breaking change
+    "fgspectra (>=1.3.0); python_version < '3.13'", # from mflike
+    "syslibrary (>=0.2.0); python_version < '3.13'", # from mflike
+]
 docs = [
     "sphinx",
     "sphinx-rtd-theme",
@@ -46,6 +53,12 @@ dev = [
     "pytest-cov",
     "scikit-learn (>=1.2)", # breaking change
     "pre-commit",
+]
+all = [
+    "soliket[emulator]",
+    "soliket[pyccl]",
+    "soliket[pyhalomodel]",
+    "soliket[mflike]",
 ]
 
 [build-system]
