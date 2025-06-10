@@ -52,7 +52,7 @@ jobs:
       - name: Install SOLikeT dependencies and likelihoods
         run: |
           pip install uv
-          bash ci_scripts/install_deps.sh --extras dev emulator --python ${{ matrix.python-version }}
+          bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
 
       - name: Run tests
         env:
