@@ -29,6 +29,7 @@ def test_installation(lhood):
         )
 
     elif lhood == "multi":
+        _ = pytest.importorskip("mflike", reason="Couldn't import 'mflike' module")
         import mflike
 
         is_installed = mflike.TTTEEE.is_installed(
@@ -56,6 +57,9 @@ def test_evaluate(lhood):
     info["force"] = True
     info["sampler"] = {"evaluate": {}}
 
+    if lhood == "multi":
+        pytest.importorskip("mflike", reason="Couldn't import 'mflike' module")
+
     install(info, path=packages_path, skip_global=True, no_set_global=True)
 
     updated_info, sampler = run(info)
@@ -76,6 +80,9 @@ def test_mcmc(lhood):
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
     info["sampler"] = {"mcmc": {"max_samples": 10, "max_tries": 1000}}
+
+    if lhood == "multi":
+        pytest.importorskip("mflike", reason="Couldn't import 'mflike' module")
 
     install(info, path=packages_path, skip_global=True, no_set_global=True)
 
