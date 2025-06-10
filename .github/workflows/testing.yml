@@ -46,8 +46,7 @@ jobs:
               PYTHONUTF8: 1
 
     # Only skip when it's a push AND the commit starts with "skip-tests"
-    if: ${{ !( github.event_name == 'push' && startsWith(github.event.head_commit.message, 'skip-tests') ) }}
-
+    if: ${{ !( github.event_name == 'push' && startsWith(github.event.head_commit.message, 'skip-tests:') ) }}
 
     steps:
       - name: Checkout repository
