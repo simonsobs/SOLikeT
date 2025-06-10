@@ -1,21 +1,37 @@
 name: Upload to PyPI
 
 on:
+  # Only run when a GitHub Release is published
   release:
     types: [published]
 
+  # Or trigger manually for debugging
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Where to push'
+        required: true
+        default: 'testpypi'
+        type: choice
+        options:
+          - testpypi
+          - pypi
+
 jobs:
-  build-and-publish:
+  publish:
+    name: 📦 Publish to ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.repository || 'pypi' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Install uv
         run: pip install uv
@@ -23,5 +39,27 @@ jobs:
       - name: Build with uv
         run: uv build
 
-      - name: Publish to PyPI with uv
-        run: uv publish --token ${{ secrets.PYPI_API_TOKEN }}
+      - name: Determine target
+        id: choose
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "REPO=${{ github.event.inputs.repository }}" >> $GITHUB_OUTPUT
+          else
+            # on a real Release, always push to PyPI
+            echo "REPO=pypi" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Publish
+        run: |
+          echo "Publishing to ${{ steps.choose.outputs.REPO }}..."
+          if [ "${{ steps.choose.outputs.REPO }}" = "testpypi" ]; then
+            uv publish --token "${{ secrets.TEST_PYPI_TOKEN }}" --repository testpypi
+          else
+            uv publish --token "${{ secrets.PYPI_API_TOKEN }}"
+          fi
+        env:
+          # optional extra debug
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          UV_DEBUG: '1'
