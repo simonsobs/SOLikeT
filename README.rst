@@ -54,10 +54,16 @@ Then, after activating an existing environment (both `conda` or `venv` environme
 
 At this point, you can forget about `uv`, if you want to, and continue using SOLikeT as desired. If you want to re-sync your environment with the lockfile, you can re-run that command.
 
-If you need to use `CosmoPower` emulator, you can specify the `emulator` extra when running `uv sync`. This will install all the necessary dependencies related to `CosmoPower`:
+We define extra dependencies for SOLikeT, which allow you to install additional features or functionalities as needed. In particuar, we define `emulator`, `pyccl`, `pyhalomodel`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the PyHaloModel library for halo modeling. The last one will install all of them. These can be specified when running `uv sync` to install the corresponding dependencies.
+
 .. code-block:: bash
 
-  uv sync --locked --extra emulator
+   uv sync --locked --extra emulator    # for CosmoPower emulator
+   uv sync --locked --extra pyccl       # for PyCCL library
+   uv sync --locked --extra pyhalomodel # for PyHaloModel library
+   uv sync --locked --extra all         # for all extras
+
+Of course, you can combine multiple extras as needed. Note that these extra dependencies come with extra constraints, so these may not be compatible with all Python versions or platforms. These are reported in the `pyproject.toml` file, which is used by `uv` to manage dependencies.
 
 If you are less worried about reproducibility, you can also install SOLikeT without the lockfile by using `pip` after cloning the repository:
 
@@ -66,7 +72,7 @@ If you are less worried about reproducibility, you can also install SOLikeT with
   cd soliket
   pip install .
   
-In this case, you can also specify the `emulator` extra to install the dependencies related to `CosmoPower`:
+In this case, you can also specify extras, such as the `emulator` to install the dependencies related to `CosmoPower`:
 
 .. code-block:: bash
 

@@ -36,11 +36,18 @@ If instead you prefer `venv` to be created automatically, you can use:
    source .venv/bin/activate
    uv sync --locked
 
-In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation). To achieve this (see below for M1 Mac specific guide), you can add the `emulator` extra to your install command to install all necessary dependencies:
+On top of this, we define sets of extra dependencies that can be installed to extend the functionality of SOLikeT. They are: `emulator`, `pyccl`, `pyhalomodel`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the PyHaloModel library for halo modeling. The last one will install all of them. Note that these extras are not installed by default, as they are not strictly necessary for running SOLikeT and they intorduce additional constraints on the environment. You can install them by adding the `--extra` flag to the `uv sync` command:
 
 .. code-block:: bash
 
-   uv sync --locked --extra emulator
+   uv sync --locked --extra emulator    # for CosmoPower emulator
+   uv sync --locked --extra pyccl       # for PyCCL library
+   uv sync --locked --extra pyhalomodel # for PyHaloModel library
+   uv sync --locked --extra all         # for all extras
+
+Of course, you can combine multiple extras as needed.
+
+If you ask to install some extra that is not compatible with your current environment, `uv` will not install it, so you should not be surprised if you do not see the expected packages installed.
    
 At this point, you are ready to use SOLikeT!
 
@@ -49,6 +56,11 @@ Install with pip
 
 Alternatively, you can use pip to install SOLikeT. This method is straightforward but does not provide the same level of reproducibility as `uv` since it does not use a lockfile. Nonetheless, the `pyproject.toml` file specifies the required dependencies, so you can still install a consistent set of packages. The procedure is as follows:
 
+In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation). To achieve this (see below for M1 Mac specific guide), you can add the `emulator` extra to your install command to install all necessary dependencies:
+
+.. code-block:: bash
+
+   uv sync --locked --extra emulator
 .. code-block:: bash
 
   git clone https://github.com/simonsobs/soliket
@@ -61,18 +73,20 @@ Soon we will also provide a `soliket` package on PyPI, which will allow you to i
 
   pip install soliket
 
-In these cases, you can also install the `emulator` extra to include CosmoPower support:
+In these cases, you can also install extras to include optional features:
 
 .. code-block:: bash
 
-   pip install .[emulator] # without PyPI release after cloning or
-   pip install soliket[emulator] # with PyPI release
+   pip install .[emulator,pyccl,pyhalomodel,all] # without PyPI release after cloning or
+   pip install soliket[emulator,pyccl,pyhalomodel,all] # with PyPI release
+
+Of course, you can install any of the extras individually, e.g. `pip install soliket[emulator]` to install only the CosmoPower emulator.
 
 Install with conda
 ------------------
 
 Another way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <soliket-tests.yml>`_. After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a the latest released version of SOLikeT using pip::
-
+In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation)
 .. code-block:: bash
 
   git clone https://github.com/simonsobs/soliket
