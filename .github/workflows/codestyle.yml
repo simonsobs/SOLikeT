@@ -6,7 +6,16 @@ on:
     branches: [ master ]
 jobs:
   check-skip:
-    uses: ./.github/actions/check-skip.yml
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run skip-check
+        id: check
+        uses: ./.github/actions/check-skip
 
   ruff:
     needs: check-skip
