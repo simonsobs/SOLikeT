@@ -20,7 +20,7 @@ jobs:
 
       - name: Run skip-check
         id: check
-        uses: ./.github/actions/check-skip.yml
+        uses: ./.github/actions/check-skip
 
   test:
     needs: check-skip
