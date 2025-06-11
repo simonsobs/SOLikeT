@@ -11,7 +11,7 @@ env:
 
 jobs:
   check-skip:
-    uses: ./.github/actions/check-skip.yml
+    uses: ./.github/actions/check-skip
 
   test:
     needs: check-skip
@@ -88,7 +88,16 @@ jobs:
     runs-on: ubuntu-latest
     name: Conda Test (Python 3.11)
     steps:
-      - uses: actions/checkout@v3
+      - name: Early exit if [skipci]
+        if: ${{ needs.check-skip.outputs.skip == 'true' }}
+        run: |
+          echo "⚠️  skip marker detected—skipping all test-conda steps"
+          exit 0
+
+      - name: Checkout repository
+        if: ${{ needs.check-skip.outputs.skip != 'true' }}
+        uses: actions/checkout@v3
+
       - name: Setup Python
         if: ${{ needs.check-skip.outputs.skip != 'true' }}
         uses: actions/setup-python@v2
@@ -96,10 +105,12 @@ jobs:
           python-version: '3.11'
 
       - uses: conda-incubator/setup-miniconda@v3
+        if: ${{ needs.check-skip.outputs.skip != 'true' }}
         with:
           auto-activate-base: false
           environment-file: soliket-tests.yml
           activate-environment: soliket-tests
+
       - name: Run tests
         if: ${{ needs.check-skip.outputs.skip != 'true' }}
         shell: bash -el {0}
