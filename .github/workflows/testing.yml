@@ -11,8 +11,13 @@ env:
 
 jobs:
   check-skip:
-    name: "Check skip-logic"
-    uses: ./.github/actions/check-skip
+    runs-on: ubuntu-latest           # <-- must set runs-on
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Run skip-check
+        id: check
+        uses: ./.github/actions/check-skip.yml   # <-- composite action called here
 
   test:
     needs: check-skip
