@@ -1,42 +1,35 @@
 name: Code Style
+
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+
 jobs:
-  check-skip:
-    runs-on: ubuntu-latest
-    outputs:
-      skip: ${{ steps.check.outputs.skip }}
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Run skip-check
-        id: check
-        uses: ./.github/actions/check-skip
-
   ruff:
-    needs: check-skip
-    if: ${{ needs.check-skip.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.11'
+
       - name: Install uv
         run: |
           pip install uv
           uv python install '3.11'
           uv python pin '3.11'
+
       - name: Install dev dependencies
         run: |
           EXTRAS="--extra dev"
           uv sync --locked ${EXTRAS}
+
       - name: Check code style with ruff
         run: |
           set -o errexit
