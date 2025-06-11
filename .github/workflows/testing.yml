@@ -11,6 +11,7 @@ env:
 
 jobs:
   check-skip:
+    name: "Check skip-logic"
     uses: ./.github/actions/check-skip
 
   test:
