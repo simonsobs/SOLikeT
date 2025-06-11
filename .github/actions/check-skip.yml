@@ -1,0 +1,44 @@
+# .github/actions/check-skip/action.yml
+name: "Check for [skipci]"
+description: "Sets output `skip` when the last commit message OR PR title starts with [skipci] or [skip ci]"
+inputs: {}
+outputs:
+  skip:
+    description: "true if tests should be skipped"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Read last commit message
+      id: commit
+      shell: bash
+      run: |
+        MSG=$(git log -1 --pretty=%B)
+        echo "commit=$MSG" >> $GITHUB_OUTPUT
+
+    - name: Read PR title (if any)
+      id: pr
+      shell: bash
+      run: |
+        PR_TITLE=""
+        if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+          PR_TITLE=$(jq -r .pull_request.title <"$GITHUB_EVENT_PATH")
+        fi
+        echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+
+    - name: Decide skip=true/false
+      id: decide
+      shell: bash
+      run: |
+        SKIP=false
+        for PREFIX in "[skipci]" "[skip ci]"; do
+          if [[ "${{ steps.commit.outputs.commit }}" == "$PREFIX"* ]] \
+            || [[ "${{ steps.pr.outputs.pr_title }}" == "$PREFIX"* ]]; then
+            SKIP=true
+            break
+          fi
+        done
+        echo "skip=$SKIP" >> $GITHUB_OUTPUT

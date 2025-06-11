@@ -10,7 +10,12 @@ env:
   COBAYA_PACKAGES_PATH: ./cobaya_packages
 
 jobs:
+  check-skip:
+    uses: ./.github/actions/check-skip.yml
+
   test:
+    needs: check-skip
+    if: ${{ needs.check-skip.outputs.skip != 'true' }}
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -45,11 +50,6 @@ jobs:
               PYTHONIOENCODING: utf-8
               PYTHONUTF8: 1
 
-    # Only skip when it's a push AND the commit starts with "skip-tests"
-    if: |
-      !startsWith(github.event.head_commit.message, '[skip ci]') &&
-      !startsWith(github.event.head_commit.message, '[skipci]')
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -75,11 +75,10 @@ jobs:
         uses: codecov/codecov-action@v3
 
   test-conda:
+    needs: check-skip
+    if: ${{ needs.check-skip.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     name: Conda Test (Python 3.11)
-    if: |
-      !startsWith(github.event.head_commit.message, '[skip ci]') &&
-      !startsWith(github.event.head_commit.message, '[skipci]')
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python
