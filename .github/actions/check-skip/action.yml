@@ -5,6 +5,7 @@ inputs: {}
 outputs:
   skip:
     description: "true if tests should be skipped"
+    value: ${{ steps.decide.outputs.skip }}
 runs:
   using: "composite"
   steps:
@@ -41,3 +42,8 @@ runs:
           fi
         done
         echo "skip=$SKIP" >> $GITHUB_OUTPUT
+
+    - name: Debug skip value
+      shell: bash
+      run: |
+        echo ">>> skip output: '${{ steps.decide.outputs.skip }}'"
