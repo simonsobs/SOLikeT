@@ -166,6 +166,13 @@ For this you need to make sure all of the required system-level and python depen
   uv run pytest -vv soliket # or
   pytest -vv soliket
 
+Skipping tests
+--------------
+
+If you want to skip all CI tests, it is possible to do so by using the prefix `[skipci]` or `[skip ci]` in the commit message of your PR. This is useful if you are making changes that do not affect the code, such as documentation updates or minor formatting changes. Still, assuming that some change to the code is made, you should be completely sure that you are not introducing any bugs or issues before skipping the tests, as this can lead to problems down the line.
+
+If you are working on a pure documentation update, or something similar, you can skip tests for all commits in your PR by using the same prefix in the PR title. This will prevent the CI tests from running, which can save time and resources.
+
 Good luck!
 
 Documentation
