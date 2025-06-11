@@ -5,12 +5,15 @@ inputs: {}
 outputs:
   skip:
     description: "true if tests should be skipped"
-    required: true
+    value: ${{ steps.decide.outputs.skip }}
 runs:
   using: "composite"
   steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
     - name: Read last commit message
       id: commit
@@ -42,3 +45,8 @@ runs:
           fi
         done
         echo "skip=$SKIP" >> $GITHUB_OUTPUT
+
+    - name: Debug skip value
+      shell: bash
+      run: |
+        echo ">>> skip output: '${{ steps.decide.outputs.skip }}'"

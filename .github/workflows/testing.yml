@@ -20,10 +20,11 @@ jobs:
 
       - name: Run skip-check
         id: check
-        uses: ./.github/actions/check-skip
+        uses: ./.github/actions/check-skip.yml
 
   test:
     needs: check-skip
+    if: ${{ needs.check-skip.outputs.skip != 'true' }}
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -59,30 +60,20 @@ jobs:
               PYTHONUTF8: 1
 
     steps:
-      - name: Early exit if [skipci]
-        if: ${{ needs.check-skip.outputs.skip == 'true' }}
-        run: |
-          echo "⚠️  skip marker detected—skipping all test steps"
-          exit 0
-
       - name: Checkout repository
-        if: ${{ needs.check-skip.outputs.skip != 'true' }}
         uses: actions/checkout@v4
 
       - name: Setup Python
-        if: ${{ needs.check-skip.outputs.skip != 'true' }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install SOLikeT dependencies and likelihoods
-        if: ${{ needs.check-skip.outputs.skip != 'true' }}
         run: |
           pip install uv
           bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
 
       - name: Run tests
-        if: ${{ needs.check-skip.outputs.skip != 'true' }}
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
@@ -94,34 +85,25 @@ jobs:
 
   test-conda:
     needs: check-skip
+    if: ${{ needs.check-skip.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     name: Conda Test (Python 3.11)
     steps:
-      - name: Early exit if [skipci]
-        if: ${{ needs.check-skip.outputs.skip == 'true' }}
-        run: |
-          echo "⚠️  skip marker detected—skipping all test-conda steps"
-          exit 0
-
       - name: Checkout repository
-        if: ${{ needs.check-skip.outputs.skip != 'true' }}
         uses: actions/checkout@v3
 
       - name: Setup Python
-        if: ${{ needs.check-skip.outputs.skip != 'true' }}
         uses: actions/setup-python@v2
         with:
           python-version: '3.11'
 
       - uses: conda-incubator/setup-miniconda@v3
-        if: ${{ needs.check-skip.outputs.skip != 'true' }}
         with:
           auto-activate-base: false
           environment-file: soliket-tests.yml
           activate-environment: soliket-tests
 
       - name: Run tests
-        if: ${{ needs.check-skip.outputs.skip != 'true' }}
         shell: bash -el {0}
         run: |
           pytest -vv
