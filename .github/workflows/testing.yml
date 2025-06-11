@@ -11,13 +11,16 @@ env:
 
 jobs:
   check-skip:
-    runs-on: ubuntu-latest           # <-- must set runs-on
+    runs-on: ubuntu-latest
     outputs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Run skip-check
         id: check
-        uses: ./.github/actions/check-skip   # <-- composite action called here
+        uses: ./.github/actions/check-skip
 
   test:
     needs: check-skip
