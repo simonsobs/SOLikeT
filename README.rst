@@ -27,17 +27,58 @@ Installation
 
 For a set of detailed requirements and installation instructions for different machines (e.g. NERSC, M1 Mac), please see `the installation page <INSTALL.rst>`_.
 
-A preferred and convenient way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <soliket-tests.yml>`_. After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a the latest released version of SOLikeT using pip::
+SOLikeT can be installed using any of three methods: `uv`, `pip`, or `conda`, with the recommended method being `uv`.
 
-  conda env create -f soliket-tests.yml
-  conda activate soliket-tests
-  pip install soliket
+Quick install with uv
+---------------------
 
-You can alternatively clone a local version of the in-development code and install it in editable mode::
+The recommended method is `uv`, which offers fast, reproducible installations using a lockfile and can manage virtual environments automatically. It is extremely flexible offering complete control over the environment and dependencies. Indeed, `uv` substitutes for `pip` and `conda` in many cases, providing a unified interface for package management. Still, it can be used seamlessly within a `conda` environment and is compatible with existing `pip` and `conda` workflows. 
+
+One of the key features of `uv` is producing a lockfile (`uv.lock`) that captures the exact versions of all installed packages, ensuring reproducibility across different platforms and Python versions. This is particularly useful to avoid the "it works on my machine" problem, as it allows you to recreate the same environment on any machine with a single command.
+
+Installing `uv` is as simple as running:
+
+.. code-block:: bash
+
+  pip install uv
+
+Then, after activating an existing environment (both `conda` or `venv` environments are supported), you can clone the repository and install it via:
+
+.. code-block:: bash
 
   git clone https://github.com/simonsobs/soliket
   cd soliket
-  pip install -e .
+  uv sync --locked
+
+`uv sync --locked` will install all the necessary dependencies to the fixed versions stored in the `uv.lock` file. This ensures that you have a consistent and reproducible environment, identical to the one developed and tested.
+
+At this point, you can forget about `uv`, if you want to, and continue using SOLikeT as desired. If you want to re-sync your environment with the lockfile, you can re-run that command.
+
+We define extra dependencies for SOLikeT, which allow you to install additional features or functionalities as needed. In particuar, we define `emulator`, `pyccl`, `pyhalomodel`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the PyHaloModel library for halo modeling. The last one will install all of them. These can be specified when running `uv sync` to install the corresponding dependencies.
+
+.. code-block:: bash
+
+   uv sync --locked --extra emulator    # for CosmoPower emulator
+   uv sync --locked --extra pyccl       # for PyCCL library
+   uv sync --locked --extra pyhalomodel # for PyHaloModel library
+   uv sync --locked --extra all         # for all extras
+
+Of course, you can combine multiple extras as needed. Note that these extra dependencies come with extra constraints, so these may not be compatible with all Python versions or platforms. These are reported in the `pyproject.toml` file, which is used by `uv` to manage dependencies.
+
+If you are less worried about reproducibility, you can also install SOLikeT without the lockfile by using `pip` after cloning the repository:
+
+.. code-block:: bash
+  git clone https://github.com/simonsobs/soliket
+  cd soliket
+  pip install .
+  
+In this case, you can also specify extras, such as the `emulator` to install the dependencies related to `CosmoPower`:
+
+.. code-block:: bash
+
+  pip install .[emulator]
+
+For further details on `uv` and alternatives ways to install SOLikeT, please refer to `the installation page <INSTALL.rst>`_.
 
 Running an Example
 ==================
@@ -63,30 +104,31 @@ Checking code in development
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 To see if codes you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
 
-If you are using conda, the easiest way to run tests (and the way we run them) is to use tox-conda::
+If you are using `uv`, the easiest way to run tests (and the way we run them) is to use::
 
-  pip install tox-conda
-  tox -e test
+.. code-block:: bash
 
-This will create a fresh virtual environment replicating the one which is used for CI then run the tests (i.e. without touching your current environment). Note that any args after a '--' string will be passed to pytest, so::
+  uv run pytest -vv --durations=10
 
-  tox -e test -- -k my_new_module
+`-vv` will give you verbose output, and `--durations=10` will show you the 10 slowest tests, which can help identify performance issues. `uv` will automatically use the current environment, so you don't need to worry about activating a specific virtual environment.
 
-will only run tests which have names containing the string 'my_new_model', and ::
+If the current environment does not have the required dependencies, `uv` will install them automatically based on the `uv.lock` file, ensuring that you have all the necessary packages to run the tests.
 
-  tox -e test -- -pdb
+You can also test a subset of tests or run specific tests by passing additional arguments to `pytest`. For example, if you want to run only the tests in a specific module, you can do
 
-will start a pdb debug instance when (sorry, *if*) a test fails.
+.. code-block:: bash
+  uv run pytest -vv --durations=10 -k my_new_module
 
-Checking environment configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Check SOLikeT is working as intended in a python environment of your own specification (i.e. you have installed SOLikeT not using the solike-tests conda environment).
+searching for tests that match the string 'my_new_module'.
 
+If you want to run the tests using `pytest` directly, you can do so by running:
 
-For this you need to make sure all of the required system-level and python dependencies described in `the installation instructions <INSTALL.rst>`_ are working correctly, then run::
+.. code-block:: bash
 
-  pytest -v soliket
+  pytest -vv soliket
 
-Good luck!
+This will run the tests in the same way as `uv`, but without the additional features provided by `uv`. Note that you will need to have all the required dependencies installed in your current environment for this to work.
+
+Indeed, running tests after installing SOLikeT in any environment is a good practice to ensure that everything is working as expected (see `the installation instructions <INSTALL.rst>`_).
 
 Please raise an issue if you have trouble installing or any of the tests fail.

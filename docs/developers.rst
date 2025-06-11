@@ -62,100 +62,55 @@ Is your new Likelihood **newlike** Gaussian, Poisson or Cash-C?  If so, great; i
 Conventions for Theories
 ------------------------
 
-Basic ingredients
-^^^^^^^^^^^^^^^^^
-Your theory calculator must inherit from the cobaya theory class. It must have 3 main blocks of functions: inizialization (``initialize``); requirements (``get_requirement``, ``must_provide``); calculations (``get_X``, ``calculate``).
+The detailed guidelines for developing new Theory components in SOLikeT can be found in the `theory component guidelines <docs/theory-component-guidelines.rst>`_ page, but a brief summary is:
 
-In what follows, we will use the structure of ``mflike`` as a concrete example of how to build these 3 blocks. mflike splits the original mflike into 2 blocks:
-one cobaya-likelihood component (``mflike``), and a cobaya-theory component ``BandpowerForeground`` to calculate the foreground model.
-
-Initialization
-^^^^^^^^^^^^^^
-You can either assign params in initialize or do that via a dedicated yaml. You can in general do all the calculations that need to be done once for all.
-
-Requirements
-^^^^^^^^^^^^
-Here you need to write what external elements are needed by your theory block to perform its duties. These external elements will be computed and provided by some other external module (e.g., another Theory class).
-In our case, ``mflike`` must tell us that it needs a dictionary of cmb and fg spectra. This is done by letting the get_requirement function return a dictionary which has the name of the needed element as a key. For example, if the cmb+fg spectra dict is called ``fg_totals``, the get_requirement function should be::
-
-   return {"fg_totals":{}}
-
-The key is a dict itself. It can be empty, if no params need to be passed to the external Theory in charge of computing fg_totals.
-It might be possible that, in order to compute ``fg_totals``, we should pass to the specific Theory component some params known by ``mflike`` (e.g., frequency channel). This is done by filling the above empty dict::
-
-   {"fg_totals": {"param1": param1_value, "param2": param2_value, etc}}
-
-If this happens, then the external Theory block (in this example, ``BandpowerForeground``) must have a ``must_provide`` function. ``must_provide`` tells the code:
-
-   1. The values which should be assigned to the parameters needed to compute the element required from the Theory block. The required elements are stored in the 
-   ``**requirements`` dictionary which is the input of ``must_provide``.
-   In our example, ``BandpowerForeground`` will assign to ``param1`` the ``param1_value`` passed from ``mflike`` via the ``get_requirement`` in ``mflike`` (and so on). For example:
-   ::
-
-        must_provide(self, **requirements):
-           if "fg_totals" in requirements:
-              self.param1 = requirements["fg_totals"]["param1"]
-
-   if this is the only job of ``must_provide``, then the function will not return anything
-
-   2. If required, what external elements are needed by this specific theory block to perform its duties. In this case, the function will return a dictionary of dictionaries which are the requirements of the specific theory block. These dictionaries do not have to necessarily contain content (they can be empty instances of the dictionary), but must be included if expected. Note this can be also done via ``get_requirement``. However, if you need to pass some params read from the block above to the new requirements, this can only be done with ``must_provide``.
-
-Calculation
-^^^^^^^^^^^
-In each Theory class, you need at least 2 functions:
-
-   1. A get function:
-   ::
-
-      get_X(self, any_other_param):
-         return self.current_state[“X”]
-
-   where "X" is the name of the requirement computed by that class (in our case, it is ``fg_totals`` in ``BandpowerForeground``). ``any_other_param`` is an optional param that you may want to apply to ``current_state["X"]`` before returning it. E.g., it could be a rescaling amplitude. This function is called by the Likelihood or Theory class that has ``X`` as its requirement, via the ``self.provider.get_X(any_other_param)`` call.
-
-   2. A calculate function:
-   ::
-
-      calculate(self, **state, want_derived=False, **params_values_dict):
-         state[“X”] = result of above calculations
-
-   which will do actual calculations, that could involve the use of some of the ``**params_value_dict``, and might also compute derived params (if ``want_derived=True``).
+- Your theory calculator must inherit from the Cobaya theory class.
+- It must have 3 main blocks of functions: initialization (`initialize`); requirements (`get_requirement`, `must_provide`); calculations (`get_X`, `calculate`).
+- The `initialize` function is where you can assign parameters and perform calculations that need to be done once for all.
+- The `get_requirement` function specifies what external elements are needed by your theory block to perform its duties, returning a dictionary with the names of the required elements as keys.
+- The `must_provide` function is used to assign values to parameters needed to compute the required elements and can also specify additional requirements for the theory block.
+- In each Theory class, you need at least two functions:
+  1. A `get_X` function that returns the current state of the required element.
+  2. A `calculate` function that performs the actual calculations and updates the state of the required element.
 
 Code Style
 ==========
 
 All contributions should follow the `PEP8 Style Guide for Python Code <https://www.python.org/dev/peps/pep-0008/>`_. When a PR is created for SOLikeT, a check will be run to make sure your code complies with these recommendations, which are the same as those specified for `Cobaya <https://cobaya.readthedocs.io/>`_. This means the following checks will be made:
 
-::
+.. code-block:: bash
 
   E713,E704,E703,E714,E741,E10,E11,E20,E22,E23,E25,E27,E301,E302,E304,E9,F405,F406,F5,F6,F7,F8,W1,W2,W3,W6
 
 and a line length limit of 90 characters will be applied.
 
-You may find it easier to run this check as locally before raising a PR. This can be done by running:
+This will be run automatically for you at commit time if you have `pre-commit <https://pre-commit.com/>`_ installed, which is highly recommended. To install pre-commit, run:
 
-::
+.. code-block:: bash
 
-  tox -e codestlye
+  pip install pre-commit
+  pre-commit install
 
-in the SOLikeT root directory.
+This will install the pre-commit hooks, and in particular the `ruff <https://docs.astral.sh/ruff/>`_ tool, which will check your code for style issues and formatting before you commit it. You can also run `ruff <https://docs.astral.sh/ruff/>`_ manually with the command:
 
-The `black <https://black.readthedocs.io/en/stable/>`_ tool will also try to automatically format your code to abide by the style guide. It should be used with caution as it is irreversible (without a git revert), and can be run on any python files you create by running:
+.. code-block:: bash
 
-::
-
-  black <py-file-you-created>
-
-it is usually best to then inspect the file and correct any strange choices `black` has made.
+  ruff check --fix . --config ./pyproject.toml
+  ruff format . --config ./pyproject.toml
 
 Unit Tests
 ==========
 
-Pull requests will require existing unit tests to pass before they can be merged. Additionally, new unit tests should be written for all new public methods and functions. Unit tests for each Likelihood and Theory should be placed in the tests directory with a name matching that of the python file in which the class is defined::
+Pull requests will require existing unit tests to pass before they can be merged. Additionally, new unit tests should be written for all new public methods and functions. Unit tests for each Likelihood and Theory should be placed in the tests directory with a name matching that of the python file in which the class is defined
+
+.. code-block:: bash
 
  SOLikeT/soliket/tests/test_my_module.py
 
 
-For Likelihoods we request that there is a test which compares the result of a likelihood calculation to a precomputed expected value which is hard coded in the tests file, to a tolerance of ``1.e-3``::
+For Likelihoods we request that there is a test which compares the result of a likelihood calculation to a precomputed expected value which is hard coded in the tests file, to a tolerance of ``1.e-3``
+
+.. code-block:: bash
 
   assert np.isclose(loglike_just_computed, -25.053, rtol=1.e-3)
 
@@ -167,28 +122,56 @@ Checking code in development
 ----------------------------
 To see if codes you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
 
-If you are using conda, the easiest way to run tests (and the way we run them) is to use tox-conda::
+To run tests, you can use the following command:
 
-  pip install tox
-  tox -e test
+.. code-block:: bash
 
-This will create a fresh virtual environment replicating the one which is used for CI then run the tests (i.e. without touching your current environment). Note that any args after a '--' string will be passed to pytest, so::
+   uv run pytest -vv --durations=10  # using uv
+   pytest -vv --durations=10         # using pip or conda
 
-  tox -e test -- -k my_new_module
+This command will run all tests in the SOLikeT codebase and provide verbose output, including the duration of each test. The `--durations=10` option will show the 10 slowest tests, which can help identify performance bottlenecks.
 
-will only run tests which have names containing the string 'my_new_model', and ::
+If the current environment does not have the required dependencies, `uv` will install them automatically based on the `uv.lock` file, ensuring that you have all the necessary packages to run the tests.
 
-  tox -e test -- -pdb
+You can also test a subset of tests or run specific tests by passing additional arguments to `pytest`. For example, if you want to run only the tests in a specific module, you can do
 
-will start a pdb debug instance when (sorry, *if*) a test fails.
+.. code-block:: bash
+  uv run pytest -vv --durations=10 -k my_new_module
+
+searching for tests that match the string 'my_new_module'.
+
+`uv` provides a very easy but powerful way to test your new feature in depth locally (if you really want to). In fact, you can install different Python versions without needing to set up multiple environments manually. You can install multiple Python version and pin the one you want to test with:
+
+.. code-block:: bash
+
+  uv python install 3.10 # install Python 3.10 or any other version you want to test
+  uv python pin 3.10 # pin the current environment to Python 3.10
+
+Then, provided that the version is compatible with SOLikeT, you can run the tests with that version:
+
+.. code-block:: bash
+
+  uv run pytest -vv --durations=10
+
+`uv` will automatically use the pinned Python version to run the tests, check the `uv.lock` file for the correct dependencies, and ensure that your code is compatible with that version.
 
 Checking environment configuration
 ----------------------------------
-Check SOLikeT is working as intended in a python environment of your own specification (i.e. you have installed SOLikeT not using the soliket-tests conda environment).
+Check SOLikeT is working as intended in a python environment of your own specification (i.e. you have installed SOLikeT without following our guide).
 
-For this you need to make sure all of the required system-level and python dependencies described in `the installation instructions <install.html>`_ are working correctly, then run::
+For this you need to make sure all of the required system-level and python dependencies described in `the installation instructions <install.html>`_ are working correctly, then run
 
-  pytest -v soliket
+.. code-block:: bash
+
+  uv run pytest -vv soliket # or
+  pytest -vv soliket
+
+Skipping tests
+--------------
+
+If you want to skip all CI tests, it is possible to do so by using the prefix `[skipci]` or `[skip ci]` in the commit message of your PR. This is useful if you are making changes that do not affect the code, such as documentation updates or minor formatting changes. Still, assuming that some change to the code is made, you should be completely sure that you are not introducing any bugs or issues before skipping the tests, as this can lead to problems down the line.
+
+If you are working on a pure documentation update, or something similar, you can skip tests for all commits in your PR by using the same prefix in the PR title. This will prevent the CI tests from running, which can save time and resources.
 
 Good luck!
 

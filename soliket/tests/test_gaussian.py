@@ -24,8 +24,8 @@ def toy_data():
     # Generate arbitrary covariance matrix, partition into parts
     full_cov = make_spd_matrix(n1 + n2 + n3, random_state=1234)
     cov1 = full_cov[:n1, :n1]
-    cov2 = full_cov[n1: n1 + n2, n1: n1 + n2]
-    cov3 = full_cov[n1 + n2:, n1 + n2:]
+    cov2 = full_cov[n1 : n1 + n2, n1 : n1 + n2]
+    cov3 = full_cov[n1 + n2 :, n1 + n2 :]
 
     data1 = GaussianData(name1, x1, y1, cov1)
     data2 = GaussianData(name2, x2, y2, cov2)
@@ -33,9 +33,9 @@ def toy_data():
 
     cross_cov = CrossCov(
         {
-            (name1, name2): full_cov[:n1, n1: n1 + n2],
-            (name1, name3): full_cov[:n1, n1 + n2:],
-            (name2, name3): full_cov[n1: n1 + n2, n1 + n2:],
+            (name1, name2): full_cov[:n1, n1 : n1 + n2],
+            (name1, name3): full_cov[:n1, n1 + n2 :],
+            (name2, name3): full_cov[n1 : n1 + n2, n1 + n2 :],
         }
     )
 
@@ -47,7 +47,7 @@ def test_gaussian():
 
     multi = MultiGaussianData(datalist, cross_cov)
 
-    name1, name2, name3 = [d.name for d in datalist]
+    name1, name2, name3 = (d.name for d in datalist)
     data1, data2, data3 = datalist
 
     assert (multi.cross_covs[(name1, name2)] == multi.cross_covs[(name2, name1)].T).all()
@@ -60,31 +60,32 @@ def test_gaussian():
 
 
 def test_gaussian_hartlap():
-
     np.random.seed(1234)
 
     name1 = "A"
     n1 = 10
     x1 = np.arange(n1)
-    y1th = x1**2.
+    y1th = x1**2.0
     y1 = np.random.random(n1)
     nsims1 = 50
 
     cov1 = make_spd_matrix(n1, random_state=1234)
 
     data1 = GaussianData(name1, x1, y1, cov1)
-    data1_simcov = GaussianData(name1 + 'simcov', x1, y1, cov1,
-                                ncovsims=nsims1)
-    data1_manysimcov = GaussianData(name1 + 'simcov', x1, y1, cov1,
-                                    ncovsims=(100 * nsims1))
+    data1_simcov = GaussianData(name1 + "simcov", x1, y1, cov1, ncovsims=nsims1)
+    data1_manysimcov = GaussianData(
+        name1 + "simcov", x1, y1, cov1, ncovsims=(100 * nsims1)
+    )
 
     hartlap_factor = (nsims1 - n1 - 2) / (nsims1 - 1)
     hartlap_manyfactor = (100 * nsims1 - n1 - 2) / (100 * nsims1 - 1)
 
-    assert np.isclose(data1.loglike(y1th),
-                      data1_simcov.loglike(y1th) / hartlap_factor,
-                      rtol=1.e-3)
+    assert np.isclose(
+        data1.loglike(y1th), data1_simcov.loglike(y1th) / hartlap_factor, rtol=1.0e-3
+    )
 
-    assert np.isclose(data1.loglike(y1th),
-                      data1_manysimcov.loglike(y1th) / hartlap_manyfactor,
-                      rtol=1.e-5)
+    assert np.isclose(
+        data1.loglike(y1th),
+        data1_manysimcov.loglike(y1th) / hartlap_manyfactor,
+        rtol=1.0e-5,
+    )

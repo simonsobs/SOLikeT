@@ -26,16 +26,20 @@ class PoissonData:
         if samples is not None:
             for c in columns:
                 if c not in samples:
-                    raise ValueError(f"If providing samples, must have samples \
-                                     for all columns: {columns}")
+                    raise ValueError(
+                        f"If providing samples, must have samples \
+                                     for all columns: {columns}"
+                    )
 
             if "prior" not in samples:
-                raise ValueError('Must provide value of interim prior \
-                                  for all samples, under "prior" key!')
+                raise ValueError(
+                    'Must provide value of interim prior \
+                                  for all samples, under "prior" key!'
+                )
 
-            assert all(
-                [samples[k].shape == samples["prior"].shape for k in samples]
-            ), "Samples all need same shape!"
+            assert all([samples[k].shape == samples["prior"].shape for k in samples]), (
+                "Samples all need same shape!"
+            )
             self.N_k = samples["prior"].shape[1]
             self._len = samples["prior"].shape[0]
 
@@ -59,8 +63,9 @@ class PoissonData:
         # Simple case; no uncertainties
         if self.samples is None:
             if broadcastable:
-                rate_densities = rate_fn(**{c: self.catalog[c].values for
-                                            c in self.columns})
+                rate_densities = rate_fn(
+                    **{c: self.catalog[c].values for c in self.columns}
+                )
             else:
                 rate_densities = np.array(
                     [
@@ -73,8 +78,10 @@ class PoissonData:
 
         else:
             # Eqn (11) of DFM, Hogg & Morton (https://arxiv.org/pdf/1406.3020.pdf)
-            summand = rate_fn(**{c: self.samples[c] for
-                                 c in self.columns}) / self.samples["prior"]
+            summand = (
+                rate_fn(**{c: self.samples[c] for c in self.columns})
+                / self.samples["prior"]
+            )
             l_k = 1 / self.N_k * summand.sum(axis=1)
             assert l_k.shape == (self._len,)
             return -n_expected + sum(np.log(l_k))

@@ -1,6 +1,6 @@
 import numpy as np
-from cobaya.tools import resolve_packages_path
 from cobaya.model import get_model
+from cobaya.tools import resolve_packages_path
 
 packages_path = resolve_packages_path()
 
@@ -38,7 +38,7 @@ nuisance_params = {
 }
 
 
-def test_lensing_and_mflike_installations():
+def test_lensing_and_mflike_installations(check_skip_mflike):
     import mflike
 
     from soliket import LensingLikelihood
@@ -60,7 +60,7 @@ def test_lensing_and_mflike_installations():
     )
 
 
-def test_multi(test_cosmology_params):
+def test_multi(test_cosmology_params, check_skip_mflike):
     lensing_options = {"theory_lmax": 5000}
 
     mflike_options = {
@@ -71,8 +71,10 @@ def test_multi(test_cosmology_params):
 
     camb_options = {"extra_args": {"lens_potential_accuracy": 1}}
 
-    fg_params = {"a_tSZ": {"prior": {"min": 3.0, "max": 3.6}},
-                 "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}}}
+    fg_params = {
+        "a_tSZ": {"prior": {"min": 3.0, "max": 3.6}},
+        "a_kSZ": {"prior": {"min": 1.4, "max": 1.8}},
+    }
     mflike_params = test_cosmology_params | nuisance_params | fg_params
 
     lensing_params = test_cosmology_params
@@ -85,15 +87,19 @@ def test_multi(test_cosmology_params):
                 "stop_at_error": True,
             }
         },
-        "theory": {"camb": camb_options,
-                   "mflike.BandpowerForeground": {"stop_at_error": True}},
+        "theory": {
+            "camb": camb_options,
+            "mflike.BandpowerForeground": {"stop_at_error": True},
+        },
         "params": mflike_params,
     }
 
     info1 = {
         "likelihood": {"mflike.TTTEEE": mflike_options},
-        "theory": {"camb": camb_options,
-                   "mflike.BandpowerForeground": {"stop_at_error": True}},
+        "theory": {
+            "camb": camb_options,
+            "mflike.BandpowerForeground": {"stop_at_error": True},
+        },
         "params": mflike_params,
     }
 

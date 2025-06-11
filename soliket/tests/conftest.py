@@ -1,13 +1,4 @@
 import pytest
-import sys
-
-
-def pytest_collection_modifyitems(config, items):
-    if sys.platform.startswith('win'):
-        skip_on_windows = pytest.mark.skip(reason="Skipped on Windows")
-        for item in items:
-            if "require_ccl" in item.keywords:
-                item.add_marker(skip_on_windows)
 
 
 @pytest.fixture
@@ -31,3 +22,56 @@ def evaluate_one_info():
     info["sampler"] = {"evaluate": None}
     info["debug"] = True
     return info
+
+
+@pytest.fixture
+def check_skip_cosmopower():
+    """
+    Check if the CosmoPower module can be imported, otherwise skip the tests.
+    """
+    pytest.importorskip(
+        modname="cosmopower", reason="Couldn't import 'cosmopower' module"
+    )
+
+
+@pytest.fixture
+def check_skip_pyccl():
+    """
+    Check if the pyCCL module can be imported, otherwise skip the tests.
+    """
+    pytest.importorskip(modname="pyccl", reason="Couldn't import 'pyccl' module")
+
+
+@pytest.fixture
+def check_skip_pyhalomodel():
+    """
+    Check if the pyhalomodel module can be imported, otherwise skip the tests.
+    """
+    pytest.importorskip(
+        modname="pyhalomodel", reason="Couldn't import 'pyhalomodel' module"
+    )
+
+
+@pytest.fixture
+def check_skip_mflike():
+    """
+    Check if the LAT_MFLike module can be imported, otherwise skip the tests.
+    """
+    pytest.importorskip(modname="mflike", reason="Couldn't import 'mflike' module")
+
+
+@pytest.fixture
+def install_planck_lite():
+    """
+    Install the Planck 2018 high-l multipoles likelihood.
+    """
+    from cobaya.install import install
+
+    install(
+        {"likelihood": {"planck_2018_highl_plik.TTTEEE_lite_native": None}},
+        path=None,
+        skip_global=False,
+        force=False,
+        debug=True,
+        no_set_global=True,
+    )

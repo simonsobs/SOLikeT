@@ -1,55 +1,65 @@
 name: Upload to PyPI
 
 on:
+  # Only run when a GitHub Release is published
   release:
     types: [published]
 
+  # Or trigger manually for debugging
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Where to push'
+        required: true
+        default: 'testpypi'
+        type: choice
+        options:
+          - testpypi
+          - pypi
+
 jobs:
-  build:
-    name: Build distribution
+  publish:
+    name: 📦 Publish to ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.repository || 'pypi' }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.x"
+          python-version: '3.11'
 
-      - name: Install pypa/build
-        run: >-
-          python3 -m
-          pip install
-          build
-          --user
-      - name: Build a binary wheel and a source tarball
-        run: python3 -m build
-      - name: Store the distribution packages
-        uses: actions/upload-artifact@v3
-        with:
-          name: python-package-distributions
-          path: dist/
+      - name: Install uv
+        run: pip install uv
 
-  testpypi-publish:
-    name: Upload release to PyPI
-    needs:
-      - build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/soliket
-    permissions:
-      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
-    steps:
-      - name: Download all the dists
-        uses: actions/download-artifact@v4.1.7
-        with:
-          name: python-package-distributions
-          path: dist/
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        # with:
-          # user: __token__
-          # repository-url: https://test.pypi.org/legacy/
-          # print-hash: true
-          # password: ${{ secrets.TEST_PYPI_TOKEN }}
+      - name: Build with uv
+        run: uv build
+
+      - name: Determine target
+        id: choose
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "REPO=${{ github.event.inputs.repository }}" >> $GITHUB_OUTPUT
+          else
+            # on a real Release, always push to PyPI
+            echo "REPO=pypi" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Publish
+        run: |
+          echo "Publishing to ${{ steps.choose.outputs.REPO }}..."
+          if [ "${{ steps.choose.outputs.REPO }}" = "testpypi" ]; then
+            uv publish --token "${{ secrets.TEST_PYPI_TOKEN }}" --repository testpypi
+          else
+            uv publish --token "${{ secrets.PYPI_API_TOKEN }}"
+          fi
+        env:
+          # optional extra debug
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          UV_DEBUG: '1'
