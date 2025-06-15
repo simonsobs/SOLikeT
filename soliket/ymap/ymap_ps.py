@@ -30,6 +30,7 @@ class SZLikelihood(GaussianLikelihood):
         "soliket", "ymap/data/"
     )
     ymap_ps_file: Optional[str] = 'data_ps-ell-y2-erry2_total-planck-collab-15.txt'
+    ymap_cov_file: Optional[str] = None
     f_sky: Optional[str] = 0.47
     trispectrum_directory: Optional[str] = resource_filename(
         "soliket", "ymap/data/"
@@ -50,10 +51,16 @@ class SZLikelihood(GaussianLikelihood):
         self.ell_plc = D[:,0]
         self.y2AndFg_plc = D[:,1]
         self.sigma_tot_plc = D[:,2]
+        try:
+            self.data_covmat = np.loadtxt(os.path.join(self.data_directory, self.ymap_cov_file))
+        except:
+            print('No covariance matrix found, setting it to diagonal from sigma_tot')
+            self.data_covmat = np.diag(self.sigma_tot_plc**2)
 
 
         #number of data points (multipole bins)
         self.num_points = np.shape(self.ell_plc)[0]
+        print("using {} multipoles".format(self.num_points))
 
 
         self.fid_values_exist = False
@@ -78,11 +85,11 @@ class SZLikelihood(GaussianLikelihood):
             #check that the reference tSZ data is computed at same multipoles as planck data
             try:
                 if(np.any(self.ell-self.ell_plc)):
-                    print("[reading ref tSZ files] the reference multipoles do not match the planck data.")
-                    exit(0)
+                    print("[reading ref tSZ files] the reference multipoles do not match the planck data... If you are running a planck case, you should stop here and check why.")
+                    # exit(0)
             except ValueError:
-                print("[reading ref tSZ files] the reference multipoles do not match the planck data.")
-                exit(0)
+                print("[reading ref tSZ files] the reference multipoles do not match the planck data... If you are running a planck case, you should stop here and check why.")
+                # exit(0)
 
             #Binning of covmat [not used for planck sz]
             #compute number of multipoles in each bin
@@ -110,9 +117,14 @@ class SZLikelihood(GaussianLikelihood):
                 print('Using both Gaussian and Non-Gaussian sampling variance')
                 self.covmat = self.covmat/self.f_sky/4./np.pi + self.cvg
             else:
-                print('Using only Gaussian sampling variance')
-                self.covmat = self.cvg
-            #print(self.covmat)
+                if self.ymap_cov_file is None:
+                    print('Using only Gaussian covmat')
+                    self.covmat = self.cvg
+                else:
+                    print('Using provided data covariance matrix')
+                    self.covmat = self.data_covmat
+
+            print("covmat: ", self.covmat)
             self.inv_covmat = np.linalg.inv(self.covmat)
             self.det_covmat = np.linalg.det(self.covmat)
             #print(np.linalg.eig(self.covmat))
@@ -142,7 +154,12 @@ class SZLikelihood(GaussianLikelihood):
         cl_2h_theory = theory['2h']
         Cl_sz = np.asarray(list(cl_1h_theory)) + np.asarray(list(cl_2h_theory))
         Cl_sz_foreground = self.provider.get_Cl_sz_foreground()
-        return Cl_sz + Cl_sz_foreground
+        
+        if Cl_sz_foreground:
+            return Cl_sz + Cl_sz_foreground
+        else:
+            # print("No foregrounds")
+            return Cl_sz
 
 
 
@@ -180,8 +197,14 @@ class SZForegroundTheory(Theory):
         # components (see Bolliet et al. 1712.00788).
         A_CN = 0.9033
         #print(state)
-
-        state["Cl_sz_foreground"] = A_CIB*self.A_CIB_MODEL + A_RS*self.A_RS_MODEL + A_IR*self.A_IR_MODEL + A_CN*self.A_CN_MODEL
+        # print("A_CIB: ", A_CIB)
+        # print("A_RS: ", A_RS)
+        # print("A_IR: ", A_IR)
+        if A_CIB==0 and A_RS==0 and A_IR==0:
+            # print("No foregrounds")
+            state["Cl_sz_foreground"] = None
+        else:
+            state["Cl_sz_foreground"] = A_CIB*self.A_CIB_MODEL + A_RS*self.A_RS_MODEL + A_IR*self.A_IR_MODEL + A_CN*self.A_CN_MODEL
 
     def get_Cl_sz_foreground(self):
         return self._current_state['Cl_sz_foreground']

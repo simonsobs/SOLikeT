@@ -142,3 +142,7 @@ soliket/cosmopower/covmats/desy1_joint_plancklensing2018_lenspriors_BAO_cosmopow
 
 yg*
 soliket/cibxlensing/chains/test.1.txt
+soliket/chains
+soliket/p-actlite*
+soliket/*png
+soliket/ymap_contours.ipynb
