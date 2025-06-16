@@ -19,7 +19,7 @@ runs:
       id: commit
       shell: bash
       run: |
-        MSG=$(git log -1 --pretty=%B)
+        MSG=$(git log -1 --pretty=%B | tr '\n' ' ' | sed 's/"/\\"/g')
         echo "commit=$MSG" >> $GITHUB_OUTPUT
 
     - name: Read PR title (if any)
@@ -30,6 +30,7 @@ runs:
         if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
           PR_TITLE=$(jq -r .pull_request.title <"$GITHUB_EVENT_PATH")
         fi
+        PR_TITLE=$(echo "$PR_TITLE" | tr '\n' ' ' | sed 's/"/\\"/g')
         echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
 
     - name: Decide skip=true/false
