@@ -15,7 +15,7 @@ class GaussianData:
     cov: np.ndarray  # covariance matrix
     inv_cov: np.ndarray  # inverse covariance matrix
     ncovsims: int | None  # number of simulations used to estimate covariance
-    indices: np.ndarray | None #boolean array to trim cross-cov with selected bandpowers
+    indices: np.ndarray | None #boolean array to trim cross-cov with selected bandpower
 
     _fast_chi_squared = staticmethod(chi_squared)
 
