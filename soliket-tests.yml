@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python>=3.9,<=3.11
+  - python>3.9,<3.13
   - pip
   - pytest
   - pytest-cov
@@ -13,8 +13,9 @@ dependencies:
   - swig
   - gsl
   - fftw
+  - pyccl>=3.1.2
   - cython
   - mpi4py
   - camb
   - pip:
-      - -r requirements.txt
+      - -e .[dev,all]

@@ -1,12 +1,12 @@
 """
 Check that CCL works correctly.
 """
+
+import importlib
+
 import numpy as np
-import pytest
 from cobaya.likelihood import Likelihood
 from cobaya.model import get_model
-
-pytestmark = pytest.mark.require_ccl
 
 
 class CheckLike(Likelihood):
@@ -16,7 +16,7 @@ class CheckLike(Likelihood):
     """
 
     def logp(self, **params_values):
-        ccl = self.provider.get_CCL()  # noqa F841
+        _ = self.provider.get_CCL()
         return -1.0
 
     def get_requirements(self):
@@ -24,28 +24,19 @@ class CheckLike(Likelihood):
 
 
 ccl_like_and_theory = {
-    "likelihood": {
-        "checkLike": {"external": CheckLike}
-    },
-    "theory": {
-        "camb": {
-        },
-        "soliket.CCL": {
-            "kmax": 10.0,
-            "nonlinear": True
-        }
-    }
+    "likelihood": {"checkLike": {"external": CheckLike}},
+    "theory": {"camb": {}, "soliket.CCL": {"kmax": 10.0, "nonlinear": True}},
 }
 
 
-def test_ccl_import():
+def test_ccl_import(check_skip_pyccl):
     """
     Test whether we can import pyCCL.
     """
-    import pyccl  # noqa F401
+    _ = importlib.import_module("pyccl")
 
 
-def test_ccl_cobaya(evaluate_one_info, test_cosmology_params):
+def test_ccl_cobaya(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     """
     Test whether we can call CCL from cobaya.
     """
@@ -56,7 +47,7 @@ def test_ccl_cobaya(evaluate_one_info, test_cosmology_params):
     model.loglikes()
 
 
-def test_ccl_distances(evaluate_one_info, test_cosmology_params):
+def test_ccl_distances(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     """
     Test whether the calculated angular diameter distance & luminosity distances
     in CCL have the correct relation.
@@ -77,7 +68,7 @@ def test_ccl_distances(evaluate_one_info, test_cosmology_params):
     assert np.allclose(da * (1.0 + z) ** 2.0, dl)
 
 
-def test_ccl_pk(evaluate_one_info, test_cosmology_params):
+def test_ccl_pk(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     """
     Test whether non-linear Pk > linear Pk in expected regimes.
     """

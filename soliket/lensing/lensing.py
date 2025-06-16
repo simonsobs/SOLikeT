@@ -69,13 +69,14 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     def initialize(self):
         self.log.info("Initialising.")
         # Set path to data
-        if ((not getattr(self, "path", None)) and
-                (not getattr(self, "packages_path", None))):
+        if (not getattr(self, "path", None)) and (
+            not getattr(self, "packages_path", None)
+        ):
             raise LoggedError(
                 self.log,
                 "No path given to LensingLikelihood data. "
                 "Set the likelihood property "
-                "'path' or 'packages_path'"
+                "'path' or 'packages_path'",
             )
 
         # If no path specified, use the modules path
@@ -108,11 +109,11 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         # Set the fiducial spectra
         self.ls = np.arange(0, self.lmax, dtype=np.longlong)
-        self.fcltt = Cls["tt"][0: self.lmax]
-        self.fclpp = Cls["pp"][0: self.lmax]
-        self.fclee = Cls["ee"][0: self.lmax]
-        self.fclte = Cls["te"][0: self.lmax]
-        self.fclbb = Cls["bb"][0: self.lmax]
+        self.fcltt = Cls["tt"][0 : self.lmax]
+        self.fclpp = Cls["pp"][0 : self.lmax]
+        self.fclee = Cls["ee"][0 : self.lmax]
+        self.fclte = Cls["te"][0 : self.lmax]
+        self.fclbb = Cls["bb"][0 : self.lmax]
         self.thetaclkk = self.fclpp * (self.ls * (self.ls + 1)) ** 2 * 0.25
 
         # load the correction terms generate from the script n1so.py
@@ -173,9 +174,8 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
                     "ee": self.theory_lmax,
                     "bb": self.theory_lmax,
                 },
-                "CCL": {"kmax": 10,
-                        "nonlinear": True},
-                "zstar": None
+                "CCL": {"kmax": 10, "nonlinear": True},
+                "zstar": None,
             }
 
     def _get_CCL_results(self):
@@ -183,22 +183,24 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         return cosmo_dict["ccl"], cosmo_dict["cosmo"]
 
     def _get_data(self):
-        bin_centers, bandpowers, cov = \
-            self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
+        bin_centers, bandpowers, cov = self.sacc.get_ell_cl(
+            None, "ck", "ck", return_cov=True
+        )
         self.x = bin_centers
         self.y = bandpowers
         return bin_centers, self.y
 
     def _get_cov(self):
-        bin_centers, bandpowers, cov = \
-            self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True)
+        bin_centers, bandpowers, cov = self.sacc.get_ell_cl(
+            None, "ck", "ck", return_cov=True
+        )
         self.cov = cov
         return cov
 
     def _get_binning_matrix(self):
-
-        bin_centers, bandpowers, cov, ind = \
-            self.sacc.get_ell_cl(None, 'ck', 'ck', return_cov=True, return_ind=True)
+        bin_centers, bandpowers, cov, ind = self.sacc.get_ell_cl(
+            None, "ck", "ck", return_cov=True, return_ind=True
+        )
         bpw = self.sacc.get_bandpower_windows(ind)
         binning_matrix = bpw.weight.T
         self.binning_matrix = binning_matrix
@@ -215,7 +217,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         cl = self.provider.get_Cl(ell_factor=False)
 
         if self.pp_ccl is False:
-            Cl_theo = cl["pp"][0: self.lmax]
+            Cl_theo = cl["pp"][0 : self.lmax]
             ls = self.ls
             Clkk_theo = (ls * (ls + 1)) ** 2 * Cl_theo * 0.25
         else:
@@ -224,27 +226,27 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             cmbk = ccl.CMBLensingTracer(cosmo, z_source=zstar)
             Clkk_theo = ccl.angular_cl(cosmo, cmbk, cmbk, self.ls)
 
-        Cl_tt = cl["tt"][0: self.lmax]
-        Cl_ee = cl["ee"][0: self.lmax]
-        Cl_te = cl["te"][0: self.lmax]
-        Cl_bb = cl["bb"][0: self.lmax]
+        Cl_tt = cl["tt"][0 : self.lmax]
+        Cl_ee = cl["ee"][0 : self.lmax]
+        Cl_te = cl["te"][0 : self.lmax]
+        Cl_bb = cl["bb"][0 : self.lmax]
 
         Clkk_binned = self.binning_matrix.dot(Clkk_theo)
 
         correction = (
-                2
-                * (self.thetaclkk / self.n0)
-                * (
-                        np.dot(self.N0cltt, Cl_tt - self.fcltt)
-                        + np.dot(self.N0clee, Cl_ee - self.fclee)
-                        + np.dot(self.N0clbb, Cl_bb - self.fclbb)
-                        + np.dot(self.N0clte, Cl_te - self.fclte)
-                )
-                + np.dot(self.N1clpp, Clkk_theo - self.thetaclkk)
-                + np.dot(self.N1cltt, Cl_tt - self.fcltt)
-                + np.dot(self.N1clee, Cl_ee - self.fclee)
-                + np.dot(self.N1clbb, Cl_bb - self.fclbb)
-                + np.dot(self.N1clte, Cl_te - self.fclte)
+            2
+            * (self.thetaclkk / self.n0)
+            * (
+                np.dot(self.N0cltt, Cl_tt - self.fcltt)
+                + np.dot(self.N0clee, Cl_ee - self.fclee)
+                + np.dot(self.N0clbb, Cl_bb - self.fclbb)
+                + np.dot(self.N0clte, Cl_te - self.fclte)
+            )
+            + np.dot(self.N1clpp, Clkk_theo - self.thetaclkk)
+            + np.dot(self.N1cltt, Cl_tt - self.fcltt)
+            + np.dot(self.N1clee, Cl_ee - self.fclee)
+            + np.dot(self.N1clbb, Cl_bb - self.fclbb)
+            + np.dot(self.N1clte, Cl_te - self.fclte)
         )
 
         # put the correction term into bandpowers
@@ -260,14 +262,16 @@ class LensingLiteLikelihood(BinnedPSLikelihood):
     data. Simply a Gaussian likelihood between a provided binned ``pp`` data vector
     and covariance matrix, and the appropriate theory vector.
     """
+
     kind: str = "pp"
     lmax: int = 3000
 
     def initialize(self):
-        data = os.path.join(self.get_class_path(), 'data')
-        self.datapath = self.datapath or os.path.join(data, 'binnedauto.txt')
-        self.covpath = self.covpath or os.path.join(data, 'binnedcov.txt')
+        data = os.path.join(self.get_class_path(), "data")
+        self.datapath = self.datapath or os.path.join(data, "binnedauto.txt")
+        self.covpath = self.covpath or os.path.join(data, "binnedcov.txt")
 
-        self.binning_matrix_path = self.binning_matrix_path or \
-                                   os.path.join(data, 'binningmatrix.txt')
+        self.binning_matrix_path = self.binning_matrix_path or os.path.join(
+            data, "binningmatrix.txt"
+        )
         super().initialize()

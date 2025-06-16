@@ -6,57 +6,121 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  COBAYA_PACKAGES_PATH: ./cobaya_packages
+
 jobs:
+  check-skip:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run skip-check
+        id: check
+        uses: ./.github/actions/check-skip
+
   test:
-    name: ${{ matrix.name }}
+    needs: check-skip
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          - os: ubuntu-latest
+            python-version: '3.13'
 
-          - name: latest supported versions
-            os: ubuntu-latest
+          - os: ubuntu-latest
+            python-version: '3.12'
+
+          - os: ubuntu-latest
             python-version: '3.11'
-            toxenv: py311-test-all-latest-cov
+            tags: cov
 
-          - name: oldest supported versions
-            os: ubuntu-latest
-            python-version: '3.9'
-            toxenv: py39-test-oldest
+          - os: ubuntu-latest
+            python-version: '3.10'
 
-          - name: macOS latest
-            os: macos-latest
+          - os: macos-latest
             python-version: '3.11'
-            toxenv: py311-test-latest
 
-          - name: Windows latest
-            os: windows-latest
+          - os: windows-latest
             python-version: '3.11'
-            toxenv: py311-test-latest
             env:
               PYTHONIOENCODING: utf-8
               PYTHONUTF8: 1
 
+    if: ${{ needs.check-skip.outputs.skip != 'true' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install SOLikeT dependencies and likelihoods
+        run: |
+          pip install uv
+          bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
+
+      - name: Run tests
+        env:
+          COBAYA_PACKAGES_PATH: ./cobaya_packages
+        run: |
+          uv run pytest -vv --durations=10
+
+      - if: contains(matrix.tags, 'cov') && ${{ needs.check-skip.outputs.skip != 'true' }}
+        name: Report Coverage
+        uses: codecov/codecov-action@v3
+
+  test-conda:
+    needs: check-skip
+    if: ${{ needs.check-skip.outputs.skip != 'true' }}
+    runs-on: ubuntu-latest
+    name: Conda Test (Python 3.11)
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Install Conda w/ Python ${{ matrix.python-version }}
-        uses: conda-incubator/setup-miniconda@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           auto-activate-base: false
-          activate-environment: soliket-tests
           environment-file: soliket-tests.yml
-          python-version: ${{ matrix.python-version }}
-          channels: conda-forge
-      - name: Install Dependencies
+          activate-environment: soliket-tests
+
+      - name: Run tests
         shell: bash -el {0}
         run: |
-          pip install tox
-      - name: Run Tests
-        shell: bash -el {0}
+          pytest -vv
+
+  aggregate:
+    needs: [test, test-conda]
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    name: 🛠 Aggregate test results
+    steps:
+      - name: Show individual results
         run: |
-           tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
-      - if: contains(matrix.toxenv, '-cov')
-        name: Report Coverage
-        uses: codecov/codecov-action@v3
+          echo "matrix test result: ${{ needs.test.result }}"
+          echo "conda test result: ${{ needs.test-conda.result }}"
+
+      - name: Fail if any failed
+        run: |
+          if [ "${{ needs.test.result }}" = "failure" ]; then
+            echo "❌ matrix test failed"
+            exit 1
+          fi
+          if [ "${{ needs['test-conda'].result }}" = "failure" ]; then
+            echo "❌ test-conda failed"
+            exit 1
+          fi
+          echo "👍 All succeeded or skipped"

@@ -1,16 +1,20 @@
+import importlib
+
 import numpy as np
 from cobaya.model import get_model
 
 
-def test_halomodel_import():
-    from soliket.halo_model import HaloModel  # noqa F401
+def test_halomodel_import(check_skip_pyhalomodel):
+    _ = importlib.import_module("soliket.halo_model").HaloModel
 
 
-def test_pyhalomodel_import():
-    from soliket.halo_model import HaloModel_pyhm  # noqa F401
+def test_pyhalomodel_import(check_skip_pyhalomodel):
+    _ = importlib.import_module("soliket.halo_model").HaloModel_pyhm
 
 
-def test_pyhalomodel_model(evaluate_one_info, test_cosmology_params):
+def test_pyhalomodel_model(
+    evaluate_one_info, test_cosmology_params, check_skip_pyhalomodel
+):
     from soliket.halo_model import HaloModel_pyhm
 
     evaluate_one_info["params"] = test_cosmology_params
@@ -19,10 +23,12 @@ def test_pyhalomodel_model(evaluate_one_info, test_cosmology_params):
         "halo_model": {"external": HaloModel_pyhm, "stop_at_error": True},
     }
 
-    model = get_model(evaluate_one_info)  # noqa F841
+    _ = get_model(evaluate_one_info)
 
 
-def test_pyhalomodel_compute_mm_grid(evaluate_one_info, test_cosmology_params):
+def test_pyhalomodel_compute_mm_grid(
+    evaluate_one_info, test_cosmology_params, check_skip_pyhalomodel
+):
     from soliket.halo_model import HaloModel_pyhm
 
     evaluate_one_info["params"] = test_cosmology_params

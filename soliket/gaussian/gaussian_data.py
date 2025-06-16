@@ -1,33 +1,43 @@
-from typing import Optional, Sequence
+from collections.abc import Sequence
+
 import numpy as np
 from cobaya.functions import chi_squared
 
 
 class GaussianData:
     """
-     Named multivariate gaussian data
+    Named multivariate gaussian data
     """
+
     name: str  # name identifier for the data
     x: Sequence  # labels for each data point
     y: np.ndarray  # data point values
     cov: np.ndarray  # covariance matrix
     inv_cov: np.ndarray  # inverse covariance matrix
-    ncovsims: Optional[int]  # number of simulations used to estimate covariance
-    indices: Optional[np.array] #boolean array to trim cross-cov with selected bandpowers
+    ncovsims: int | None  # number of simulations used to estimate covariance
+    indices: np.ndarray | None #boolean array to trim cross-cov with selected bandpowers
 
     _fast_chi_squared = staticmethod(chi_squared)
 
-    def __init__(self, name, x: Sequence, y: Sequence[float], cov: np.ndarray,
-                 ncovsims: Optional[int] = None, indices: Optional[np.array] = None):
-
+    def __init__(
+        self,
+        name,
+        x: Sequence,
+        y: Sequence[float],
+        cov: np.ndarray,
+        ncovsims: int | None = None,
+        indices: np.ndarray | None = None
+    ):
         self.name = str(name)
         self.ncovsims = ncovsims
         self.indices = indices if indices is not None and not all(indices) \
                                else np.ones(len(x), dtype=bool)
 
         if not (len(x) == len(y) and cov.shape == (len(x), len(x))):
-            raise ValueError(f"Incompatible shapes! x={len(x)}, y={len(y)}, \
-                               cov={cov.shape}")
+            raise ValueError(
+                f"Incompatible shapes! x={len(x)}, y={len(y)}, \
+                               cov={cov.shape}"
+            )
 
         self.x = x
         self.y = np.ascontiguousarray(y)
@@ -69,7 +79,6 @@ class MultiGaussianData(GaussianData):
     """
 
     def __init__(self, data_list, cross_covs=None):
-
         if cross_covs is None:
             cross_covs = {}
 
@@ -134,8 +143,11 @@ class MultiGaussianData(GaussianData):
 
     @property
     def labels(self):
-        return [x for y in [[name] * len(d) for
-                            name, d in zip(self.names, self.data_list)] for x in y]
+        return [
+            x
+            for y in [[name] * len(d) for name, d in zip(self.names, self.data_list)]
+            for x in y
+        ]
 
     def _index_range(self, name):
         if name not in self.names:
@@ -177,5 +189,6 @@ class MultiGaussianData(GaussianData):
             for j, lj in zip(range(len(self.data)), self.labels)
         ]
 
-        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800,
-                                     invert_yaxis=True, xrotation=90)
+        return hv.HeatMap(data).opts(
+            tools=["hover"], width=800, height=800, invert_yaxis=True, xrotation=90
+        )
