@@ -20,8 +20,8 @@ runs:
       shell: bash
       run: |
         MSG=$(git log -1 --pretty=%B | tr '\n' ' ' | sed 's/"/\\"/g')
-        echo "::debug::Raw git log -1 output: $(git log -1 --pretty=%B | sed 's/$/↵/g')"
-        echo "::debug::Normalized commit message: '$MSG'"
+        echo "Raw git log -1 output: $(git log -1 --pretty=%B | sed 's/$/↵/g')"
+        echo "Normalized commit message: '$MSG'"
         echo "commit=$MSG" >> $GITHUB_OUTPUT
 
     - name: Read PR title (if any)
@@ -32,9 +32,9 @@ runs:
         if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
           PR_TITLE=$(jq -r .pull_request.title <"$GITHUB_EVENT_PATH")
         fi
+        echo "$PR_TITLE" | sed 's/$/↵/g'
         PR_TITLE=$(echo "$PR_TITLE" | tr '\n' ' ' | sed 's/"/\\"/g')
-        echo "::debug::Raw PR title from event JSON: $(jq -r .pull_request.title <"$GITHUB_EVENT_PATH" | sed 's/$/↵/g')"
-        echo "::debug::Normalized PR title: '$PR_TITLE'"
+        echo "NORMALIZED PR_TITLE: '$PR_TITLE'"
         echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
 
     - name: Decide skip=true/false
@@ -49,7 +49,7 @@ runs:
             break
           fi
         done
-        echo "::debug::Final skip verdict: $SKIP"
+        echo "Final skip verdict: $SKIP"
         echo "skip=$SKIP" >> $GITHUB_OUTPUT
 
 
