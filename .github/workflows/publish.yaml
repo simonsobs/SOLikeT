@@ -61,7 +61,7 @@ jobs:
           if [ "${{ steps.pick.outputs.repo }}" = "testpypi" ]; then
             export UV_PUBLISH_URL=https://test.pypi.org/legacy/
           fi
-          uv publish
+          uv publish --trusted-publishing always
         env:
           # optional extra debug
           GITHUB_REF: ${{ github.ref }}
