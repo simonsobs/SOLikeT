@@ -9,30 +9,20 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python-version: ['3.11']
-        toxenv: [py311-test-all-latest]
-        # release: [main, latest] # there are no releases yet so this would break
-        release: [main]
+        python-version: ['3.10', '3.11']
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
-      - if: matrix.release != 'main'
-        name: Checkout Release
-        run: |
-          git checkout tags/$(curl -s https://api.github.com/repos/simonsobs/SOLikeT/releases/${{ matrix.release }} | python -c "import sys, json; print(json.load(sys.stdin)['tag_name'])")
-      - name: Install Conda w/ Python ${{ matrix.python-version }}
-        uses: conda-incubator/setup-miniconda@v2
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          auto-activate-base: false
-          activate-environment: soliket-tests
-          environment-file: soliket-tests.yml
           python-version: ${{ matrix.python-version }}
-          channels: conda-forge
-      - name: Install Dependencies
-        shell: bash -el {0}
+      - name: Install uv and dependencies
         run: |
-          pip install tox
-      - name: Run Tests
-        shell: bash -el {0}
+          pip install uv
+          bash ci_scripts/install_deps.sh --extras dev emulator --python ${{ matrix.python-version }}
+      - name: Run tests
+        env:
+          COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
-          tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.toxposargs }}
+          uv run pytest -vv --durations=10

@@ -1,49 +1,58 @@
-from typing import Optional, Sequence
+from collections.abc import Sequence
+
 import numpy as np
 from cobaya.functions import chi_squared
 
 
 class GaussianData:
     """
-     Named multivariate gaussian data
+    Named multivariate gaussian data
     """
+
     name: str  # name identifier for the data
     x: Sequence  # labels for each data point
     y: np.ndarray  # data point values
     cov: np.ndarray  # covariance matrix
     inv_cov: np.ndarray  # inverse covariance matrix
-    ncovsims: Optional[int]  # number of simulations used to estimate covariance
+    ncovsims: int | None  # number of simulations used to estimate covariance
 
     _fast_chi_squared = staticmethod(chi_squared)
 
-    def __init__(self, name, x: Sequence, y: Sequence[float], cov: np.ndarray,
-                 ncovsims: Optional[int] = None):
-
+    def __init__(
+        self,
+        name,
+        x: Sequence,
+        y: Sequence[float],
+        cov: np.ndarray,
+        ncovsims: int | None = None,
+    ):
         self.name = str(name)
         self.ncovsims = ncovsims
 
         if not (len(x) == len(y) and cov.shape == (len(x), len(x))):
-            raise ValueError(f"Incompatible shapes! x={len(x)}, y={len(y)}, \
-                               cov={cov.shape}")
+            raise ValueError(
+                f"Incompatible shapes! x={len(x)}, y={len(y)}, \
+                               cov={cov.shape}"
+            )
 
-        self.x = x
-        self.y = np.ascontiguousarray(y)
-        self.cov = cov
-        self.eigenevalues = np.linalg.eigvalsh(cov)
+        self.x: Sequence[float] = x
+        self.y: np.ndarray = np.ascontiguousarray(y)
+        self.cov: np.ndarray = cov
+        self.eigenevalues: np.ndarray = np.linalg.eigvalsh(cov)
         if self.eigenevalues.min() <= 0:
             raise ValueError("Covariance is not positive definite!")
 
-        self.inv_cov = np.linalg.inv(self.cov)
+        self.inv_cov: np.ndarray = np.linalg.inv(self.cov)
         if ncovsims is not None:
             hartlap_factor = (self.ncovsims - len(x) - 2) / (self.ncovsims - 1)
             self.inv_cov *= hartlap_factor
         log_det = np.log(self.eigenevalues).sum()
         self.norm_const = -(np.log(2 * np.pi) * len(x) + log_det) / 2
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.x)
 
-    def loglike(self, theory):
+    def loglike(self, theory: np.ndarray) -> float:
         delta = self.y - theory
         return -0.5 * self._fast_chi_squared(self.inv_cov, delta) + self.norm_const
 
@@ -60,8 +69,11 @@ class MultiGaussianData(GaussianData):
         Cross-covariances, keyed by (name1, name2) tuples.
     """
 
-    def __init__(self, data_list, cross_covs=None):
-
+    def __init__(
+        self,
+        data_list: list[GaussianData],
+        cross_covs: dict[tuple[str, str], np.ndarray] | None = None,
+    ):
         if cross_covs is None:
             cross_covs = {}
 
@@ -86,44 +98,47 @@ class MultiGaussianData(GaussianData):
                 else:
                     cross_covs[key] = np.zeros((len(d1), len(d2)))
 
-        self.data_list = data_list
-        self.lengths = [len(d) for d in data_list]
-        self.names = [d.name for d in data_list]
-        self.cross_covs = cross_covs
+        self.data_list: list[GaussianData] = data_list
+        self.lengths: list[int] = [len(d) for d in data_list]
+        self.names: list[str] = [d.name for d in data_list]
+        self.cross_covs: dict[tuple[str, str], np.ndarray] = cross_covs
 
-        self._data = None
+        self._data: np.ndarray | None = None
 
     @property
-    def data(self):
+    def data(self) -> GaussianData:
         if self._data is None:
             self._assemble_data()
         return self._data
 
-    def loglike(self, theory):
+    def loglike(self, theory: np.ndarray) -> float:
         return self.data.loglike(theory)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.data.name
 
     @property
-    def inv_cov(self):
+    def inv_cov(self) -> np.ndarray:
         return self.data.inv_cov
 
     @property
-    def cov(self):
+    def cov(self) -> np.ndarray:
         return self.data.cov
 
     @property
-    def norm_const(self):
+    def norm_const(self) -> float:
         return self.data.norm_const
 
     @property
-    def labels(self):
-        return [x for y in [[name] * len(d) for
-                            name, d in zip(self.names, self.data_list)] for x in y]
+    def labels(self) -> list[str]:
+        return [
+            x
+            for y in [[name] * len(d) for name, d in zip(self.names, self.data_list)]
+            for x in y
+        ]
 
-    def _index_range(self, name):
+    def _index_range(self, name: str) -> tuple[int, int]:
         if name not in self.names:
             raise ValueError(f"{name} not in {self.names}!")
 
@@ -135,7 +150,7 @@ class MultiGaussianData(GaussianData):
             i0 += length
         return i0, i1
 
-    def _slice(self, *names):
+    def _slice(self, *names: str) -> slice:
         if isinstance(names, str):
             names = [names]
 
@@ -155,13 +170,29 @@ class MultiGaussianData(GaussianData):
         self._data = GaussianData(" + ".join(self.names), x, y, cov)
 
     def plot_cov(self, **kwargs):
-        import holoviews as hv
+        import matplotlib.pyplot as plt
 
-        data = [
-            (f"{li}: {self.data.x[i]}", f"{lj}: {self.data.x[j]}", self.cov[i, j])
-            for i, li in zip(range(len(self.data)), self.labels)
-            for j, lj in zip(range(len(self.data)), self.labels)
+        labels = [
+            f"{label}: {value:.2f}" for label, value in zip(self.labels, self.data.x)
         ]
 
-        return hv.HeatMap(data).opts(tools=["hover"], width=800, height=800,
-                                     invert_yaxis=True, xrotation=90)
+        x_indices = np.arange(len(labels) + 1)
+        y_indices = np.arange(len(labels) + 1)
+
+        _, ax = plt.subplots(figsize=(10, 8))
+        heatmap = ax.pcolormesh(
+            x_indices, y_indices, self.cov, cmap="viridis", shading="auto"
+        )
+
+        ax.set_xticks(x_indices[:-1] + 0.5)
+        ax.set_yticks(y_indices[:-1] + 0.5)
+        ax.set_xticklabels(labels, rotation=90)
+        ax.set_yticklabels(labels)
+
+        ax.invert_yaxis()
+
+        plt.colorbar(heatmap, ax=ax)
+
+        plt.show()
+
+        return heatmap

@@ -1,16 +1,60 @@
+import copy
+import importlib
+
 import numpy as np
+import pytest
 from cobaya.model import get_model
 
 
-def test_halomodel_import():
-    from soliket.halo_model import HaloModel  # noqa F401
+def test_halomodel_import(check_skip_pyhalomodel):
+    _ = importlib.import_module("soliket.halo_model").HaloModel
 
 
-def test_pyhalomodel_import():
-    from soliket.halo_model import HaloModel_pyhm  # noqa F401
+def test_pyhalomodel_import(check_skip_pyhalomodel):
+    _ = importlib.import_module("soliket.halo_model").HaloModel_pyhm
 
 
-def test_pyhalomodel_model(evaluate_one_info, test_cosmology_params):
+def test_wrong_types(check_skip_pyhalomodel):
+    from soliket.halo_model import HaloModel, HaloModel_pyhm
+
+    base_case_halo_model = {"kmax": 10, "z": 0.5, "extra_args": {}}
+    wrong_type_cases_halo_model = {
+        "kmax": "not_a_number",
+        "z": "not_a_float_or_list_or_array",
+        "extra_args": "not_a_dict",
+    }
+
+    for key, wrong_value in wrong_type_cases_halo_model.items():
+        case = copy.deepcopy(base_case_halo_model)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = HaloModel(**case)
+
+    base_case_halo_model_pyhm = {
+        "hmf_name": "some_name",
+        "hmf_Dv": 1.0,
+        "Mmin": 1.0,
+        "Mmax": 1.0,
+        "nM": 10,
+    }
+    wrong_type_cases_halo_model_pyhm = {
+        "hmf_name": 123,
+        "hmf_Dv": "not_a_float",
+        "Mmin": "not_a_float",
+        "Mmax": "not_a_float",
+        "nM": "not_an_int",
+    }
+
+    for key, wrong_value in wrong_type_cases_halo_model_pyhm.items():
+        case = copy.deepcopy(base_case_halo_model_pyhm)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = HaloModel_pyhm(**case)
+
+
+def test_pyhalomodel_model(
+    evaluate_one_info, test_cosmology_params, check_skip_pyhalomodel
+):
     from soliket.halo_model import HaloModel_pyhm
 
     evaluate_one_info["params"] = test_cosmology_params
@@ -19,10 +63,12 @@ def test_pyhalomodel_model(evaluate_one_info, test_cosmology_params):
         "halo_model": {"external": HaloModel_pyhm, "stop_at_error": True},
     }
 
-    model = get_model(evaluate_one_info)  # noqa F841
+    _ = get_model(evaluate_one_info)
 
 
-def test_pyhalomodel_compute_mm_grid(evaluate_one_info, test_cosmology_params):
+def test_pyhalomodel_compute_mm_grid(
+    evaluate_one_info, test_cosmology_params, check_skip_pyhalomodel
+):
     from soliket.halo_model import HaloModel_pyhm
 
     evaluate_one_info["params"] = test_cosmology_params

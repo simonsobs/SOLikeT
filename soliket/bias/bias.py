@@ -26,6 +26,8 @@ If you want to add your own bias model, you can do so by inheriting from the
 function (have a look at the linear bias model for ideas).
 """
 
+from typing import Any
+
 import numpy as np
 from cobaya.theory import Theory
 
@@ -33,46 +35,59 @@ from cobaya.theory import Theory
 class Bias(Theory):
     """Parent class for bias models."""
 
+    kmax: int | float
+    nonlinear: bool
+    z: float | list[float] | np.ndarray
+    extra_args: dict | None
+    params: dict
+
+    _enforce_types: bool = True
+
     _logz = np.linspace(-3, np.log10(1100), 150)
-    _default_z_sampling = 10 ** _logz
+    _default_z_sampling = 10**_logz
     _default_z_sampling[0] = 0
 
     def initialize(self):
-        self._var_pairs = set()
+        self._var_pairs: set[tuple[str, str]] = set()
 
-    def get_requirements(self):
+    def get_requirements(self) -> dict[str, Any]:
         return {}
 
-    def must_provide(self, **requirements):
+    def must_provide(self, **requirements) -> dict[str, Any]:
         options = requirements.get("linear_bias") or {}
 
         self.kmax = max(self.kmax, options.get("kmax", self.kmax))
-        self.z = np.unique(np.concatenate(
-            (np.atleast_1d(options.get("z", self._default_z_sampling)),
-             np.atleast_1d(self.z))))
+        self.z = np.unique(
+            np.concatenate(
+                (
+                    np.atleast_1d(options.get("z", self._default_z_sampling)),
+                    np.atleast_1d(self.z),
+                )
+            )
+        )
 
         # Dictionary of the things needed from CAMB/CLASS
         needs = {}
 
         self.nonlinear = self.nonlinear or options.get("nonlinear", False)
         self._var_pairs.update(
-            set((x, y) for x, y in
-                options.get("vars_pairs", [("delta_tot", "delta_tot")])))
+            {(x, y) for x, y in options.get("vars_pairs", [("delta_tot", "delta_tot")])}
+        )
 
         needs["Pk_grid"] = {
             "vars_pairs": self._var_pairs or [("delta_tot", "delta_tot")],
             "nonlinear": (True, False) if self.nonlinear else False,
             "z": self.z,
-            "k_max": self.kmax
+            "k_max": self.kmax,
         }
 
         assert len(self._var_pairs) < 2, "Bias doesn't support other Pk yet"
         return needs
 
     def _get_Pk_mm(self):
-        self.k, self.z, Pk_mm = \
-            self.provider.get_Pk_grid(var_pair=list(self._var_pairs)[0],
-                                      nonlinear=self.nonlinear)
+        self.k, self.z, Pk_mm = self.provider.get_Pk_grid(
+            var_pair=list(self._var_pairs)[0], nonlinear=self.nonlinear
+        )
         return Pk_mm
 
     def get_Pk_gg_grid(self) -> dict:
@@ -89,9 +104,11 @@ class Linear_bias(Bias):
     Has one free parameter, :math:`b_\mathrm{lin}` (``b_lin``).
     """
 
-    def calculate(self, state: dict, want_derived: bool = True,
-                  **params_values_dict):
+    _enforce_types: bool = True
+    params: dict
+
+    def calculate(self, state: dict, want_derived: bool = True, **params_values_dict):
         Pk_mm = self._get_Pk_mm()
 
-        state["Pk_gg_grid"] = params_values_dict["b_lin"] ** 2. * Pk_mm
+        state["Pk_gg_grid"] = params_values_dict["b_lin"] ** 2.0 * Pk_mm
         state["Pk_gm_grid"] = params_values_dict["b_lin"] * Pk_mm

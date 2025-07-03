@@ -1,5 +1,8 @@
+import importlib
+
+
 def test_soliket_import():
-    import soliket  # noqa: F401
+    _ = importlib.import_module("soliket")
 
 
 def test_soliket_version():
