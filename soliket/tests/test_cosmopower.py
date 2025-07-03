@@ -2,10 +2,12 @@
 Check that CosmoPower gives the correct Planck CMB power spectrum.
 """
 
+import copy
 import importlib
 import os
 
 import numpy as np
+import pytest
 from cobaya.model import get_model
 
 fiducial_params = {
@@ -67,6 +69,32 @@ info_dict = {
 
 def test_cosmopower_import(check_skip_cosmopower):
     _ = importlib.import_module("soliket.cosmopower").CosmoPower
+
+
+def test_wrong_types(check_skip_cosmopower):
+    from soliket.cosmopower import CosmoPower
+
+    base_case = {
+        "network_path": "valid_path",
+        "network_settings": {},
+        "stop_at_error": True,
+        "renames": {},
+        "extra_args": {},
+    }
+
+    wrong_type_cases = {
+        "network_path": 12345,
+        "network_settings": "not_a_dict",
+        "stop_at_error": "not_a_bool",
+        "renames": "not_a_dict",
+        "extra_args": "not_a_dict",
+    }
+
+    for key, wrong_value in wrong_type_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = CosmoPower(**case)
 
 
 def test_cosmopower_theory(request, check_skip_cosmopower, install_planck_lite):

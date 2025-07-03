@@ -5,6 +5,8 @@ data. Makes use of the cobaya CCL module for handling tracers and Limber integra
 :Authors: Pablo Lemos, Ian Harrison.
 """
 
+from typing import ClassVar
+
 import numpy as np
 
 try:
@@ -13,7 +15,9 @@ except ImportError:
     from numpy import trapz as trapezoid
 import sacc
 from cobaya.log import LoggedError
+from cobaya.theory import Provider
 
+from soliket.ccl import CCL
 from soliket.gaussian import GaussianData, GaussianLikelihood
 
 
@@ -22,14 +26,19 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
     Generic likelihood for cross-correlations of CCL tracer objects.
     """
 
+    datapath: str
+    use_spectra: str | list[tuple[str, str]]
+    ncovsims: int | None
+    provider: Provider
+
     def initialize(self):
         self._get_sacc_data()
         self._check_tracers()
 
-    def get_requirements(self):
+    def get_requirements(self) -> dict:
         return {"CCL": {"kmax": 10, "nonlinear": True}, "zstar": None}
 
-    def _get_CCL_results(self):
+    def _get_CCL_results(self) -> tuple[CCL, dict]:
         cosmo_dict = self.provider.get_CCL()
         return cosmo_dict["ccl"], cosmo_dict["cosmo"]
 
@@ -52,17 +61,16 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
                 if self.sacc_data.tracers[tracer].quantity not in self._allowable_tracers:
                     raise LoggedError(
                         self.log,
-                        "You have tried to use a {} tracer in \
-                                       {}, which only allows {}. Please check your \
-                                       tracer selection in the ini file.\
-                                       ".format(
-                            self.sacc_data.tracers[tracer].quantity,
-                            self.__class__.__name__,
-                            self._allowable_tracers,
-                        ),
+                        f"You have tried to use a \
+                        {self.sacc_data.tracers[tracer].quantity} tracer in \
+                        {self.__class__.__name__}, which only allows \
+                        {self._allowable_tracers}. Please check your \
+                        tracer selection in the ini file.",
                     )
 
-    def _get_nz(self, z, tracer, tracer_name, **params_values):
+    def _get_nz(
+        self, z: np.ndarray, tracer, tracer_name: str, **params_values
+    ) -> np.ndarray:
         if self.z_nuisance_mode == "deltaz":
             bias = params_values[f"{tracer_name}_deltaz"]
             nz_biased = tracer.get_dndz(z - bias)
@@ -87,7 +95,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         self.data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
 
-    def _construct_ell_bins(self):
+    def _construct_ell_bins(self) -> np.ndarray:
         ell_eff = []
 
         for tracer_comb in self.sacc_data.get_tracer_combinations():
@@ -97,7 +105,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         return np.concatenate(ell_eff)
 
-    def _get_data(self, **params_values):
+    def _get_data(self, **params_values) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         data_auto = np.loadtxt(self.auto_file)
         data_cross = np.loadtxt(self.cross_file)
 
@@ -116,7 +124,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         return x, y, dy
 
-    def get_binning(self, tracer_comb):
+    def get_binning(self, tracer_comb: tuple) -> tuple[np.ndarray, np.ndarray]:
         bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
         bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
         ells_theory = bpw.values
@@ -125,7 +133,7 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
         return ells_theory, w_bins
 
-    def logp(self, **params_values):
+    def logp(self, **params_values) -> float:
         theory = self._get_theory(**params_values)
         return self.data.loglike(theory)
 
@@ -135,9 +143,10 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
     Likelihood for cross-correlations of galaxy and CMB lensing data.
     """
 
-    _allowable_tracers = ["cmb_convergence", "galaxy_density"]
+    _allowable_tracers: ClassVar[list[str]] = ["cmb_convergence", "galaxy_density"]
+    params: dict
 
-    def _get_theory(self, **params_values):
+    def _get_theory(self, **params_values) -> np.ndarray:
         ccl, cosmo = self._get_CCL_results()
 
         tracer_comb = self.sacc_data.get_tracer_combinations()
@@ -175,12 +184,16 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
     Likelihood for cross-correlations of galaxy weak lensing shear and CMB lensing data.
     """
 
-    _allowable_tracers = ["cmb_convergence", "galaxy_shear"]
+    _allowable_tracers: ClassVar[list[str]] = ["cmb_convergence", "galaxy_shear"]
 
-    def _get_theory(self, **params_values):
+    z_nuisance_mode: str | bool | None
+    m_nuisance_mode: str | bool | None
+    ia_mode: str | None
+    params: dict
+
+    def _get_theory(self, **params_values) -> np.ndarray:
         ccl, cosmo = self._get_CCL_results()
-
-        cl_binned_list = []
+        cl_binned_list: list[np.ndarray] = []
 
         for tracer_comb in self.sacc_data.get_tracer_combinations():
             if self.sacc_data.tracers[tracer_comb[0]].quantity == "cmb_convergence":
@@ -263,12 +276,10 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
 
             bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
             bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
-            ells_theory = bpw.values
-            ells_theory = np.asarray(ells_theory, dtype=int)
+            ells_theory = np.asarray(bpw.values, dtype=int)
             w_bins = bpw.weight.T
 
             cl_unbinned = ccl.cells.angular_cl(cosmo, tracer1, tracer2, ells_theory)
-
             if self.m_nuisance_mode is not None:
                 # note this allows wrong calculation, as we can do
                 # shear x shear if the spectra are in the sacc
@@ -277,9 +288,49 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                 cl_unbinned = (1 + m_bias) * cl_unbinned
 
             cl_binned = np.dot(w_bins, cl_unbinned)
-
             cl_binned_list.append(cl_binned)
 
         cl_binned_total = np.concatenate(cl_binned_list)
-
         return cl_binned_total
+
+    def _get_tracer(self, ccl: CCL, cosmo: dict, tracer_name: str, params_values: dict):
+        tracer_data = self.sacc_data.tracers[tracer_name]
+        if tracer_data.quantity == "cmb_convergence":
+            return ccl.CMBLensingTracer(cosmo, z_source=self.provider.get_param("zstar"))
+        elif tracer_data.quantity == "galaxy_shear":
+            z_tracer = self.sacc_data.tracers[tracer_name].z
+            nz_tracer = self.sacc_data.tracers[tracer_name].nz
+            ia_z = self._get_ia_bias(z_tracer, nz_tracer, tracer_name, params_values)
+
+            tracer = ccl.WeakLensingTracer(
+                cosmo, dndz=(z_tracer, nz_tracer), ia_bias=ia_z
+            )
+            if self.z_nuisance_mode is not None:
+                nz_tracer = self._get_nz(z_tracer, tracer, tracer_name, **params_values)
+                tracer = ccl.WeakLensingTracer(
+                    cosmo, dndz=(z_tracer, nz_tracer), ia_bias=ia_z
+                )
+            return tracer
+        return None
+
+    def _get_ia_bias(
+        self,
+        z_tracer: np.ndarray,
+        nz_tracer: np.ndarray,
+        tracer_name: str,
+        params_values: dict,
+    ) -> tuple[np.ndarray, np.ndarray] | None:
+        if self.ia_mode is None:
+            return None
+        elif self.ia_mode == "nla":
+            A_IA = params_values["A_IA"]
+            eta_IA = params_values["eta_IA"]
+            z0_IA = trapezoid(z_tracer * nz_tracer)
+            return (z_tracer, A_IA * ((1 + z_tracer) / (1 + z0_IA)) ** eta_IA)
+        elif self.ia_mode == "nla-perbin":
+            A_IA = params_values[f"{tracer_name}_A_IA"]
+            return (z_tracer, A_IA * np.ones_like(z_tracer))
+        elif self.ia_mode == "nla-noevo":
+            A_IA = params_values["A_IA"]
+            return (z_tracer, A_IA * np.ones_like(z_tracer))
+        return None

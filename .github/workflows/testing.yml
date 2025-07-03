@@ -81,7 +81,7 @@ jobs:
     needs: check-skip
     if: ${{ needs.check-skip.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
-    name: Conda Test (Python 3.11)
+    name: Conda Test (Python 3.12)
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -89,7 +89,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - uses: conda-incubator/setup-miniconda@v3
         with:

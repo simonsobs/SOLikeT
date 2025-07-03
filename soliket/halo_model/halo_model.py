@@ -34,7 +34,7 @@ function (have a look at the simple pyhalomodel model for ideas).
 
 import numpy as np
 import pyhalomodel as halo
-from cobaya.theory import Theory
+from cobaya.theory import Provider, Theory
 
 # from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
 from scipy.interpolate import RectBivariateSpline
@@ -43,28 +43,38 @@ from scipy.interpolate import RectBivariateSpline
 class HaloModel(Theory):
     """Abstract parent class for implementing Halo Models."""
 
+    kmax: int | float
+    z: float | list[float] | np.ndarray
+    extra_args: dict | None
+
+    _enforce_types: bool = True
+
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10**_logz
     _default_z_sampling[0] = 0
+    provider: Provider
 
     def initialize(self):
         self._var_pairs = set()
         self._required_results = {}
 
-    def _get_Pk_mm_lin(self):
+    # def must_provide(self, **requirements):
+    #     options = requirements.get("halo_model") or {}
+
+    def _get_Pk_mm_lin(self) -> np.ndarray:
         for pair in self._var_pairs:
             self.k, self.z, pk_mm = self.provider.get_Pk_grid(
                 var_pair=pair, nonlinear=False
             )
         return pk_mm
 
-    def get_Pk_mm_grid(self):
+    def get_Pk_mm_grid(self) -> np.ndarray:
         return self.current_state["Pk_mm_grid"]
 
-    def get_Pk_gg_grid(self):
+    def get_Pk_gg_grid(self) -> np.ndarray:
         return self.current_state["Pk_gg_grid"]
 
-    def get_Pk_gm_grid(self):
+    def get_Pk_gm_grid(self) -> np.ndarray:
         return self.current_state["Pk_gm_grid"]
 
 
@@ -75,6 +85,12 @@ class HaloModel_pyhm(HaloModel):
     NFW profiles. This is calculated via the `pyhalomodel
     <https://github.com/alexander-mead/pyhalomodel>`_ code.
     """
+
+    hmf_name: str
+    hmf_Dv: float
+    Mmin: float
+    Mmax: float
+    nM: int
 
     def initialize(self):
         super().initialize()
@@ -120,7 +136,7 @@ class HaloModel_pyhm(HaloModel):
         return needs
 
     def calculate(self, state: dict, want_derived: bool = True, **params_values_dict):
-        pk_mm_lin = self._get_Pk_mm_lin()
+        pk_mm_lin: np.ndarray = self._get_Pk_mm_lin()
 
         # now wish to interpolate sigma_R to these Rs
         zinterp, rinterp, sigma_r_interp = self.provider.get_sigma_R()

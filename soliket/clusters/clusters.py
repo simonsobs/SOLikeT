@@ -23,15 +23,15 @@ import os
 import numpy as np
 import pandas as pd
 from cobaya import LoggedError
+from cobaya.theory import Provider
 from scipy.interpolate import interp1d
 
 from soliket.clusters import massfunc as mf
+from soliket.constants import C_KM_S
 from soliket.poisson import PoissonLikelihood
 
 from .survey import SurveyData
 from .sz_utils import SZUtils, trapezoid
-
-C_KM_S = 2.99792e5
 
 
 class SZModel:
@@ -45,6 +45,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
     name = "Clusters"
     columns = ["tsz_signal", "z", "tsz_signal_err"]
+    provider: Provider
 
     # data_name = resource_filename("soliket",
     #                   "clusters/data/MFMF_WebSkyHalos_A10tSZ_3freq_tiles_mass.fits")
@@ -101,45 +102,44 @@ class ClusterLikelihood(PoissonLikelihood):
     #     # model.szk = SZTracer(cosmo)
     #     return model
 
-    def _get_catalog(self):
+    def _get_catalog(self) -> pd.DataFrame:
         self.survey = SurveyData(
             self.data_path, self.data_name
         )  # , MattMock=False,tiles=False)
 
         self.szutils = SZUtils(self.survey)
 
-        df = pd.DataFrame(
+        return pd.DataFrame(
             {
                 "z": self.survey.clst_z.byteswap().newbyteorder(),
                 "tsz_signal": self.survey.clst_y0.byteswap().newbyteorder(),
                 "tsz_signal_err": self.survey.clst_y0err.byteswap().newbyteorder(),
             }
         )
-        return df
 
-    def _get_om(self):
+    def _get_om(self) -> float:
         return (self.provider.get_param("omch2") + self.provider.get_param("ombh2")) / (
             (self.provider.get_param("H0") / 100.0) ** 2
         )
 
-    def _get_ob(self):
+    def _get_ob(self) -> float:
         return (self.provider.get_param("ombh2")) / (
             (self.provider.get_param("H0") / 100.0) ** 2
         )
 
-    def _get_Ez(self):
+    def _get_Ez(self) -> np.ndarray:
         return self.provider.get_Hubble(self.zarr) / self.provider.get_param("H0")
 
-    def _get_Ez_interpolator(self):
+    def _get_Ez_interpolator(self) -> interp1d:
         return interp1d(self.zarr, self._get_Ez())
 
-    def _get_DAz(self):
+    def _get_DAz(self) -> np.ndarray:
         return self.provider.get_angular_diameter_distance(self.zarr)
 
-    def _get_DAz_interpolator(self):
+    def _get_DAz_interpolator(self) -> interp1d:
         return interp1d(self.zarr, self._get_DAz())
 
-    def _get_HMF(self):
+    def _get_HMF(self) -> mf.HMF:
         h = self.provider.get_param("H0") / 100.0
 
         Pk_interpolator = self.provider.get_Pk_interpolator(
@@ -155,10 +155,9 @@ class ClusterLikelihood(PoissonLikelihood):
         om = self._get_om()
 
         hmf = mf.HMF(om, Ez, pk=pks * h**3, kh=self.k / h, zarr=self.zarr)
-
         return hmf
 
-    def _get_param_vals(self, **kwargs):
+    def _get_param_vals(self, **kwargs) -> dict[str, float]:
         # Read in scaling relation parameters
         # scat = kwargs['scat']
         # massbias = kwargs['massbias']
@@ -195,7 +194,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
         h = self.provider.get_param("H0") / 100.0
 
-        def Prob_per_cluster(z, tsz_signal, tsz_signal_err):
+        def Prob_per_cluster(z, tsz_signal, tsz_signal_err) -> np.ndarray:
             c_y = tsz_signal
             c_yerr = tsz_signal_err
             c_z = z
@@ -206,13 +205,12 @@ class ClusterLikelihood(PoissonLikelihood):
 
             dn_dzdm = 10 ** np.squeeze(dn_dzdm_interp((np.log10(HMF.M), c_z))) * h**4.0
 
-            ans = trapezoid(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
-            return ans
+            return trapezoid(dn_dzdm * Pfunc_ind, dx=np.diff(HMF.M, axis=0), axis=0)
 
         return Prob_per_cluster
         # Implement a function that returns a rate function (function of (tsz_signal, z))
 
-    def _get_dVdz(self):
+    def _get_dVdz(self) -> np.ndarray:
         DA_z = self.provider.get_angular_diameter_distance(self.zarr)
 
         dV_dz = (
@@ -224,7 +222,7 @@ class ClusterLikelihood(PoissonLikelihood):
         # dV_dz *= (self.provider.get_param("H0") / 100.0) ** 3.0  # was h0
         return dV_dz
 
-    def _get_n_expected(self, **kwargs):
+    def _get_n_expected(self, **kwargs) -> float:
         """
         Calculates expected number of clusters at the current parameter values.
         """
@@ -258,7 +256,7 @@ class ClusterLikelihood(PoissonLikelihood):
 
         return Ntot
 
-    def _test_n_tot(self, **kwargs):
+    def _test_n_tot(self, **kwargs) -> float:
         HMF = self._get_HMF()
         # param_vals = self._get_param_vals(**kwargs)
         # Ez_fn = self._get_Ez_interpolator()
