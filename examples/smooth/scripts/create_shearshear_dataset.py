@@ -44,12 +44,6 @@ for i in range(n_ell):
 
 Well = sacc.BandpowerWindow(ells_win, wins.T)
 
-# dir = '../../../../act-x-des/desgamma-x-actkappa/data/'
-# fname = dir + 'UNBLINDED_ACTPlanck_tSZfree_ACTDR4-kappa_DESY3-gamma_data_simCov.fits'
-# s_win = sacc.Sacc.load_fits(fname)
-
-# Well = sacc.BandpowerWindow(ells_win, np.loadtxt("bpw1.txt"))
-
 # set up shear lensing des
 z_shear = np.loadtxt("./data/shearkappa_nz_source/z.txt")
 nbins = 4
@@ -118,33 +112,13 @@ for ibin in np.arange(0, n_maps):
         * sigma_e[ibin - 1] ** 2.0
         / (ngal[ibin - 1] * (1.08e4 / np.pi) ** 2)
         )
-
-        # Nell_bin_oiv = (
-        # np.ones(nell_win)
-        # * sigma_e_oiv[ibin - 1] ** 2.0
-        # / (ngal_oiv[ibin - 1] * (1.08e4 / np.pi) ** 2)
-        # )
         
-
         if ibin == jbin:
             # auto spectra
 
             spectra[ibin, ibin, :] = ccl.angular_cl(cosmo, tracers[ibin], tracers[ibin], ells_win) + Nell_bin
             spectra_label[ibin, ibin] = f'{tracer_labels[ibin]}{tracer_labels[ibin]}'
             print(tracer_labels[ibin], tracer_labels[ibin])
-
-
-            # t1_spectra[ibin, ibin, :] = ccl.angular_cl(cosmo, shear1_tracers[ibin], shear1_tracers[ibin], ells_win) + Nell_bin_ska
-            # t2_spectra[ibin, ibin, :] = ccl.angular_cl(cosmo, shear2_tracers[ibin], shear2_tracers[ibin], ells_win) + Nell_bin_oiv
-            # cross_spectra[ibin, ibin, :] = ccl.angular_cl(cosmo, shear1_tracers[ibin], shear2_tracers[ibin], ells_win)
-
-            # print(ska_bins[ibin], ska_bins[ibin])
-            # print(oiv_bins[ibin], oiv_bins[ibin])
-            # print(ska_bins[ibin], oiv_bins[ibin])
-
-            # t1_spectra_label[ibin, ibin] = f"s{ibin}s{ibin}"
-            # t2_spectra_label[ibin, ibin] = f"o{ibin}o{ibin}"
-            # cross_spectra_label[ibin, ibin] = f"s{ibin}o{ibin}"
 
         else:
             # cross spectra
@@ -155,58 +129,7 @@ for ibin in np.arange(0, n_maps):
             spectra_label[jbin, ibin] = f'{tracer_labels[jbin]}{tracer_labels[ibin]}'
             print(tracer_labels[ibin], tracer_labels[jbin])
 
-            # cross tomo-bin spectra
-            # t1_spectra[ibin, jbin, :] = ccl.angular_cl(cosmo, shear1_tracers[ibin], shear1_tracers[jbin], ells_win)
-            # t2_spectra[ibin, jbin, :] = ccl.angular_cl(cosmo, shear2_tracers[ibin], shear2_tracers[jbin], ells_win)
-            # cross_spectra[ibin, jbin, :] = ccl.angular_cl(cosmo, shear1_tracers[ibin], shear2_tracers[jbin], ells_win)
-
-            # t1_spectra_label[ibin, jbin] = f"s{ibin}s{ibin}"
-            # t2_spectra_label[ibin, jbin] = f"o{ibin}o{jbin}"
-            # cross_spectra_label[ibin, jbin] = f"s{ibin}o{jbin}"
-
-            # print(ska_bins[ibin], ska_bins[jbin])
-            # print(oiv_bins[ibin], oiv_bins[jbin])
-            # print(ska_bins[ibin], oiv_bins[jbin])
-
-# for ibin in np.arange(0, nbins + 1):
-#     Nell_bin = (
-#         np.ones(nell_win)
-#         * sigma_e[ibin - 1] ** 2.0
-#         / (ngal[ibin - 1] * (1.08e4 / np.pi) ** 2)
-#     )
-
-#     # spectra[ibin, 0, :] = ccl.angular_cl(
-#     #     cosmo, shear1_tracers[ibin - 1], tracer_so_k, ells_win
-#     # )
-#     # spectra[0, ibin, :] = spectra[ibin, 0, :]
-
-#     # spectra_label[ibin, 0] = f"g{ibin}k"
-#     # spectra_label[0, ibin] = f"kg{ibin}"
-
-#     for jbin in np.arange(0, nbins + 1):
-#         if ibin == jbin:
-#             spectra[ibin, ibin, :] = (
-#                 ccl.angular_cl(
-#                     cosmo, shear_tracers[ibin - 1], shear_tracers[ibin - 1], ells_win
-#                 )
-#                 + Nell_bin
-#             )
-#             spectra_label[ibin, ibin] = f"g{ibin}g{ibin}"
-#         else:
-#             spectra[ibin, jbin, :] = ccl.angular_cl(
-#                 cosmo, shear_tracers[ibin - 1], shear_tracers[jbin - 1], ells_win
-#             )
-#             spectra[jbin, ibin, :] = ccl.angular_cl(
-#                 cosmo, shear_tracers[jbin - 1], shear_tracers[ibin - 1], ells_win
-#             )
-
-#             spectra_label[ibin, jbin] = f"g{ibin}g{jbin}"
-#             spectra_label[jbin, ibin] = f"g{jbin}g{ibin}"
-
-# import pdb; pdb.set_trace()
-
 # calculate covmat
-# n_maps = nbins
 fsky = 0.4
 n_cross = (n_maps * (n_maps + 1)) // 2
 covar = np.zeros([n_cross, n_ell, n_cross, n_ell])
@@ -244,10 +167,6 @@ print(covar.shape)
 # construct sacc file
 s = sacc.Sacc()
 
-# s.add_tracer(
-#     "Map", "ck_so", quantity="cmb_convergence", spin=0, ell=ell_beam, beam=beam_so_k
-# )
-
 for ibin in np.arange(1, nbins + 1):
     s.add_tracer(
         "NZ",
@@ -269,19 +188,8 @@ for ibin in np.arange(1, nbins + 1):
         metadata={"sigma_e": sigma_e[ibin - 1], "ngal": ngal[ibin - 1]},
     )
 
-# s.add_ell_cl(
-#     "cl_00", "ck_so", "ck_so", ells, np.dot(Well.weight.T, spectra[0, 0, :]), window=Well
-# )
 
 for ibin in np.arange(1, n_maps + 1):
-    # s.add_ell_cl(
-    #     "cl_ee",
-    #     "ss_des_bin{}".format(ibin),
-    #     "ck_so",
-    #     ells,
-    #     np.dot(Well.weight.T, spectra[ibin, 0, :]),
-    #     window=Well,
-    # )
 
     for jbin in np.arange(1, n_maps + 1):
         if ibin <= jbin:
@@ -297,8 +205,7 @@ for ibin in np.arange(1, n_maps + 1):
 
 s.add_covariance(covar)
 
-# we only want the cross-correlations in the sacc we're going to save:
-keep_spectra = s.get_tracer_combinations()
+keep_spectra = s.get_tracer_combinations() # keep all the combinations
 
 for tracer_comb in s.get_tracer_combinations():
     if tracer_comb not in keep_spectra:

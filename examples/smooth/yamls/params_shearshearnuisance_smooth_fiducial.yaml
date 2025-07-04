@@ -5,50 +5,50 @@ eta_IA:
   latex: \eta_{IA}
   value: 1.66
 gs_d1_deltaz:
-  latex: \Delta z_{1}
+  latex: \Delta z_{d,1}
   value: 0.0
 gs_d2_deltaz:
-  latex: \Delta z_{2}
+  latex: \Delta z_{d,2}
   value: 0.0
 gs_d3_deltaz:
-  latex: \Delta z_{3}
+  latex: \Delta z_{d,3}
   value: 0.0
 gs_d4_deltaz:
-  latex: \Delta z_{4}
+  latex: \Delta z_{d,4}
   value: 0.0
 gs_d1_m:
-  latex: m_{1}
+  latex: m_{d,1}
   value: 0.0
 gs_d2_m:
-  latex: m_{2}
+  latex: m_{d,2}
   value: 0.0
 gs_d3_m:
-  latex: m_{3}
+  latex: m_{d,3}
   value: 0.0
 gs_d4_m:
-  latex: m_{4}
+  latex: m_{d,4}
   value: 0.0
 gs_s1_deltaz:
-  latex: \Delta z_{1}
+  latex: \Delta z_{s,1}
   value: 0.0
 gs_s2_deltaz:
-  latex: \Delta z_{2}
+  latex: \Delta z_{s,2}
   value: 0.0
 gs_s3_deltaz:
-  latex: \Delta z_{3}
+  latex: \Delta z_{s,3}
   value: 0.0
 gs_s4_deltaz:
-  latex: \Delta z_{4}
+  latex: \Delta z_{s,4}
   value: 0.0
 gs_s1_m:
-  latex: m_{1}
+  latex: m_{s,1}
   value: 0.0
 gs_s2_m:
-  latex: m_{2}
+  latex: m_{s,2}
   value: 0.0
 gs_s3_m:
-  latex: m_{3}
+  latex: m_{s,3}
   value: 0.0
 gs_s4_m:
-  latex: m_{4}
+  latex: m_{s,4}
   value: 0.0
