@@ -1,0 +1,18 @@
+debug: False
+sampler:
+  # evaluate: null
+  mcmc:
+    Rminus1_cl_stop: 0.2
+    Rminus1_stop: 0.01
+    drag: false
+    max_tries: 10000
+    oversample_power: 0.4
+    proposal_scale: 1.9
+
+output: chains/shearkappa-test
+
+theory: !defaults [theory_camb, theory_ccl]
+
+likelihood: !defaults [like_shearkappa]
+
+params: !defaults [params_cosmo_smooth, params_shearkappanuisance_smooth]

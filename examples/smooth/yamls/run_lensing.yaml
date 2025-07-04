@@ -1,0 +1,7 @@
+debug: False
+
+theory: !defaults [theory_camb, theory_ccl]
+
+likelihood: !defaults [like_LensingLikelihood]
+
+params: !defaults [params_cosmo_smooth]
