@@ -34,8 +34,6 @@ jobs:
       - name: Debug chosen repo
         run: |
           echo "🔥 [choose-target] Final repo output: '${{ steps.pick.outputs.repo }}'"
-          # Also print job-level output reference
-          echo "🔗 Job output 'repo': '${{ needs.choose-target.outputs.repo }}'"
 
   publish:
     needs: choose-target
