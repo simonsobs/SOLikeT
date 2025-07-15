@@ -65,13 +65,14 @@ class XcorrLikelihood(GaussianLikelihood):
     cross_file: str | None
     dndz_file: str | None
     datapath: str | None
+    covpath: str | None
     k_tracer_name: str | None
     gc_tracer_name: str | None
-    high_ell: int
-    nz: int
-    Nchi: int
-    Nchi_mag: int
-    Pk_interp_kmax: int | float
+    high_ell: int | None
+    nz: int | None
+    Nchi: int | None
+    Nchi_mag: int | None
+    Pk_interp_kmax: int | float | None
     b1: int | float
     s1: int | float
 
@@ -80,13 +81,6 @@ class XcorrLikelihood(GaussianLikelihood):
     def initialize(self):
         self.name: str = "Xcorr"
         self.log.info("Initialising.")
-
-        self.dndz_file: str | None = None
-        self.auto_file: str | None = None
-        self.cross_file: str | None = None
-        self.k_tracer_name: str | None = None
-        self.gc_tracer_name: str | None = None
-        self.covpath: str | None = None
 
         if self.datapath is None:
             self.dndz = np.loadtxt(self.dndz_file)
@@ -107,18 +101,12 @@ class XcorrLikelihood(GaussianLikelihood):
             self.ngal = self.sacc_data["ngal"]
 
         # TODO is this resolution limit on zarray a CAMB problem?
-        self.nz: int | None = None
         assert self.nz <= 149, "CAMB limitations requires nz <= 149"
         self.zarray = np.linspace(self.dndz[:, 0].min(), self.dndz[:, 0].max(), self.nz)
         self.zbgdarray = np.concatenate([self.zarray, [1100]])  # TODO: unfix zstar
-        self.Nchi: int | None = None
-        self.Nchi_mag: int | None = None
 
         # self.use_zeff: bool | None = None
 
-        self.Pk_interp_kmax: float | None = None
-
-        self.high_ell: float | None = None
         self.ell_range = np.linspace(1, self.high_ell, int(self.high_ell + 1))
 
         # TODO expose these defaults
