@@ -64,7 +64,7 @@ def test_evaluate(lhood):
 
     install(info, path=packages_path, skip_global=True, no_set_global=True)
 
-    _, _ = run(info)
+    updated_info, sampler = run(info)
 
 
 @pytest.mark.parametrize(
@@ -90,4 +90,4 @@ def test_mcmc(lhood):
 
     install(info, path=packages_path, skip_global=True, no_set_global=True)
 
-    _, _ = run(info)
+    updated_info, sampler = run(info)
