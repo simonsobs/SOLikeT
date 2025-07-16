@@ -108,11 +108,12 @@ Pull requests will require existing unit tests to pass before they can be merged
  tests/test_my_module.py
 
 
-For Likelihoods we request that there is a test which compares the result of a likelihood calculation to a precomputed expected value which is hard coded in the tests file, to a tolerance of ``1.e-3``
+For Likelihoods we request that there is a test which compares the result of a likelihood calculation to a precomputed expected value which is hard coded in the tests file, to a tolerance of ``1.e-3``. Both the tolerances and the reference values of all likelihoods are stored in the `tests` folder within `likelihood_refs.yaml`. To use them in your test, you can rely on the `likelihood_refs` fixture, which reads and stores the values contained in that file. Thus, it is sufficient to do
 
 .. code-block:: bash
 
-  assert np.isclose(loglike_just_computed, -25.053, rtol=1.e-3)
+  ref = likelihood_refs["your_like_name"]
+  assert np.isclose(loglike_just_computed, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 For more advice on how to write tests see the `Astropy Testing Guidelines <https://docs.astropy.org/en/stable/development/testguide.html>`_.
 
