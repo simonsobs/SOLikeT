@@ -71,11 +71,13 @@ jobs:
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
-          uv run pytest -vv --durations=10
+          uv run pytest --cov --cov-branch --cov-report=xml -vv --durations=10
 
       - if: contains(matrix.tags, 'cov') && ${{ needs.check-skip.outputs.skip != 'true' }}
         name: Report Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-conda:
     needs: check-skip
