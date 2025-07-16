@@ -105,7 +105,7 @@ Pull requests will require existing unit tests to pass before they can be merged
 
 .. code-block:: bash
 
- SOLikeT/soliket/tests/test_my_module.py
+ tests/test_my_module.py
 
 
 For Likelihoods we request that there is a test which compares the result of a likelihood calculation to a precomputed expected value which is hard coded in the tests file, to a tolerance of ``1.e-3``

@@ -29,7 +29,7 @@ class XcorrLikelihood(GaussianLikelihood):
 
     datapath : str, optional
         sacc file containing the redshift distribtion, galaxy-galaxy and galaxy-kappa
-        observed spectra. Default: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits
+        observed spectra. Default: tests/data/unwise_g-so_kappa.sim.sacc.fits
     k_tracer_name : str, optional
         sacc file tracer name for kappa. Default: ck_so
     gc_tracer_name : str, optional
