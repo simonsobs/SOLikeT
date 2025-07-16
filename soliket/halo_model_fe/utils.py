@@ -1,13 +1,10 @@
+import astropy.units as u
 import numpy as np
 import scipy
 import scipy.integrate
-from scipy import interpolate
-from scipy.interpolate import InterpolatedUnivariateSpline as _spline
-from scipy import special
-import scipy.constants as con
 from astropy.cosmology import Planck18
-import astropy.units as u
 from numpy import trapz
+from scipy.interpolate import InterpolatedUnivariateSpline as _spline
 
 cosmo = Planck18
 
@@ -16,19 +13,16 @@ class u_p_nfw_hmf_bias:
     def __init__(self, k_array, Pk_array, mh, redshift, delta_h):
         self.k_array = k_array
         self.Pk_array = Pk_array
-        self.mh = 10 ** mh / (cosmo.h ** -1)
+        self.mh = 10**mh / (cosmo.h**-1)
         self.redshift = redshift
         self.delta_h = delta_h
         self.compute_nfw()
         self.compute_hmf()
         self.compute_b_CIB()
 
-
     def mean_density(self):
-        mean_density0 = (
-            (cosmo.Om0 * cosmo.critical_density0).to(u.Msun / u.Mpc ** 3).value
-        )
-        mean_density0 /= cosmo.h ** 2
+        mean_density0 = (cosmo.Om0 * cosmo.critical_density0).to(u.Msun / u.Mpc**3).value
+        mean_density0 /= cosmo.h**2
         return mean_density0
 
     # Lagrangian radius
@@ -45,18 +39,18 @@ class u_p_nfw_hmf_bias:
 
     # Fourier transform of top hat window function
     def W(self, rk):
-        return np.where(rk > 1.4e-6, (3 * (np.sin(rk) - rk * np.cos(rk)) / rk ** 3), 1)
+        return np.where(rk > 1.4e-6, (3 * (np.sin(rk) - rk * np.cos(rk)) / rk**3), 1)
 
     def sigma(self, rad, red, zeta):
         k = self.k_array
         P_linear = self.Pk_array[zeta]
         rk = np.outer(rad, k)
-        rest = P_linear * k ** 3
+        rest = P_linear * k**3
         lnk = np.log(k)
         uW = self.W(rk)
-        integ = rest * uW ** 2
-        sigm = (0.5 / np.pi ** 2) * trapz(integ, x=lnk, axis=-1) 
-        #sigm = (0.5 / np.pi ** 2) * scipy.integrate.simps(integ, x=lnk, axis=-1)
+        integ = rest * uW**2
+        sigm = (0.5 / np.pi**2) * trapz(integ, x=lnk, axis=-1)
+        # sigm = (0.5 / np.pi ** 2) * scipy.integrate.simps(integ, x=lnk, axis=-1)
         return np.sqrt(sigm)
 
     # sigma depends on z from the linear power spectrum
@@ -111,12 +105,12 @@ class u_p_nfw_hmf_bias:
 
         self.u_k = u_k
 
-        return u_k                    
+        return u_k
 
     def dw_dlnkr(self, rk):
         return np.where(
             rk > 1e-3,
-            (9 * rk * np.cos(rk) + 3 * np.sin(rk) * (rk ** 2 - 3)) / rk ** 3,
+            (9 * rk * np.cos(rk) + 3 * np.sin(rk) * (rk**2 - 3)) / rk**3,
             0,
         )
 
@@ -124,15 +118,13 @@ class u_p_nfw_hmf_bias:
         k = self.k_array
         P_linear = self.Pk_array[zeta]
         rk = np.outer(rad, k)
-        rest = P_linear * k ** 3
+        rest = P_linear * k**3
         w = self.W(rk)
         dw = self.dw_dlnkr(rk)
         inte = w * dw * rest
         lnk = np.log(k)
         s = self.sigma(rad, red, zeta)
-        return trapz(inte, x=lnk, axis=-1) / (
-            np.pi ** 2 * s ** 2
-        )
+        return trapz(inte, x=lnk, axis=-1) / (np.pi**2 * s**2)
 
     def dlnr_dlnm(self):
         return 1.0 / 3.0
@@ -218,8 +210,8 @@ class u_p_nfw_hmf_bias:
         a = a_0 * (1 + z) ** a_exp
         alpha = 10 ** (-((0.75 / np.log10(dhalo / 75.0)) ** 1.2))
         b = b_0 * (1 + z) ** (-alpha)
-        return A * ((s / b) ** (-a) + 1) * np.exp(-c_0 / s ** 2)
-    
+        return A * ((s / b) ** (-a) + 1) * np.exp(-c_0 / s**2)
+
     def compute_fsigma(self):
         f_sigma = np.zeros([len(self.redshift), len(self.mh)])
         rad = self.mass_to_radius()
@@ -230,16 +222,20 @@ class u_p_nfw_hmf_bias:
 
     def dn_dm(self, red, zeta):
         rad = self.mass_to_radius()
-        return (self.fsigma(rad, red, zeta) * self.mean_density() 
-                * np.abs(self.dlns_dlnm(rad, red, zeta)) / self.mh**2)
+        return (
+            self.fsigma(rad, red, zeta)
+            * self.mean_density()
+            * np.abs(self.dlns_dlnm(rad, red, zeta))
+            / self.mh**2
+        )
 
     def dn_dlnm(self, red, zeta):
         return self.mh * self.dn_dm(red, zeta)
 
     def dn_dlogm(self, red, zeta):
         return self.mh * self.dn_dm(red, zeta) * np.log(10)
-    
-    #redshift threshold from Tinker et al. 
+
+    # redshift threshold from Tinker et al.
     def max_z_dep(self):
         z_thr = 3.0
         z_dep_arr = []
@@ -250,7 +246,6 @@ class u_p_nfw_hmf_bias:
         z_max = np.max(z_dep_arr)
         index_max = len(z_dep_arr)
         return z_max, index_max
-
 
     def compute_hmf(self):
         dndM = np.zeros([len(self.redshift), len(self.mh)])
@@ -278,12 +273,7 @@ class u_p_nfw_hmf_bias:
         s = self.sigma(rad, red, zeta)
         nuu = 1.686 / s
         dc = 1.686  # neglecting the redshift evolution
-        return (
-            1
-            - (A * nuu ** aa / (nuu ** aa + dc ** aa))
-            + B * nuu ** b
-            + C * nuu ** c
-        )
+        return 1 - (A * nuu**aa / (nuu**aa + dc**aa)) + B * nuu**b + C * nuu**c
 
     def compute_b_CIB(self):
         bias = np.zeros([len(self.redshift), len(self.mh)])
@@ -292,5 +282,5 @@ class u_p_nfw_hmf_bias:
             bias[zeta] = self.b_CIB(red, zeta)
 
         self.bias_cib = bias
-        
+
         return bias

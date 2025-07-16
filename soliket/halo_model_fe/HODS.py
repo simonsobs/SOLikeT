@@ -1,6 +1,6 @@
 import numpy as np
-from scipy import special
 from numpy import trapz
+from scipy import special
 
 
 class hod_ngal:
@@ -20,15 +20,24 @@ class hod_ngal:
         Nsat = np.zeros([len(self.mh)])
         Nbra = np.zeros([len(self.mh)])
 
-        Mmin = 10 ** self.clust_param['LogMmin_EP']
-        Msat = self.clust_param['scale_EP'] * Mmin
-        Ncent = 0.5 * (1 + special.erf((np.log10(self.mh) - 
-                                        np.log10(Mmin)) / self.clust_param['sigma_EP']))
+        Mmin = 10 ** self.clust_param["LogMmin_EP"]
+        Msat = self.clust_param["scale_EP"] * Mmin
+        Ncent = 0.5 * (
+            1
+            + special.erf(
+                (np.log10(self.mh) - np.log10(Mmin)) / self.clust_param["sigma_EP"]
+            )
+        )
         Nsat = (
             0.5
-            * (1 + special.erf((np.log10(self.mh) - 
-                                np.log10(2 * Mmin)) / self.clust_param['sigma_EP']))
-            * ((self.mh) / Msat) ** self.clust_param['alpha_EP']
+            * (
+                1
+                + special.erf(
+                    (np.log10(self.mh) - np.log10(2 * Mmin))
+                    / self.clust_param["sigma_EP"]
+                )
+            )
+            * ((self.mh) / Msat) ** self.clust_param["alpha_EP"]
         )
         Nbra = Ncent + Nsat
 
@@ -39,7 +48,6 @@ class hod_ngal:
         return Ncent, Nsat, Nbra
 
     def mean_gal_EP(self):
-
         Nbra = self.HODS_EP()[2]
         ngal_200c = trapz(self.instance_200.dndM[:, :] * Nbra[np.newaxis, :], self.mh[:])
 
@@ -52,15 +60,24 @@ class hod_ngal:
         Nsat = np.zeros([len(self.mh)])
         Nbra = np.zeros([len(self.mh)])
 
-        Mmin = 10 ** self.clust_param['LogMmin_LP']
-        Msat = self.clust_param['scale_LP'] * Mmin
-        Ncent = 0.5 * (1 + special.erf((np.log10(self.mh) - 
-                                        np.log10(Mmin)) / self.clust_param['sigma_LP']))
+        Mmin = 10 ** self.clust_param["LogMmin_LP"]
+        Msat = self.clust_param["scale_LP"] * Mmin
+        Ncent = 0.5 * (
+            1
+            + special.erf(
+                (np.log10(self.mh) - np.log10(Mmin)) / self.clust_param["sigma_LP"]
+            )
+        )
         Nsat = (
             0.5
-            * (1 + special.erf((np.log10(self.mh) - 
-                                np.log10(2 * Mmin)) / self.clust_param['sigma_LP']))
-            * ((self.mh) / Msat) ** self.clust_param['alpha_LP']
+            * (
+                1
+                + special.erf(
+                    (np.log10(self.mh) - np.log10(2 * Mmin))
+                    / self.clust_param["sigma_LP"]
+                )
+            )
+            * ((self.mh) / Msat) ** self.clust_param["alpha_LP"]
         )
         Nbra = Ncent + Nsat
 
@@ -71,7 +88,6 @@ class hod_ngal:
         return Ncent, Nsat, Nbra
 
     def mean_gal_LP(self):
-
         Nbra = self.HODS_LP()[2]
 
         ngal_200c = trapz(self.instance_200.dndM[:, :] * Nbra[np.newaxis, :], self.mh[:])
