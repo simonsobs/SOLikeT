@@ -81,7 +81,7 @@ def test_evaluate(lhood):
 def test_mcmc(lhood):
     info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
     info["force"] = True
-    info["sampler"] = {"mcmc": {"max_samples": 5, "max_tries": 10}}
+    info["sampler"] = {"mcmc": {"max_samples": 5, "max_tries": 100}}
 
     if lhood == "multi":
         pytest.importorskip("mflike", reason="Couldn't import 'mflike' module")
