@@ -104,7 +104,10 @@ def test_cosmopower_theory(request, check_skip_cosmopower, install_planck_lite):
     _ = get_model(info_dict)
 
 
-def test_cosmopower_loglike(request, check_skip_cosmopower, install_planck_lite):
+def test_cosmopower_loglike(
+    request, check_skip_cosmopower, install_planck_lite, likelihood_refs
+):
+    ref = likelihood_refs["cosmopower"]
     info_dict["theory"]["soliket.CosmoPower"]["network_path"] = os.path.join(
         request.config.rootdir, "soliket/cosmopower/data/CP_paper"
     )
@@ -112,7 +115,7 @@ def test_cosmopower_loglike(request, check_skip_cosmopower, install_planck_lite)
 
     logL_cp = float(model_cp.loglikes({})[0])
 
-    assert np.isclose(logL_cp, -295.139)
+    assert np.isclose(logL_cp, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
 def test_cosmopower_against_camb(request, check_skip_cosmopower, install_planck_lite):
