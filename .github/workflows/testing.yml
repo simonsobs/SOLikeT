@@ -31,9 +31,11 @@ jobs:
         include:
           - os: ubuntu-latest
             python-version: '3.13'
+            tags: []
 
           - os: ubuntu-latest
             python-version: '3.12'
+            tags: []
 
           - os: ubuntu-latest
             python-version: '3.11'
@@ -41,12 +43,15 @@ jobs:
 
           - os: ubuntu-latest
             python-version: '3.10'
+            tags: []
 
           - os: macos-latest
             python-version: '3.11'
+            tags: []
 
           - os: windows-latest
             python-version: '3.11'
+            tags: []
             env:
               PYTHONIOENCODING: utf-8
               PYTHONUTF8: 1
@@ -67,15 +72,25 @@ jobs:
           pip install uv
           bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
 
-      - name: Run tests
+      - name: Run tests (coverage)
+        if: contains(matrix.tags, 'cov')
+        env:
+          COBAYA_PACKAGES_PATH: ./cobaya_packages
+        run: |
+          uv run pytest --cov --cov-branch --cov-report=xml -vv --durations=10
+
+      - name: Run tests (no coverage)
+        if: ${{ !contains(matrix.tags, 'cov') }}
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
           uv run pytest -vv --durations=10
 
-      - if: contains(matrix.tags, 'cov') && ${{ needs.check-skip.outputs.skip != 'true' }}
+      - if: contains(matrix.tags, 'cov')
         name: Report Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-conda:
     needs: check-skip
@@ -84,10 +99,10 @@ jobs:
     name: Conda Test (Python 3.12)
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.12'
 

@@ -60,7 +60,7 @@ def test_toy():
     info2 = {"name": name2, "n": n2, "cov": cov2, "seed": 234}
     info3 = {"name": name3, "n": n3, "cov": cov3, "seed": 345}
 
-    lhood = "soliket.tests.test_ps.ToyLikelihood"
+    lhood = "tests.test_ps.ToyLikelihood"
     components = [lhood] * 3
     options = [info1, info2, info3]
     multilike1 = MultiGaussianLikelihood({"components": components, "options": options})
