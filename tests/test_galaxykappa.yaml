@@ -24,10 +24,18 @@ params:
     latex: \Omega_\mathrm{c} h^2
   tau: 0.05
   mnu: 0.0
+  b1: 
+    prior:
+      min: 0.
+      max: 10.
+    latex: b_1
+  s1: 
+    value: 0.4
+    latex: s_1 
   sigma8: 
 likelihood:
-  soliket.cross_correlation.ShearKappaLikelihood:
-    datapath: soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits
+  soliket.cross_correlation.GalaxyKappaLikelihood:
+    datapath: tests/data/gc_cmass-actdr4_kappa.sacc.fits
     use_spectra: all
     ncovsims: null
 theory:
@@ -35,9 +43,9 @@ theory:
     extra_args:
       num_massive_neutrinos: 0
   soliket.ccl.CCL: 
-debug: true
+debug: false
 stop_at_error: true
 sampler:
   evaluate:
 
-output: chains/test_shearkappa
+output: chains/test_galaxykappa

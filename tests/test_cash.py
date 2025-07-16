@@ -33,7 +33,7 @@ def test_cash_read_data(request):
     from soliket.cash import CashCLikelihood
 
     cash_data_path = os.path.join(
-        request.config.rootdir, "soliket/tests/data/cash_data.txt"
+        request.config.rootdir, "tests/data/cash_data.txt"
     )
 
     cash_lkl = CashCLikelihood({"datapath": cash_data_path})
@@ -48,7 +48,7 @@ def test_cash_logp(request):
 
     params = {"cash_test_logp": 20}
     cash_data_path = os.path.join(
-        request.config.rootdir, "soliket/tests/data/cash_data.txt"
+        request.config.rootdir, "tests/data/cash_data.txt"
     )
 
     cash_lkl = CashCLikelihood({"datapath": cash_data_path})

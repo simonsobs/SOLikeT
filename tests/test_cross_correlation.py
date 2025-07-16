@@ -8,8 +8,8 @@ from cobaya.model import get_model
 
 from soliket.ccl import CCL
 
-gammakappa_sacc_file = "soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits"
-gkappa_sacc_file = "soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits"
+gammakappa_sacc_file = "tests/data/des_s-act_kappa.toy-sim.sacc.fits"
+gkappa_sacc_file = "tests/data/gc_cmass-actdr4_kappa.sacc.fits"
 
 cross_correlation_params = {
     "b1": 1.0,
@@ -148,7 +148,7 @@ def test_shearkappa_like(request, check_skip_pyccl, evaluate_one_info):
 
     rootdir = request.config.rootdir
 
-    cs82_file = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
+    cs82_file = "tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
     test_datapath = os.path.join(rootdir, cs82_file)
 
     evaluate_one_info["likelihood"] = {
@@ -250,7 +250,7 @@ def test_shearkappa_hartlap(request, check_skip_pyccl, evaluate_one_info):
 
     rootdir = request.config.rootdir
 
-    cs82_file = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
+    cs82_file = "tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
     test_datapath = os.path.join(rootdir, cs82_file)
 
     evaluate_one_info["likelihood"] = {

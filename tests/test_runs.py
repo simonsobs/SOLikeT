@@ -53,7 +53,7 @@ def test_installation(lhood):
     ],
 )
 def test_evaluate(lhood):
-    info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
+    info = yaml_load(pkgutil.get_data("tests", f"test_{lhood}.yaml"))
     info["force"] = True
     info["sampler"] = {"evaluate": {}}
 
@@ -79,7 +79,7 @@ def test_evaluate(lhood):
     ],
 )
 def test_mcmc(lhood):
-    info = yaml_load(pkgutil.get_data("soliket", f"tests/test_{lhood}.yaml"))
+    info = yaml_load(pkgutil.get_data("tests", f"test_{lhood}.yaml"))
     info["force"] = True
     info["sampler"] = {"mcmc": {"max_samples": 5, "max_tries": 100}}
 

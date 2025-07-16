@@ -14,7 +14,7 @@ def get_demo_xcorr_model(theory):
         likelihood:
             soliket.XcorrLikelihood:
                 stop_at_error: True
-                datapath: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits
+                datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
                 k_tracer_name: ck_so
                 gc_tracer_name: gc_unwise
 
@@ -46,7 +46,7 @@ def get_demo_xcorr_model(theory):
         likelihood:
             soliket.XcorrLikelihood:
                 stop_at_error: True
-                datapath: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits
+                datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
                 k_tracer_name: ck_so
                 gc_tracer_name: gc_unwise
 
