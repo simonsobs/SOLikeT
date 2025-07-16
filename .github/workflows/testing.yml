@@ -31,9 +31,11 @@ jobs:
         include:
           - os: ubuntu-latest
             python-version: '3.13'
+            tags: []
 
           - os: ubuntu-latest
             python-version: '3.12'
+            tags: []
 
           - os: ubuntu-latest
             python-version: '3.11'
@@ -41,12 +43,15 @@ jobs:
 
           - os: ubuntu-latest
             python-version: '3.10'
+            tags: []
 
           - os: macos-latest
             python-version: '3.11'
+            tags: []
 
           - os: windows-latest
             python-version: '3.11'
+            tags: []
             env:
               PYTHONIOENCODING: utf-8
               PYTHONUTF8: 1
@@ -75,7 +80,7 @@ jobs:
           uv run pytest --cov --cov-branch --cov-report=xml -vv --durations=10
 
       - name: Run tests (no coverage)
-        if: ! contains(matrix.tags, 'cov')
+        if: ${{ !contains(matrix.tags, 'cov') }}
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
