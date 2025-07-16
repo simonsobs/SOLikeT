@@ -71,9 +71,13 @@ jobs:
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
-          uv run pytest --cov --cov-branch --cov-report=xml -vv --durations=10
+          COV_FLAGS=""
+          if [[ "${{ matrix.tags }}" == *cov* ]]; then
+            COV_FLAGS="--cov --cov-branch --cov-report=xml"
+          fi
+          uv run pytest $COV_FLAGS -vv --durations=10
 
-      - if: contains(matrix.tags, 'cov') && ${{ needs.check-skip.outputs.skip != 'true' }}
+      - if: contains(matrix.tags, 'cov')
         name: Report Coverage
         uses: codecov/codecov-action@v5
         with:
@@ -86,10 +90,10 @@ jobs:
     name: Conda Test (Python 3.12)
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.12'
 
