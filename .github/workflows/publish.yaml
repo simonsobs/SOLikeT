@@ -31,6 +31,10 @@ jobs:
             echo "repo=pypi" >> $GITHUB_OUTPUT
           fi
 
+      - name: Debug chosen repo
+        run: |
+          echo "🔥 [choose-target] Final repo output: '${{ steps.pick.outputs.repo }}'"
+
   publish:
     needs: choose-target
     name: 📦 Publish to ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.repository || 'pypi' }}
@@ -57,11 +61,11 @@ jobs:
 
       - name: Publish
         run: |
-          echo "Publishing to ${{ steps.pick.outputs.repo }}..."
-          if [ "${{ steps.pick.outputs.repo }}" = "testpypi" ]; then
+          echo "Publishing to ${{ needs.choose-target.outputs.repo }}..."
+          if [ "${{ needs.choose-target.outputs.repo }}" = "testpypi" ]; then
             export UV_PUBLISH_URL=https://test.pypi.org/legacy/
           fi
-          uv publish
+          uv publish --trusted-publishing always
         env:
           # optional extra debug
           GITHUB_REF: ${{ github.ref }}

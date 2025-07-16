@@ -14,7 +14,7 @@ def get_demo_xcorr_model(theory):
         likelihood:
             soliket.XcorrLikelihood:
                 stop_at_error: True
-                datapath: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits
+                datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
                 k_tracer_name: ck_so
                 gc_tracer_name: gc_unwise
 
@@ -46,7 +46,7 @@ def get_demo_xcorr_model(theory):
         likelihood:
             soliket.XcorrLikelihood:
                 stop_at_error: True
-                datapath: soliket/tests/data/unwise_g-so_kappa.sim.sacc.fits
+                datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
                 k_tracer_name: ck_so
                 gc_tracer_name: gc_unwise
 
@@ -115,9 +115,14 @@ def test_wrong_types():
             XcorrLikelihood(**case)
 
 
+@pytest.mark.parametrize("theory", ["camb"])  # , "classy"])
+def test_xcorr_model(theory):
+    _ = get_demo_xcorr_model(theory)
+
+
 @pytest.mark.skip(reason="Under development")
 @pytest.mark.parametrize("theory", ["camb"])  # , "classy"])
-def test_xcorr(theory):
+def test_xcorr_like(theory):
     params = {"b1": 1.0, "s1": 0.4}
 
     model = get_demo_xcorr_model(theory)

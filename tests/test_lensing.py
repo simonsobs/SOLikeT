@@ -26,7 +26,7 @@ def test_lensing_import(request):
     _ = importlib.import_module("soliket.lensing").LensingLikelihood
 
 
-def test_lensing_like(request):
+def test_lensing_like(request, likelihood_refs):
     from cobaya.install import install
 
     install(
@@ -40,11 +40,13 @@ def test_lensing_like(request):
 
     from soliket.lensing import LensingLikelihood
 
+    ref = likelihood_refs["lensing"]
+
     info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood}}
     model = get_model(info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], 335.8560097798468, atol=0.2, rtol=0.0)
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
 def test_lensing_ccl_limber(check_skip_pyccl):
