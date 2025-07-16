@@ -67,15 +67,19 @@ jobs:
           pip install uv
           bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
 
-      - name: Run tests
+      - name: Run tests (coverage)
+        if: contains(matrix.tags, 'cov')
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
-          COV_FLAGS=""
-          if [[ "${{ matrix.tags }}" == *cov* ]]; then
-            COV_FLAGS="--cov --cov-branch --cov-report=xml"
-          fi
-          uv run pytest $COV_FLAGS -vv --durations=10
+          uv run pytest --cov --cov-branch --cov-report=xml -vv --durations=10
+
+      - name: Run tests (no coverage)
+        if: ! contains(matrix.tags, 'cov')
+        env:
+          COBAYA_PACKAGES_PATH: ./cobaya_packages
+        run: |
+          uv run pytest -vv --durations=10
 
       - if: contains(matrix.tags, 'cov')
         name: Report Coverage
