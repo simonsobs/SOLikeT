@@ -86,10 +86,12 @@ include = [
     "soliket.poisson",
     "soliket.ps",
     "soliket.xcorr",
+    "tests",
 ]
 
 [tool.setuptools.package-data]
 "*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
+"tests" = ['*.py', '*.yaml', '*.txt', '*.fits']
 
 [tool.setuptools_scm]
 version_file = "soliket/_version.py"
@@ -114,12 +116,7 @@ exclude = [".tox", "build", "cobaya_packages", "test", ".eggs"]
 line-length = 90
 
 [tool.coverage.run]
-omit = [
-    "soliket/tests/*",
-    "soliket/*/tests/*",
-    "*/soliket/tests/*",
-    "*/soliket/*/tests/*",
-]
+omit = ["tests/*", "*/tests/*"]
 
 [tool.coverage.report]
 exclude_lines = [

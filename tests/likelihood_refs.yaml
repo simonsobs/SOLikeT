@@ -1,0 +1,75 @@
+# ======= TOLERANCE =======
+
+rtol: &rtol 1e-3
+atol: &atol 1e-3
+
+# ====== REFERENCES =======
+
+# If needed individual tolerances can be modified
+
+cash:
+  value: -37.3710640070228
+  rtol: *rtol
+  atol: *atol
+cash_2d:
+  value: -2349.5353718742294
+  rtol: *rtol
+  atol: *atol
+
+clusters:
+  value: -847.22462272
+  rtol: *rtol
+  atol: *atol
+
+cosmopower:
+  value: -295.139
+  rtol: *rtol
+  atol: *atol
+
+galaxykappa:
+  value: 173.69192885580344
+  rtol: *rtol
+  atol: *atol
+shearkappa:
+  value: 637.64473666
+  rtol: *rtol
+  atol: *atol
+shearkappa_deltaz:
+  value: -7910.043704938653
+  rtol: *rtol
+  atol: *atol
+shearkappa_m:
+  value: -3737.5531377692337
+  rtol: *rtol
+  atol: *atol
+shearkappa_ia_nla_noevo:
+  value: -111712.15660832982
+  rtol: *rtol
+  atol: *atol
+shearkappa_ia_nla:
+  value: -114145.55021412153
+  rtol: *rtol
+  atol: *atol
+shearkappa_ia_perbin:
+  value: -100164.38521295182
+  rtol: *rtol
+  atol: *atol
+shearkappa_hmcode:
+  value: -20679.897354035915
+  rtol: *rtol
+  atol: *atol
+
+lensing:
+  value: 335.8560097798468
+  rtol: *rtol
+  atol: *atol
+
+multi:
+  value: -503.395
+  rtol: *rtol
+  atol: *atol
+
+ps:
+  value: -295.139
+  rtol: *rtol
+  atol: *atol
