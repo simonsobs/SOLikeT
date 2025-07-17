@@ -126,7 +126,9 @@ def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
     logp_a = model.loglikes(fg_values_a, cached=False)[0].sum()
     logp_b = model.loglikes(fg_values_b, cached=False)[0].sum()
     d_logp = logp_b - logp_a
+
     assert np.isclose(d_logp, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
 
     model1_logp_a = model1.loglikes(fg_values_a, cached=False)[0].sum()
     model2_logp_a = model2.loglikes({}, cached=False)[0].sum()
