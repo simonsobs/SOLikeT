@@ -182,6 +182,7 @@ def test_shearkappa_like(request, check_skip_pyccl, evaluate_one_info, likelihoo
     assert np.isclose(loglikes, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
+
 def test_shearkappa_tracerselect(
     request, check_skip_pyccl, evaluate_one_info, test_cosmology_params
 ):
@@ -298,6 +299,7 @@ def test_shearkappa_deltaz(
     from soliket.cross_correlation import ShearKappaLikelihood
 
     ref = likelihood_refs["shearkappa_deltaz"]
+
 
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
@@ -420,6 +422,7 @@ def test_shearkappa_hmcode(
     from soliket.cross_correlation import ShearKappaLikelihood
 
     ref = likelihood_refs["shearkappa_hmcode"]
+
 
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
