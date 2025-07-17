@@ -26,18 +26,25 @@ def test_clusters_model(check_skip_pyccl, evaluate_one_info, test_cosmology_para
     _ = get_model(evaluate_one_info)
 
 
-def test_clusters_loglike(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
+def test_clusters_loglike(
+    check_skip_pyccl, evaluate_one_info, test_cosmology_params, likelihood_refs
+):
+    ref = likelihood_refs["clusters"]
+
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info.update(clusters_like_and_theory)
 
     model_fiducial = get_model(evaluate_one_info)
 
     lnl = model_fiducial.loglikes({})[0]
+    assert np.isclose(lnl, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
-    assert np.isclose(lnl, -847.22462272, rtol=1.0e-3, atol=1.0e-5)
 
+def test_clusters_n_expected(
+    check_skip_pyccl, evaluate_one_info, test_cosmology_params, likelihood_refs
+):
+    ref = likelihood_refs["clusters"]
 
-def test_clusters_n_expected(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info.update(clusters_like_and_theory)
 
@@ -47,5 +54,5 @@ def test_clusters_n_expected(check_skip_pyccl, evaluate_one_info, test_cosmology
 
     like = model_fiducial.likelihood["soliket.ClusterLikelihood"]
 
-    assert np.isclose(lnl, -847.22462272, rtol=1.0e-3, atol=1.0e-5)
+    assert np.isclose(lnl, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
     assert like._get_n_expected() > 40
