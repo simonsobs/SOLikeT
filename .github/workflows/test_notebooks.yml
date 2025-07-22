@@ -10,8 +10,22 @@ env:
   COBAYA_PACKAGES_PATH: ./cobaya_packages
 
 jobs:
-  notebooks:
+  check-skip:
     runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run skip-check
+        id: check
+        uses: ./.github/actions/check-skip
+
+  notebooks:
+    needs: check-skip
+    runs-on: ubuntu-latest
+    if: ${{ needs.check-skip.outputs.skip != 'true' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,7 +38,7 @@ jobs:
       - name: Install SOLikeT dependencies and likelihoods
         run: |
           pip install uv
-          bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
+          bash ci_scripts/install_deps.sh --extras dev all --python 3.11
 
       - name: Run notebooks
         run: uv run pytest --nbval-lax --current-env --cov --cov-branch --cov-report=xml -vv --durations=10 notebooks/dev/smooth/*.ipynb
