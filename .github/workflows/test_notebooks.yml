@@ -1,0 +1,35 @@
+name: Test notebooks
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  COBAYA_PACKAGES_PATH: ./cobaya_packages
+
+jobs:
+  notebooks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install SOLikeT dependencies and likelihoods
+        run: |
+          pip install uv
+          bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
+
+      - name: Run notebooks
+        run: uv run pytest --nbval-lax --current-env --cov --cov-branch --cov-report=xml -vv --durations=10 notebooks/dev/smooth/*.ipynb
+
+      - name: Report Coverage
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
