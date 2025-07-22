@@ -53,6 +53,7 @@ dev = [
     "pytest-cov",
     "scikit-learn (>=1.2)", # breaking change
     "pre-commit",
+    "nbval",
 ]
 all = [
     "soliket[emulator]",
