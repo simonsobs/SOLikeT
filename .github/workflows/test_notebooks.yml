@@ -1,10 +1,10 @@
 name: Test notebooks
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  # push:
+  #   branches: [ master ]
+  # pull_request:
+  #   branches: [ master ]
 
 env:
   COBAYA_PACKAGES_PATH: ./cobaya_packages
