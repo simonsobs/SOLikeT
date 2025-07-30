@@ -5,6 +5,8 @@ from astropy import units
 from cobaya.model import get_model
 from cobaya.yaml import yaml_load_file
 
+doplots=False
+
 info = yaml_load_file("./yamls/run_shearshear_fiducial.yaml")
 
 fiducial_cosmo = yaml_load_file("./yamls/params_cosmo_smooth_fiducial.yaml")
@@ -27,13 +29,14 @@ cosmo = ccl.Cosmology(
 )
 
 # construct binning
-ell_max = 1900
-n_ell = 6
-delta_ell = ell_max // n_ell
+ell_min = 8
+ell_max = 2048
+n_ell = 32
+delta_ell = (ell_max - ell_min) // n_ell
 
 ells = (np.arange(n_ell) + 0.5) * delta_ell
 
-ells_win = np.arange(ell_max + 1)
+ells_win = np.arange(ell_min,ell_max + 1)
 nell_win = len(ells_win)
 wins = np.zeros([n_ell, len(ells_win)])
 
@@ -44,12 +47,36 @@ for i in range(n_ell):
 
 Well = sacc.BandpowerWindow(ells_win, wins.T)
 
+ngal = {}
+sigma_e = {}
+
 # set up shear lensing des
 z_shear = np.loadtxt("./data/shearkappa_nz_source/z.txt")
 nbins = 4
 n_maps = nbins + 1
-ngal = [1.5, 1.5, 1.5, 1.5]
-sigma_e = [0.28, 0.28, 0.28, 0.28]
+# ngal = [10, 10, 10, 10]
+# sigma_e = [0.28, 0.28, 0.28, 0.28]
+
+ngal['d1'] = 1.5
+ngal['d2'] = 1.5
+ngal['d3'] = 1.5
+ngal['d4'] = 1.5
+
+ngal['s1'] = 2.7
+ngal['s2'] = 2.7
+ngal['s3'] = 2.7
+ngal['s4'] = 2.7
+
+sigma_e['d1'] = 0.28
+sigma_e['d2'] = 0.28
+sigma_e['d3'] = 0.28
+sigma_e['d4'] = 0.28
+
+sigma_e['s1'] = 0.28
+sigma_e['s2'] = 0.28
+sigma_e['s3'] = 0.28
+sigma_e['s4'] = 0.28
+
 
 tracers = []
 tracer_labels = []
@@ -75,8 +102,8 @@ for ibin in np.arange(1, nbins + 1):
 z_shear = np.loadtxt("./data/shearkappa_nz_source/z.txt")
 nbins = 4
 n_maps = nbins + 1
-ngal = [1.5, 1.5, 1.5, 1.5] + [1.5, 1.5, 1.5, 1.5]
-sigma_e = [0.28, 0.28, 0.28, 0.28] + [0.28, 0.28, 0.28, 0.28]
+# ngal = ngal + [2.7, 2.7, 2.7, 2.7]
+# sigma_e = sigma_e + [0.28, 0.28, 0.28, 0.28]
 
 for ibin in np.arange(1, nbins + 1):
     # nz_bin = np.loadtxt(f"./data/shearshear_nz_ska1/bin_{ibin}.txt")
@@ -106,19 +133,19 @@ spectra_label = np.empty([n_maps, n_maps], dtype="S4")
 
 for ibin in np.arange(0, n_maps):
     for jbin in np.arange(0, ibin+1):
-
-        Nell_bin = (
-        np.ones(nell_win)
-        * sigma_e[ibin - 1] ** 2.0
-        / (ngal[ibin - 1] * (1.08e4 / np.pi) ** 2)
-        )
         
         if ibin == jbin:
             # auto spectra
 
+            Nell_bin = (
+            np.ones(nell_win)
+            * sigma_e[tracer_labels[ibin]] ** 2.0
+            / (ngal[tracer_labels[ibin]] * (1.08e4 / np.pi) ** 2)
+            )
+
             spectra[ibin, ibin, :] = ccl.angular_cl(cosmo, tracers[ibin], tracers[ibin], ells_win) + Nell_bin
             spectra_label[ibin, ibin] = f'{tracer_labels[ibin]}{tracer_labels[ibin]}'
-            print(tracer_labels[ibin], tracer_labels[ibin])
+            print(tracer_labels[ibin], tracer_labels[ibin], ngal[tracer_labels[ibin]])
 
         else:
             # cross spectra
@@ -130,10 +157,10 @@ for ibin in np.arange(0, n_maps):
             print(tracer_labels[ibin], tracer_labels[jbin])
 
 # calculate covmat
-fsky = 0.4
+fsky = 0.1
 n_cross = (n_maps * (n_maps + 1)) // 2
 covar = np.zeros([n_cross, n_ell, n_cross, n_ell])
-d_ell = 30
+# d_ell = 30
 
 id_i = 0
 for i1 in range(n_maps):
@@ -151,7 +178,7 @@ for i1 in range(n_maps):
                 cl_i2j2_lab = spectra_label[i2, j2]
                 # Knox formula
                 cov = (cl_i1j1 * cl_i2j2 + cl_i1j2 * cl_i2j1) / (
-                    d_ell * fsky * (2 * ells + 1)
+                    delta_ell * fsky * (2 * ells + 1)
                 )
                 covar[id_i, :, id_j, :] = np.diag(cov)
                 print(
@@ -175,7 +202,7 @@ for ibin in np.arange(1, nbins + 1):
         spin=2,
         z=z_shear,
         nz=shear_nz[ibin - 1],
-        metadata={"sigma_e": sigma_e[ibin - 1], "ngal": ngal[ibin - 1]},
+        metadata={"sigma_e": sigma_e[tracer_labels[ibin - 1]], "ngal": ngal[tracer_labels[ibin - 1]]},
     )
 
     s.add_tracer(
@@ -185,7 +212,7 @@ for ibin in np.arange(1, nbins + 1):
         spin=2,
         z=z_shear,
         nz=shear_nz[ibin - 1],
-        metadata={"sigma_e": sigma_e[ibin - 1], "ngal": ngal[ibin - 1]},
+        metadata={"sigma_e": sigma_e[tracer_labels[ibin + 3]], "ngal": ngal[tracer_labels[ibin + 3]]},
     )
 
 
@@ -249,7 +276,7 @@ sstheory = sslike._get_theory(**param_values)
 
 s.mean = sstheory
 
-s.save_fits("./data/shearkappa_smooth_mockdata.fits", overwrite=True)
+s.save_fits("./data/shearshear_smooth_mockdata.fits", overwrite=True)
 
 model = get_model(info)
 likes = model.loglikes(fid_cosmo)
@@ -258,3 +285,18 @@ sslike = model.likelihood["soliket.cross_correlation.ShearShearLikelihood"]
 sstheory = sslike._get_theory(**param_values)
 
 assert np.all(s.mean == sstheory)
+
+if doplots:
+    from matplotlib import pyplot as plt
+
+    for b1, b2 in s.get_tracer_combinations():
+        l, cl, cov = s.get_ell_cl('cl_ee', b1, b2, return_cov=True)
+        if b1==b2:
+            plt.figure()
+            plt.title(b1+" x "+b2,fontsize=14)
+            plt.errorbar(l, l*cl, yerr=np.sqrt(np.diag(cov)), fmt='r.')
+            plt.xlabel('$\\ell$',fontsize=14)
+            plt.ylabel('$D_\\ell$',fontsize=14)
+            plt.yscale('log')
+            plt.xscale('log')
+    plt.show()

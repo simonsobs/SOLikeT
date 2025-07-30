@@ -28,27 +28,27 @@ gs_d3_m:
 gs_d4_m:
   latex: m_{d,4}
   value: 0.0
-gs_s1_deltaz:
-  latex: \Delta z_{s,1}
-  value: 0.0
-gs_s2_deltaz:
-  latex: \Delta z_{s,2}
-  value: 0.0
-gs_s3_deltaz:
-  latex: \Delta z_{s,3}
-  value: 0.0
-gs_s4_deltaz:
-  latex: \Delta z_{s,4}
-  value: 0.0
-gs_s1_m:
-  latex: m_{s,1}
-  value: 0.0
-gs_s2_m:
-  latex: m_{s,2}
-  value: 0.0
-gs_s3_m:
-  latex: m_{s,3}
-  value: 0.0
-gs_s4_m:
-  latex: m_{s,4}
-  value: 0.0
+# gs_s1_deltaz:
+#   latex: \Delta z_{s,1}
+#   value: 0.0
+# gs_s2_deltaz:
+#   latex: \Delta z_{s,2}
+#   value: 0.0
+# gs_s3_deltaz:
+#   latex: \Delta z_{s,3}
+#   value: 0.0
+# gs_s4_deltaz:
+#   latex: \Delta z_{s,4}
+#   value: 0.0
+# gs_s1_m:
+#   latex: m_{s,1}
+#   value: 0.0
+# gs_s2_m:
+#   latex: m_{s,2}
+#   value: 0.0
+# gs_s3_m:
+#   latex: m_{s,3}
+#   value: 0.0
+# gs_s4_m:
+#   latex: m_{s,4}
+#   value: 0.0

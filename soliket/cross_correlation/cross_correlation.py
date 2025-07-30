@@ -81,12 +81,11 @@ class CrossCorrelationLikelihood(GaussianLikelihood):
 
     def _get_sacc_data(self, **params_values):
         self.sacc_data = sacc.Sacc.load_fits(self.datapath)
-
         if self.use_spectra == "all":
             pass
         else:
             for tracer_comb in self.sacc_data.get_tracer_combinations():
-                if tracer_comb not in self.use_spectra:
+                if list(tracer_comb) not in self.use_spectra:
                     self.sacc_data.remove_selection(tracers=tracer_comb)
 
         self.x = self._construct_ell_bins()
@@ -213,6 +212,7 @@ class ShearShearLikelihood(CrossCorrelationLikelihood):
             w_bins = bpw.weight.T
 
             cl_unbinned = ccl.cells.angular_cl(cosmo, tracers[0], tracers[1], ells_theory)
+
             if self.m_nuisance_mode is not None:
                 m1_bias = params_values[f"{tracers_name[0]}_m"]
                 m2_bias = params_values[f"{tracers_name[1]}_m"]
@@ -222,6 +222,7 @@ class ShearShearLikelihood(CrossCorrelationLikelihood):
             cl_binned_list.append(cl_binned)
 
         cl_binned_total = np.concatenate(cl_binned_list)
+        import pdb; pdb.set_trace()
         return cl_binned_total
 
 
