@@ -222,7 +222,7 @@ class ShearShearLikelihood(CrossCorrelationLikelihood):
             cl_binned_list.append(cl_binned)
 
         cl_binned_total = np.concatenate(cl_binned_list)
-        import pdb; pdb.set_trace()
+
         return cl_binned_total
 
 
