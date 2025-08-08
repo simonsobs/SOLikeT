@@ -41,6 +41,8 @@ params:
     value: -0.02
   gs_s4_deltaz:
     value: -0.02
+  gs_s5_deltaz:
+    value: -0.02
   gs_s1_m:
     value: -0.04
   gs_s2_m:
@@ -48,6 +50,8 @@ params:
   gs_s3_m:
     value: -0.04
   gs_s4_m:
+    value: -0.04
+  gs_s5_m:
     value: -0.04
   gs_s1_sigmam:
     value: 0.01

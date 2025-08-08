@@ -99,27 +99,27 @@ for ibin in np.arange(1, nbins + 1):
     tracer_labels.append(f'd{ibin}')
 
 # set up shear lensing ska
-z_shear = np.loadtxt("./data/shearkappa_nz_source/z.txt")
-nbins = 4
-n_maps = nbins + 1
-# ngal = ngal + [2.7, 2.7, 2.7, 2.7]
-# sigma_e = sigma_e + [0.28, 0.28, 0.28, 0.28]
+# z_shear = np.loadtxt("./data/shearkappa_nz_source/z.txt")
+# nbins = 4
+# n_maps = nbins + 1
+# # ngal = ngal + [2.7, 2.7, 2.7, 2.7]
+# # sigma_e = sigma_e + [0.28, 0.28, 0.28, 0.28]
 
-for ibin in np.arange(1, nbins + 1):
-    # nz_bin = np.loadtxt(f"./data/shearshear_nz_ska1/bin_{ibin}.txt")
-    nz_bin = np.loadtxt(f"./data/shearkappa_nz_source/bin_{ibin}.txt") # fictional for now
-    z0_IA = np.trapz(z_shear * nz_bin)
+# for ibin in np.arange(1, nbins + 1):
+#     # nz_bin = np.loadtxt(f"./data/shearshear_nz_ska1/bin_{ibin}.txt")
+#     nz_bin = np.loadtxt(f"./data/shearkappa_nz_source/bin_{ibin}.txt") # fictional for now
+#     z0_IA = np.trapz(z_shear * nz_bin)
 
-    ia_z = (
-        z_shear,
-        info["params"]["A_IA"]["value"]
-        * ((1 + z_shear) / (1 + z0_IA)) ** info["params"]["eta_IA"]["value"],
-    )
+#     ia_z = (
+#         z_shear,
+#         info["params"]["A_IA"]["value"]
+#         * ((1 + z_shear) / (1 + z0_IA)) ** info["params"]["eta_IA"]["value"],
+#     )
 
-    tracer_bin = ccl.WeakLensingTracer(cosmo, dndz=(z_shear, nz_bin), ia_bias=ia_z)
+#     tracer_bin = ccl.WeakLensingTracer(cosmo, dndz=(z_shear, nz_bin), ia_bias=ia_z)
 
-    tracers.append(tracer_bin)
-    tracer_labels.append(f's{ibin}')
+#     tracers.append(tracer_bin)
+#     tracer_labels.append(f's{ibin}')
 
 n_maps = len(tracers)
 
@@ -204,17 +204,6 @@ for ibin in np.arange(1, nbins + 1):
         nz=shear_nz[ibin - 1],
         metadata={"sigma_e": sigma_e[tracer_labels[ibin - 1]], "ngal": ngal[tracer_labels[ibin - 1]]},
     )
-
-    s.add_tracer(
-        "NZ",
-        "gs_{}".format(tracer_labels[ibin + 3]),
-        quantity="galaxy_shear",
-        spin=2,
-        z=z_shear,
-        nz=shear_nz[ibin - 1],
-        metadata={"sigma_e": sigma_e[tracer_labels[ibin + 3]], "ngal": ngal[tracer_labels[ibin + 3]]},
-    )
-
 
 for ibin in np.arange(1, n_maps + 1):
 
