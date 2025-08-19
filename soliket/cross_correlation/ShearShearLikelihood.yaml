@@ -1,0 +1,63 @@
+z_nuisance_mode: null
+m_nuisance_mode: null
+ia_mode: null
+
+params:
+  A_IA:
+    value: 0.54
+    latex: A_{IA}
+  eta_IA:
+    value: 1.7
+    latex: \eta_{IA}
+  gs_d1_deltaz:
+    value: -0.02
+  gs_d2_deltaz:
+    value: -0.02
+  gs_d3_deltaz:
+    value: -0.02
+  gs_d4_deltaz:
+    value: -0.02
+  gs_d1_m:
+    value: -0.04
+  gs_d2_m:
+    value: -0.04
+  gs_d3_m:
+    value: -0.04
+  gs_d4_m:
+    value: -0.04
+  gs_d1_sigmam:
+    value: 0.01
+  gs_d2_sigmam:
+    value: 0.01
+  gs_d3_sigmam:
+    value: 0.01
+  gs_d4_sigmam:
+    value: 0.01
+  gs_s1_deltaz:
+    value: -0.02
+  gs_s2_deltaz:
+    value: -0.02
+  gs_s3_deltaz:
+    value: -0.02
+  gs_s4_deltaz:
+    value: -0.02
+  gs_s5_deltaz:
+    value: -0.02
+  gs_s1_m:
+    value: -0.04
+  gs_s2_m:
+    value: -0.04
+  gs_s3_m:
+    value: -0.04
+  gs_s4_m:
+    value: -0.04
+  gs_s5_m:
+    value: -0.04
+  gs_s1_sigmam:
+    value: 0.01
+  gs_s2_sigmam:
+    value: 0.01
+  gs_s3_sigmam:
+    value: 0.01
+  gs_s4_sigmam:
+    value: 0.01

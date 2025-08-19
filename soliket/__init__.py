@@ -14,6 +14,7 @@ from .cross_correlation import (
     CrossCorrelationLikelihood,
     GalaxyKappaLikelihood,
     ShearKappaLikelihood,
+    ShearShearLikelihood,
 )
 from .gaussian import GaussianLikelihood, MultiGaussianLikelihood
 from .lensing import LensingLikelihood, LensingLiteLikelihood
