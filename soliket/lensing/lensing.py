@@ -62,6 +62,10 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     pp_ccl: bool = False
     provider: Provider
 
+    fiducial_from_file: bool = False
+    fiducial_filename: str | None = None
+    correction_filename: str | None = None
+
     fiducial_params: ClassVar = {
         "ombh2": 0.02219218,
         "omch2": 0.1203058,
