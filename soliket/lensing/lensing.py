@@ -128,16 +128,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         # load the correction terms generate from the script n1so.py
 
-        self.N0cltt = np.loadtxt(os.path.join(self.data_folder, "n0mvdcltt1.txt")).T
-        self.N0clte = np.loadtxt(os.path.join(self.data_folder, "n0mvdclte1.txt")).T
-        self.N0clee = np.loadtxt(os.path.join(self.data_folder, "n0mvdclee1.txt")).T
-        self.N0clbb = np.loadtxt(os.path.join(self.data_folder, "n0mvdclbb1.txt")).T
-        self.N1clpp = np.loadtxt(os.path.join(self.data_folder, "n1mvdclkk1.txt")).T
-        self.N1cltt = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltte1.txt")).T
-        self.N1clte = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltee1.txt")).T
-        self.N1clee = np.loadtxt(os.path.join(self.data_folder, "n1mvdcleee1.txt")).T
-        self.N1clbb = np.loadtxt(os.path.join(self.data_folder, "n1mvdclbbe1.txt")).T
-        self.n0 = np.loadtxt(os.path.join(self.data_folder, "n0mv.txt"))
+        self._get_correction_factors()
 
         super().initialize()
 
