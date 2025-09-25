@@ -148,6 +148,38 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         :return: Fiducial ``Cls``
         """
+        if self.fiducial_from_file:
+            assert self.fiducial_filename is not None
+            self.log.info(f"Loading fiducial Cls from file: {self.fiducial_filename}")
+            if self.fiducial_filename.endswith((".fits", ".sacc")):
+                s = sacc.Sacc.load_fits(
+                    os.path.join(self.data_folder, self.fiducial_filename)
+                )
+                Cls_pp = self._get_spectrum_from_sacc(s, "pp")
+                Cls_tt = self._get_spectrum_from_sacc(s, "tt")
+                Cls_ee = self._get_spectrum_from_sacc(s, "ee")
+                Cls_bb = self._get_spectrum_from_sacc(s, "bb")
+                Cls_te = self._get_spectrum_from_sacc(s, "te")
+                Cls = {
+                    "pp": Cls_pp,
+                    "tt": Cls_tt,
+                    "ee": Cls_ee,
+                    "bb": Cls_bb,
+                    "te": Cls_te,
+                }
+            else:
+                Cls = np.loadtxt(
+                    os.path.join(self.data_folder, self.fiducial_filename), unpack=True
+                )
+                Cls = {
+                    "pp": Cls[0],
+                    "tt": Cls[1],
+                    "ee": Cls[2],
+                    "bb": Cls[3],
+                    "te": Cls[4],
+                }
+            return Cls
+
         info_fiducial = {
             "params": self.fiducial_params,
             "likelihood": {"soliket.utils.OneWithCls": {"lmax": self.theory_lmax}},
