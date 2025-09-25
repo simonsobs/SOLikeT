@@ -141,6 +141,55 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         super().initialize()
 
+    def _get_correction_factors(self):
+        if self.correction_filename is not None:
+            assert self.correction_filename.endswith((".fits", ".sacc")), (
+                "Passing 'correction_filepath' LensingLikelihood tries to load it as a "
+                "'sacc file'. Remove it to use default correction factors."
+            )
+            s = sacc.Sacc.load_fits(
+                os.path.join(self.data_folder, self.correction_filename)
+            )
+
+            self.N0cltt = self._get_spectrum_from_sacc(s, "tt", data_type="cl_n0mvd")
+            self.N0clte = self._get_spectrum_from_sacc(s, "te", data_type="cl_n0mvd")
+            self.N0clee = self._get_spectrum_from_sacc(s, "ee", data_type="cl_n0mvd")
+            self.N0clbb = self._get_spectrum_from_sacc(s, "bb", data_type="cl_n0mvd")
+            self.N1clpp = self._get_spectrum_from_sacc(s, "pp", data_type="cl_n1mvd")
+            self.N1cltt = self._get_spectrum_from_sacc(s, "tt", data_type="cl_n1mvd")
+            self.N1clte = self._get_spectrum_from_sacc(s, "te", data_type="cl_n1mvd")
+            self.N1clee = self._get_spectrum_from_sacc(s, "ee", data_type="cl_n1mvd")
+            self.N1clbb = self._get_spectrum_from_sacc(s, "bb", data_type="cl_n1mvd")
+            self.n0 = self._get_spectrum_from_sacc(s, "pp", data_type="cl_n0mv")
+        else:
+            self.log.info("Using default correction factors.")
+
+            self.N0cltt = np.loadtxt(os.path.join(self.data_folder, "n0mvdcltt1.txt")).T
+            self.N0clte = np.loadtxt(os.path.join(self.data_folder, "n0mvdclte1.txt")).T
+            self.N0clee = np.loadtxt(os.path.join(self.data_folder, "n0mvdclee1.txt")).T
+            self.N0clbb = np.loadtxt(os.path.join(self.data_folder, "n0mvdclbb1.txt")).T
+            self.N1clpp = np.loadtxt(os.path.join(self.data_folder, "n1mvdclkk1.txt")).T
+            self.N1cltt = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltte1.txt")).T
+            self.N1clte = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltee1.txt")).T
+            self.N1clee = np.loadtxt(os.path.join(self.data_folder, "n1mvdcleee1.txt")).T
+            self.N1clbb = np.loadtxt(os.path.join(self.data_folder, "n1mvdclbbe1.txt")).T
+            self.n0 = np.loadtxt(os.path.join(self.data_folder, "n0mv.txt"))
+
+    def _get_spectrum_from_sacc(
+        self, s: sacc.Sacc, spec: str, data_type: str | None = None
+    ) -> np.ndarray:
+        """
+        Extract a specific spectrum from a SACC file.
+
+        :param s: The SACC object.
+        :param spec: The spectrum to extract (e.g. "tt", "ee", "pp").
+        :return: The extracted spectrum as a numpy array.
+        """
+        tname_1, tname_2 = spec[0], spec[1]
+
+        _, spec = s.get_ell_cl(data_type, tname_1, tname_2, return_cov=False)
+        return spec
+
     def _get_fiducial_Cls(self) -> dict:
         """
         Obtain a set of fiducial ``Cls`` from theory provider (e.g. ``camb``).
