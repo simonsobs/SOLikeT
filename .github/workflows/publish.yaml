@@ -1,0 +1,73 @@
+name: Upload to PyPI
+
+on:
+  # Only run when a GitHub Release is published
+  release:
+    types: [published]
+
+  # Or trigger manually for debugging
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Where to push'
+        required: true
+        default: 'testpypi'
+        type: choice
+        options:
+          - testpypi
+          - pypi
+
+jobs:
+  choose-target:
+    runs-on: ubuntu-latest
+    outputs:
+      repo: ${{ steps.pick.outputs.repo }}
+    steps:
+      - id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "repo=${{ github.event.inputs.repository }}" >> $GITHUB_OUTPUT
+          else
+            echo "repo=pypi" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Debug chosen repo
+        run: |
+          echo "🔥 [choose-target] Final repo output: '${{ steps.pick.outputs.repo }}'"
+
+  publish:
+    needs: choose-target
+    name: 📦 Publish to ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.repository || 'pypi' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.choose-target.outputs.repo }}
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Build with uv
+        run: uv build
+
+      - name: Publish
+        run: |
+          echo "Publishing to ${{ needs.choose-target.outputs.repo }}..."
+          if [ "${{ needs.choose-target.outputs.repo }}" = "testpypi" ]; then
+            export UV_PUBLISH_URL=https://test.pypi.org/legacy/
+          fi
+          uv publish --trusted-publishing always
+        env:
+          # optional extra debug
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          UV_DEBUG: '1'

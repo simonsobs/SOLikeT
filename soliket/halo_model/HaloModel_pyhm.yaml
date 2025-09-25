@@ -1,0 +1,15 @@
+# Default parameters for the pyhalomodel HaloModel theory.
+hmf_name: 'Tinker et al. (2010)'
+hmf_Dv: 330.
+Mmin: 1.e9
+Mmax: 1.e17
+nM: 256
+
+# Maximum k for P(k) (units 1/Mpc). Set to zero if not needed.
+kmax: 10.0
+
+# Redshift sampling.
+z: []
+
+# Extra (non-parameter) arguments passed to ccl.Cosmology()
+extra_args:

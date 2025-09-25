@@ -1,1 +1,1 @@
-from .lensing import LensingLiteLikelihood, LensingLikelihood  # noqa: F401
+from .lensing import LensingLikelihood, LensingLiteLikelihood

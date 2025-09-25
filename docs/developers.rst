@@ -1,207 +1,186 @@
-==========================
-Information for Developers
-==========================
+==============================
+General Development Guidelines
+==============================
 
-Adding your own likelihood or theory code
------------------------------------------
+This page describes dow to develop new code within SOLikeT, including changing existing components and adding new ones.
+
+GitHub Workflow
+===============
+
+Code development is done via Github. More detailed instructions on each step can be found in the `workflow guidelines <workflow.html>`_, but a brief summary is:
+
+1. Identify development work
+2. Open a Github Issue
+3. Clone the repository
+4. Create a new branch
+5. Create a draft Pull Request (PR) from the branch
+6. Develop the code including tests and docs
+7. Ensure tests pass
+8. Convert the PR from draft and request a Code Review
+9. Merge the code
+10. |:tropical_drink:|
+
+Project Structure and Conventions
+=================================
+
+SOLikeT contains two conceptual types of code modules: Likelihoods and Theories.
+
+Likelihoods compute a likelihood value from a comparison between a data vector and a prediction for that data vector at some set of values of input parameters (e.g. cosmological and nuisance parameters). For example a Gaussian likelihood comparing Cosmic Microwave Background (CMB) power spectra with a Lambda-CDM model prediction.
+
+Theories perform calculations necessary to create the predicted data vector given the set of parameters. For instance solving the coupled Einstein-Boltzmann equations necessary to predict the CMB power spectrum within a given model.
+
+General guidance on how to create Theories and Likelihoods can be found within the Cobaya documentation.
+
+Directories and naming
+----------------------
+
+Within SOLikeT we request that you create new modules inside a directory of the same name::
+
+ SOLikeT/soliket/my_module/my_module.py
+
+Likelihood classes should be named in CamelCase and have a ``Likelihood`` as a suffix, e.g.::
+
+ class MyModuleLikelihood(GaussianLikelihood)
+
+Default parameters
+------------------
+
+Default parameters for a Likelihood or Theory can be stored in a ``.yaml`` file next to the ``.py`` file in which the Likelihood or Theory class is defined, and with the same name as the Likelihood or Theory, i.e.::
+
+ SOLikeT/soliket/my_module/MyModuleLikelihood.yaml
+
+Conventions for Likelihoods
+---------------------------
+
+Is your new Likelihood **newlike** Gaussian, Poisson or Cash-C?  If so, great; if not, then we need to do some prep work to implement a generic version of the new likelihood form into **SOLikeT**, alongside ``GaussianLikelihood``, ``PoissonLikelihood`` and ``CashCLikelihood``.
+
+* Write likelihood code so as to inherit from ``GaussianLikelihood``, implementing ``_get_data()``, ``_get_cov()``, ``_get_theory()`` methods, etc.
+* Also, if there is substantial data to be used by the likelihood, have it also extend ``_InstallableLikelihood`` (see ``soliket.mflike`` and ``soliket.lensing`` for examples).
+* Factor out all cosmological/astrophysical calculations necessary to compute the "theory vector" into separate standalone ``Theory`` objects (current example of this is the ``Foreground`` object in ``soliket.mflike``.)
+* If any of your new modules require physical constants, please make use of the ``constants.py`` module in SOLikeT (if you need to add new entries) and import it as needed. This would avoid inconsistent definitions of potentially shared quantities. Don't re-define constants in your own modules.
+
+Conventions for Theories
+------------------------
+
+The detailed guidelines for developing new Theory components in SOLikeT can be found in the `theory component guidelines <docs/theory-component-guidelines.rst>`_ page, but a brief summary is:
+
+- Your theory calculator must inherit from the Cobaya theory class.
+- It must have 3 main blocks of functions: initialization (`initialize`); requirements (`get_requirement`, `must_provide`); calculations (`get_X`, `calculate`).
+- The `initialize` function is where you can assign parameters and perform calculations that need to be done once for all.
+- The `get_requirement` function specifies what external elements are needed by your theory block to perform its duties, returning a dictionary with the names of the required elements as keys.
+- The `must_provide` function is used to assign values to parameters needed to compute the required elements and can also specify additional requirements for the theory block.
+- In each Theory class, you need at least two functions:
+  1. A `get_X` function that returns the current state of the required element.
+  2. A `calculate` function that performs the actual calculations and updates the state of the required element.
+
+Code Style
+==========
+
+All contributions should follow the `PEP8 Style Guide for Python Code <https://www.python.org/dev/peps/pep-0008/>`_. When a PR is created for SOLikeT, a check will be run to make sure your code complies with these recommendations, which are the same as those specified for `Cobaya <https://cobaya.readthedocs.io/>`_. This means the following checks will be made:
+
+.. code-block:: bash
+
+  E713,E704,E703,E714,E741,E10,E11,E20,E22,E23,E25,E27,E301,E302,E304,E9,F405,F406,F5,F6,F7,F8,W1,W2,W3,W6
+
+and a line length limit of 90 characters will be applied.
+
+This will be run automatically for you at commit time if you have `pre-commit <https://pre-commit.com/>`_ installed, which is highly recommended. To install pre-commit, run:
+
+.. code-block:: bash
+
+  pip install pre-commit
+  pre-commit install
+
+This will install the pre-commit hooks, and in particular the `ruff <https://docs.astral.sh/ruff/>`_ tool, which will check your code for style issues and formatting before you commit it. You can also run `ruff <https://docs.astral.sh/ruff/>`_ manually with the command:
+
+.. code-block:: bash
+
+  ruff check --fix . --config ./pyproject.toml
+  ruff format . --config ./pyproject.toml
+
+Unit Tests
+==========
+
+Pull requests will require existing unit tests to pass before they can be merged. Additionally, new unit tests should be written for all new public methods and functions. Unit tests for each Likelihood and Theory should be placed in the tests directory with a name matching that of the python file in which the class is defined
+
+.. code-block:: bash
+
+ tests/test_my_module.py
 
 
-Creating tests
+For Likelihoods we request that there is a test which compares the result of a likelihood calculation to a precomputed expected value which is hard coded in the tests file, to a tolerance of ``1.e-3``. Both the tolerances and the reference values of all likelihoods are stored in the `tests` folder within `likelihood_refs.yaml`. To use them in your test, you can rely on the `likelihood_refs` fixture, which reads and stores the values contained in that file. Thus, it is sufficient to do
+
+.. code-block:: bash
+
+  ref = likelihood_refs["your_like_name"]
+  assert np.isclose(loglike_just_computed, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
+For more advice on how to write tests see the `Astropy Testing Guidelines <https://docs.astropy.org/en/stable/development/testguide.html>`_.
+
+Tests run a set of SOLikeT calculations with known expected results. There are (at least) two reasons you might want to run tests:
+
+Checking code in development
+----------------------------
+To see if codes you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
+
+To run tests, you can use the following command:
+
+.. code-block:: bash
+
+   uv run pytest -vv --durations=10  # using uv
+   pytest -vv --durations=10         # using pip or conda
+
+This command will run all tests in the SOLikeT codebase and provide verbose output, including the duration of each test. The `--durations=10` option will show the 10 slowest tests, which can help identify performance bottlenecks.
+
+If the current environment does not have the required dependencies, `uv` will install them automatically based on the `uv.lock` file, ensuring that you have all the necessary packages to run the tests.
+
+You can also test a subset of tests or run specific tests by passing additional arguments to `pytest`. For example, if you want to run only the tests in a specific module, you can do
+
+.. code-block:: bash
+  uv run pytest -vv --durations=10 -k my_new_module
+
+searching for tests that match the string 'my_new_module'.
+
+`uv` provides a very easy but powerful way to test your new feature in depth locally (if you really want to). In fact, you can install different Python versions without needing to set up multiple environments manually. You can install multiple Python version and pin the one you want to test with:
+
+.. code-block:: bash
+
+  uv python install 3.10 # install Python 3.10 or any other version you want to test
+  uv python pin 3.10 # pin the current environment to Python 3.10
+
+Then, provided that the version is compatible with SOLikeT, you can run the tests with that version:
+
+.. code-block:: bash
+
+  uv run pytest -vv --durations=10
+
+`uv` will automatically use the pinned Python version to run the tests, check the `uv.lock` file for the correct dependencies, and ensure that your code is compatible with that version.
+
+Checking environment configuration
+----------------------------------
+Check SOLikeT is working as intended in a python environment of your own specification (i.e. you have installed SOLikeT without following our guide).
+
+For this you need to make sure all of the required system-level and python dependencies described in `the installation instructions <install.html>`_ are working correctly, then run
+
+.. code-block:: bash
+
+  uv run pytest -vv soliket # or
+  pytest -vv soliket
+
+Skipping tests
 --------------
 
+If you want to skip all CI tests, it is possible to do so by using the prefix `[skipci]` or `[skip ci]` in the commit message of your PR. This is useful if you are making changes that do not affect the code, such as documentation updates or minor formatting changes. Still, assuming that some change to the code is made, you should be completely sure that you are not introducing any bugs or issues before skipping the tests, as this can lead to problems down the line.
 
-Documenting your code
----------------------
+If you are working on a pure documentation update, or something similar, you can skip tests for all commits in your PR by using the same prefix in the PR title. This will prevent the CI tests from running, which can save time and resources.
 
-After you have written your code, created tests and ensured that your code works
-and is ready to be included, it might be a good idea to have a look at
-**documenting** your code. As you are seeing right now, *SOLikeT* uses
-readthedocs for hosting its documentation, and a lot of it is automatically
-generated by *sphinx* with the *autodoc* extension.
+Good luck!
 
-For you as a developer, this might not mean a lot, so let's focus on the (few)
-steps you need to take to get your documentation added here. This is done in
-only three simple steps:
+Documentation
+=============
 
-1. Annotate your code with **docstrings**, optionally including some nice
-   formatting that sphinx can parse.
-2. Creating a page where your documentation gets listed, or adding your docs
-   to an existing page.
-3. Ensuring your page gets added to the index on the left.
+Along with writing your code and creating tests we also ask that you create documentation for any work you do within SOLikeT, which is then listed on our documentation page `http://soliket.readthedocs.io <http://soliket.readthedocs.io>`_.
 
+Code should be annotated with docstrings which can be automatically parsed by the sphinx tool. See `here for a syntax reference <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_. You should then create a page in the ``/docs`` folder of the repository on which the code is to be listed, and add the new page to the index.
 
-Creating Docstrings
-^^^^^^^^^^^^^^^^^^^
-
-Let's assume we have made a theory code called ``Pulsars`` that exists in SOLikeT
-thanks to our amazing python skills, and now we want to document its use so that
-other people can use it as well. Say we put this in ``soliket/Pulsars.py``, and it
-looks something like this:
-
-.. code:: python
-
-   """
-   .. module:: soliket.pulsars
-   
-   :Synopsis: A theory code that models a pulsar signal.
-   :Author: Jocelyn Bell
-   
-   We can give a much longer description of our code here. All text we put
-   up here will appear at the top of our page in the end for our very long
-   description.
-   """
-   
-   class Pulsars(Theory):
-       """A Pulsar theory code for SOLikeT."""
-       
-       def calculate_signal(self, distance, mass):
-           """
-           Given a pulsar of mass ``mass`` (in solar masses) and a distance
-           ``distance`` (in parsecs), calculate a mock signal of a pulse.
-           
-           :param distance: the distance to the pulsar (in pc).
-           :param mass: the mass of the pulsar (in Msun)
-           
-           :return: A tuple of two arrays, one with some times t (in seconds)
-               over which this signal was measured, and one with some fluxes
-               (in Jy) for the strength of the signal.
-           """
-           ...
-       
-       def extra_function(self):
-           """
-           This function is needed for internal mechanics, but we might
-           not want to add it to our documentation for whatever reason.
-           """
-           ...
-
-Essentially, we have a class called ``Pulsars`` with a function called
-``calculate_signal``. We see three instances of so-called **docstrings**, these
-are strings which document (hence the clever name: doc-strings) what the code
-does. We see a couple of directives that are going to be parsed by the code
-that generated the webpages:
-
-* At the top of the page, we have a docstring that gives a general overview of
-  the code. We name our module at the top with a directive, give a synopsis of
-  this module, provide an author, and then give a much more descriptive summary
-  of what this module does. All this will get formatted by sphinx and added to
-  our webpage.
-* Immediately after the class and function definitions, we put docstrings that
-  explain what this class (or function) does. If you are unsure what to put as
-  a description of your class, have a look at other documentation pages in
-  here and in other projects to get an idea of what would be good summaries.
-* When writing docstrings for functions, good practice is to (at minimum) write
-  descriptions for every parameter and the return value. This can be done (as
-  seen in the example) with the ``:param <parname>:`` and ``:return:`` directives.
-
-We also have an extra function called ``extra_function`` that we might need for
-technical reasons (e.g. for internal calculations, or as boilerplate code to
-interface with other codes elsewhere). Such functions should not need excessive
-comments, but it is good practice to give them clear docstrings either way.
-
-
-Creating a doc page
-^^^^^^^^^^^^^^^^^^^
-
-Documentation in SOLikeT can be very easily created from the docstrings  in your
-python code. For this, SOLikeT uses the **autodoc** extension for sphinx.
-
-Let's have a look at our Pulsars class we created earlier in the
-`Creating Docstrings`_ section.
-
-We start by creating a new, empty text file called ``SOLikeT/docs/pulsars.rst``
-(i.e. the file is called ``pulsars.rst`` and it is stored in the ``docs`` folder
-of SOLikeT). The contents can be quite simple:
-
-.. code::
-
-   Pulsar Theory Code
-   ==================
-   
-   .. automodule:: soliket.pulsars
-   
-   .. autoclass:: soliket.Pulsars
-       :exclude-members: extra_function
-       :members:
-
-At the top we define a title, which is simply **Pulsar Theory Code** (note that
-the underline, which is made with ``=`` symbols, needs to be at least as long
-as the text it's underlining). We then simply add two directives, one
-``automodule`` with the same name as the ``module`` directive at the top of
-our module docstring (see the previous section), and one ``autoclass``
-directive that uses the python name of our class. If you have multiple classes,
-add multiple ``autoclass`` directives, one for each class you have. The
-``:members:`` directive will cause sphinx to turn the docstrings for each of the
-class's member functions to be turned into an entry.
-
-Sometimes, your class might inherit a lot of functions from some parent class,
-or implement a lot of boilerplate functions that are needed to interface with
-some other codes or frameworks. These kinds of functions can at times give
-excessive documentation that the end-user might not really need or should not
-care about. In our Pulsars example, we had the ``extra_function`` that we did
-not want to add to our docs page. For this, there exists the
-``:exclude-members:`` directive, that will skip given functions that people
-might not need.
-
-
-Obviously, there are many many more ways in which you can make your documentation
-better than whatever example we can come up with. We highly recommend you to
-explore the docstrings written by other people, both inside and outside the
-SOLikeT codes, to improve on your skills to get other people to understand
-your code. The better your documentation, the more likely that other people
-will use your codes for better science.
-
-
-Adding your documentation to the index
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This step is probably the easiest to do. All you need to do is open the file
-``SOLikeT/docs/index.rst``, where you will see a list of ``toctree`` entries,
-something like this:
-
-.. code::
-
-   .. toctree::
-      :caption: Getting Started
-      :maxdepth: 1
-      
-      index
-   
-   .. toctree::
-      :caption: Theory codes
-      :maxdepth: 2
-      
-      ccl
-      cosmopower
-
-Simply take the name of the file you created in the `Creating a doc page`_
-section and add it to the list of sections in the correct category. In our case,
-we would add a ``pulsars`` entry under the ``cosmopower`` entry. After recompiling,
-our page will now appear with a neat little ``Pulsars`` entry in the table of
-contents.
-
-
-Reviewing your documentation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-After you have made all your commits and pushed to your pull request, you have
-the opportunity to have a look at your own documentation. The workflows for
-*SOLikeT* are setup such that readthedocs builds an instanced version of the
-documentation generated by your branch, and you can review it by following
-the link under the **docs/readthedocs.org:soliket** check that will
-automatically generated on your PR.
-
-.. image:: images/pr_docs_build.png
-   :alt: Click the "details" button on the right of the "docs" check to go to your documentation build.
-
-This link will bring you to a readthedocs page that shows the output of the
-build of your documentation. Building the documentation takes about 10 minutes,
-so make yourself a cup of tea while you wait. After this time has passed, you
-should see a bright green **Build completed** button at the top. If all has
-gone well, you can click the **View docs** button on the right to have a look
-at your documentation and see if all appears as intended or if you want to make
-more edits.
-
-Congratulations! You have now created some very fancy documentation for your
-own SOLikeT code!
-
+Detailed instructions and examples on how to do this can be found in our `documentation guide <documentation.html>`_.

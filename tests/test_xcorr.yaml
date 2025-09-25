@@ -1,0 +1,36 @@
+# A simple cobaya likelihood for SO
+
+debug: True
+
+likelihood:
+  soliket.XcorrLikelihood:
+      stop_at_error: True
+      datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
+      k_tracer_name: ck_so
+      gc_tracer_name: gc_unwise
+
+params:
+  b1: 
+    prior:
+      min: 0.
+      max: 10.
+    ref:
+      min: 1.
+      max: 4.
+    proposal: 0.1
+    latex: b_1
+  s1: 
+    value: 0.4
+    latex: s_1
+
+theory:
+  camb:
+    stop_at_error: False
+    extra_args:
+      lens_potential_accuracy: 1
+
+sampler:
+  evaluate:
+
+
+output: chains/test_xcorr
