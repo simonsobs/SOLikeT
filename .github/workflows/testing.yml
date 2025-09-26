@@ -78,9 +78,14 @@ jobs:
             brew install gsl
           fi
 
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
       - name: Install SOLikeT dependencies and likelihoods
         run: |
-          pip install uv
           bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
 
       - name: Run tests (coverage)
