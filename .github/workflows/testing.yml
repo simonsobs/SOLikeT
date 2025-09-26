@@ -68,7 +68,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install GSL
-        run: sudo apt-get update && sudo apt-get install -y libgsl-dev
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            sudo apt-get update
+            sudo apt-get install -y libgsl-dev
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            brew update
+            brew install gsl
+          fi
 
       - name: Install SOLikeT dependencies and likelihoods
         run: |
