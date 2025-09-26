@@ -67,6 +67,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install GSL
+        run: sudo apt-get update && sudo apt-get install -y libgsl-dev
+
       - name: Install SOLikeT dependencies and likelihoods
         run: |
           pip install uv
