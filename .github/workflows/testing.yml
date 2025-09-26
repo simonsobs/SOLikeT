@@ -68,6 +68,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install GSL
+        if: matrix.os != 'windows-latest'
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             sudo apt-get update
