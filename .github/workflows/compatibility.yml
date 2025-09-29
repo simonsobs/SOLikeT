@@ -17,10 +17,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install uv and dependencies
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - name: Install dependencies
         run: |
-          pip install uv
-          bash ci_scripts/install_deps.sh --extras dev emulator --python ${{ matrix.python-version }}
+          bash ci_scripts/install_deps.sh --extras dev emulator
       - name: Run tests
         env:
           COBAYA_PACKAGES_PATH: ./cobaya_packages

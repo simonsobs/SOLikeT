@@ -19,11 +19,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install uv
-        run: |
-          pip install uv
-          uv python install '3.11'
-          uv python pin '3.11'
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.11'
+          enable-cache: true
 
       - name: Install dev dependencies
         run: |

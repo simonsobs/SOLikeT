@@ -53,8 +53,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install uv
-        run: pip install uv
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.11'
+          enable-cache: true
 
       - name: Build with uv
         run: uv build
