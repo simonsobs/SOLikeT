@@ -86,7 +86,7 @@ jobs:
 
       - name: Install SOLikeT dependencies and likelihoods
         run: |
-          bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
+          bash ci_scripts/install_deps.sh --extras dev all
 
       - name: Run tests (coverage)
         if: contains(matrix.tags, 'cov')
