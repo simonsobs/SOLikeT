@@ -1,0 +1,79 @@
+name: Manual uv.lock update (manual test)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  manual-update-uv-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.11'
+          enable-cache: true
+
+      - name: Update uv.lock
+        run: |
+          uv sync --extra emulator --extra dev --extra docs --upgrade
+          uv lock
+
+      - name: Commit, push to test branch and open PR (draft)
+        env:
+          REPO: ${{ github.repository }}
+          BASE_BRANCH: master
+          RUN_ID: ${{ github.run_id }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          BRANCH="uv-lock-test-${RUN_ID}"
+          echo "Creating and switching to branch ${BRANCH}"
+
+          # Create and switch to the test branch
+          git checkout -b "${BRANCH}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage uv.lock if it exists
+          if [ -f uv.lock ]; then
+            git add uv.lock
+          fi
+
+          # Commit changes or make an empty commit if nothing changed, so we have a branch/PR
+          if git diff --cached --quiet; then
+            echo "No changes to commit; creating an empty commit so a PR can be opened."
+            git commit --allow-empty -m "chore: create uv.lock test branch ${BRANCH}"
+          else
+            git commit -m "chore: manual uv.lock update (test branch ${BRANCH})"
+          fi
+
+          # Push the branch to origin
+          git push --set-upstream origin "${BRANCH}"
+
+          # Create a draft pull request targeting the base branch
+          PR_PAYLOAD=$(printf '{"title":"chore: update uv.lock (manual test)","head":"%s","base":"%s","body":"Automated uv.lock update (manual test)","draft":true}' "${BRANCH}" "${BASE_BRANCH}")
+
+          echo "Creating draft PR from ${BRANCH} into ${BASE_BRANCH}"
+          curl -s -X POST \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${REPO}/pulls" \
+            -d "${PR_PAYLOAD}" \
+            | tee /tmp/manual_uv_pr_response.json
+
+          echo "PR response (first 400 chars):"
+          head -c 400 /tmp/manual_uv_pr_response.json || true
