@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Optional
 
 import numpy as np
+import sacc
 from cobaya.input import get_default_info, merge_info
 from cobaya.likelihood import Likelihood
 from cobaya.theory import Provider, Theory
@@ -34,6 +35,27 @@ class GaussianLikelihood(Likelihood):
         cov = np.loadtxt(self.covpath)
         return cov
 
+
+    def _get_spectrum_from_sacc(
+        self,
+        sacc_data: sacc.Sacc,
+        tracer_1: str,
+        tracer_2: str,
+        data_type: str | None = None,
+    ) -> np.ndarray:
+        """
+        Extract a specific spectrum from a SACC file.
+
+        :param sacc_data: The SACC object.
+        :param tracer_1: The first tracer to extract (e.g. "t", "ck").
+        :param tracer_2: The second tracer to extract (e.g. "t", "ck").
+        :param data_type: The type of data to extract.
+        :return: The extracted spectrum as a numpy array.
+        """
+        _, req_spectrum = sacc_data.get_ell_cl(
+            data_type, tracer_1, tracer_2, return_cov=False
+        )
+        return req_spectrum
     def _get_theory(self, **kwargs) -> np.ndarray:
         raise NotImplementedError
 

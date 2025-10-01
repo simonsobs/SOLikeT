@@ -166,21 +166,6 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             self.N1clbb = np.loadtxt(os.path.join(self.data_folder, "n1mvdclbbe1.txt")).T
             self.n0 = np.loadtxt(os.path.join(self.data_folder, "n0mv.txt"))
 
-    def _get_spectrum_from_sacc(
-        self, s: sacc.Sacc, spec: str, data_type: str | None = None
-    ) -> np.ndarray:
-        """
-        Extract a specific spectrum from a SACC file.
-
-        :param s: The SACC object.
-        :param spec: The spectrum to extract (e.g. "tt", "ee", "pp").
-        :return: The extracted spectrum as a numpy array.
-        """
-        tname_1, tname_2 = spec[0], spec[1]
-
-        _, spec = s.get_ell_cl(data_type, tname_1, tname_2, return_cov=False)
-        return spec
-
     def _get_fiducial_Cls(self) -> dict:
         """
         Obtain a set of fiducial ``Cls`` from theory provider (e.g. ``camb``).
