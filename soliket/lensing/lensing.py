@@ -108,7 +108,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
 
         # Set files where data/covariance are loaded from
         self.datapath = os.path.join(self.data_folder, self.data_filename)
-        self.sacc = sacc.Sacc.load_fits(self.datapath)
+        self.sacc_data = sacc.Sacc.load_fits(self.datapath)
 
         # x, y = self._get_data()
         self.cov = self._get_cov()
@@ -261,10 +261,10 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         return cov
 
     def _get_binning_matrix(self) -> np.ndarray:
-        _, _, _, ind = self.sacc.get_ell_cl(
+        _, _, _, ind = self.sacc_data.get_ell_cl(
             None, "ck", "ck", return_cov=True, return_ind=True
         )
-        bpw = self.sacc.get_bandpower_windows(ind)
+        bpw = self.sacc_data.get_bandpower_windows(ind)
         binning_matrix = bpw.weight.T
         self.binning_matrix = binning_matrix
         return binning_matrix
