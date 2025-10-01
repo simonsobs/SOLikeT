@@ -49,6 +49,19 @@ def test_lensing_like(request, likelihood_refs):
     assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
+def test_lensing_get_requirements_flags():
+    from soliket.lensing import LensingLikelihood
+
+    inst = LensingLikelihood.__new__(LensingLikelihood)
+    inst.pp_ccl = False
+    req1 = LensingLikelihood.get_requirements(inst)
+    assert "Cl" in req1 and "pp" in req1["Cl"]
+
+    inst.pp_ccl = True
+    req2 = LensingLikelihood.get_requirements(inst)
+    assert "CCL" in req2 and "zstar" in req2
+
+
 def test_lensing_ccl_limber(check_skip_pyccl):
     """
     Test whether the CMB lensing power spectrum predicted by CCL is the same as with CAMB
