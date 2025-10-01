@@ -142,16 +142,16 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
                 os.path.join(self.data_folder, self.correction_filename)
             )
 
-            self.N0cltt = self._get_spectrum_from_sacc(s, "tt", data_type="cl_n0mvd")
-            self.N0clte = self._get_spectrum_from_sacc(s, "te", data_type="cl_n0mvd")
-            self.N0clee = self._get_spectrum_from_sacc(s, "ee", data_type="cl_n0mvd")
-            self.N0clbb = self._get_spectrum_from_sacc(s, "bb", data_type="cl_n0mvd")
-            self.N1clpp = self._get_spectrum_from_sacc(s, "pp", data_type="cl_n1mvd")
-            self.N1cltt = self._get_spectrum_from_sacc(s, "tt", data_type="cl_n1mvd")
-            self.N1clte = self._get_spectrum_from_sacc(s, "te", data_type="cl_n1mvd")
-            self.N1clee = self._get_spectrum_from_sacc(s, "ee", data_type="cl_n1mvd")
-            self.N1clbb = self._get_spectrum_from_sacc(s, "bb", data_type="cl_n1mvd")
-            self.n0 = self._get_spectrum_from_sacc(s, "pp", data_type="cl_n0mv")
+            self.N0cltt = self._get_spectrum_from_sacc(s, "t", "t", data_type="cl_n0mvd")
+            self.N0clte = self._get_spectrum_from_sacc(s, "t", "e", data_type="cl_n0mvd")
+            self.N0clee = self._get_spectrum_from_sacc(s, "e", "e", data_type="cl_n0mvd")
+            self.N0clbb = self._get_spectrum_from_sacc(s, "b", "b", data_type="cl_n0mvd")
+            self.N1clpp = self._get_spectrum_from_sacc(s, "p", "p", data_type="cl_n1mvd")
+            self.N1cltt = self._get_spectrum_from_sacc(s, "t", "t", data_type="cl_n1mvd")
+            self.N1clte = self._get_spectrum_from_sacc(s, "t", "e", data_type="cl_n1mvd")
+            self.N1clee = self._get_spectrum_from_sacc(s, "e", "e", data_type="cl_n1mvd")
+            self.N1clbb = self._get_spectrum_from_sacc(s, "b", "b", data_type="cl_n1mvd")
+            self.n0 = self._get_spectrum_from_sacc(s, "p", "p", data_type="cl_n0mv")
         else:
             self.log.info("Using default correction factors.")
 
@@ -180,11 +180,11 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
                 s = sacc.Sacc.load_fits(
                     os.path.join(self.data_folder, self.fiducial_filename)
                 )
-                Cls_pp = self._get_spectrum_from_sacc(s, "pp")
-                Cls_tt = self._get_spectrum_from_sacc(s, "tt")
-                Cls_ee = self._get_spectrum_from_sacc(s, "ee")
-                Cls_bb = self._get_spectrum_from_sacc(s, "bb")
-                Cls_te = self._get_spectrum_from_sacc(s, "te")
+                Cls_pp = self._get_spectrum_from_sacc(s, "p", "p")
+                Cls_tt = self._get_spectrum_from_sacc(s, "t", "t")
+                Cls_ee = self._get_spectrum_from_sacc(s, "e", "e")
+                Cls_bb = self._get_spectrum_from_sacc(s, "b", "b")
+                Cls_te = self._get_spectrum_from_sacc(s, "t", "e")
                 Cls = {
                     "pp": Cls_pp,
                     "tt": Cls_tt,
