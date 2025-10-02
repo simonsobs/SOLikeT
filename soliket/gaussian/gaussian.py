@@ -35,7 +35,7 @@ class GaussianLikelihood(Likelihood):
                     "You must provide either datapath or sacc_data!",
                 )
         else:
-            self._get_sacc_data()
+            self.sacc_data = self._get_sacc_data()
 
         if self.use_spectra is None:
             raise LoggedError(self.log, "You must provide use_spectra!")
@@ -45,10 +45,9 @@ class GaussianLikelihood(Likelihood):
                 "You must set _allowable_tracers in the subclass of GaussianLikelihood!",
             )
         self._check_tracers()
-
-        self.data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
-
         self.tracer_1, self.tracer_2 = self._allowable_tracers
+
+        self.data = self._get_gauss_data()
 
         self.binning_matrix = self.get_binning((self.tracer_1, self.tracer_2))
 
@@ -59,20 +58,24 @@ class GaussianLikelihood(Likelihood):
                 "You have provided sacc_data directly, so datapath will be ignored!"
             )
         else:
-            self.sacc_data = sacc.Sacc.load_fits(self.datapath)
+            sacc_data = sacc.Sacc.load_fits(self.datapath)
 
         if self.use_spectra == "all":
             pass
         else:
-            for tracer_comb in self.sacc_data.get_tracer_combinations():
+            for tracer_comb in sacc_data.get_tracer_combinations():
                 if tracer_comb not in self.use_spectra:
-                    self.sacc_data.remove_selection(tracers=tracer_comb)
+                    sacc_data.remove_selection(tracers=tracer_comb)
+        return sacc_data
 
+
+    def _get_gauss_data(self, **params_values):
         self.x = self._construct_ell_bins()
         self.y = self.sacc_data.mean
         self.cov = self.sacc_data.covariance.covmat
 
-        self.data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
+        data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
+        return data
 
     def _check_tracers(self):
         for tracer_comb in self.sacc_data.get_tracer_combinations():
@@ -121,9 +124,6 @@ class GaussianLikelihood(Likelihood):
 
     def _get_theory(self, **kwargs) -> np.ndarray:
         raise NotImplementedError
-
-    def _get_gauss_data(self):
-        return self.data
 
     def logp(self, **params_values) -> float:
         theory = self._get_theory(**params_values)
