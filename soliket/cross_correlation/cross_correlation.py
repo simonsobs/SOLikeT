@@ -132,7 +132,7 @@ class CCLTracersAutoLikelihood(CCLTracersLikelihood):
                 )
 
 
-class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
+class GalaxyKappaLikelihood(CCLTracersCrossLikelihood):
     r"""
     Likelihood for cross-correlations of galaxy and CMB lensing data.
     """
@@ -173,7 +173,7 @@ class GalaxyKappaLikelihood(CrossCorrelationLikelihood):
         return cl_gk_binned
 
 
-class ShearKappaLikelihood(CrossCorrelationLikelihood):
+class ShearKappaLikelihood(CCLTracersCrossLikelihood):
     r"""
     Likelihood for cross-correlations of galaxy weak lensing shear and CMB lensing data.
     """
@@ -201,20 +201,9 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                 z_tracer1 = self.sacc_data.tracers[tracer_comb[0]].z
                 nz_tracer1 = self.sacc_data.tracers[tracer_comb[0]].nz
 
-                if self.ia_mode is None:
-                    ia_z = None
-                elif self.ia_mode == "nla":
-                    A_IA = params_values["A_IA"]
-                    eta_IA = params_values["eta_IA"]
-                    z0_IA = trapezoid(z_tracer1 * nz_tracer1)
-
-                    ia_z = (z_tracer1, A_IA * ((1 + z_tracer1) / (1 + z0_IA)) ** eta_IA)
-                elif self.ia_mode == "nla-perbin":
-                    A_IA = params_values[f"{sheartracer_name}_A_IA"]
-                    ia_z = (z_tracer1, A_IA * np.ones_like(z_tracer1))
-                elif self.ia_mode == "nla-noevo":
-                    A_IA = params_values["A_IA"]
-                    ia_z = (z_tracer1, A_IA * np.ones_like(z_tracer1))
+                ia_z = self._get_ia_bias(
+                    z_tracer1, nz_tracer1, sheartracer_name, params_values
+                )
 
                 tracer1 = ccl.WeakLensingTracer(
                     cosmo, dndz=(z_tracer1, nz_tracer1), ia_bias=ia_z
@@ -240,20 +229,9 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                 z_tracer2 = self.sacc_data.tracers[tracer_comb[1]].z
                 nz_tracer2 = self.sacc_data.tracers[tracer_comb[1]].nz
 
-                if self.ia_mode is None:
-                    ia_z = None
-                elif self.ia_mode == "nla":
-                    A_IA = params_values["A_IA"]
-                    eta_IA = params_values["eta_IA"]
-                    z0_IA = trapezoid(z_tracer2 * nz_tracer2)
-
-                    ia_z = (z_tracer2, A_IA * ((1 + z_tracer2) / (1 + z0_IA)) ** eta_IA)
-                elif self.ia_mode == "nla-perbin":
-                    A_IA = params_values[f"{sheartracer_name}_A_IA"]
-                    ia_z = (z_tracer2, A_IA * np.ones_like(z_tracer2))
-                elif self.ia_mode == "nla-noevo":
-                    A_IA = params_values["A_IA"]
-                    ia_z = (z_tracer2, A_IA * np.ones_like(z_tracer2))
+                ia_z = self._get_ia_bias(
+                    z_tracer2, nz_tracer2, sheartracer_name, params_values
+                )
 
                 tracer2 = ccl.WeakLensingTracer(
                     cosmo, dndz=(z_tracer2, nz_tracer2), ia_bias=ia_z
@@ -305,26 +283,4 @@ class ShearKappaLikelihood(CrossCorrelationLikelihood):
                     cosmo, dndz=(z_tracer, nz_tracer), ia_bias=ia_z
                 )
             return tracer
-        return None
-
-    def _get_ia_bias(
-        self,
-        z_tracer: np.ndarray,
-        nz_tracer: np.ndarray,
-        tracer_name: str,
-        params_values: dict,
-    ) -> tuple[np.ndarray, np.ndarray] | None:
-        if self.ia_mode is None:
-            return None
-        elif self.ia_mode == "nla":
-            A_IA = params_values["A_IA"]
-            eta_IA = params_values["eta_IA"]
-            z0_IA = trapezoid(z_tracer * nz_tracer)
-            return (z_tracer, A_IA * ((1 + z_tracer) / (1 + z0_IA)) ** eta_IA)
-        elif self.ia_mode == "nla-perbin":
-            A_IA = params_values[f"{tracer_name}_A_IA"]
-            return (z_tracer, A_IA * np.ones_like(z_tracer))
-        elif self.ia_mode == "nla-noevo":
-            A_IA = params_values["A_IA"]
-            return (z_tracer, A_IA * np.ones_like(z_tracer))
         return None
