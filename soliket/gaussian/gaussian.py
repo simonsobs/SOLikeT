@@ -5,6 +5,7 @@ import numpy as np
 import sacc
 from cobaya.input import get_default_info, merge_info
 from cobaya.likelihood import Likelihood
+from cobaya.log import LoggedError
 from cobaya.theory import Provider, Theory
 from cobaya.tools import recursive_update
 from cobaya.typing import empty_dict
