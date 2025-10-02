@@ -26,7 +26,7 @@ class GaussianLikelihood(Likelihood):
     _allowable_tracers: tuple[str] | None = None
 
     def initialize(self):
-        self.log.info("Initialising.")
+        self.log.info(f"Initialising {self.name}...")
 
         if self.datapath is None:
             if self.sacc_data is None:
@@ -45,11 +45,8 @@ class GaussianLikelihood(Likelihood):
                 "You must set _allowable_tracers in the subclass of GaussianLikelihood!",
             )
         self._check_tracers()
-        self.tracer_1, self.tracer_2 = self._allowable_tracers
 
         self.data = self._get_gauss_data()
-
-        self.binning_matrix = self.get_binning((self.tracer_1, self.tracer_2))
 
     def _get_sacc_data(self, **params_values):
 
