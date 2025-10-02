@@ -18,7 +18,7 @@ class GaussianLikelihood(Likelihood):
     name: str = "Gaussian"
     use_spectra: str | list[tuple[str, str]] | None = None
     datapath: str | None = None
-    covpath: str | None = None
+    sacc_data: sacc.Sacc | None = None
     ncovsims: int | None = None
     provider: Provider
 
@@ -27,8 +27,16 @@ class GaussianLikelihood(Likelihood):
 
     def initialize(self):
         self.log.info("Initialising.")
+
         if self.datapath is None:
-            raise LoggedError(self.log, "You must provide a datapath!")
+            if self.sacc_data is None:
+                raise LoggedError(
+                    self.log,
+                    "You must provide either datapath or sacc_data!",
+                )
+        else:
+            self._get_sacc_data()
+
         if self.use_spectra is None:
             raise LoggedError(self.log, "You must provide use_spectra!")
         if self._allowable_tracers is None:
@@ -36,8 +44,6 @@ class GaussianLikelihood(Likelihood):
                 self.log,
                 "You must set _allowable_tracers in the subclass of GaussianLikelihood!",
             )
-
-        self._get_sacc_data()
         self._check_tracers()
 
         self.data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
@@ -47,7 +53,13 @@ class GaussianLikelihood(Likelihood):
         self.binning_matrix = self.get_binning((self.tracer_1, self.tracer_2))
 
     def _get_sacc_data(self, **params_values):
-        self.sacc_data = sacc.Sacc.load_fits(self.datapath)
+
+        if self.sacc_data is not None:
+            self.log.warning(
+                "You have provided sacc_data directly, so datapath will be ignored!"
+            )
+        else:
+            self.sacc_data = sacc.Sacc.load_fits(self.datapath)
 
         if self.use_spectra == "all":
             pass
