@@ -10,7 +10,7 @@ from .bias import Bias, Linear_bias
 from .ccl import CCL
 from .clusters import ClusterLikelihood
 from .cosmopower import CosmoPower, CosmoPowerDerived
-from .cross_correlation import (
+from .ccl_tracers import (
     CCLTracersLikelihood,
     GalaxyKappaLikelihood,
     ShearKappaLikelihood,
