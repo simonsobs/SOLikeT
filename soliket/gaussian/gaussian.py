@@ -15,47 +15,97 @@ from soliket.utils import get_likelihood
 
 class GaussianLikelihood(Likelihood):
     name: str = "Gaussian"
+    use_spectra: str | list[tuple[str, str]] | None = None
     datapath: str | None = None
     covpath: str | None = None
     ncovsims: int | None = None
     provider: Provider
 
     _enforce_types: bool = True
+    _allowable_tracers: tuple[str] | None = None
 
     def initialize(self):
-        x, y = self._get_data()
-        cov = self._get_cov()
-        self.data = GaussianData(self.name, x, y, cov, self.ncovsims)
+        self.log.info("Initialising.")
+        if self.datapath is None:
+            raise LoggedError(self.log, "You must provide a datapath!")
+        if self.use_spectra is None:
+            raise LoggedError(self.log, "You must provide use_spectra!")
+        if self._allowable_tracers is None:
+            raise LoggedError(
+                self.log,
+                "You must set _allowable_tracers in the subclass of GaussianLikelihood!",
+            )
+
+        self._get_sacc_data()
+        self._check_tracers()
+
+        self.data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
+
+        self.tracer_1, self.tracer_2 = self._allowable_tracers
+
+        self.binning_matrix = self.get_binning((self.tracer_1, self.tracer_2))
+
+    def _get_sacc_data(self, **params_values):
+        self.sacc_data = sacc.Sacc.load_fits(self.datapath)
+
+        if self.use_spectra == "all":
+            pass
+        else:
+            for tracer_comb in self.sacc_data.get_tracer_combinations():
+                if tracer_comb not in self.use_spectra:
+                    self.sacc_data.remove_selection(tracers=tracer_comb)
+
+        self.x = self._construct_ell_bins()
+        self.y = self.sacc_data.mean
+        self.cov = self.sacc_data.covariance.covmat
+
+        self.data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
+
+    def _check_tracers(self):
+        for tracer_comb in self.sacc_data.get_tracer_combinations():
+            assert len(tracer_comb) == 2, "Only auto- and cross-spectra are supported!"
+            for tracer in tracer_comb:
+                if self.sacc_data.tracers[tracer].quantity not in self._allowable_tracers:
+                    raise LoggedError(
+                        self.log,
+                        f"You have tried to use a \
+                        {self.sacc_data.tracers[tracer].quantity} tracer in \
+                        {self.__class__.__name__}, which only allows \
+                        {self._allowable_tracers}. Please check your \
+                        tracer selection in the ini file.",
+                    )
+
+    def _construct_ell_bins(self) -> np.ndarray:
+        ell_eff = []
+
+        for tracer_comb in self.sacc_data.get_tracer_combinations():
+            ind = self.sacc_data.indices(tracers=tracer_comb)
+            ell = np.array(self.sacc_data._get_tags_by_index(["ell"], ind)[0])
+            ell_eff.append(ell)
+
+        return np.concatenate(ell_eff)
 
     def _get_data(self) -> tuple[np.ndarray, np.ndarray]:
-        x, y = np.loadtxt(self.datapath, unpack=True)
-        return x, y
+        return self.x, self.y
 
     def _get_cov(self) -> np.ndarray:
-        cov = np.loadtxt(self.covpath)
-        return cov
+        return self.cov
 
+    def _get_bin_centers(self) -> np.ndarray:
+        return self.x
 
-    def _get_spectrum_from_sacc(
-        self,
-        sacc_data: sacc.Sacc,
-        tracer_1: str,
-        tracer_2: str,
-        data_type: str | None = None,
-    ) -> np.ndarray:
-        """
-        Extract a specific spectrum from a SACC file.
+    def _get_data_spectrum(self) -> np.ndarray:
+        return self.y
 
-        :param sacc_data: The SACC object.
-        :param tracer_1: The first tracer to extract (e.g. "t", "ck").
-        :param tracer_2: The second tracer to extract (e.g. "t", "ck").
-        :param data_type: The type of data to extract.
-        :return: The extracted spectrum as a numpy array.
-        """
-        _, req_spectrum = sacc_data.get_ell_cl(
-            data_type, tracer_1, tracer_2, return_cov=False
-        )
-        return req_spectrum
+    def get_binning(self, tracer_comb: tuple) -> tuple[np.ndarray, np.ndarray]:
+        bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
+        bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
+        ells_theory = bpw.values
+        ells_theory = np.asarray(ells_theory, dtype=int)
+        w_bins = bpw.weight.T
+
+        return ells_theory, w_bins
+
     def _get_theory(self, **kwargs) -> np.ndarray:
         raise NotImplementedError
 
