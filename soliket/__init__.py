@@ -11,7 +11,7 @@ from .ccl import CCL
 from .clusters import ClusterLikelihood
 from .cosmopower import CosmoPower, CosmoPowerDerived
 from .cross_correlation import (
-    CrossCorrelationLikelihood,
+    CCLTracersLikelihood,
     GalaxyKappaLikelihood,
     ShearKappaLikelihood,
 )

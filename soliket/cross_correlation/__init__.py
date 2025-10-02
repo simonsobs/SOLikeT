@@ -1,5 +1,5 @@
 from .cross_correlation import (
-    CrossCorrelationLikelihood,
+    CCLTracersLikelihood,
     GalaxyKappaLikelihood,
     ShearKappaLikelihood,
 )
