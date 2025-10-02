@@ -1,4 +1,4 @@
-from .cross_correlation import (
+from .ccl_tracers import (
     CCLTracersLikelihood,
     GalaxyKappaLikelihood,
     ShearKappaLikelihood,
