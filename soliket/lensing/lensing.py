@@ -250,26 +250,6 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         cosmo_dict = self.provider.get_CCL()
         return cosmo_dict["ccl"], cosmo_dict["cosmo"]
 
-    def _get_data(self) -> tuple[np.ndarray, np.ndarray]:
-        bin_centers, bandpowers = self.sacc.get_ell_cl(None, "ck", "ck", return_cov=False)
-        self.x = bin_centers
-        self.y = bandpowers
-        return bin_centers, self.y
-
-    def _get_cov(self) -> np.ndarray:
-        _, _, cov = self.sacc.get_ell_cl(None, "ck", "ck", return_cov=True)
-        self.cov = cov
-        return cov
-
-    def _get_binning_matrix(self) -> np.ndarray:
-        _, _, _, ind = self.sacc_data.get_ell_cl(
-            None, "ck", "ck", return_cov=True, return_ind=True
-        )
-        bpw = self.sacc_data.get_bandpower_windows(ind)
-        binning_matrix = bpw.weight.T
-        self.binning_matrix = binning_matrix
-        return binning_matrix
-
     def _get_theory(self, **params_values) -> np.ndarray:
         r"""
         Generate binned theory vector of :math:`\kappa \kappa` with correction terms.
