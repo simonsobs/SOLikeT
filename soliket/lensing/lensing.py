@@ -155,7 +155,13 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
             self.N1clbb = np.loadtxt(os.path.join(self.data_folder, "n1mvdclbbe1.txt")).T
             self.n0 = np.loadtxt(os.path.join(self.data_folder, "n0mv.txt"))
 
-    def _get_fiducial_Cls(self) -> dict:
+    def _get_spectrum_from_sacc(
+        self, s: sacc.Sacc, name1: str, name2: str, data_type: str | None = None
+    ) -> np.ndarray:
+        ls, cl = s.get_ell_cl(data_type, name1, name2, return_cov=False)
+        return ls, cl
+
+    def _set_fiducial_Cls(self) -> dict:
         """
         Obtain a set of fiducial ``Cls`` from theory provider (e.g. ``camb``).
         Fiducial ``Cls`` are used to compute correction terms for the theory vector.
@@ -169,40 +175,46 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
                 s = sacc.Sacc.load_fits(
                     os.path.join(self.data_folder, self.fiducial_filename)
                 )
-                Cls_pp = self._get_spectrum_from_sacc(s, "p", "p")
-                Cls_tt = self._get_spectrum_from_sacc(s, "t", "t")
-                Cls_ee = self._get_spectrum_from_sacc(s, "e", "e")
-                Cls_bb = self._get_spectrum_from_sacc(s, "b", "b")
-                Cls_te = self._get_spectrum_from_sacc(s, "t", "e")
+
+                _, Cls_tt = self._get_spectrum_from_sacc(s, "ct", "ct")
+                _, Cls_ee = self._get_spectrum_from_sacc(s, "ce", "ce")
+                _, Cls_bb = self._get_spectrum_from_sacc(s, "cb", "cb")
+                _, Cls_te = self._get_spectrum_from_sacc(s, "ct", "ce")
+
+                try:
+                    _, Cls_kk = self._get_spectrum_from_sacc(s, "ck", "ck")
+                except Exception:
+                    ls, Cls_pp = self._get_spectrum_from_sacc(s, "cp", "cp")
+                    Cls_kk = Cls_pp * (ls * (ls + 1)) ** 2 * 0.25
+
                 Cls = {
-                    "pp": Cls_pp,
+                    "kk": Cls_kk,
                     "tt": Cls_tt,
                     "ee": Cls_ee,
                     "bb": Cls_bb,
                     "te": Cls_te,
                 }
             else:
-                Cls = np.loadtxt(
-                    os.path.join(self.data_folder, self.fiducial_filename), unpack=True
+                raise LoggedError(
+                    self.log,
+                    "Fiducial Cls file not recognized. " \
+                    "Please provide a .fits or .sacc file.",
                 )
-                Cls = {
-                    "pp": Cls[0],
-                    "tt": Cls[1],
-                    "ee": Cls[2],
-                    "bb": Cls[3],
-                    "te": Cls[4],
-                }
-            return Cls
+        else:
+            info_fiducial = {
+                "params": self.fiducial_params,
+                "likelihood": {"soliket.utils.OneWithCls": {"lmax": self.theory_lmax}},
+                "theory": {"camb": {"extra_args": {"kmax": 0.9}}},
+            }
+            model_fiducial = get_model(info_fiducial)
+            model_fiducial.logposterior({})
+            Cls = model_fiducial.provider.get_Cl(ell_factor=False)
 
-        info_fiducial = {
-            "params": self.fiducial_params,
-            "likelihood": {"soliket.utils.OneWithCls": {"lmax": self.theory_lmax}},
-            "theory": {"camb": {"extra_args": {"kmax": 0.9}}},
-            # "modules": modules_path,
-        }
-        model_fiducial = get_model(info_fiducial)
-        model_fiducial.logposterior({})
-        Cls = model_fiducial.provider.get_Cl(ell_factor=False)
+        self.fcltt = Cls["tt"][0 : self.lmax]
+        self.fclee = Cls["ee"][0 : self.lmax]
+        self.fclte = Cls["te"][0 : self.lmax]
+        self.fclbb = Cls["bb"][0 : self.lmax]
+        self.thetaclkk = Cls["kk"][0 : self.lmax]
         return Cls
 
     def get_requirements(self) -> dict:
