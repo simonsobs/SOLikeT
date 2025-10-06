@@ -22,10 +22,10 @@ from cobaya.model import get_model
 from cobaya.theory import Provider
 
 from soliket.ccl import CCL
-from soliket.ps import BinnedPSLikelihood
+from soliket.gaussian import GaussianLikelihood
 
 
-class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
+class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
     r"""
     The full ``LensingLikelihood`` makes use of a *fiducial* lensing power spectrum which
     is calculated at a hard-coded set of fiducial cosmological parameters. This fiducial
@@ -47,14 +47,15 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     information about installable likelihoods.
     """
 
+    name: str = "CMB Lensing"
     _url: str = (
         "https://portal.nersc.gov/project/act/jia_qu/lensing_like/likelihood.tar.gz"
     )
     install_options: ClassVar = {"download_url": _url}
     data_folder: str = "LensingLikelihood/"
-    data_filename: str = "clkk_reconstruction_sim.fits"
+    data_filename: str = "lensing.sacc.fits"
 
-    kind: str = "pp"
+    use_spectra: str | tuple[str, str] = ("ck", "ck")
     sim_number: int = 0
     lmax: int = 3000
     theory_lmax: int = 10000
@@ -62,9 +63,9 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     pp_ccl: bool = False
     provider: Provider
 
-    fiducial_from_file: bool = False
-    fiducial_filename: str | None = None
-    correction_filename: str | None = None
+    fiducial_from_file: bool = True
+    fiducial_filename: str | None = "fiducial_lensing.sacc.fits"
+    correction_filename: str | None = "corrections_lensing.sacc.fits"
 
     fiducial_params: ClassVar = {
         "ombh2": 0.02219218,
@@ -75,6 +76,8 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         "As": 2.15086031154146e-9,
         "ns": 0.9625356e00,
     }
+
+    _allowable_tracers: ClassVar[list[str]] = ["cmb_convergence"]
 
     def initialize(self):
         self.datapath = self._get_datapath()
@@ -299,7 +302,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         return Clkk_binned + correction
 
 
-class LensingLiteLikelihood(BinnedPSLikelihood):
+class LensingLiteLikelihood(GaussianLikelihood):
     """
     Lite version of Lensing Likelihood for quick tests, which does not make any of the
     bias corrections requiring fiducial spectra calculations or downloads of external
