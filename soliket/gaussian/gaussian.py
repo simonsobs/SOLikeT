@@ -16,7 +16,7 @@ from soliket.utils import get_likelihood
 
 class GaussianLikelihood(Likelihood):
     name: str = "Gaussian"
-    use_spectra: str | list[tuple[str, str]] | None = None
+    use_spectra: str | tuple[str, str] | list[tuple[str, str]] | None = None
     datapath: str | None = None
     sacc_data: sacc.Sacc | None = None
     ncovsims: int | None = None
@@ -28,6 +28,11 @@ class GaussianLikelihood(Likelihood):
     def initialize(self):
         self.log.info(f"Initialising {self.name}...")
 
+        if self.use_spectra is None:
+            raise LoggedError(self.log, "You must provide use_spectra!")
+        elif isinstance(self.use_spectra, str):
+            assert self.use_spectra == "all", "The only allowed string is 'all'!"
+
         if self.datapath is None:
             if self.sacc_data is None:
                 raise LoggedError(
@@ -37,19 +42,17 @@ class GaussianLikelihood(Likelihood):
         else:
             self.sacc_data = self._get_sacc_data()
 
-        if self.use_spectra is None:
-            raise LoggedError(self.log, "You must provide use_spectra!")
         if self._allowable_tracers is None:
             raise LoggedError(
                 self.log,
                 "You must set _allowable_tracers in the subclass of GaussianLikelihood!",
             )
         self._check_tracers()
+        self.tracer_comb = self.sacc_data.get_tracer_combinations()[0]
 
         self.data = self._get_gauss_data()
 
     def _get_sacc_data(self, **params_values):
-
         if self.sacc_data is not None:
             self.log.warning(
                 "You have provided sacc_data directly, so datapath will be ignored!"
@@ -61,10 +64,11 @@ class GaussianLikelihood(Likelihood):
             pass
         else:
             for tracer_comb in sacc_data.get_tracer_combinations():
-                if tracer_comb not in self.use_spectra:
+                if tracer_comb != self.use_spectra:
                     sacc_data.remove_selection(tracers=tracer_comb)
+        tracer_combs = sacc_data.get_tracer_combinations()
+        assert tracer_combs != [], "No tracer was found!"
         return sacc_data
-
 
     def _get_gauss_data(self, **params_values):
         self.x = self._construct_ell_bins()
@@ -111,7 +115,7 @@ class GaussianLikelihood(Likelihood):
         return self.y
 
     def get_binning(self, tracer_comb: tuple) -> tuple[np.ndarray, np.ndarray]:
-        bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
+        bpw_idx = self.sacc_data.indices(data_type="cl_00", tracers=tracer_comb)
         bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
         ells_theory = bpw.values
         ells_theory = np.asarray(ells_theory, dtype=int)
