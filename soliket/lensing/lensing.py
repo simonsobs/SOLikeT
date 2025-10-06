@@ -77,8 +77,18 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     }
 
     def initialize(self):
-        self.log.info("Initialising.")
-        # Set path to data
+        self.datapath = self._get_datapath()
+        super().initialize()
+        _, self.binning_matrix = self.get_binning(self.tracer_comb)
+
+        # Set the fiducial spectra
+        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
+        self._set_fiducial_Cls()
+
+        # set the correction terms generate from the script n1so.py
+        self._set_correction_factors()
+
+    def _get_datapath(self) -> str:
         if (not getattr(self, "path", None)) and (
             not getattr(self, "packages_path", None)
         ):
@@ -105,53 +115,32 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
                     "Check the given path [%s].",
                     self.data_folder,
                 )
+        return os.path.join(self.data_folder, self.data_filename)
 
-        # Set files where data/covariance are loaded from
-        self.datapath = os.path.join(self.data_folder, self.data_filename)
-        self.sacc_data = sacc.Sacc.load_fits(self.datapath)
-
-        # x, y = self._get_data()
-        self.cov = self._get_cov()
-        self.binning_matrix = self._get_binning_matrix()
-
-        # Initialize fiducial PS
-        Cls = self._get_fiducial_Cls()
-
-        # Set the fiducial spectra
-        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
-        self.fcltt = Cls["tt"][0 : self.lmax]
-        self.fclpp = Cls["pp"][0 : self.lmax]
-        self.fclee = Cls["ee"][0 : self.lmax]
-        self.fclte = Cls["te"][0 : self.lmax]
-        self.fclbb = Cls["bb"][0 : self.lmax]
-        self.thetaclkk = self.fclpp * (self.ls * (self.ls + 1)) ** 2 * 0.25
-
-        # load the correction terms generate from the script n1so.py
-
-        self._get_correction_factors()
-
-        super().initialize()
-
-    def _get_correction_factors(self):
+    def _set_correction_factors(self):
         if self.correction_filename is not None:
             assert self.correction_filename.endswith((".fits", ".sacc")), (
                 "Passing 'correction_filepath' LensingLikelihood tries to load it as a "
                 "'sacc file'. Remove it to use default correction factors."
             )
+            self.log.info(
+                f"Loading correction factors from file: {self.correction_filename}"
+            )
             s = sacc.Sacc.load_fits(
                 os.path.join(self.data_folder, self.correction_filename)
             )
 
-            self.N0cltt = self._get_spectrum_from_sacc(s, "t", "t", data_type="cl_n0mvd")
-            self.N0clte = self._get_spectrum_from_sacc(s, "t", "e", data_type="cl_n0mvd")
-            self.N0clee = self._get_spectrum_from_sacc(s, "e", "e", data_type="cl_n0mvd")
-            self.N0clbb = self._get_spectrum_from_sacc(s, "b", "b", data_type="cl_n0mvd")
-            self.N1clpp = self._get_spectrum_from_sacc(s, "p", "p", data_type="cl_n1mvd")
-            self.N1cltt = self._get_spectrum_from_sacc(s, "t", "t", data_type="cl_n1mvd")
-            self.N1clte = self._get_spectrum_from_sacc(s, "t", "e", data_type="cl_n1mvd")
-            self.N1clee = self._get_spectrum_from_sacc(s, "e", "e", data_type="cl_n1mvd")
-            self.N1clbb = self._get_spectrum_from_sacc(s, "b", "b", data_type="cl_n1mvd")
-            self.n0 = self._get_spectrum_from_sacc(s, "p", "p", data_type="cl_n0mv")
+            _, self.N0cltt = self._get_spectrum_from_sacc(s, "ct", "ct", data_type="N0")
+            _, self.N0clte = self._get_spectrum_from_sacc(s, "ct", "ce", data_type="N0")
+            _, self.N0clee = self._get_spectrum_from_sacc(s, "ce", "ce", data_type="N0")
+            _, self.N0clbb = self._get_spectrum_from_sacc(s, "cb", "cb", data_type="N0")
+            _, self.N1clpp = self._get_spectrum_from_sacc(s, "cp", "cp", data_type="N1")
+            _, self.N1cltt = self._get_spectrum_from_sacc(s, "ct", "ct", data_type="N1")
+            _, self.N1clte = self._get_spectrum_from_sacc(s, "ct", "ce", data_type="N1")
+            _, self.N1clee = self._get_spectrum_from_sacc(s, "ce", "ce", data_type="N1")
+            _, self.N1clbb = self._get_spectrum_from_sacc(s, "cb", "cb", data_type="N1")
+            _, self.n0 = self._get_spectrum_from_sacc(s, "n0", "n0", data_type="N0")
+            self.n0 = self.n0[0]
         else:
             self.log.info("Using default correction factors.")
 
