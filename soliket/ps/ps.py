@@ -6,13 +6,10 @@ from soliket.gaussian import GaussianLikelihood
 
 
 class PSLikelihood(GaussianLikelihood):
-    name: str = "TT"
+    name: str = "PowerSpectrum"
     kind: str = "tt"
     lmax: int = 6000
     provider: Provider
-
-    def get_requirements(self) -> dict:
-        return {"Cl": {self.kind: self.lmax}}
 
     def _get_Cl(self) -> dict[str, np.ndarray]:
         return self.provider.get_Cl(ell_factor=True)
