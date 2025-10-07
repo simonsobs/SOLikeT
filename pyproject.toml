@@ -125,8 +125,9 @@ exclude_lines = [
     # Don't complain about packages we have installed
     "except ImportError",
     "except ModuleNotFoundError",
-    # Don't complain if tests don't hit assertions
+    # Don't complain if tests don't hit assertions/raise
     "raise AssertionError",
+    "raise LoggedError",
     "raise NotImplementedError",
     # Don't complain about script hooks
     "def main\\(.*\\):",
