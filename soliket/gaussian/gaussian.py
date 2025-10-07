@@ -32,6 +32,8 @@ class GaussianLikelihood(Likelihood):
             raise LoggedError(self.log, "You must provide use_spectra!")
         elif isinstance(self.use_spectra, str):
             assert self.use_spectra == "all", "The only allowed string is 'all'!"
+        elif isinstance(self.use_spectra, tuple):
+            self.use_spectra = [self.use_spectra]
 
         if self.datapath is None:
             if self.sacc_data is None:
@@ -58,13 +60,14 @@ class GaussianLikelihood(Likelihood):
                 "You have provided sacc_data directly, so datapath will be ignored!"
             )
         else:
+            print(f"Loading data from {self.datapath}...")
             sacc_data = sacc.Sacc.load_fits(self.datapath)
 
         if self.use_spectra == "all":
             pass
         else:
             for tracer_comb in sacc_data.get_tracer_combinations():
-                if tracer_comb != self.use_spectra:
+                if tracer_comb not in self.use_spectra:
                     sacc_data.remove_selection(tracers=tracer_comb)
         tracer_combs = sacc_data.get_tracer_combinations()
         assert tracer_combs != [], "No tracer was found!"
