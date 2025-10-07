@@ -83,26 +83,18 @@ class XcorrLikelihood(GaussianLikelihood):
     _allowable_tracers = ("cmb_convergence", "galaxy_density")
 
     def initialize(self):
-        self.name: str = "Xcorr"
-        self.log.info("Initialising.")
 
-        if self.datapath is None:
-            self.dndz = np.loadtxt(self.dndz_file)
-            self.x, self.y, self.dy = self._get_data()
-            if self.covpath is None:
-                self.log.info("No xcorr covariance specified. Using diag(dy^2).")
-                self.cov = np.diag(self.dy**2)
-            else:
-                self.cov = self._get_cov()
-        else:
-            # tracer_combinations: str | None = None # TODO: implement with keep_selection
+        super().initialize()
+        _, self.binning_matrix = self.get_binning(self.tracer_comb)
+        assert self.gc_tracer_name in self.sacc_data.tracers, (
+            f"Galaxy clustering tracer {self.gc_tracer_name} not found in sacc data!"
+        )
+        assert self.k_tracer_name in self.sacc_data.tracers, (
+            f"CMB lensing tracer {self.k_tracer_name} not found in sacc data!"
+        )
 
-            self.sacc_data = self._get_sacc_data()
-            self.x = self.sacc_data["x"]
-            self.y = self.sacc_data["y"]
-            self.cov = self.sacc_data["cov"]
-            self.dndz = self.sacc_data["dndz"]
-            self.ngal = self.sacc_data["ngal"]
+        self.dndz = self._get_dndz()
+        self.ngal = self._get_ngal()
 
         # TODO is this resolution limit on zarray a CAMB problem?
         assert self.nz <= 149, "CAMB limitations requires nz <= 149"
@@ -118,6 +110,28 @@ class XcorrLikelihood(GaussianLikelihood):
         self.alpha_cross = 0.9977
 
         self.data = GaussianData(self.name, self.x, self.y, self.cov)
+
+    def _get_dndz(self) -> np.ndarray:
+        tracers = self.sacc_data.tracers
+        tracer: sacc.tracers.NZTracer = tracers[self.gc_tracer_name]
+        if not hasattr(tracer, "extra_columns") or "dndz" not in tracer.extra_columns:
+            raise ValueError(
+                f"Tracer {self.gc_tracer_name} does not have dndz in extra_columns!"
+            )
+        dndz = tracer.extra_columns["dndz"]
+        z = tracer.z
+        assert len(z) == len(dndz), "dndz and z have different lengths!"
+        return np.array([z, dndz]).T
+
+    def _get_ngal(self) -> float:
+        tracers = self.sacc_data.tracers
+        tracer: sacc.tracers.NZTracer = tracers[self.gc_tracer_name]
+        if "ngal" not in tracer.metadata:
+            raise ValueError(
+                f"Tracer {self.gc_tracer_name} does not have ngal in metadata!"
+            )
+        ngal = tracer.metadata["ngal"]
+        return ngal
 
     def get_requirements(self):
         return {
