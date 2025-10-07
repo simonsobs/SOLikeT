@@ -200,7 +200,7 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
             else:
                 raise LoggedError(
                     self.log,
-                    "Fiducial Cls file not recognized. " \
+                    "Fiducial Cls file not recognized. "
                     "Please provide a .fits or .sacc file.",
                 )
         else:
@@ -310,15 +310,25 @@ class LensingLiteLikelihood(GaussianLikelihood):
     and covariance matrix, and the appropriate theory vector.
     """
 
-    kind: str = "pp"
     lmax: int = 3000
+    data_filename: str = "lensing.sacc.fits"
+    use_spectra: str | tuple[str, str] = ("ck", "ck")
+
+    _allowable_tracers: ClassVar[list[str]] = ["cmb_convergence"]
 
     def initialize(self):
         data = os.path.join(self.get_class_path(), "data")
-        self.datapath = self.datapath or os.path.join(data, "binnedauto.txt")
-        self.covpath = self.covpath or os.path.join(data, "binnedcov.txt")
-
-        self.binning_matrix_path = self.binning_matrix_path or os.path.join(
-            data, "binningmatrix.txt"
-        )
+        self.datapath = self.datapath or os.path.join(data, self.data_filename)
         super().initialize()
+        _, self.binning_matrix = self.get_binning(self.tracer_comb)
+        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
+
+    def get_requirements(self) -> dict:
+        return {"Cl": {"pp": self.lmax}}
+
+    def _get_theory(self, **params_values) -> np.ndarray:
+        cl = self.provider.get_Cl(ell_factor=False)
+        Clkk_theo = (self.ls * (self.ls + 1)) ** 2 * cl["pp"][0 : self.lmax] * 0.25
+
+        Clkk_binned = self.binning_matrix.dot(Clkk_theo)
+        return Clkk_binned
