@@ -11,11 +11,8 @@ class PSLikelihood(GaussianLikelihood):
     lmax: int = 6000
     provider: Provider
 
-    def _get_Cl(self) -> dict[str, np.ndarray]:
-        return self.provider.get_Cl(ell_factor=True)
-
     def _get_theory(self, **params_values) -> np.ndarray:
-        cl_theory = self._get_Cl()
+        cl_theory = self.provider.get_Cl(ell_factor=True)
         return cl_theory[self.kind][: self.lmax]
 
 
