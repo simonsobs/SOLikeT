@@ -5,79 +5,34 @@ import copy
 import numpy as np
 import pytest
 from cobaya.model import get_model
-from cobaya.yaml import yaml_load
 
 from soliket.xcorr.limber import do_limber, mag_bias_kernel
 
+fiducial_params = {
+    "b1": 1.0,
+    "s1": 0.4,
+    "tau": 0.05,
+    "mnu": 0.0,
+    "nnu": 3.046,
+}
+info = {}
+info["params"] = fiducial_params
+info["likelihood"] = {
+    "soliket.xcorr.XcorrLikelihood": {
+        "stop_at_error": True,
+    }
+}
+info["debug"] = True
 
-def get_demo_xcorr_model(theory):
+
+def get_demo_xcorr_info(theory):
     if theory == "camb":
-        info_yaml = r"""
-        likelihood:
-            soliket.XcorrLikelihood:
-                stop_at_error: True
-                datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
-                k_tracer_name: ck_so
-                gc_tracer_name: gc_unwise
-
-        theory:
-            camb:
-                extra_args:
-                  lens_potential_accuracy: 1
-
-        params:
-            tau: 0.05
-            mnu: 0.0
-            nnu: 3.046
-            b1:
-                prior:
-                    min: 0.
-                    max: 10.
-                ref:
-                    min: 1.
-                    max: 4.
-                proposal: 0.1
-            s1:
-                prior:
-                    min: 0.1
-                    max: 1.0
-                proposal: 0.1
-        """
+        info["theory"] = {"camb": {"extra_args": {"lens_potential_accuracy": 1}}}
     elif theory == "classy":
-        info_yaml = r"""
-        likelihood:
-            soliket.XcorrLikelihood:
-                stop_at_error: True
-                datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
-                k_tracer_name: ck_so
-                gc_tracer_name: gc_unwise
-
-        theory:
-            classy:
-                extra_args:
-                    output: lCl, tCl
-                path: global
-
-        params:
-            b1:
-                prior:
-                    min: 0.
-                    max: 10.
-                ref:
-                    min: 1.
-                    max: 4.
-                proposal: 0.1
-            s1:
-                prior:
-                    min: 0.1
-                    max: 1.0
-                proposal: 0.1
-
-        """
-
-    info = yaml_load(info_yaml)
-    model = get_model(info)
-    return model
+        info["theory"] = {
+            "classy": {"extra_args": {"output": "lCl, tCl"}, "path": "global"}
+        }
+    return info
 
 
 def test_wrong_types():
