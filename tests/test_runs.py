@@ -18,6 +18,7 @@ packages_path = resolve_packages_path()
 )
 def test_installation(lhood):
     if lhood == "lensing":
+        pytest.skip(reason="Missing LensingLikelihood data!")
         from soliket import LensingLikelihood
 
         is_installed = LensingLikelihood.is_installed(
@@ -53,6 +54,8 @@ def test_installation(lhood):
     ],
 )
 def test_evaluate(lhood):
+    if lhood == "lensing":
+        pytest.skip(reason="Missing LensingLikelihood data!")
     info = yaml_load(pkgutil.get_data("tests", f"test_{lhood}.yaml"))
     info["force"] = True
     info["sampler"] = {"evaluate": {}}
@@ -79,6 +82,8 @@ def test_evaluate(lhood):
     ],
 )
 def test_mcmc(lhood):
+    if lhood == "lensing":
+        pytest.skip(reason="Missing LensingLikelihood data!")
     info = yaml_load(pkgutil.get_data("tests", f"test_{lhood}.yaml"))
     info["force"] = True
     info["sampler"] = {"mcmc": {"max_samples": 5, "max_tries": 100}}

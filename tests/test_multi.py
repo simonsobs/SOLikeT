@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from cobaya.model import get_model
 from cobaya.tools import resolve_packages_path
 
@@ -40,6 +41,7 @@ nuisance_params = {
 }
 
 
+@pytest.mark.skip(reason="Missing LensingLikelihood data!")
 def test_lensing_and_mflike_installations(check_skip_mflike):
     import mflike
 
@@ -62,6 +64,7 @@ def test_lensing_and_mflike_installations(check_skip_mflike):
     )
 
 
+@pytest.mark.skip(reason="Missing LensingLikelihood data!")
 def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
     ref = likelihood_refs["multi"]
 
@@ -130,7 +133,6 @@ def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
     d_logp = logp_b - logp_a
 
     assert np.isclose(d_logp, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
-
 
     model1_logp_a = model1.loglikes(fg_values_a, cached=False)[0].sum()
     model2_logp_a = model2.loglikes({}, cached=False)[0].sum()
