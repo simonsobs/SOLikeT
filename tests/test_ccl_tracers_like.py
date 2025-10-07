@@ -470,25 +470,6 @@ def test_get_ia_bias_variants():
     assert isinstance(res3, tuple)
 
 
-@pytest.mark.skip(reason="Needs reworking after GaussianLikelihood changes")
-def test_crosscorr_get_data(tmp_path):
-    from soliket.ccl_tracers import CCLTracersLikelihood
-
-    # prepare simple auto and cross text files
-    auto = tmp_path / "auto.txt"
-    cross = tmp_path / "cross.txt"
-    # two ell bins with values and errors
-    auto.write_text("""1 2\n10 20\n0.1 0.2\n""")
-    cross.write_text("""3 4\n30 40\n0.3 0.4\n""")
-
-    xl = CCLTracersLikelihood.__new__(CCLTracersLikelihood)
-    xl.auto_file = str(auto)
-    xl.cross_file = str(cross)
-    # setup minimal attrs used by _get_data
-    x, y, dy = CCLTracersLikelihood._get_data(xl)
-    assert x.shape[0] == y.shape[0] == dy.shape[0]
-
-
 # --- merged small cross-correlation unit tests (previously in separate files) ---
 def _make_fake_sacc_for_merging():
     class Tracer:
