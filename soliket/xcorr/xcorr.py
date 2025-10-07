@@ -61,6 +61,8 @@ class XcorrLikelihood(GaussianLikelihood):
 
     """
 
+    name = "Xcorr"
+    use_spectra: str | tuple[str, str] | list[tuple[str, str]] | None
     auto_file: str | None
     cross_file: str | None
     dndz_file: str | None
@@ -77,6 +79,8 @@ class XcorrLikelihood(GaussianLikelihood):
     s1: int | float
 
     provider: Provider
+
+    _allowable_tracers = ("cmb_convergence", "galaxy_density")
 
     def initialize(self):
         self.name: str = "Xcorr"
