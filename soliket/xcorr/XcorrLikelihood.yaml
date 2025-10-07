@@ -25,6 +25,10 @@ params:
     proposal: 0.1
   s1: 
     value: 0.4
+  alpha_auto: 
+    value: 0.9981
+  alpha_cross: 
+    value: 0.9977
   H0:
     value: 70.
   omegam:

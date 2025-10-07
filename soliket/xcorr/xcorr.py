@@ -105,10 +105,6 @@ class XcorrLikelihood(GaussianLikelihood):
 
         self.ell_range = np.linspace(1, self.high_ell, int(self.high_ell + 1))
 
-        # TODO expose these defaults
-        self.alpha_auto = 0.9981
-        self.alpha_cross = 0.9977
-
         self.data = GaussianData(self.name, self.x, self.y, self.cov)
 
     def _get_dndz(self) -> np.ndarray:
