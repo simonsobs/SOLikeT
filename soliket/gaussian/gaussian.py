@@ -16,7 +16,9 @@ from soliket.utils import get_likelihood
 
 class GaussianLikelihood(Likelihood):
     name: str = "Gaussian"
-    use_spectra: str | tuple[str, str] | list[tuple[str, str]] | None = None
+    use_spectra: (
+        str | tuple[str, str] | list[tuple[str, str]] | list[list[str, str]] | None
+    ) = None
     datapath: str | None = None
     sacc_data: sacc.Sacc | None = None
     ncovsims: int | None = None
@@ -28,21 +30,14 @@ class GaussianLikelihood(Likelihood):
     def initialize(self):
         self.log.info(f"Initialising {self.name}...")
 
-        if self.use_spectra is None:
-            raise LoggedError(self.log, "You must provide use_spectra!")
-        elif isinstance(self.use_spectra, str):
-            assert self.use_spectra == "all", "The only allowed string is 'all'!"
-        elif isinstance(self.use_spectra, tuple):
-            self.use_spectra = [self.use_spectra]
+        self._check_use_spectra()
 
-        if self.datapath is None:
-            if self.sacc_data is None:
-                raise LoggedError(
-                    self.log,
-                    "You must provide either datapath or sacc_data!",
-                )
-        else:
-            self.sacc_data = self._get_sacc_data()
+        if self.datapath is None and self.sacc_data is None:
+            raise LoggedError(
+                self.log,
+                "You must provide either datapath or sacc_data!",
+            )
+        self.sacc_data = self._get_sacc_data()
 
         if self._allowable_tracers is None:
             raise LoggedError(
@@ -53,6 +48,24 @@ class GaussianLikelihood(Likelihood):
         self.tracer_comb = self.sacc_data.get_tracer_combinations()[0]
 
         self.data = self._get_gauss_data()
+
+    def _check_use_spectra(self):
+        if self.use_spectra is None:
+            raise LoggedError(self.log, "You must provide use_spectra!")
+        elif isinstance(self.use_spectra, str):
+            assert self.use_spectra == "all", "The only allowed string is 'all'!"
+        elif isinstance(self.use_spectra, tuple):
+            self.use_spectra = [self.use_spectra]
+        elif isinstance(self.use_spectra, list):
+            for item in self.use_spectra:
+                if isinstance(item, list):
+                    self.use_spectra[self.use_spectra.index(item)] = tuple(item)
+                elif not isinstance(item, tuple) or len(item) != 2:
+                    raise LoggedError(
+                        self.log,
+                        "Each item in `use_spectra` list must "
+                        "be a tuple of two tracer names!",
+                    )
 
     def _get_sacc_data(self, **params_values):
         if self.sacc_data is not None:
