@@ -1,2 +1,2 @@
-from .gaussian import CrossCov, GaussianLikelihood, MultiGaussianLikelihood
-from .gaussian_data import GaussianData, MultiGaussianData
+from .gaussian import GaussianLikelihood, MultiGaussianLikelihood
+from .gaussian_data import CrossCov, GaussianData, MultiGaussianData
