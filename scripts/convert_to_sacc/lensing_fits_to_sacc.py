@@ -19,7 +19,9 @@ if custom_packages_path is None:
     packages_path = resolve_packages_path()
 
 
-fname = packages_path + "/data/LensingLikelihood/clkk_reconstruction_sim.fits"
+fname = os.path.join(
+    packages_path, "data", "LensingLikelihood", "clkk_reconstruction_sim.fits"
+)
 hdul = fits.open(fname)
 
 data_hdu = hdul[8]

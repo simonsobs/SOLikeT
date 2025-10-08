@@ -1,7 +1,6 @@
 import importlib
 
 import numpy as np
-import pytest
 from cobaya.model import get_model
 from cobaya.tools import resolve_packages_path
 
@@ -26,8 +25,7 @@ info["params"] = fiducial_params
 def test_lensing_import(request):
     _ = importlib.import_module("soliket.lensing").LensingLikelihood
 
-
-def test_lensing_like(request, likelihood_refs, fixed_lensing_data):
+def test_lensing_install(request):
     from cobaya.install import install
 
     install(
@@ -39,6 +37,7 @@ def test_lensing_like(request, likelihood_refs, fixed_lensing_data):
         no_set_global=True,
     )
 
+def test_lensing_like(request, likelihood_refs, fixed_lensing_data):
     from soliket.lensing import LensingLikelihood
 
     ref = likelihood_refs["lensing"]
