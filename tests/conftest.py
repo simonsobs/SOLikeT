@@ -82,3 +82,37 @@ def install_planck_lite():
         debug=True,
         no_set_global=True,
     )
+
+
+@pytest.fixture(scope="session")
+def fixed_lensing_data():
+    """Download and convert lensing data to SACC format if not already present."""
+    import sys
+    from pathlib import Path
+
+    from cobaya.tools import resolve_packages_path
+
+    # Check if SACC files already exist
+    packages_path = resolve_packages_path()
+    lensing_data_path = Path(packages_path) / "data/LensingLikelihood"
+
+    sacc_files = [
+        "lensing.sacc.fits",
+        "fiducial_lensing.sacc.fits",
+        "corrections_lensing.sacc.fits"
+    ]
+
+    # If all SACC files exist, skip conversion
+    if all((lensing_data_path / fname).exists() for fname in sacc_files):
+        return True
+
+    # Run conversion script by importing it
+    script_dir = Path(__file__).parent.parent / "scripts/convert_to_sacc"
+    sys.path.insert(0, str(script_dir))
+
+    try:
+        __import__('lensing_fits_to_sacc')  # This executes the script
+    finally:
+        sys.path.remove(str(script_dir))
+
+    return True

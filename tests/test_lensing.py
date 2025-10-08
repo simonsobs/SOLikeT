@@ -27,7 +27,6 @@ def test_lensing_import(request):
     _ = importlib.import_module("soliket.lensing").LensingLikelihood
 
 
-@pytest.mark.skip(reason="Missing data in likelihood!")
 def test_lensing_like(request, likelihood_refs):
     from cobaya.install import install
 
@@ -64,8 +63,7 @@ def test_lensing_get_requirements_flags():
     assert "CCL" in req2 and "zstar" in req2
 
 
-@pytest.mark.skip(reason="Missing data in likelihood!")
-def test_lensing_ccl_limber(check_skip_pyccl):
+def test_lensing_ccl_limber(check_skip_pyccl, fixed_lensing_data):
     """
     Test whether the CMB lensing power spectrum predicted by CCL is the same as with CAMB
     """

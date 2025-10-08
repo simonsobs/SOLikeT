@@ -41,8 +41,7 @@ nuisance_params = {
 }
 
 
-@pytest.mark.skip(reason="Missing LensingLikelihood data!")
-def test_lensing_and_mflike_installations(check_skip_mflike):
+def test_lensing_and_mflike_installations(check_skip_mflike, fixed_lensing_data):
     import mflike
 
     from soliket import LensingLikelihood
@@ -64,8 +63,9 @@ def test_lensing_and_mflike_installations(check_skip_mflike):
     )
 
 
-@pytest.mark.skip(reason="Missing LensingLikelihood data!")
-def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
+def test_multi(
+    test_cosmology_params, check_skip_mflike, likelihood_refs, fixed_lensing_data
+):
     ref = likelihood_refs["multi"]
 
     lensing_options = {"theory_lmax": 5000}

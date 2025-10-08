@@ -8,7 +8,7 @@ from cobaya.yaml import yaml_load
 
 packages_path = resolve_packages_path()
 
-@pytest.mark.skip(reason="Missing LensingLikelihood data!")
+
 @pytest.mark.parametrize(
     "lhood",
     [
@@ -16,7 +16,7 @@ packages_path = resolve_packages_path()
         "multi",
     ],
 )
-def test_installation(lhood):
+def test_installation(lhood, fixed_lensing_data):
     if lhood == "lensing":
         from soliket import LensingLikelihood
 
