@@ -27,7 +27,7 @@ def test_lensing_import(request):
     _ = importlib.import_module("soliket.lensing").LensingLikelihood
 
 
-def test_lensing_like(request, likelihood_refs):
+def test_lensing_like(request, likelihood_refs, fixed_lensing_data):
     from cobaya.install import install
 
     install(
