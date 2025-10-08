@@ -205,12 +205,13 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
             model_fiducial = get_model(info_fiducial)
             model_fiducial.logposterior({})
             Cls = model_fiducial.provider.get_Cl(ell_factor=False)
+            Cls["kk"] = Cls["pp"][0 : self.lmax] * (self.ls * (self.ls + 1)) ** 2 * 0.25
 
         self.fcltt = Cls["tt"][0 : self.lmax]
         self.fclee = Cls["ee"][0 : self.lmax]
         self.fclte = Cls["te"][0 : self.lmax]
         self.fclbb = Cls["bb"][0 : self.lmax]
-        self.thetaclkk = Cls["pp"][0 : self.lmax] * (self.ls * (self.ls + 1)) ** 2 * 0.25
+        self.thetaclkk = Cls["kk"][0 : self.lmax]
         return Cls
 
     def get_requirements(self) -> dict:
