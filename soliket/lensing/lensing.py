@@ -145,18 +145,11 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
             _, self.n0 = self._get_spectrum_from_sacc(s, "n0", "n0", data_type="N0")
             self.n0 = self.n0[0]
         else:
-            self.log.info("Using default correction factors.")
-
-            self.N0cltt = np.loadtxt(os.path.join(self.data_folder, "n0mvdcltt1.txt")).T
-            self.N0clte = np.loadtxt(os.path.join(self.data_folder, "n0mvdclte1.txt")).T
-            self.N0clee = np.loadtxt(os.path.join(self.data_folder, "n0mvdclee1.txt")).T
-            self.N0clbb = np.loadtxt(os.path.join(self.data_folder, "n0mvdclbb1.txt")).T
-            self.N1clpp = np.loadtxt(os.path.join(self.data_folder, "n1mvdclkk1.txt")).T
-            self.N1cltt = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltte1.txt")).T
-            self.N1clte = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltee1.txt")).T
-            self.N1clee = np.loadtxt(os.path.join(self.data_folder, "n1mvdcleee1.txt")).T
-            self.N1clbb = np.loadtxt(os.path.join(self.data_folder, "n1mvdclbbe1.txt")).T
-            self.n0 = np.loadtxt(os.path.join(self.data_folder, "n0mv.txt"))
+            raise LoggedError(
+                self.log,
+                "No correction file provided. "
+                "Set the 'correction_filename' property of LensingLikelihood.",
+            )
 
     def _get_spectrum_from_sacc(
         self, s: sacc.Sacc, name1: str, name2: str, data_type: str | None = None
@@ -217,7 +210,7 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
         self.fclee = Cls["ee"][0 : self.lmax]
         self.fclte = Cls["te"][0 : self.lmax]
         self.fclbb = Cls["bb"][0 : self.lmax]
-        self.thetaclkk = Cls["kk"][0 : self.lmax]
+        self.thetaclkk = Cls["pp"][0 : self.lmax] * (self.ls * (self.ls + 1)) ** 2 * 0.25
         return Cls
 
     def get_requirements(self) -> dict:
