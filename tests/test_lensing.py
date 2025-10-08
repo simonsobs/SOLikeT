@@ -48,6 +48,17 @@ def test_lensing_like(request, likelihood_refs, fixed_lensing_data):
 
     assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
+def test_lensing_regen_fiducial(request, likelihood_refs, fixed_lensing_data):
+    from soliket.lensing import LensingLikelihood
+
+    ref = likelihood_refs["lensing"]
+
+    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood,
+    "fiducial_from_file": False}}
+    model = get_model(info)
+    loglikes, derived = model.loglikes()
+
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 def test_lensing_get_requirements_flags():
     from soliket.lensing import LensingLikelihood
