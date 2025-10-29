@@ -1,0 +1,43 @@
+sz_data_file: gnfw_test_projections.txt
+beam_file: beam_f150_daynight.txt 
+transform_type:	Hankel #FFT or Hankel
+#optional beam response file
+beam_response: act_planck_s08_s18_cmb_f150_daynight_response_tsz.txt #False, or give file
+#optional 2-halo file
+twohalo_term: twohalo_cmass_average.txt
+
+redshift: 0.55 
+mass_halo_mean_Msol: 10**13.
+frequency_GHz: 150.
+input_model: "gnfw" #or "obb"
+
+params:
+  Omega_m:
+    value: 0.25
+  Omega_b:
+    value: 0.044
+  hh:
+    value: 0.7
+  Omega_L:
+    value: 0.75
+  rhoc_0:
+    value: 2.77525e2
+  C_OVER_HUBBLE:
+    value: 2997.9
+  XH:
+    value: 0.76
+  v_rms:
+    value: 1.06e-3
+
+  gnfw_rho0:
+    value: 3.1864410705359125
+  gnfw_bt_ksz:
+    value: 3.45493977635
+  gnfw_A2h_ksz:
+    value: 1.0
+  gnfw_P0:
+    value: 9.10766709141
+  gnfw_bt_tsz:
+    value: 4.76625102519
+  gnfw_A2h_tsz:
+    value: 1.0

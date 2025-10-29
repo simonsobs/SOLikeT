@@ -18,4 +18,5 @@ from .cross_correlation import (
 from .gaussian import GaussianLikelihood, MultiGaussianLikelihood
 from .lensing import LensingLikelihood, LensingLiteLikelihood
 from .ps import BinnedPSLikelihood, PSLikelihood
+from .szlike import KSZLikelihood, TSZLikelihood
 from .xcorr import XcorrLikelihood
