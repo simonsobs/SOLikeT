@@ -26,7 +26,7 @@ To install SOLikeT using `uv` and following the preferred procedure, you can fol
    pip install uv  # if you don't have uv already
    uv sync --locked # sync the environment with the uv.lock file
 
-This will ensure full isolation of the environment and reproducibility of the installation, as it will install all the necessary dependencies fixed in the `uv.lock` file. This procedure is test and works on multiple platforms (explicitly tested for latest ubuntu, MacOS and Windows).
+This will ensure full isolation of the environment and reproducibility of the installation, as it will install all the necessary dependencies fixed in the `uv.lock` file. This procedure is tested and works on multiple platforms (explicitly tested for latest ubuntu, MacOS and Windows).
 
 If instead you prefer `venv` to be created automatically, you can use:
 
@@ -36,7 +36,7 @@ If instead you prefer `venv` to be created automatically, you can use:
    source .venv/bin/activate
    uv sync --locked
 
-On top of this, we define sets of extra dependencies that can be installed to extend the functionality of SOLikeT. They are: `emulator`, `pyccl`, `pyhalomodel`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the PyHaloModel library for halo modeling. The last one will install all of them. Note that these extras are not installed by default, as they are not strictly necessary for running SOLikeT and they intorduce additional constraints on the environment. You can install them by adding the `--extra` flag to the `uv sync` command:
+On top of this, we define sets of extra dependencies that can be installed to extend the functionality of SOLikeT. They are: `emulator`, `pyccl`, `pyhalomodel`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the PyHaloModel library for halo modeling. The last one will install all of them. Note that these extras are not installed by default, as they are not strictly necessary for running SOLikeT and they introduce additional constraints on the environment. You can install them by adding the `--extra` flag to the `uv sync` command:
 
 .. code-block:: bash
 
@@ -67,7 +67,7 @@ In order to use the CosmoPower Theories within SOLikeT you will need to addition
   cd soliket
   pip install .
 
-Soon we will also provide a `soliket` package on PyPI, which will allow you to install the latest released version of SOLikeT using pip without needing to clone the repository:
+We also provide a `soliket` package on PyPI, which will allow you to install the latest released version of SOLikeT using pip without needing to clone the repository:
 
 .. code-block:: bash
 
@@ -282,7 +282,7 @@ You can also test a subset of tests or run specific tests by passing additional 
 
 searching for tests that match the string 'my_new_module'.
 
-`uv` provides a very easy but powerful way to test your new feature in depth locally (if you really want to). In fact, you can install different Python versions without needing to set up multiple environments manually. You can install multiple Python version and pin the one you want to test with:
+`uv` provides a very easy but powerful way to test your new feature in depth locally. In fact, you can install different Python versions without needing to set up multiple environments manually. You can install multiple Python version and pin the one you want to test with:
 
 .. code-block:: bash
 

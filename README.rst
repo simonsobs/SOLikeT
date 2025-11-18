@@ -40,15 +40,15 @@ Installing `uv` is as simple as running:
 
 .. code-block:: bash
 
-  pip install uv
+   pip install uv
 
 Then, after activating an existing environment (both `conda` or `venv` environments are supported), you can clone the repository and install it via:
 
 .. code-block:: bash
 
-  git clone https://github.com/simonsobs/soliket
-  cd soliket
-  uv sync --locked
+   git clone https://github.com/simonsobs/soliket
+   cd soliket
+   uv sync --locked
 
 `uv sync --locked` will install all the necessary dependencies to the fixed versions stored in the `uv.lock` file. This ensures that you have a consistent and reproducible environment, identical to the one developed and tested.
 
@@ -68,15 +68,16 @@ Of course, you can combine multiple extras as needed. Note that these extra depe
 If you are less worried about reproducibility, you can also install SOLikeT without the lockfile by using `pip` after cloning the repository:
 
 .. code-block:: bash
-  git clone https://github.com/simonsobs/soliket
-  cd soliket
-  pip install .
+
+   git clone https://github.com/simonsobs/soliket
+   cd soliket
+   pip install .
   
 In this case, you can also specify extras, such as the `emulator` to install the dependencies related to `CosmoPower`:
 
 .. code-block:: bash
 
-  pip install .[emulator]
+   pip install .[emulator]
 
 For further details on `uv` and alternatives ways to install SOLikeT, please refer to `the installation page <INSTALL.rst>`_.
 
@@ -87,8 +88,9 @@ SOLikeT is a collection of modules for use within the Cobaya cosmological infere
 
 SOLikeT examples and explanatory notebooks are under construction, but will be run using standard [yaml](https://en.wikipedia.org/wiki/YAML) format (which can in turn be read in as Python dictionaries). The examples will be run using something similar to::
 
-  cobaya-run examples/example_1.yaml
+.. code-block:: bash
 
+   cobaya-run examples/example_1.yaml
 
 Developing SOLikeT Theories and Likelihoods
 ===========================================
@@ -98,17 +100,18 @@ If you wish to develop your own Theory and Likelihood codes for use in SOLikeT p
 Running Tests
 =============
 
-Tests run a set of SOLikeT calculations with known expected results. There are (at least) two reasons you might want to run tests:
+Tests run a set of SOLikeT calculations with known expected results. There are (at least) two reasons you might want to run tests: verify your installation is working correclty, or check that your code changes do not break existing functionality.
 
 Checking code in development
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------
+
 To see if codes you have written when developing SOLikeT are valid and will pass the Continuous Integration (CI) tests which we require for merging on github.
 
 If you are using `uv`, the easiest way to run tests (and the way we run them) is to use::
 
 .. code-block:: bash
 
-  uv run pytest -vv --durations=10
+   uv run pytest -vv --durations=10
 
 `-vv` will give you verbose output, and `--durations=10` will show you the 10 slowest tests, which can help identify performance issues. `uv` will automatically use the current environment, so you don't need to worry about activating a specific virtual environment.
 
@@ -117,7 +120,8 @@ If the current environment does not have the required dependencies, `uv` will in
 You can also test a subset of tests or run specific tests by passing additional arguments to `pytest`. For example, if you want to run only the tests in a specific module, you can do
 
 .. code-block:: bash
-  uv run pytest -vv --durations=10 -k my_new_module
+
+   uv run pytest -vv --durations=10 -k my_new_module
 
 searching for tests that match the string 'my_new_module'.
 
@@ -125,7 +129,7 @@ If you want to run the tests using `pytest` directly, you can do so by running:
 
 .. code-block:: bash
 
-  pytest -vv soliket
+   pytest -vv soliket
 
 This will run the tests in the same way as `uv`, but without the additional features provided by `uv`. Note that you will need to have all the required dependencies installed in your current environment for this to work.
 

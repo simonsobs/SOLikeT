@@ -1,13 +1,15 @@
+import copy
 import importlib
 import os
 
 import numpy as np
+import pytest
 from cobaya.model import get_model
 
 from soliket.ccl import CCL
 
-gammakappa_sacc_file = "soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits"
-gkappa_sacc_file = "soliket/tests/data/gc_cmass-actdr4_kappa.sacc.fits"
+gammakappa_sacc_file = "tests/data/des_s-act_kappa.toy-sim.sacc.fits"
+gkappa_sacc_file = "tests/data/gc_cmass-actdr4_kappa.sacc.fits"
 
 cross_correlation_params = {
     "b1": 1.0,
@@ -25,6 +27,58 @@ def test_galaxykappa_import():
 
 def test_shearkappa_import():
     _ = importlib.import_module("soliket.cross_correlation").ShearKappaLikelihood
+
+
+def test_galaxykappa_with_wrong_types(request):
+    from soliket.cross_correlation import GalaxyKappaLikelihood
+
+    base_case = {
+        "datapath": "valid_path",
+        "use_spectra": ["valid"],
+        "ncovsims": 5,
+        "params": {},
+    }
+    wrong_type_cases = {
+        "datapath": 12345,
+        "use_spectra": 12345,
+        "ncovsims": "not_an_int",
+        "params": "not_a_dict",
+    }
+
+    for key, wrong_value in wrong_type_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = GalaxyKappaLikelihood(**case)
+
+
+def test_shearkappa_with_wrong_types(request):
+    from soliket.cross_correlation import ShearKappaLikelihood
+
+    base_case = {
+        "datapath": "valid_path",
+        "use_spectra": ["valid"],
+        "ncovsims": 5,
+        "params": {},
+        "z_nuisance_mode": "valid_str",
+        "m_nuisance_mode": True,
+        "ia_mode": "valid_str",
+    }
+    wrong_type_cases = {
+        "datapath": 12345,
+        "use_spectra": 12345,
+        "ncovsims": "not_an_int",
+        "params": "not_a_dict",
+        "z_nuisance_mode": 12345,
+        "m_nuisance_mode": "not_a_bool",
+        "ia_mode": 12345,
+    }
+
+    for key, wrong_value in wrong_type_cases.items():
+        case = copy.deepcopy(base_case)
+        case[key] = wrong_value
+        with pytest.raises(TypeError):
+            _ = ShearKappaLikelihood(**case)
 
 
 def test_galaxykappa_model(
@@ -65,9 +119,11 @@ def test_shearkappa_model(
 
 
 def test_galaxykappa_like(
-    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params
+    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params, likelihood_refs
 ):
     from soliket.cross_correlation import GalaxyKappaLikelihood
+
+    ref = likelihood_refs["galaxykappa"]
 
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["params"].update(cross_correlation_params)
@@ -84,17 +140,19 @@ def test_galaxykappa_like(
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], 173.69192885580344, atol=0.2, rtol=0.0)
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
-def test_shearkappa_like(request, check_skip_pyccl, evaluate_one_info):
+def test_shearkappa_like(request, check_skip_pyccl, evaluate_one_info, likelihood_refs):
     from soliket.cross_correlation import ShearKappaLikelihood
+
+    ref = likelihood_refs["shearkappa"]
 
     evaluate_one_info["theory"] = cross_correlation_theory
 
     rootdir = request.config.rootdir
 
-    cs82_file = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
+    cs82_file = "tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
     test_datapath = os.path.join(rootdir, cs82_file)
 
     evaluate_one_info["likelihood"] = {
@@ -121,7 +179,8 @@ def test_shearkappa_like(request, check_skip_pyccl, evaluate_one_info):
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes, 637.64473666)
+    assert np.isclose(loglikes, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
 
 
 def test_shearkappa_tracerselect(
@@ -196,7 +255,7 @@ def test_shearkappa_hartlap(request, check_skip_pyccl, evaluate_one_info):
 
     rootdir = request.config.rootdir
 
-    cs82_file = "soliket/tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
+    cs82_file = "tests/data/cs82_gs-planck_kappa_binned.sim.sacc.fits"
     test_datapath = os.path.join(rootdir, cs82_file)
 
     evaluate_one_info["likelihood"] = {
@@ -235,9 +294,12 @@ def test_shearkappa_hartlap(request, check_skip_pyccl, evaluate_one_info):
 
 
 def test_shearkappa_deltaz(
-    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params
+    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params, likelihood_refs
 ):
     from soliket.cross_correlation import ShearKappaLikelihood
+
+    ref = likelihood_refs["shearkappa_deltaz"]
+
 
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
@@ -253,13 +315,15 @@ def test_shearkappa_deltaz(
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], -7910.043704938653, atol=0.2, rtol=0.0)
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
 def test_shearkappa_m(
-    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params
+    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params, likelihood_refs
 ):
     from soliket.cross_correlation import ShearKappaLikelihood
+
+    ref = likelihood_refs["shearkappa_m"]
 
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
@@ -275,13 +339,15 @@ def test_shearkappa_m(
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], -3737.5531377692337, atol=0.2, rtol=0.0)
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
 def test_shearkappa_ia_nla_noevo(
-    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params
+    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params, likelihood_refs
 ):
     from soliket.cross_correlation import ShearKappaLikelihood
+
+    ref = likelihood_refs["shearkappa_ia_nla_noevo"]
 
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
@@ -297,13 +363,15 @@ def test_shearkappa_ia_nla_noevo(
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], -111712.15660832982, atol=0.2, rtol=0.0)
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
 def test_shearkappa_ia_nla(
-    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params
+    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params, likelihood_refs
 ):
     from soliket.cross_correlation import ShearKappaLikelihood
+
+    ref = likelihood_refs["shearkappa_ia_nla"]
 
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
@@ -321,13 +389,15 @@ def test_shearkappa_ia_nla(
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], -114145.55021412153, atol=0.2, rtol=0.0)
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
 def test_shearkappa_ia_perbin(
-    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params
+    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params, likelihood_refs
 ):
     from soliket.cross_correlation import ShearKappaLikelihood
+
+    ref = likelihood_refs["shearkappa_ia_perbin"]
 
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
@@ -343,13 +413,16 @@ def test_shearkappa_ia_perbin(
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], -100164.38521295182, atol=0.2, rtol=0.0)
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
 def test_shearkappa_hmcode(
-    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params
+    request, check_skip_pyccl, evaluate_one_info, test_cosmology_params, likelihood_refs
 ):
     from soliket.cross_correlation import ShearKappaLikelihood
+
+    ref = likelihood_refs["shearkappa_hmcode"]
+
 
     evaluate_one_info["params"] = test_cosmology_params
     evaluate_one_info["theory"] = cross_correlation_theory
@@ -370,4 +443,4 @@ def test_shearkappa_hmcode(
     model = get_model(evaluate_one_info)
     loglikes, derived = model.loglikes()
 
-    assert np.isclose(loglikes[0], -20679.897354035915, atol=0.2, rtol=0.0)
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])

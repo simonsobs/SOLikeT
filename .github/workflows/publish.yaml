@@ -18,9 +18,29 @@ on:
           - pypi
 
 jobs:
+  choose-target:
+    runs-on: ubuntu-latest
+    outputs:
+      repo: ${{ steps.pick.outputs.repo }}
+    steps:
+      - id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "repo=${{ github.event.inputs.repository }}" >> $GITHUB_OUTPUT
+          else
+            echo "repo=pypi" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Debug chosen repo
+        run: |
+          echo "🔥 [choose-target] Final repo output: '${{ steps.pick.outputs.repo }}'"
+
   publish:
+    needs: choose-target
     name: 📦 Publish to ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.repository || 'pypi' }}
     runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.choose-target.outputs.repo }}
     permissions:
       id-token: write
 
@@ -29,7 +49,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -39,25 +59,13 @@ jobs:
       - name: Build with uv
         run: uv build
 
-      - name: Determine target
-        id: choose
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "REPO=${{ github.event.inputs.repository }}" >> $GITHUB_OUTPUT
-          else
-            # on a real Release, always push to PyPI
-            echo "REPO=pypi" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
-
       - name: Publish
         run: |
-          echo "Publishing to ${{ steps.choose.outputs.REPO }}..."
-          if [ "${{ steps.choose.outputs.REPO }}" = "testpypi" ]; then
-            uv publish --token "${{ secrets.TEST_PYPI_TOKEN }}" --repository testpypi
-          else
-            uv publish --token "${{ secrets.PYPI_API_TOKEN }}"
+          echo "Publishing to ${{ needs.choose-target.outputs.repo }}..."
+          if [ "${{ needs.choose-target.outputs.repo }}" = "testpypi" ]; then
+            export UV_PUBLISH_URL=https://test.pypi.org/legacy/
           fi
+          uv publish --trusted-publishing always
         env:
           # optional extra debug
           GITHUB_REF: ${{ github.ref }}

@@ -4,8 +4,9 @@ params:
   ns: 0.965
   logA:
     prior:
-      min: 1.00
-      max: 4.00
+      min: 2.6
+      max: 3.5
+    proposal: 0.0036
     latex: \log(10^{10} A_\mathrm{s})
     drop: true
   As:
@@ -13,12 +14,13 @@ params:
     latex: A_\mathrm{s}
   omegam:
     prior:
-      min: 0.1
-      max: 0.9
+      min: 0.09
+      max: 0.15
+    proposal: 0.0011
     latex: \Omega_\mathrm{m}
     drop: true
   omch2:
-    value: 'lambda omegam, ombh2, mnu, H0: (omegam*(H0/100)**2-ombh2)-(mnu*(3.046/3)**0.75)/94.0708'
+    value: 'lambda omegam, ombh2, mnu, H0: (omegam*(H0/100)**2-ombh2)-(mnu*(3.044/3)**0.75)/94.0708'
     latex: \Omega_\mathrm{c} h^2
   tau: 0.05
   mnu: 0.0
@@ -33,7 +35,7 @@ params:
   sigma8: 
 likelihood:
   soliket.cross_correlation.GalaxyKappaLikelihood:
-    datapath: soliket/tests/data/des_s-act_kappa.toy-sim.sacc.fits
+    datapath: tests/data/gc_cmass-actdr4_kappa.sacc.fits
     use_spectra: all
     ncovsims: null
 theory:

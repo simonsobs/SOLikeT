@@ -511,7 +511,7 @@ def y0_from_logm500(
 
     """
 
-    if type(Mpivot) == str:
+    if isinstance(Mpivot, str):
         raise Exception(
             "Mpivot is a string - check Mpivot in your .yml config file:\
              use, e.g., 3.0e+14 (not 3e14 or 3e+14)"

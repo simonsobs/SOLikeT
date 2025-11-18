@@ -1,23 +1,17 @@
+from collections.abc import Callable
+
 import numpy as np
 import pandas as pd
 
 
 class PoissonData:
-    """Poisson-process-generated data.
-
-    Parameters
-    ----------
-    catalog : pd.DataFrame
-        Catalog of observed data.
-    columns : list
-        Columns of catalog relevant for computing poisson rate.
-    samples : dict, optional
-        Each entry is an N_cat x N_samples array of posterior samples;
-        plus, should have a 'prior' entry of the same shape that is the value of the
-        interim prior for each sample.
-    """
-
-    def __init__(self, name, catalog, columns, samples=None):
+    def __init__(
+        self,
+        name: str,
+        catalog: pd.DataFrame,
+        columns: list[str],
+        samples: dict[str, np.ndarray] | None = None,
+    ):
         self.name = str(name)
 
         self.catalog = pd.DataFrame(catalog)[columns]
@@ -48,10 +42,15 @@ class PoissonData:
 
         self.samples = samples
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._len
 
-    def loglike(self, rate_fn, n_expected, broadcastable=False):
+    def loglike(
+        self,
+        rate_fn: Callable,
+        n_expected: float,
+        broadcastable: bool = False,
+    ) -> float:
         """Computes log-likelihood of data under poisson process model
 
         rate_fn returns the *observed rate* as a function of self.columns

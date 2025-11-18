@@ -1,4 +1,11 @@
 import pytest
+from cobaya.yaml import yaml_load_file
+
+
+@pytest.fixture(scope="session")
+def likelihood_refs():
+    yaml_path = "tests/likelihood_refs.yaml"
+    return yaml_load_file(yaml_path)
 
 
 @pytest.fixture

@@ -51,25 +51,23 @@ class HMF:
             self.kh = kh
             # self.kh, self.pk = self._pk(self.zarr)
 
-    def rhoc(self):
+    def rhoc(self) -> np.ndarray:
         """
         Critical density as a function of z
         """
         ans = self.rho_crit0H100 * self.E_z**2.0
         return ans
 
-    def rhom(self):
+    def rhom(self) -> np.ndarray:
         """
         Mean matter density as a function of z
         """
-        ans = self.rhoc0om * (1.0 + self.zarr) ** 3
-        return ans
+        return self.rhoc0om * (1.0 + self.zarr) ** 3
 
-    def critdensThreshold(self, deltac):
-        rho_treshold = deltac * self.rhoc() / self.rhom()
-        return rho_treshold
+    def critdensThreshold(self, deltac) -> np.ndarray:
+        return deltac * self.rhoc() / self.rhom()
 
-    def dn_dM(self, M, delta):
+    def dn_dM(self, M, delta) -> np.ndarray:
         """
         dN/dmdV Mass Function
 
@@ -83,7 +81,7 @@ class HMF:
         dn_dm = dn_dlnm / M[:, None]
         return dn_dm
 
-    def inter_dndmLogm(self, delta, M=None):
+    def inter_dndmLogm(self, delta, M=None) -> RegularGridInterpolator:
         """
         Interpolating over M and z for faster calculations
         """
