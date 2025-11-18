@@ -16,7 +16,7 @@ jobs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Run skip-check
         id: check
@@ -60,17 +60,33 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install GSL
+        if: matrix.os != 'windows-latest'
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            sudo apt-get update
+            sudo apt-get install -y libgsl-dev
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            brew update
+            brew install gsl
+          fi
+
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
       - name: Install SOLikeT dependencies and likelihoods
         run: |
-          pip install uv
-          bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
+          bash ci_scripts/install_deps.sh --extras dev all
 
       - name: Run tests (coverage)
         if: contains(matrix.tags, 'cov')
@@ -99,10 +115,10 @@ jobs:
     name: Conda Test (Python 3.12)
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 

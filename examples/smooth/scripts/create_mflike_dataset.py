@@ -172,4 +172,3 @@ for id_x, (efa, efb, pa, pb) in enumerate(get_x_iterator()):
     spec_sacc.add_ell_cl(cl_type, ta_name, tb_name, lbin, cb)
 
 spec_sacc.save_fits("%s/data_sacc_smooth_%s.fits" % (namedir, sim_suffix), overwrite=True)
-
