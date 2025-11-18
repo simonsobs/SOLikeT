@@ -4,14 +4,8 @@ from cobaya.model import get_model
 from cobaya.yaml import yaml_load_file
 
 # read in the cobaya info
-info = yaml_load_file("run_mflike_fiducial.yaml")
-
-fiducial_cosmo = yaml_load_file("params_cosmo_smooth_fiducial.yaml")
-fiducial_fg = yaml_load_file("params_mflikefg_smooth_fiducial.yaml")
-fiducial_sys = yaml_load_file("params_mflikesyst_smooth_fiducial.yaml")
-
-fiducial_params = {**fiducial_cosmo, **fiducial_fg, **fiducial_sys}
-info["params"] = fiducial_params
+folder = "../yamls/"
+info = yaml_load_file(folder+"run_mflike_fiducial.yaml")
 
 # ensure all components are installed
 # install(info)
@@ -26,8 +20,23 @@ fg_totals = model.components[3].get_fg_totals()
 
 mflike = model.components[0]
 dls = {s: Dl[s][mflike.l_bpws] for s, _ in mflike.lcuts.items()}
+
+param_values = {}
+
+for par in info["params"]:
+    try:
+        param_values[par] = info["params"][par]["value"]
+    except KeyError:
+        try:
+            param_values[par] = info["params"][par]["value"]["loc"]
+        except:
+            try:
+                param_values[par] = info["params"][par]["value"]
+            except:
+                continue
+
 # combine CMB and FG and add svstematics
-DlsObs = mflike.get_modified_theory(dls, fg_totals, **fiducial_params)
+DlsObs = mflike.get_modified_theory(dls, fg_totals, **param_values)
 
 # construct a sacc file
 ps_dic = {}
@@ -50,7 +59,7 @@ for m in model.components[0].spec_meta:
 
     ps_dic[t1 + "x" + t2].update({p: ps_vec[ids]})
 
-namedir = "./data/"
+namedir = "../data/"
 
 for k in ps_dic.keys():
     namefile = "Dl_" + k + "_auto_00000.dat"
@@ -163,3 +172,4 @@ for id_x, (efa, efb, pa, pb) in enumerate(get_x_iterator()):
     spec_sacc.add_ell_cl(cl_type, ta_name, tb_name, lbin, cb)
 
 spec_sacc.save_fits("%s/data_sacc_smooth_%s.fits" % (namedir, sim_suffix), overwrite=True)
+

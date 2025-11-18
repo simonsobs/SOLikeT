@@ -26,3 +26,7 @@ a_pste:
   value: 0.000
 xi:
   value: 0.10
+alpha_tSZ:
+  value: 0.
+beta_s:
+  value: -2.5
