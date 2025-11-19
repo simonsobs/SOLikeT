@@ -59,7 +59,7 @@ for m in model.components[0].spec_meta:
 
     ps_dic[t1 + "x" + t2].update({p: ps_vec[ids]})
 
-namedir = "../data/"
+namedir = model.likelihood['mflike.TTTEEE'].data_folder + "/"
 
 for k in ps_dic.keys():
     namefile = "Dl_" + k + "_auto_00000.dat"
