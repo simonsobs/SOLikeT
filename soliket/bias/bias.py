@@ -26,6 +26,8 @@ If you want to add your own bias model, you can do so by inheriting from the
 function (have a look at the linear bias model for ideas).
 """
 
+from typing import Any
+
 import numpy as np
 from cobaya.theory import Theory
 
@@ -33,17 +35,25 @@ from cobaya.theory import Theory
 class Bias(Theory):
     """Parent class for bias models."""
 
+    kmax: int | float
+    nonlinear: bool
+    z: float | list[float] | np.ndarray
+    extra_args: dict | None
+    params: dict
+
+    _enforce_types: bool = True
+
     _logz = np.linspace(-3, np.log10(1100), 150)
     _default_z_sampling = 10**_logz
     _default_z_sampling[0] = 0
 
     def initialize(self):
-        self._var_pairs = set()
+        self._var_pairs: set[tuple[str, str]] = set()
 
-    def get_requirements(self):
+    def get_requirements(self) -> dict[str, Any]:
         return {}
 
-    def must_provide(self, **requirements):
+    def must_provide(self, **requirements) -> dict[str, Any]:
         options = requirements.get("linear_bias") or {}
 
         self.kmax = max(self.kmax, options.get("kmax", self.kmax))
@@ -93,6 +103,9 @@ class Linear_bias(Bias):
 
     Has one free parameter, :math:`b_\mathrm{lin}` (``b_lin``).
     """
+
+    _enforce_types: bool = True
+    params: dict
 
     def calculate(self, state: dict, want_derived: bool = True, **params_values_dict):
         Pk_mm = self._get_Pk_mm()

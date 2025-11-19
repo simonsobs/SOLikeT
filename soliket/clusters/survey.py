@@ -8,6 +8,7 @@ specific survey.
 """
 
 import os
+from typing import Any
 
 import astropy.io.fits as pyfits
 import astropy.table as atpy
@@ -18,8 +19,13 @@ from astropy.io import fits
 from astropy.wcs import WCS
 from scipy import interpolate
 
+# TODO: Placeholder for the NemoConfig type
+NemoConfig = Any
 
-def read_clust_cat(fitsfile, qmin):
+
+def read_clust_cat(
+    fitsfile: str, qmin: float
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     list = fits.open(fitsfile)
     data = list[1].data
     SNR = data.field("SNR2p4")
@@ -32,7 +38,9 @@ def read_clust_cat(fitsfile, qmin):
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
 
 
-def read_mock_cat(fitsfile, qmin):
+def read_mock_cat(
+    fitsfile: str, qmin: float
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     list = fits.open(fitsfile)
     data = list[1].data
     SNR = data.field("fixed_SNR")
@@ -44,7 +52,9 @@ def read_mock_cat(fitsfile, qmin):
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
 
 
-def read_matt_mock_cat(fitsfile, qmin):
+def read_matt_mock_cat(
+    fitsfile: str, qmin: float
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     list = fits.open(fitsfile)
     data = list[1].data
     # ra = data.field("RADeg")
@@ -59,7 +69,9 @@ def read_matt_mock_cat(fitsfile, qmin):
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
 
 
-def read_matt_cat(fitsfile, qmin):
+def read_matt_cat(
+    fitsfile: str, qmin: float
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     list = fits.open(fitsfile)
     data = list[1].data
     z = data.field("redshift")
@@ -71,12 +83,12 @@ def read_matt_cat(fitsfile, qmin):
     return z[ind], zerr[ind], Y0[ind], Y0err[ind]
 
 
-def loadAreaMask(extName, DIR):
+def loadAreaMask(extName: str, DIR: str) -> tuple[np.ndarray, WCS]:
     """Loads the survey area mask (i.e., after edge-trimming and point source masking,
      produced by nemo).
     Returns map array, wcs
     """
-    areaImg = pyfits.open(os.path.join(DIR, "areaMask%s.fits.gz" % extName))
+    areaImg = pyfits.open(os.path.join(DIR, f"areaMask{extName}.fits.gz"))
     areaMap = areaImg[0].data
     wcs = WCS(areaImg[0].header)  # , mode="pyfits")
     areaImg.close()
@@ -84,13 +96,11 @@ def loadAreaMask(extName, DIR):
     return areaMap, wcs
 
 
-def loadRMSmap(extName, DIR):
+def loadRMSmap(extName: str, DIR: str) -> tuple[np.ndarray, WCS]:
     """Loads the survey RMS map (produced by nemo).
     Returns map array, wcs
     """
-    areaImg = pyfits.open(
-        os.path.join(DIR, "RMSMap_Arnaud_M2e14_z0p4%s.fits.gz" % extName)
-    )
+    areaImg = pyfits.open(os.path.join(DIR, f"RMSMap_Arnaud_M2e14_z0p4{extName}.fits.gz"))
     areaMap = areaImg[0].data
     wcs = WCS(areaImg[0].header)  # , mode="pyfits")
     areaImg.close()
@@ -98,7 +108,7 @@ def loadRMSmap(extName, DIR):
     return areaMap, wcs
 
 
-def loadQ(source, tileNames=None):
+def loadQ(source: NemoConfig | str, tileNames: list[str] | None = None) -> dict:
     """Load the filter mismatch function Q as a dictionary of spline fits.
     Args:
         source (NemoConfig or str): Either the path to a .fits table (containing Q fits
@@ -110,10 +120,10 @@ def loadQ(source, tileNames=None):
         A dictionary (with tile names as keys), containing spline knots for the Q
         function for each tile.
     """
-    if type(source) == str:
+    if isinstance(source, str):
         combinedQTabFileName = source
     else:
-        # We should add a check to confirm this is actually a NemoConfig object
+        # TODO: We should add a check to confirm this is actually a NemoConfig object
         combinedQTabFileName = os.path.join(source.selFnDir, "QFit.fits")
         tileNames = source.tileNames
     tckDict = {}
@@ -144,10 +154,10 @@ class SurveyData:
         nemoOutputDir,
         ClusterCat,
         qmin=5.6,
+        num_noise_bins=20,
         szarMock=False,
         MattMock=False,
         tiles=False,
-        num_noise_bins=20,
     ):
         self.nemodir = nemoOutputDir
 
@@ -209,7 +219,7 @@ class SurveyData:
         self.Ythresh = 10 ** ((bin_edge[:-1] + bin_edge[1:]) / 2.0)
 
     @property
-    def Q(self):
+    def Q(self) -> np.ndarray:
         if self.tiles:
             return self.tckQFit["Q"]
         else:

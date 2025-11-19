@@ -6,12 +6,14 @@ packages_path = resolve_packages_path()
 
 nuisance_params = {
     "a_tSZ": 3.3044404448917724,
+    "alpha_tSZ": 0.0,
     "a_kSZ": 1.6646620740058649,
     "a_p": 6.912474322461401,
     "beta_p": 2.077474196171309,
     "a_c": 4.88617700670901,
     "beta_c": 2.2030316332596014,
     "a_s": 3.099214100532393,
+    "beta_s": -2.5,
     "T_d": 9.60,
     "a_gtt": 0,
     "a_gte": 0,
@@ -60,7 +62,9 @@ def test_lensing_and_mflike_installations(check_skip_mflike):
     )
 
 
-def test_multi(test_cosmology_params, check_skip_mflike):
+def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
+    ref = likelihood_refs["multi"]
+
     lensing_options = {"theory_lmax": 5000}
 
     mflike_options = {
@@ -124,7 +128,9 @@ def test_multi(test_cosmology_params, check_skip_mflike):
     logp_a = model.loglikes(fg_values_a, cached=False)[0].sum()
     logp_b = model.loglikes(fg_values_b, cached=False)[0].sum()
     d_logp = logp_b - logp_a
-    assert np.isclose(d_logp, -503.395, rtol=1e-4)
+
+    assert np.isclose(d_logp, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
 
     model1_logp_a = model1.loglikes(fg_values_a, cached=False)[0].sum()
     model2_logp_a = model2.loglikes({}, cached=False)[0].sum()

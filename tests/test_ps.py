@@ -60,7 +60,7 @@ def test_toy():
     info2 = {"name": name2, "n": n2, "cov": cov2, "seed": 234}
     info3 = {"name": name3, "n": n3, "cov": cov3, "seed": 345}
 
-    lhood = "soliket.tests.test_ps.ToyLikelihood"
+    lhood = "tests.test_ps.ToyLikelihood"
     components = [lhood] * 3
     options = [info1, info2, info3]
     multilike1 = MultiGaussianLikelihood({"components": components, "options": options})
@@ -78,3 +78,27 @@ def test_toy():
     assert not np.isclose(
         multilike2.logp(), sum([likex.logp() for likex in [like1, like2, like3]])
     )
+
+class DummyProviderCl:
+    def __init__(self, lmax):
+        self.lmax = lmax
+
+    def get_Cl(self, ell_factor=True):
+        # return small arrays for pp, tt, ee, te, bb
+        size = self.lmax
+        return {
+            "pp": np.arange(size, dtype=float) + 1.0,
+            "tt": (np.arange(size, dtype=float) + 2.0),
+            "ee": (np.arange(size, dtype=float) + 3.0),
+            "te": (np.arange(size, dtype=float) + 4.0),
+            "bb": (np.arange(size, dtype=float) + 5.0),
+        }
+
+def test_psl_get_theory_basic():
+    lmax = 4
+    pl = PSLikelihood.__new__(PSLikelihood)
+    pl.provider = DummyProviderCl(lmax)
+    pl.kind = "tt"
+    pl.lmax = lmax
+    out = PSLikelihood._get_theory(pl)
+    assert np.allclose(out, np.arange(lmax, dtype=float) + 2.0)
