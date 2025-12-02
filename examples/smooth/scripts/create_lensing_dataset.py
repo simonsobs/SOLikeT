@@ -3,14 +3,14 @@ from cobaya.model import get_model
 from cobaya.yaml import yaml_load_file
 
 # read in the cobaya info
-info = yaml_load_file("run_lensing_fiducial.yaml")
+info = yaml_load_file("../yamls/run_lensing_fiducial.yaml")
 
 model = get_model(info)
 model.loglikes({})
 
-fname = "../../clkk_reconstruction_sim.fits"
+fname = "../data/clkk_reconstruction_sim.fits"
 hdul = fits.open(fname)
 hdul[8].data["value"][:] = model.likelihood["soliket.LensingLikelihood"]._get_theory()
 
-ndir = "data/clkk_smooth.fits"
+ndir = "../data/clkk_smooth.fits"
 hdul.writeto(ndir, overwrite=True)

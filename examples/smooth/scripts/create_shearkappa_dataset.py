@@ -5,10 +5,10 @@ from astropy import units
 from cobaya.model import get_model
 from cobaya.yaml import yaml_load_file
 
-info = yaml_load_file("run_shearkappa_fiducial.yaml")
+info = yaml_load_file("../yamls/run_shearkappa_fiducial.yaml")
 
-fiducial_cosmo = yaml_load_file("params_cosmo_smooth_fiducial.yaml")
-fiducial_sys = yaml_load_file("params_shearkappanuisance_smooth_fiducial.yaml")
+fiducial_cosmo = yaml_load_file("../yamls/params_cosmo_smooth_fiducial.yaml")
+fiducial_sys = yaml_load_file("../yamls/params_shearkappanuisance_smooth_fiducial.yaml")
 
 fiducial_params = {**fiducial_cosmo, **fiducial_sys}
 info["params"] = fiducial_params
@@ -48,13 +48,13 @@ nell_win = len(ells_win)
 # fname = dir + 'UNBLINDED_ACTPlanck_tSZfree_ACTDR4-kappa_DESY3-gamma_data_simCov.fits'
 # s_win = sacc.Sacc.load_fits(fname)
 
-Well = sacc.BandpowerWindow(ells_win, np.loadtxt("bpw1.txt"))
+Well = sacc.BandpowerWindow(ells_win, np.loadtxt("../data/bpw1.txt"))
 
 # set up kappa lensing tracer
 zstar = 1086
 
 tracer_so_k = ccl.CMBLensingTracer(cosmo, z_source=zstar)
-fname = "./data/nlkk_v3_1_0_deproj0_SENS1_fsky0p4_it_lT30-3000_lP30-5000.dat"
+fname = "../data/nlkk_v3_1_0_deproj0_SENS1_fsky0p4_it_lT30-3000_lP30-5000.dat"
 noise_so_kk = np.loadtxt(fname)[:, 7]  # [7 is MV(all)]
 noise_so_kk = noise_so_kk[: ell_max + 1]
 
@@ -65,7 +65,7 @@ ell_beam = np.arange(3000)
 beam_so_k = np.exp(-ell_beam * (ell_beam + 1) * sigma_so_k**2)
 
 # set up shear lensing tracer
-z_shear = np.loadtxt("./data/shearkappa_nz_source/z.txt")
+z_shear = np.loadtxt("../data/shearkappa_nz_source/z.txt")
 nbins = 4
 n_maps = nbins + 1
 ngal = [1.5, 1.5, 1.5, 1.5]
@@ -75,7 +75,7 @@ shear_tracers = []
 shear_nz = []
 
 for ibin in np.arange(1, nbins + 1):
-    nz_bin = np.loadtxt(f"./data/shearkappa_nz_source/bin_{ibin}.txt")
+    nz_bin = np.loadtxt(f"../data/shearkappa_nz_source/bin_{ibin}.txt")
     shear_nz.append(nz_bin)
     z0_IA = np.trapz(z_shear * nz_bin)
 
@@ -224,7 +224,7 @@ for tracer_comb in s.get_tracer_combinations():
     if tracer_comb not in keep_spectra:
         s.remove_selection(tracers=tracer_comb)
 
-s.save_fits("./data/shearkappa_smooth_mockdata.fits", overwrite=True)
+s.save_fits("../data/shearkappa_smooth_mockdata.fits", overwrite=True)
 
 # now we calculate the soliket spectra at the fiducial parameters
 
@@ -262,7 +262,7 @@ sktheory = sklike._get_theory(**param_values)
 
 s.mean = sktheory
 
-s.save_fits("./data/shearkappa_smooth_mockdata.fits", overwrite=True)
+s.save_fits("../data/shearkappa_smooth_mockdata.fits", overwrite=True)
 
 model = get_model(info)
 likes = model.loglikes(fid_cosmo)

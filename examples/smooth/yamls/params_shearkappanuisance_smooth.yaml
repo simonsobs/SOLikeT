@@ -2,7 +2,7 @@ A_IA:
   latex: A_{IA}
   prior:
     dist: norm
-    loc: 0.0
+    loc: 0.35
     scale: 0.65
   proposal: 0.5
   ref: 0.35
@@ -11,7 +11,7 @@ eta_IA:
   latex: \eta_{IA}
   prior:
     dist: norm
-    loc: 0.0
+    loc: 1.66
     scale: 4.0
   proposal: 3.0
   ref: 1.66
