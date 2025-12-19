@@ -15,6 +15,7 @@ Available tutorials
    - Interpreting outputs and plotting basic results
 
 2. Coming soon 
+
 Running the tutorial locally
 ----------------------------
 
