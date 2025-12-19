@@ -2,12 +2,12 @@
 Tutorials
 ==============================
 
-This page introduces the SOLikeT tutorial notebook and how to run it locally to get familiar with the package.
+This page introduces the SOLikeT tutorial notebooks and how to run them locally to get familiar with the package.
 
 Available tutorials
 -----------------------
 
-1. Tutorial Notebook — The notebook file is located at ``notebooks/tutorial_soliket.ipynb``.It walks through:
+1. First step Notebook — The notebook file is located at ``notebooks/first_step_tutorial.ipynb``. It walks through:
 
    - Installing SOLikeT and optional extras
    - Loading example data and utilities
@@ -25,7 +25,7 @@ To open and run the notebook on your machine:
 
    .. code-block:: bash
 
-      uv run jupyter notebook notebooks/tutorial_soliket.ipynb
+      uv run jupyter notebook notebooks/first_step_tutorial.ipynb
 
 - If SOLiket has not been installed via uv:
    1. Ensure you have a Python environment that meets SOLikeT requirements (see :doc:`install`). 
@@ -39,5 +39,5 @@ To open and run the notebook on your machine:
 
    .. code-block:: bash
 
-      jupyter notebook notebooks/tutorial_soliket.ipynb
+      jupyter notebook notebooks/first_step_tutorial.ipynb
 
