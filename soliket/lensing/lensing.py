@@ -133,16 +133,34 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
                 os.path.join(self.data_folder, self.correction_filename)
             )
 
-            _, self.N0cltt = self._get_spectrum_from_sacc(s, "ct", "ct", data_type="N0")
-            _, self.N0clte = self._get_spectrum_from_sacc(s, "ct", "ce", data_type="N0")
-            _, self.N0clee = self._get_spectrum_from_sacc(s, "ce", "ce", data_type="N0")
-            _, self.N0clbb = self._get_spectrum_from_sacc(s, "cb", "cb", data_type="N0")
-            _, self.N1clpp = self._get_spectrum_from_sacc(s, "cp", "cp", data_type="N1")
-            _, self.N1cltt = self._get_spectrum_from_sacc(s, "ct", "ct", data_type="N1")
-            _, self.N1clte = self._get_spectrum_from_sacc(s, "ct", "ce", data_type="N1")
-            _, self.N1clee = self._get_spectrum_from_sacc(s, "ce", "ce", data_type="N1")
-            _, self.N1clbb = self._get_spectrum_from_sacc(s, "cb", "cb", data_type="N1")
-            _, self.n0 = self._get_spectrum_from_sacc(s, "n0", "n0", data_type="N0")
+            _, self.N0cltt = self._get_spectrum_from_sacc(
+                s, "ct", "ct", data_type="N0_00"
+            )
+            _, self.N0clte = self._get_spectrum_from_sacc(
+                s, "ct", "ce", data_type="N0_0e"
+            )
+            _, self.N0clee = self._get_spectrum_from_sacc(
+                s, "ce", "ce", data_type="N0_ee"
+            )
+            _, self.N0clbb = self._get_spectrum_from_sacc(
+                s, "cb", "cb", data_type="N0_bb"
+            )
+            _, self.N1clpp = self._get_spectrum_from_sacc(
+                s, "cp", "cp", data_type="N1_00"
+            )
+            _, self.N1cltt = self._get_spectrum_from_sacc(
+                s, "ct", "ct", data_type="N1_00"
+            )
+            _, self.N1clte = self._get_spectrum_from_sacc(
+                s, "ct", "ce", data_type="N1_0e"
+            )
+            _, self.N1clee = self._get_spectrum_from_sacc(
+                s, "ce", "ce", data_type="N1_ee"
+            )
+            _, self.N1clbb = self._get_spectrum_from_sacc(
+                s, "cb", "cb", data_type="N1_bb"
+            )
+            _, self.n0 = self._get_spectrum_from_sacc(s, "n0", "n0", data_type="N0_00")
             self.n0 = self.n0[0]
         else:
             raise LoggedError(

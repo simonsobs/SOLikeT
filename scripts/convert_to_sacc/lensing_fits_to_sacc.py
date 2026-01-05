@@ -14,11 +14,6 @@ if custom_packages_path is None:
 else:
     packages_path = custom_packages_path
 
-# Try to resolve global path
-if custom_packages_path is None:
-    packages_path = resolve_packages_path()
-
-
 fname = os.path.join(
     packages_path, "data", "LensingLikelihood", "clkk_reconstruction_sim.fits"
 )
@@ -34,12 +29,14 @@ ells_large = np.array([elem[0] for elem in win_bp_tab])
 windows = np.array([elem[1] for elem in win_bp_tab]).T
 
 s = sacc.Sacc()
+s.metadata['info'] = 'CMB lensing power spectra from reconstruction simulations'
 
 s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="ck",
     quantity="cmb_convergence",
     spin=0,
+    map_unit='uK_CMB',
 )
 
 wins = sacc.BandpowerWindow(ells_large, windows.T)
@@ -66,40 +63,46 @@ s.save_fits(
 # FIDUCIAL SACC
 
 fid_s = sacc.Sacc()
+fid_s.metadata['info'] = 'Fiducial CMB lensing power spectra computed with CAMB'
 
 fid_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="ct",
     quantity="cmb_temperature",
     spin=0,
+    map_unit='uK_CMB',
 )
 
 fid_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="ce",
     quantity="cmb_polarization",
     spin=2,
+    map_unit='uK_CMB',
 )
 
 fid_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="cb",
     quantity="cmb_polarization",
     spin=2,
+    map_unit='uK_CMB',
 )
 
 fid_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="cp",
     quantity="cmb_lens_potential",
     spin=0,
+    map_unit='uK_CMB',
 )
 
 fid_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="ck",
     quantity="cmb_convergence",
     spin=0,
+    map_unit='uK_CMB',
 )
 
 fiducial_params = {
@@ -139,7 +142,7 @@ fid_s.add_ell_cl(
 )
 
 fid_s.add_ell_cl(
-    "cl_02",  # Data type
+    "cl_0e",  # Data type
     "ct",  # 1st tracer's name
     "ce",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -148,7 +151,7 @@ fid_s.add_ell_cl(
 )
 
 fid_s.add_ell_cl(
-    "cl_02",  # Data type
+    "cl_0b",  # Data type
     "ct",  # 1st tracer's name
     "cb",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -157,7 +160,7 @@ fid_s.add_ell_cl(
 )
 
 fid_s.add_ell_cl(
-    "cl_22",  # Data type
+    "cl_ee",  # Data type
     "ce",  # 1st tracer's name
     "ce",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -166,7 +169,7 @@ fid_s.add_ell_cl(
 )
 
 fid_s.add_ell_cl(
-    "cl_22",  # Data type
+    "cl_bb",  # Data type
     "cb",  # 1st tracer's name
     "cb",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -175,7 +178,7 @@ fid_s.add_ell_cl(
 )
 
 fid_s.add_ell_cl(
-    "cl_22",  # Data type
+    "cl_eb",  # Data type
     "ce",  # 1st tracer's name
     "cb",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -210,47 +213,54 @@ fid_s.save_fits(
 # CORRECTION SACC
 
 corr_s = sacc.Sacc()
+corr_s.metadata['info'] = 'CMB lensing reconstruction noise corrections'
 
 corr_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="ct",
     quantity="cmb_temperature",
     spin=0,
+    map_unit='uK_CMB',
 )
 
 corr_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="ce",
     quantity="cmb_polarization",
     spin=2,
+    map_unit='uK_CMB',
 )
 
 corr_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="cb",
     quantity="cmb_polarization",
     spin=2,
+    map_unit='uK_CMB',
 )
 
 corr_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="cp",
     quantity="cmb_lens_potential",
     spin=0,
+    map_unit='uK_CMB',
 )
 
 corr_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="ck",
     quantity="cmb_convergence",
     spin=0,
+    map_unit='uK_CMB',
 )
 
 corr_s.add_tracer(
-    tracer_type="misc",
+    tracer_type="Map",
     name="n0",
     quantity="cmb_convergence",
     spin=0,
+    map_unit='uK_CMB',
 )
 
 data_folder = packages_path
@@ -286,7 +296,7 @@ n0 = np.loadtxt(os.path.join(packages_path, "data/LensingLikelihood", "n0mv.txt"
 n0 = np.tile(n0, (len(ls), 1))
 
 corr_s.add_ell_cl(
-    "N0",  # Data type
+    "N0_00",  # Data type
     "ct",  # 1st tracer's name
     "ct",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -295,7 +305,7 @@ corr_s.add_ell_cl(
 )
 
 corr_s.add_ell_cl(
-    "N0",  # Data type
+    "N0_ee",  # Data type
     "ce",  # 1st tracer's name
     "ce",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -304,7 +314,7 @@ corr_s.add_ell_cl(
 )
 
 corr_s.add_ell_cl(
-    "N0",  # Data type
+    "N0_bb",  # Data type
     "cb",  # 1st tracer's name
     "cb",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -313,7 +323,7 @@ corr_s.add_ell_cl(
 )
 
 corr_s.add_ell_cl(
-    "N0",  # Data type
+    "N0_0e",  # Data type
     "ct",  # 1st tracer's name
     "ce",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -322,7 +332,7 @@ corr_s.add_ell_cl(
 )
 
 corr_s.add_ell_cl(
-    "N1",  # Data type
+    "N1_00",  # Data type
     "ct",  # 1st tracer's name
     "ct",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -331,7 +341,7 @@ corr_s.add_ell_cl(
 )
 
 corr_s.add_ell_cl(
-    "N1",  # Data type
+    "N1_ee",  # Data type
     "ce",  # 1st tracer's name
     "ce",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -340,7 +350,7 @@ corr_s.add_ell_cl(
 )
 
 corr_s.add_ell_cl(
-    "N1",  # Data type
+    "N1_bb",  # Data type
     "cb",  # 1st tracer's name
     "cb",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -349,7 +359,7 @@ corr_s.add_ell_cl(
 )
 
 corr_s.add_ell_cl(
-    "N1",  # Data type
+    "N1_0e",  # Data type
     "ct",  # 1st tracer's name
     "ce",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -358,7 +368,7 @@ corr_s.add_ell_cl(
 )
 
 corr_s.add_ell_cl(
-    "N1",  # Data type
+    "N1_00",  # Data type
     "cp",  # 1st tracer's name
     "cp",  # 2nd tracer's name
     ls,  # Effective multipole
@@ -367,7 +377,7 @@ corr_s.add_ell_cl(
 )
 
 corr_s.add_ell_cl(
-    "N0",  # Data type
+    "N0_00",  # Data type
     "n0",  # 1st tracer's name
     "n0",  # 2nd tracer's name
     ls,  # Effective multipole
