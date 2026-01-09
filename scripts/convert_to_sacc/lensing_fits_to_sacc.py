@@ -27,6 +27,7 @@ win_bp_tab = win_bp_hdu.data
 
 ells_large = np.array([elem[0] for elem in win_bp_tab])
 windows = np.array([elem[1] for elem in win_bp_tab]).T
+beam = np.ones_like(data["ell"])
 
 s = sacc.Sacc()
 s.metadata['info'] = 'CMB lensing power spectra from reconstruction simulations'
@@ -37,6 +38,8 @@ s.add_tracer(
     quantity="cmb_convergence",
     spin=0,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 wins = sacc.BandpowerWindow(ells_large, windows.T)
@@ -71,6 +74,8 @@ fid_s.add_tracer(
     quantity="cmb_temperature",
     spin=0,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 fid_s.add_tracer(
@@ -79,6 +84,8 @@ fid_s.add_tracer(
     quantity="cmb_polarization",
     spin=2,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 fid_s.add_tracer(
@@ -87,6 +94,8 @@ fid_s.add_tracer(
     quantity="cmb_polarization",
     spin=2,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 fid_s.add_tracer(
@@ -95,6 +104,8 @@ fid_s.add_tracer(
     quantity="cmb_lens_potential",
     spin=0,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 fid_s.add_tracer(
@@ -103,6 +114,8 @@ fid_s.add_tracer(
     quantity="cmb_convergence",
     spin=0,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 fiducial_params = {
@@ -221,6 +234,8 @@ corr_s.add_tracer(
     quantity="cmb_temperature",
     spin=0,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 corr_s.add_tracer(
@@ -229,6 +244,8 @@ corr_s.add_tracer(
     quantity="cmb_polarization",
     spin=2,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 corr_s.add_tracer(
@@ -237,6 +254,8 @@ corr_s.add_tracer(
     quantity="cmb_polarization",
     spin=2,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 corr_s.add_tracer(
@@ -245,6 +264,8 @@ corr_s.add_tracer(
     quantity="cmb_lens_potential",
     spin=0,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 corr_s.add_tracer(
@@ -253,6 +274,8 @@ corr_s.add_tracer(
     quantity="cmb_convergence",
     spin=0,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 corr_s.add_tracer(
@@ -261,6 +284,8 @@ corr_s.add_tracer(
     quantity="cmb_convergence",
     spin=0,
     map_unit='uK_CMB',
+    ell=data["ell"],
+    beam=beam,
 )
 
 data_folder = packages_path
