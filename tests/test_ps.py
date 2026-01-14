@@ -68,13 +68,11 @@ def test_toy():
     create_toy_sacc_file(name2, n2, cov2, 234, sacc_path2)
     create_toy_sacc_file(name3, n3, cov3, 345, sacc_path3)
 
-    cross_cov = CrossCov(
-        {
-            (name1, name2): full_cov[:n1, n1 : n1 + n2],
-            (name1, name3): full_cov[:n1, n1 + n2 :],
-            (name2, name3): full_cov[n1 : n1 + n2, n1 + n2 :],
-        }
-    )
+    cross_cov = CrossCov()
+
+    cross_cov.add_cross_covariance(name1, name2, full_cov[:n1, n1 : n1 + n2])
+    cross_cov.add_cross_covariance(name1, name3, full_cov[:n1, n1 + n2 :])
+    cross_cov.add_cross_covariance(name2, name3, full_cov[n1 : n1 + n2, n1 + n2 :])
 
     # Add required metadata for SACC format
     tracer_info = {
@@ -185,3 +183,129 @@ def test_psl_get_theory_basic():
     pl.lmax = lmax
     out = PSLikelihood._get_theory(pl)
     assert np.allclose(out, np.arange(lmax, dtype=float) + 2.0)
+
+
+def test_crosscov_add_component():
+    """Test CrossCov with explicit add_component() calls."""
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    n1, n2 = 5, 8
+    cov1 = make_spd_matrix(n1, random_state=42)
+    cov2 = make_spd_matrix(n2, random_state=43)
+    cross_12 = np.random.randn(n1, n2) * 0.1
+
+    # Test add_component
+    crosscov = CrossCov()
+    crosscov.add_component("A", cov1)
+    crosscov.add_component("B", cov2)
+    crosscov.add_cross_covariance("A", "B", cross_12)
+
+    assert ("A", "A") in crosscov
+    assert ("B", "B") in crosscov
+    assert ("A", "B") in crosscov
+    assert crosscov.component_names == ["A", "B"]
+
+    # Test save/load roundtrip with explicit components
+    tempdir = gettempdir()
+    path = os.path.join(tempdir, "test_explicit.fits")
+    crosscov.save(path)
+
+    loaded = CrossCov.load(path)
+    assert np.allclose(crosscov[("A", "A")], loaded[("A", "A")])
+    assert np.allclose(crosscov[("B", "B")], loaded[("B", "B")])
+    assert np.allclose(crosscov[("A", "B")], loaded[("A", "B")])
+
+
+def test_crosscov_error_handling():
+    """Test CrossCov error handling."""
+    import pytest
+
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    # Test invalid file format on save
+    crosscov = CrossCov()
+    crosscov.add_cross_covariance("A", "B", np.ones((3, 4)))
+    with pytest.raises(ValueError, match="Only .fits or .sacc"):
+        crosscov.save("invalid.npz")
+
+    # Test invalid file format on load
+    with pytest.raises(ValueError, match="Only .fits or .sacc"):
+        CrossCov.load("invalid.npz")
+
+    # Test dict passed as cov
+    with pytest.raises(TypeError, match="must be a numpy array"):
+        crosscov.add_component("C", {"not": "an array"})
+
+    # Test inconsistent sizes
+    crosscov2 = CrossCov()
+    crosscov2.add_cross_covariance("A", "B", np.ones((3, 4)))
+    crosscov2.add_cross_covariance("A", "C", np.ones((5, 6)))  # A size mismatch
+    with pytest.raises(ValueError, match="Inconsistent sizes"):
+        crosscov2._infer_component_info()
+
+
+def test_multigaussiandata_properties():
+    """Test MultiGaussianData properties."""
+    from soliket.gaussian.gaussian_data import GaussianData, MultiGaussianData
+
+    n1, n2 = 5, 8
+    cov1 = make_spd_matrix(n1, random_state=42)
+    cov2 = make_spd_matrix(n2, random_state=43)
+
+    x1 = np.arange(n1, dtype=float)
+    y1 = np.zeros(n1)
+    data1 = GaussianData("A", x1, y1, cov1)
+
+    x2 = np.arange(n2, dtype=float)
+    y2 = np.zeros(n2)
+    data2 = GaussianData("B", x2, y2, cov2)
+
+    multi = MultiGaussianData([data1, data2])
+
+    # Test properties
+    assert multi.name == "A + B"
+    assert multi.cov.shape == (n1 + n2, n1 + n2)
+    assert multi.inv_cov.shape == (n1 + n2, n1 + n2)
+    assert isinstance(multi.norm_const, float)
+    assert multi.labels == ["A"] * n1 + ["B"] * n2
+    assert multi.lengths == [n1, n2]
+    assert multi.names == ["A", "B"]
+
+
+def test_multigaussiandata_with_crosscov_modes():
+    """Test MultiGaussianData with different CrossCov modes."""
+    from soliket.gaussian.gaussian_data import CrossCov, GaussianData, MultiGaussianData
+
+    n1, n2 = 5, 8
+    full_cov = make_spd_matrix(n1 + n2, random_state=44)
+    cov1 = full_cov[:n1, :n1]
+    cov2 = full_cov[n1:, n1:]
+    cross_12 = full_cov[:n1, n1:]
+
+    x1, y1 = np.arange(n1, dtype=float), np.zeros(n1)
+    x2, y2 = np.arange(n2, dtype=float), np.zeros(n2)
+    data1 = GaussianData("A", x1, y1, cov1)
+    data2 = GaussianData("B", x2, y2, cov2)
+    data_list = [data1, data2]
+
+    # Mode 1: Full CrossCov with add_component
+    crosscov_full = CrossCov()
+    crosscov_full.add_component("A", cov1)
+    crosscov_full.add_component("B", cov2)
+    crosscov_full.add_cross_covariance("A", "B", cross_12)
+    multi_full = MultiGaussianData(data_list, crosscov_full)
+
+    # Mode 2: Cross-only CrossCov
+    crosscov_cross = CrossCov()
+    crosscov_cross.add_cross_covariance("A", "B", cross_12)
+    multi_cross = MultiGaussianData(data_list, crosscov_cross)
+
+    # Mode 3: No CrossCov (auto-covs from individual data)
+    multi_none = MultiGaussianData(data_list, None)
+
+    # Verify full and cross-only produce same result
+    assert np.allclose(multi_full.cov, multi_cross.cov)
+
+    # Verify no cross-cov has zeros in off-diagonal
+    assert np.allclose(multi_none.cov[:n1, n1:], 0)
+    assert np.allclose(multi_none.cov[n1:, :n1], 0)
