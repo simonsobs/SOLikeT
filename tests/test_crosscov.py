@@ -5,7 +5,7 @@ import numpy as np
 import sacc
 from sklearn.datasets import make_spd_matrix
 
-from soliket import MultiGaussianLikelihood, PSLikelihood
+from soliket import MultiGaussianLikelihood
 from soliket.gaussian import CrossCov
 from soliket.gaussian.gaussian import GaussianLikelihood
 from soliket.utils import get_likelihood
@@ -108,7 +108,7 @@ def test_toy():
     info2 = {"name": name2, "datapath": sacc_path2, "use_spectra": "all"}
     info3 = {"name": name3, "datapath": sacc_path3, "use_spectra": "all"}
 
-    lhood = "tests.test_ps.ToyLikelihood"
+    lhood = "tests.test_crosscov.ToyLikelihood"
     components = [lhood] * 3
     options = [info1, info2, info3]
     multilike1 = MultiGaussianLikelihood({"components": components, "options": options})
@@ -157,32 +157,6 @@ def test_toy():
                 continue
 
         assert np.allclose(loaded_block, orig_block), f"Cross-cov {key} mismatch"
-
-
-class DummyProviderCl:
-    def __init__(self, lmax):
-        self.lmax = lmax
-
-    def get_Cl(self, ell_factor=True):
-        # return small arrays for pp, tt, ee, te, bb
-        size = self.lmax
-        return {
-            "pp": np.arange(size, dtype=float) + 1.0,
-            "tt": (np.arange(size, dtype=float) + 2.0),
-            "ee": (np.arange(size, dtype=float) + 3.0),
-            "te": (np.arange(size, dtype=float) + 4.0),
-            "bb": (np.arange(size, dtype=float) + 5.0),
-        }
-
-
-def test_psl_get_theory_basic():
-    lmax = 4
-    pl = PSLikelihood.__new__(PSLikelihood)
-    pl.provider = DummyProviderCl(lmax)
-    pl.kind = "tt"
-    pl.lmax = lmax
-    out = PSLikelihood._get_theory(pl)
-    assert np.allclose(out, np.arange(lmax, dtype=float) + 2.0)
 
 
 def test_crosscov_add_component():

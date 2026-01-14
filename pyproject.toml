@@ -87,7 +87,6 @@ include = [
     "soliket.lensing",
     "soliket.mflike",
     "soliket.poisson",
-    "soliket.ps",
     "soliket.xcorr",
     "tests",
 ]

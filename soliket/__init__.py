@@ -17,5 +17,4 @@ from .clusters import ClusterLikelihood
 from .cosmopower import CosmoPower, CosmoPowerDerived
 from .gaussian import GaussianLikelihood, MultiGaussianLikelihood
 from .lensing import LensingLikelihood, LensingLiteLikelihood
-from .ps import BinnedPSLikelihood, PSLikelihood
 from .xcorr import XcorrLikelihood
