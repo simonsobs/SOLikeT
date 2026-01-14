@@ -14,6 +14,51 @@ from soliket.utils import get_likelihood
 
 
 class GaussianLikelihood(Likelihood):
+    """Base class for Gaussian likelihoods in SOLikeT.
+
+    This class provides the infrastructure for computing Gaussian log-likelihoods
+    from SACC data files. Subclasses must implement the ``_get_theory()`` method
+    to compute the theory prediction for the data vector.
+
+    Parameters
+    ----------
+    name : str
+        Name identifier for the likelihood (default: "Gaussian")
+    datapath : str
+        Path to the SACC file containing data and covariance
+    use_spectra : str or list
+        Which spectra to use. Either "all" or a list of tracer pairs
+        like ``[("tracer1", "tracer2")]``
+    ncovsims : int, optional
+        Number of simulations used to estimate covariance. If provided,
+        applies the Hartlap correction factor to the inverse covariance.
+
+    Attributes
+    ----------
+    data : GaussianData
+        The assembled Gaussian data object with covariance
+    sacc_data : sacc.Sacc
+        The loaded SACC data object
+    x : np.ndarray
+        The bin centers (ell values)
+    y : np.ndarray
+        The data vector
+    cov : np.ndarray
+        The covariance matrix
+
+    Examples
+    --------
+    To create a custom Gaussian likelihood::
+
+        class MyLikelihood(GaussianLikelihood):
+            name = "my_likelihood"
+            _allowable_tracers = ("cmb_temperature", "cmb_polarization")
+
+            def _get_theory(self, **params):
+                # Compute theory prediction
+                return theory_vector
+    """
+
     name: str = "Gaussian"
     use_spectra: (
         str | tuple[str, str] | list[tuple[str, str]] | list[list[str, str]] | None
@@ -147,6 +192,63 @@ class GaussianLikelihood(Likelihood):
 
 
 class MultiGaussianLikelihood(GaussianLikelihood):
+    """A likelihood combining multiple Gaussian likelihoods with cross-covariances.
+
+    This class enables joint analysis of multiple datasets by combining their
+    data vectors and covariance matrices. Cross-covariances between datasets
+    can be specified via a ``CrossCov`` object stored in SACC format.
+
+    Parameters
+    ----------
+    components : list of str
+        List of likelihood class names to combine, e.g.,
+        ``["soliket.mflike.MFLike", "soliket.lensing.LensingLikelihood"]``
+    options : list of dict
+        Configuration options for each component likelihood. Each dict should
+        contain at minimum ``datapath`` and any other required parameters.
+    cross_cov_path : str, optional
+        Path to a SACC file containing cross-covariances between components.
+        If not provided, components are assumed independent (zero cross-covariance).
+
+    Attributes
+    ----------
+    likelihoods : list of Likelihood
+        The instantiated component likelihoods
+    cross_cov : CrossCov or None
+        The loaded cross-covariance container
+    data : MultiGaussianData
+        The combined data object with joint covariance
+
+    Examples
+    --------
+    YAML configuration::
+
+        likelihood:
+          soliket.MultiGaussianLikelihood:
+            components:
+              - soliket.mflike.MFLike
+              - soliket.lensing.LensingLikelihood
+            options:
+              - datapath: /path/to/mflike.fits
+                use_spectra: all
+              - datapath: /path/to/lensing.fits
+            cross_cov_path: /path/to/cross_cov.fits
+
+    Python usage::
+
+        from soliket import MultiGaussianLikelihood
+
+        info = {
+            "components": ["soliket.mflike.MFLike", "soliket.lensing.LensingLikelihood"],
+            "options": [
+                {"datapath": "mflike.fits", "use_spectra": "all"},
+                {"datapath": "lensing.fits"},
+            ],
+            "cross_cov_path": "cross_cov.fits",
+        }
+        like = MultiGaussianLikelihood(info)
+    """
+
     components: Sequence | None = None
     options: Sequence | None = None
     cross_cov_path: str | None = None

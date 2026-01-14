@@ -7,8 +7,39 @@ from cobaya.functions import chi_squared
 
 
 class GaussianData:
-    """
-    Named multivariate gaussian data
+    """Container for named multivariate Gaussian data.
+
+    Stores a data vector with its covariance matrix and provides methods
+    for computing the Gaussian log-likelihood.
+
+    Parameters
+    ----------
+    name : str
+        Name identifier for the data
+    x : Sequence
+        Labels or coordinates for each data point (e.g., ell values)
+    y : Sequence[float]
+        The data vector values
+    cov : np.ndarray
+        Covariance matrix with shape (n, n) where n = len(x)
+    ncovsims : int, optional
+        Number of simulations used to estimate covariance. If provided,
+        applies the Hartlap correction factor to the inverse covariance.
+    indices : np.ndarray, optional
+        Boolean array for trimming cross-covariances when scale cuts are applied
+
+    Attributes
+    ----------
+    inv_cov : np.ndarray
+        Inverse covariance matrix (with Hartlap correction if applicable)
+    norm_const : float
+        Normalization constant for the Gaussian likelihood
+
+    Raises
+    ------
+    ValueError
+        If dimensions of x, y, and cov are incompatible
+        If covariance matrix has non-positive determinant
     """
 
     name: str  # name identifier for the data
@@ -69,11 +100,64 @@ class GaussianData:
         return len(self.x)
 
     def loglike(self, theory: np.ndarray) -> float:
+        """Compute the Gaussian log-likelihood.
+
+        Parameters
+        ----------
+        theory : np.ndarray
+            Theory prediction vector with same length as data
+
+        Returns
+        -------
+        float
+            Log-likelihood value including normalization constant
+        """
         delta = self.y - theory
         return -0.5 * self._fast_chi_squared(self.inv_cov, delta) + self.norm_const
 
 
 class CrossCov(dict):
+    """Cross-covariance container for multi-component Gaussian likelihoods.
+
+    Stores cross-covariances between named components (e.g., "mflike", "lensing")
+    and optionally the full covariances for each component. Supports saving and
+    loading in SACC format for persistence.
+
+    The dictionary keys are tuples of component names, e.g., ("mflike", "lensing").
+    Values are the corresponding covariance matrices.
+
+    For the full joint covariance, use:
+
+    - Diagonal blocks: ``(name, name)`` -> auto-covariance matrix
+    - Off-diagonal blocks: ``(name1, name2)`` -> cross-covariance matrix
+
+    Examples
+    --------
+    **Mode 1: Full covariance specification**
+
+    Use ``add_component()`` for auto-covariances and ``add_cross_covariance()``
+    for off-diagonal blocks::
+
+        cross_cov = CrossCov()
+        cross_cov.add_component("mflike", mflike_cov)
+        cross_cov.add_component("lensing", lensing_cov)
+        cross_cov.add_cross_covariance("mflike", "lensing", cross_block)
+        cross_cov.save("cross_cov.fits")
+
+    **Mode 2: Cross-covariance only**
+
+    If auto-covariances will come from individual likelihoods::
+
+        cross_cov = CrossCov()
+        cross_cov.add_cross_covariance("mflike", "lensing", cross_block)
+        cross_cov.save("cross_cov.fits")
+
+    **Loading**::
+
+        cross_cov = CrossCov.load("cross_cov.fits")
+        block = cross_cov[("mflike", "lensing")]
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._metadata = {}
@@ -85,19 +169,14 @@ class CrossCov(dict):
         data_types: tuple[str],
         tracer_info: dict[str, dict[str, str | int]] = None,
     ):
-        """Store metadata for cross-covariance entries.
+        """Add a component with its full covariance.
 
-        Parameters:
-        -----------
-        key : tuple[str]
-            Component identifier key
-        tracers : tuple[tuple[str]]
-            Tracer pairs for each component
-        data_types : tuple[str]
-            Data types (e.g., "cl_00", "cl_22")
-        tracer_info : dict[str, dict[str, str | int]]
-            Dictionary mapping tracer names to their properties:
-            {tracer_name: {"name": str, "quantity": str, "spin": int}}
+        Parameters
+        ----------
+        name : str
+            Component name (e.g., "mflike", "kk")
+        cov : np.ndarray
+            Full covariance matrix for this component
         """
         self._metadata[key] = {
             "tracers": tracers,
@@ -290,11 +369,40 @@ class MultiGaussianData(GaussianData):
 
     Parameters
     ----------
-    data_list : list
-        List of Data objects
+    data_list : list of GaussianData
+        Individual data objects to combine
+    cross_covs : CrossCov, optional
+        Cross-covariance container. If None, components are assumed independent.
+        Auto-covariances can come from either the CrossCov or the individual
+        GaussianData objects (individual data takes precedence if CrossCov
+        doesn't contain auto-covariance for a component).
 
-    cross_covs : dictionary
-        Cross-covariances, keyed by (name1, name2) tuples.
+    Attributes
+    ----------
+    data_list : list of GaussianData
+        The original individual data objects
+    names : list of str
+        Names of all components
+    lengths : list of int
+        Data vector lengths for each component
+    labels : list of str
+        Component name for each element in the combined data vector
+
+    Examples
+    --------
+    Combining two datasets with cross-covariance::
+
+        data1 = GaussianData("mflike", x1, y1, cov1)
+        data2 = GaussianData("lensing", x2, y2, cov2)
+
+        cross_cov = CrossCov()
+        cross_cov.add_cross_covariance("mflike", "lensing", cross_block)
+
+        multi_data = MultiGaussianData([data1, data2], cross_cov)
+
+        # Access combined properties
+        print(multi_data.cov.shape)  # (n1 + n2, n1 + n2)
+        loglike = multi_data.loglike(theory_vector)
     """
 
     def __init__(
