@@ -22,10 +22,10 @@ from cobaya.model import get_model
 from cobaya.theory import Provider
 
 from soliket.ccl import CCL
-from soliket.ps import BinnedPSLikelihood
+from soliket.gaussian import GaussianLikelihood
 
 
-class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
+class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
     r"""
     The full ``LensingLikelihood`` makes use of a *fiducial* lensing power spectrum which
     is calculated at a hard-coded set of fiducial cosmological parameters. This fiducial
@@ -47,20 +47,25 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     information about installable likelihoods.
     """
 
+    name: str = "CMB Lensing"
     _url: str = (
         "https://portal.nersc.gov/project/act/jia_qu/lensing_like/likelihood.tar.gz"
     )
     install_options: ClassVar = {"download_url": _url}
     data_folder: str = "LensingLikelihood/"
-    data_filename: str = "clkk_reconstruction_sim.fits"
+    data_filename: str = "lensing.sacc.fits"
 
-    kind: str = "pp"
+    use_spectra: str | tuple[str, str] = ("ck", "ck")
     sim_number: int = 0
     lmax: int = 3000
     theory_lmax: int = 10000
     # flag about whether CCL should be used to compute the cmb lensing power spectrum
     pp_ccl: bool = False
     provider: Provider
+
+    fiducial_from_file: bool = True
+    fiducial_filename: str | None = "fiducial_lensing.sacc.fits"
+    correction_filename: str | None = "corrections_lensing.sacc.fits"
 
     fiducial_params: ClassVar = {
         "ombh2": 0.02219218,
@@ -72,9 +77,21 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         "ns": 0.9625356e00,
     }
 
+    _allowable_tracers: ClassVar[list[str]] = ["cmb_convergence"]
+
     def initialize(self):
-        self.log.info("Initialising.")
-        # Set path to data
+        self.datapath = self._get_datapath()
+        super().initialize()
+        _, self.binning_matrix = self.get_binning(self.tracer_comb)
+
+        # Set the fiducial spectra
+        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
+        self._set_fiducial_Cls()
+
+        # set the correction terms generate from the script n1so.py
+        self._set_correction_factors()
+
+    def _get_datapath(self) -> str:
         if (not getattr(self, "path", None)) and (
             not getattr(self, "packages_path", None)
         ):
@@ -101,58 +118,118 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
                     "Check the given path [%s].",
                     self.data_folder,
                 )
+        return os.path.join(self.data_folder, self.data_filename)
 
-        # Set files where data/covariance are loaded from
-        self.datapath = os.path.join(self.data_folder, self.data_filename)
-        self.sacc = sacc.Sacc.load_fits(self.datapath)
+    def _set_correction_factors(self):
+        if self.correction_filename is not None:
+            assert self.correction_filename.endswith((".fits", ".sacc")), (
+                "Passing 'correction_filepath' LensingLikelihood tries to load it as a "
+                "'sacc file'. Remove it to use default correction factors."
+            )
+            self.log.info(
+                f"Loading correction factors from file: {self.correction_filename}"
+            )
+            s = sacc.Sacc.load_fits(
+                os.path.join(self.data_folder, self.correction_filename)
+            )
 
-        # x, y = self._get_data()
-        self.cov = self._get_cov()
-        self.binning_matrix = self._get_binning_matrix()
+            _, self.N0cltt = self._get_spectrum_from_sacc(
+                s, "ct", "ct", data_type="N0_00"
+            )
+            _, self.N0clte = self._get_spectrum_from_sacc(
+                s, "ct", "ce", data_type="N0_0e"
+            )
+            _, self.N0clee = self._get_spectrum_from_sacc(
+                s, "ce", "ce", data_type="N0_ee"
+            )
+            _, self.N0clbb = self._get_spectrum_from_sacc(
+                s, "cb", "cb", data_type="N0_bb"
+            )
+            _, self.N1clpp = self._get_spectrum_from_sacc(
+                s, "cp", "cp", data_type="N1_00"
+            )
+            _, self.N1cltt = self._get_spectrum_from_sacc(
+                s, "ct", "ct", data_type="N1_00"
+            )
+            _, self.N1clte = self._get_spectrum_from_sacc(
+                s, "ct", "ce", data_type="N1_0e"
+            )
+            _, self.N1clee = self._get_spectrum_from_sacc(
+                s, "ce", "ce", data_type="N1_ee"
+            )
+            _, self.N1clbb = self._get_spectrum_from_sacc(
+                s, "cb", "cb", data_type="N1_bb"
+            )
+            _, self.n0 = self._get_spectrum_from_sacc(s, "n0", "n0", data_type="N0_00")
+            self.n0 = self.n0[0]
+        else:
+            raise LoggedError(
+                self.log,
+                "No correction file provided. "
+                "Set the 'correction_filename' property of LensingLikelihood.",
+            )
 
-        # Initialize fiducial PS
-        Cls = self._get_fiducial_Cls()
+    def _get_spectrum_from_sacc(
+        self, s: sacc.Sacc, name1: str, name2: str, data_type: str | None = None
+    ) -> np.ndarray:
+        ls, cl = s.get_ell_cl(data_type, name1, name2, return_cov=False)
+        return ls, cl
 
-        # Set the fiducial spectra
-        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
-        self.fcltt = Cls["tt"][0 : self.lmax]
-        self.fclpp = Cls["pp"][0 : self.lmax]
-        self.fclee = Cls["ee"][0 : self.lmax]
-        self.fclte = Cls["te"][0 : self.lmax]
-        self.fclbb = Cls["bb"][0 : self.lmax]
-        self.thetaclkk = self.fclpp * (self.ls * (self.ls + 1)) ** 2 * 0.25
-
-        # load the correction terms generate from the script n1so.py
-
-        self.N0cltt = np.loadtxt(os.path.join(self.data_folder, "n0mvdcltt1.txt")).T
-        self.N0clte = np.loadtxt(os.path.join(self.data_folder, "n0mvdclte1.txt")).T
-        self.N0clee = np.loadtxt(os.path.join(self.data_folder, "n0mvdclee1.txt")).T
-        self.N0clbb = np.loadtxt(os.path.join(self.data_folder, "n0mvdclbb1.txt")).T
-        self.N1clpp = np.loadtxt(os.path.join(self.data_folder, "n1mvdclkk1.txt")).T
-        self.N1cltt = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltte1.txt")).T
-        self.N1clte = np.loadtxt(os.path.join(self.data_folder, "n1mvdcltee1.txt")).T
-        self.N1clee = np.loadtxt(os.path.join(self.data_folder, "n1mvdcleee1.txt")).T
-        self.N1clbb = np.loadtxt(os.path.join(self.data_folder, "n1mvdclbbe1.txt")).T
-        self.n0 = np.loadtxt(os.path.join(self.data_folder, "n0mv.txt"))
-
-        super().initialize()
-
-    def _get_fiducial_Cls(self) -> dict:
+    def _set_fiducial_Cls(self) -> dict:
         """
         Obtain a set of fiducial ``Cls`` from theory provider (e.g. ``camb``).
         Fiducial ``Cls`` are used to compute correction terms for the theory vector.
 
         :return: Fiducial ``Cls``
         """
-        info_fiducial = {
-            "params": self.fiducial_params,
-            "likelihood": {"soliket.utils.OneWithCls": {"lmax": self.theory_lmax}},
-            "theory": {"camb": {"extra_args": {"kmax": 0.9}}},
-            # "modules": modules_path,
-        }
-        model_fiducial = get_model(info_fiducial)
-        model_fiducial.logposterior({})
-        Cls = model_fiducial.provider.get_Cl(ell_factor=False)
+        if self.fiducial_from_file:
+            assert self.fiducial_filename is not None
+            self.log.info(f"Loading fiducial Cls from file: {self.fiducial_filename}")
+            if self.fiducial_filename.endswith((".fits", ".sacc")):
+                s = sacc.Sacc.load_fits(
+                    os.path.join(self.data_folder, self.fiducial_filename)
+                )
+
+                _, Cls_tt = self._get_spectrum_from_sacc(s, "ct", "ct")
+                _, Cls_ee = self._get_spectrum_from_sacc(s, "ce", "ce")
+                _, Cls_bb = self._get_spectrum_from_sacc(s, "cb", "cb")
+                _, Cls_te = self._get_spectrum_from_sacc(s, "ct", "ce")
+
+                try:
+                    _, Cls_kk = self._get_spectrum_from_sacc(s, "ck", "ck")
+                except Exception:
+                    ls, Cls_pp = self._get_spectrum_from_sacc(s, "cp", "cp")
+                    Cls_kk = Cls_pp * (ls * (ls + 1)) ** 2 * 0.25
+
+                Cls = {
+                    "kk": Cls_kk,
+                    "tt": Cls_tt,
+                    "ee": Cls_ee,
+                    "bb": Cls_bb,
+                    "te": Cls_te,
+                }
+            else:
+                raise LoggedError(
+                    self.log,
+                    "Fiducial Cls file not recognized. "
+                    "Please provide a .fits or .sacc file.",
+                )
+        else:
+            info_fiducial = {
+                "params": self.fiducial_params,
+                "likelihood": {"soliket.utils.OneWithCls": {"lmax": self.theory_lmax}},
+                "theory": {"camb": {"extra_args": {"kmax": 0.9}}},
+            }
+            model_fiducial = get_model(info_fiducial)
+            model_fiducial.logposterior({})
+            Cls = model_fiducial.provider.get_Cl(ell_factor=False)
+            Cls["kk"] = Cls["pp"][0 : self.lmax] * (self.ls * (self.ls + 1)) ** 2 * 0.25
+
+        self.fcltt = Cls["tt"][0 : self.lmax]
+        self.fclee = Cls["ee"][0 : self.lmax]
+        self.fclte = Cls["te"][0 : self.lmax]
+        self.fclbb = Cls["bb"][0 : self.lmax]
+        self.thetaclkk = Cls["kk"][0 : self.lmax]
         return Cls
 
     def get_requirements(self) -> dict:
@@ -187,30 +264,6 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
     def _get_CCL_results(self) -> tuple[CCL, dict]:
         cosmo_dict = self.provider.get_CCL()
         return cosmo_dict["ccl"], cosmo_dict["cosmo"]
-
-    def _get_data(self) -> tuple[np.ndarray, np.ndarray]:
-        bin_centers, bandpowers, cov = self.sacc.get_ell_cl(
-            None, "ck", "ck", return_cov=True
-        )
-        self.x = bin_centers
-        self.y = bandpowers
-        return bin_centers, self.y
-
-    def _get_cov(self) -> np.ndarray:
-        bin_centers, bandpowers, cov = self.sacc.get_ell_cl(
-            None, "ck", "ck", return_cov=True
-        )
-        self.cov = cov
-        return cov
-
-    def _get_binning_matrix(self) -> np.ndarray:
-        bin_centers, bandpowers, cov, ind = self.sacc.get_ell_cl(
-            None, "ck", "ck", return_cov=True, return_ind=True
-        )
-        bpw = self.sacc.get_bandpower_windows(ind)
-        binning_matrix = bpw.weight.T
-        self.binning_matrix = binning_matrix
-        return binning_matrix
 
     def _get_theory(self, **params_values) -> np.ndarray:
         r"""
@@ -261,7 +314,7 @@ class LensingLikelihood(BinnedPSLikelihood, InstallableLikelihood):
         return Clkk_binned + correction
 
 
-class LensingLiteLikelihood(BinnedPSLikelihood):
+class LensingLiteLikelihood(GaussianLikelihood):
     """
     Lite version of Lensing Likelihood for quick tests, which does not make any of the
     bias corrections requiring fiducial spectra calculations or downloads of external
@@ -269,15 +322,25 @@ class LensingLiteLikelihood(BinnedPSLikelihood):
     and covariance matrix, and the appropriate theory vector.
     """
 
-    kind: str = "pp"
     lmax: int = 3000
+    data_filename: str = "lensing.sacc.fits"
+    use_spectra: str | tuple[str, str] = ("ck", "ck")
+
+    _allowable_tracers: ClassVar[list[str]] = ["cmb_convergence"]
 
     def initialize(self):
         data = os.path.join(self.get_class_path(), "data")
-        self.datapath = self.datapath or os.path.join(data, "binnedauto.txt")
-        self.covpath = self.covpath or os.path.join(data, "binnedcov.txt")
-
-        self.binning_matrix_path = self.binning_matrix_path or os.path.join(
-            data, "binningmatrix.txt"
-        )
+        self.datapath = self.datapath or os.path.join(data, self.data_filename)
         super().initialize()
+        _, self.binning_matrix = self.get_binning(self.tracer_comb)
+        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
+
+    def get_requirements(self) -> dict:
+        return {"Cl": {"pp": self.lmax}}
+
+    def _get_theory(self, **params_values) -> np.ndarray:
+        cl = self.provider.get_Cl(ell_factor=False)
+        Clkk_theo = (self.ls * (self.ls + 1)) ** 2 * cl["pp"][0 : self.lmax] * 0.25
+
+        Clkk_binned = self.binning_matrix.dot(Clkk_theo)
+        return Clkk_binned

@@ -5,79 +5,34 @@ import copy
 import numpy as np
 import pytest
 from cobaya.model import get_model
-from cobaya.yaml import yaml_load
 
 from soliket.xcorr.limber import do_limber, mag_bias_kernel
 
+fiducial_params = {
+    "b1": 1.0,
+    "s1": 0.4,
+    "tau": 0.05,
+    "mnu": 0.0,
+    "nnu": 3.046,
+}
+info = {}
+info["params"] = fiducial_params
+info["likelihood"] = {
+    "soliket.xcorr.XcorrLikelihood": {
+        "stop_at_error": True,
+    }
+}
+info["debug"] = True
 
-def get_demo_xcorr_model(theory):
+
+def get_demo_xcorr_info(theory):
     if theory == "camb":
-        info_yaml = r"""
-        likelihood:
-            soliket.XcorrLikelihood:
-                stop_at_error: True
-                datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
-                k_tracer_name: ck_so
-                gc_tracer_name: gc_unwise
-
-        theory:
-            camb:
-                extra_args:
-                  lens_potential_accuracy: 1
-
-        params:
-            tau: 0.05
-            mnu: 0.0
-            nnu: 3.046
-            b1:
-                prior:
-                    min: 0.
-                    max: 10.
-                ref:
-                    min: 1.
-                    max: 4.
-                proposal: 0.1
-            s1:
-                prior:
-                    min: 0.1
-                    max: 1.0
-                proposal: 0.1
-        """
+        info["theory"] = {"camb": {"extra_args": {"lens_potential_accuracy": 1}}}
     elif theory == "classy":
-        info_yaml = r"""
-        likelihood:
-            soliket.XcorrLikelihood:
-                stop_at_error: True
-                datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
-                k_tracer_name: ck_so
-                gc_tracer_name: gc_unwise
-
-        theory:
-            classy:
-                extra_args:
-                    output: lCl, tCl
-                path: global
-
-        params:
-            b1:
-                prior:
-                    min: 0.
-                    max: 10.
-                ref:
-                    min: 1.
-                    max: 4.
-                proposal: 0.1
-            s1:
-                prior:
-                    min: 0.1
-                    max: 1.0
-                proposal: 0.1
-
-        """
-
-    info = yaml_load(info_yaml)
-    model = get_model(info)
-    return model
+        info["theory"] = {
+            "classy": {"extra_args": {"output": "lCl, tCl"}, "path": "global"}
+        }
+    return info
 
 
 def test_wrong_types():
@@ -119,33 +74,8 @@ def test_wrong_types():
 
 @pytest.mark.parametrize("theory", ["camb"])  # , "classy"])
 def test_xcorr_model(theory):
-    _ = get_demo_xcorr_model(theory)
-
-
-def test_xcorr_bin_and_get_data(tmp_path):
-    from soliket.xcorr import XcorrLikelihood
-
-    # prepare simple auto and cross text files
-    auto = tmp_path / "auto.txt"
-    cross = tmp_path / "cross.txt"
-    # two ell bins with values and errors
-    auto.write_text("""1 2\n10 20\n0.1 0.2\n""")
-    cross.write_text("""3 4\n30 40\n0.3 0.4\n""")
-
-    xl = XcorrLikelihood.__new__(XcorrLikelihood)
-    xl.auto_file = str(auto)
-    xl.cross_file = str(cross)
-    # setup minimal attrs used by _get_data
-    x, y, dy = XcorrLikelihood._get_data(xl)
-    assert x.shape[0] == y.shape[0] == dy.shape[0]
-
-    # test _bin: create a small theory array and simple lmin/lmax
-    xl.ell_range = np.linspace(1, 10, 10)
-    theory = np.arange(1, 11)
-    lmin = np.array([1, 5])
-    lmax = np.array([5, 11])
-    binned = XcorrLikelihood._bin(xl, theory, lmin, lmax)
-    assert binned.shape[0] == lmin.shape[0]
+    info = get_demo_xcorr_info(theory)
+    _ = get_model(info)
 
 
 def test_xcorr_get_theory(tmp_path):
@@ -189,8 +119,6 @@ def test_xcorr_get_theory(tmp_path):
     xl.Nchi_mag = 5
     xl.high_ell = 100
     xl.ell_range = np.linspace(1, xl.high_ell, int(xl.high_ell + 1))
-    xl.alpha_auto = 1.0
-    xl.alpha_cross = 1.0
 
     # small data object with x of even length so binning works
     class SimpleData:
@@ -213,11 +141,11 @@ def test_xcorr_get_theory(tmp_path):
 
     xcorr_mod.do_limber = simple_do_limber
 
-    res = xl._get_theory(s1=0.4, b1=1.0)
+    xl.binning_matrix = np.eye(xl.high_ell + 1)[: xl.data.x.shape[0]]
+    res = xl._get_theory(s1=0.4, b1=1.0, alpha_auto=1.0, alpha_cross=1.0)
 
-    # result should be a 1D array with same length as data.x and finite values
     assert isinstance(res, np.ndarray)
-    assert res.shape[0] == xl.data.x.shape[0]
+    assert res.shape[0] == xl.data.x.shape[0] * 2
     assert np.all(np.isfinite(res))
 
 
@@ -226,7 +154,8 @@ def test_xcorr_get_theory(tmp_path):
 def test_xcorr_like(theory):
     params = {"b1": 1.0, "s1": 0.4}
 
-    model = get_demo_xcorr_model(theory)
+    info = get_demo_xcorr_info(theory)
+    model = get_model(info)
 
     lnl = model.loglike(params)[0]
     assert np.isfinite(lnl)
@@ -251,8 +180,8 @@ def test_xcorr_like(theory):
         Pk_interpolator,
         params["b1"],
         params["b1"],
-        xcorr_lhood.alpha_auto,
-        xcorr_lhood.alpha_cross,
+        params["alpha_auto"],
+        params["alpha_cross"],
         setup_chi_out,
         Nchi=xcorr_lhood.Nchi,
         dndz1_mag=xcorr_lhood.dndz,

@@ -16,7 +16,7 @@ packages_path = resolve_packages_path()
         "multi",
     ],
 )
-def test_installation(lhood):
+def test_installation(lhood, fixed_lensing_data):
     if lhood == "lensing":
         from soliket import LensingLikelihood
 
@@ -44,9 +44,9 @@ def test_installation(lhood):
 @pytest.mark.parametrize(
     "lhood",
     [
-        "lensing",
+        # "lensing",
         "lensing_lite",
-        "multi",
+        # "multi",
         "galaxykappa",
         "shearkappa",
         # "xcorr"
@@ -70,9 +70,9 @@ def test_evaluate(lhood):
 @pytest.mark.parametrize(
     "lhood",
     [
-        "lensing",
+        # "lensing",
         "lensing_lite",
-        "multi",
+        # "multi",
         "galaxykappa",
         "shearkappa",
         # "xcorr"

@@ -1,0 +1,3 @@
+datapath: tests/data/des_s-act_kappa.toy-sim.sacc.fits
+use_spectra: all
+ncovsims: null

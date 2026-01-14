@@ -40,7 +40,7 @@ nuisance_params = {
 }
 
 
-def test_lensing_and_mflike_installations(check_skip_mflike):
+def test_lensing_and_mflike_installations(check_skip_mflike, fixed_lensing_data):
     import mflike
 
     from soliket import LensingLikelihood
@@ -62,7 +62,9 @@ def test_lensing_and_mflike_installations(check_skip_mflike):
     )
 
 
-def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
+def test_multi(
+    test_cosmology_params, check_skip_mflike, likelihood_refs, fixed_lensing_data
+):
     ref = likelihood_refs["multi"]
 
     lensing_options = {"theory_lmax": 5000}
@@ -130,7 +132,6 @@ def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
     d_logp = logp_b - logp_a
 
     assert np.isclose(d_logp, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
-
 
     model1_logp_a = model1.loglikes(fg_values_a, cached=False)[0].sum()
     model2_logp_a = model2.loglikes({}, cached=False)[0].sum()

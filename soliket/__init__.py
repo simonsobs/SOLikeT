@@ -8,14 +8,13 @@ except PackageNotFoundError:
 
 from .bias import Bias, Linear_bias
 from .ccl import CCL
-from .clusters import ClusterLikelihood
-from .cosmopower import CosmoPower, CosmoPowerDerived
-from .cross_correlation import (
-    CrossCorrelationLikelihood,
+from .ccl_tracers import (
+    CCLTracersLikelihood,
     GalaxyKappaLikelihood,
     ShearKappaLikelihood,
 )
+from .clusters import ClusterLikelihood
+from .cosmopower import CosmoPower, CosmoPowerDerived
 from .gaussian import GaussianLikelihood, MultiGaussianLikelihood
 from .lensing import LensingLikelihood, LensingLiteLikelihood
-from .ps import BinnedPSLikelihood, PSLikelihood
 from .xcorr import XcorrLikelihood

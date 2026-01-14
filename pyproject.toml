@@ -60,6 +60,9 @@ all = [
     "soliket[pyhalomodel]",
     "soliket[mflike]",
 ]
+jupyter = [
+    "jupyter>=1.1.1",
+]
 
 [build-system]
 requires = ["setuptools>=64", "setuptools_scm>=8"]
@@ -75,16 +78,15 @@ include = [
     "soliket.bias",
     "soliket.cash",
     "soliket.ccl",
+    "soliket.ccl_tracers",
     "soliket.clusters",
     "soliket.cosmopower",
-    "soliket.cross_correlation",
     "soliket.foreground",
     "soliket.gaussian",
     "soliket.halo_model",
     "soliket.lensing",
     "soliket.mflike",
     "soliket.poisson",
-    "soliket.ps",
     "soliket.xcorr",
     "tests",
 ]
@@ -125,8 +127,10 @@ exclude_lines = [
     # Don't complain about packages we have installed
     "except ImportError",
     "except ModuleNotFoundError",
-    # Don't complain if tests don't hit assertions
+    "except Exception",
+    # Don't complain if tests don't hit assertions/raise
     "raise AssertionError",
+    "raise LoggedError",
     "raise NotImplementedError",
     # Don't complain about script hooks
     "def main\\(.*\\):",

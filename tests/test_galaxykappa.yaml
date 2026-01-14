@@ -34,7 +34,7 @@ params:
     latex: s_1 
   sigma8: 
 likelihood:
-  soliket.cross_correlation.GalaxyKappaLikelihood:
+  soliket.ccl_tracers.GalaxyKappaLikelihood:
     datapath: tests/data/gc_cmass-actdr4_kappa.sacc.fits
     use_spectra: all
     ncovsims: null

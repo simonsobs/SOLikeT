@@ -1,4 +1,4 @@
-soliket.cross_correlation.ShearKappaLikelihood:
+soliket.ccl_tracers.ShearKappaLikelihood:
   datapath: ../data/shearkappa_smooth_mockdata.fits
   use_spectra: all
   z_nuisance_mode: deltaz

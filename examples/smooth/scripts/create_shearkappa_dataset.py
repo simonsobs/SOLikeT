@@ -241,7 +241,7 @@ model = get_model(info)
 model.loglikes(fid_cosmo)
 
 # and replace the data in the sacc file
-sklike = model.likelihood["soliket.cross_correlation.ShearKappaLikelihood"]
+sklike = model.likelihood["soliket.ccl_tracers.ShearKappaLikelihood"]
 
 # param_values = {'H0': 67.7, 'logA': 3.05, 'omch2': 0.1202, 'A_IA': 0.35, 'eta_IA': 1.66}
 param_values = {}
@@ -267,7 +267,7 @@ s.save_fits("../data/shearkappa_smooth_mockdata.fits", overwrite=True)
 model = get_model(info)
 likes = model.loglikes(fid_cosmo)
 
-sklike = model.likelihood["soliket.cross_correlation.ShearKappaLikelihood"]
+sklike = model.likelihood["soliket.ccl_tracers.ShearKappaLikelihood"]
 sktheory = sklike._get_theory(**param_values)
 
 assert np.all(s.mean == sktheory)

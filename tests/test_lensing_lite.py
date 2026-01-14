@@ -95,9 +95,12 @@ def test_lensinglite_get_theory_basic():
     # set minimal attributes
     ll.provider = DummyProviderCl(lmax)
     ll.lmax = lmax
+    ll.ls = np.arange(lmax, dtype=np.longlong)
+    ll.use_spectra = ("ck", "ck")
     # make binning matrix identity so binned result equals theory
     ll.binning_matrix = np.eye(lmax)
-    # call inherited BinnedPSLikelihood._get_theory (kind is 'pp' by default)
+    # call LensingLiteLikelihood._get_theory which computes binned Clkk from pp
     out = LensingLiteLikelihood._get_theory(ll)
+    expected = (ll.ls * (ll.ls + 1)) ** 2 * ll.provider.get_Cl()["pp"][0 : ll.lmax] * 0.25
     # provider returns pp = [1,2,3,4,5], so out should equal that
-    assert np.allclose(out, np.arange(lmax, dtype=float) + 1.0)
+    assert np.allclose(out, expected)

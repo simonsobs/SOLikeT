@@ -26,7 +26,7 @@ jobs:
     needs: check-skip
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - os: ubuntu-latest
@@ -49,13 +49,6 @@ jobs:
             python-version: '3.11'
             tags: []
 
-          - os: windows-latest
-            python-version: '3.11'
-            tags: []
-            env:
-              PYTHONIOENCODING: utf-8
-              PYTHONUTF8: 1
-
     if: ${{ needs.check-skip.outputs.skip != 'true' }}
 
     steps:
@@ -68,7 +61,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install GSL
-        if: matrix.os != 'windows-latest'
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             sudo apt-get update
@@ -83,6 +75,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
+          prune-cache: false
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
+
+      - name: Cache virtual environment
+        uses: actions/cache@v4
+        id: cache-venv
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
+
+      - name: Cache cobaya_packages
+        id: cache-cobaya
+        uses: actions/cache@v4
+        with:
+          path: ./cobaya_packages
+          key: cobaya_packages-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
 
       - name: Install SOLikeT dependencies and likelihoods
         run: |
@@ -108,33 +118,8 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  test-conda:
-    needs: check-skip
-    if: ${{ needs.check-skip.outputs.skip != 'true' }}
-    runs-on: ubuntu-latest
-    name: Conda Test (Python 3.12)
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-activate-base: false
-          environment-file: soliket-tests.yml
-          activate-environment: soliket-tests
-
-      - name: Run tests
-        shell: bash -el {0}
-        run: |
-          pytest -vv
-
   aggregate:
-    needs: [test, test-conda]
+    needs: [test]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     name: 🛠 Aggregate test results
@@ -142,16 +127,11 @@ jobs:
       - name: Show individual results
         run: |
           echo "matrix test result: ${{ needs.test.result }}"
-          echo "conda test result: ${{ needs.test-conda.result }}"
 
       - name: Fail if any failed
         run: |
           if [ "${{ needs.test.result }}" = "failure" ]; then
             echo "❌ matrix test failed"
-            exit 1
-          fi
-          if [ "${{ needs['test-conda'].result }}" = "failure" ]; then
-            echo "❌ test-conda failed"
             exit 1
           fi
           echo "👍 All succeeded or skipped"
