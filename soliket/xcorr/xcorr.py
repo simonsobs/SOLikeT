@@ -62,11 +62,7 @@ class XcorrLikelihood(GaussianLikelihood):
 
     name = "Xcorr"
     use_spectra: str | tuple[str, str] | list[tuple[str, str]] | None
-    auto_file: str | None
-    cross_file: str | None
-    dndz_file: str | None
     datapath: str | None
-    covpath: str | None
     k_tracer_name: str | None
     gc_tracer_name: str | None
     high_ell: int | None
@@ -109,11 +105,8 @@ class XcorrLikelihood(GaussianLikelihood):
     def _get_dndz(self) -> np.ndarray:
         tracers = self.sacc_data.tracers
         tracer: sacc.tracers.NZTracer = tracers[self.gc_tracer_name]
-        if not hasattr(tracer, "extra_columns") or "dndz" not in tracer.extra_columns:
-            raise ValueError(
-                f"Tracer {self.gc_tracer_name} does not have dndz in extra_columns!"
-            )
-        dndz = tracer.extra_columns["dndz"]
+
+        dndz = tracer.nz
         z = tracer.z
         assert len(z) == len(dndz), "dndz and z have different lengths!"
         return np.array([z, dndz]).T
