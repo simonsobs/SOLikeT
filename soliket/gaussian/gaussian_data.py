@@ -1,3 +1,4 @@
+import json
 from collections.abc import Sequence
 from typing import Optional
 
@@ -161,13 +162,12 @@ class CrossCov(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._metadata = {}
+        self._component_info: dict[str, dict] = {}
 
-    def add_metadata(
+    def add_component(
         self,
-        key: tuple[str],
-        tracers: tuple[tuple[str]],
-        data_types: tuple[str],
-        tracer_info: dict[str, dict[str, str | int]] = None,
+        name: str,
+        cov: np.ndarray,
     ):
         """Add a component with its full covariance.
 
@@ -178,194 +178,248 @@ class CrossCov(dict):
         cov : np.ndarray
             Full covariance matrix for this component
         """
+        if isinstance(cov, dict):
+            raise TypeError(
+                f"cov must be a numpy array, not a dict. Got: {type(cov)}"
+            )
+        cov_array = np.asarray(cov)
+        self._component_info[name] = {
+            "size": cov_array.shape[0],
+            "cov": cov_array,
+        }
+        # Also store the auto-covariance in the dict
+        self[(name, name)] = cov_array
+
+    def add_cross_covariance(
+        self,
+        name1: str,
+        name2: str,
+        cross_cov: np.ndarray,
+    ):
+        """Add cross-covariance between two components.
+
+        Parameters
+        ----------
+        name1 : str
+            First component name
+        name2 : str
+            Second component name
+        cross_cov : np.ndarray
+            Cross-covariance matrix with shape (n1, n2)
+        """
+        self[(name1, name2)] = np.asarray(cross_cov)
+        # Also store the transpose for convenience
+        self[(name2, name1)] = np.asarray(cross_cov).T
+
+    @property
+    def component_names(self) -> list[str]:
+        """Get ordered list of component names."""
+        return list(self._component_info.keys())
+
+    def _infer_component_info(self):
+        """Infer component sizes from stored covariance blocks.
+
+        This is called when save() is invoked without explicit add_component() calls.
+        Sizes are inferred from the shapes of cross-covariance matrices.
+        """
+        sizes: dict[str, int] = {}
+
+        for key, cov in self.items():
+            name1, name2 = key
+            n1, n2 = cov.shape
+
+            if name1 in sizes:
+                if sizes[name1] != n1:
+                    raise ValueError(
+                        f"Inconsistent sizes for component '{name1}': "
+                        f"{sizes[name1]} vs {n1}"
+                    )
+            else:
+                sizes[name1] = n1
+
+            if name2 in sizes:
+                if sizes[name2] != n2:
+                    raise ValueError(
+                        f"Inconsistent sizes for component '{name2}': "
+                        f"{sizes[name2]} vs {n2}"
+                    )
+            else:
+                sizes[name2] = n2
+
+        # Populate _component_info with inferred sizes
+        for name, size in sizes.items():
+            self._component_info[name] = {
+                "size": size,
+                "cov": self.get((name, name)),  # May be None if only cross-covs
+            }
+
+    def save(self, path: str):
+        """Save cross-covariance to SACC format.
+
+        The SACC file will contain:
+        - A misc tracer for each component
+        - Dummy data points to establish the data vector structure
+        - The full joint covariance matrix
+
+        Parameters
+        ----------
+        path : str
+            Output path (must end with .fits or .sacc)
+        """
+        if not path.endswith((".fits", ".sacc")):
+            raise ValueError("Only .fits or .sacc files are supported!")
+
+        # If no components were added explicitly, infer sizes from cross-covariances
+        if not self._component_info:
+            self._infer_component_info()
+
+        cross_sacc = sacc.Sacc()
+
+        # Add metadata about component order (as JSON string for FITS compatibility)
+        cross_sacc.metadata["component_names"] = json.dumps(self.component_names)
+
+        # Add a misc tracer for each component
+        for name in self.component_names:
+            cross_sacc.add_tracer("misc", name, quantity="generic", spin=0)
+
+        # Add dummy data points to establish SACC structure
+        # (SACC requires data points before covariance can be added)
+        # The actual data values are not meaningful - only the covariance matters
+        for name in self.component_names:
+            n_points = self._component_info[name]["size"]
+
+            for i in range(n_points):
+                cross_sacc.add_data_point(
+                    "generic", (name, name), 0.0, ell=float(i)
+                )
+
+        # Build and add the full joint covariance matrix
+        full_cov = self._build_full_covariance()
+        cross_sacc.add_covariance(full_cov)
+
+        cross_sacc.save_fits(path, overwrite=True)
+
+    def _build_full_covariance(self) -> np.ndarray:
+        """Build the full joint covariance matrix from stored blocks."""
+        names = self.component_names
+        sizes = [self._component_info[name]["size"] for name in names]
+        total_size = sum(sizes)
+
+        full_cov = np.zeros((total_size, total_size))
+
+        # Fill in blocks
+        row_start = 0
+        for i, name_i in enumerate(names):
+            col_start = 0
+            for j, name_j in enumerate(names):
+                key = (name_i, name_j)
+                if key in self:
+                    block = np.asarray(self[key])
+                    full_cov[
+                        row_start : row_start + sizes[i],
+                        col_start : col_start + sizes[j],
+                    ] = block
+                col_start += sizes[j]
+            row_start += sizes[i]
+
+        return full_cov
+
+    @classmethod
+    def load(cls, path: str | None) -> Optional["CrossCov"]:
+        """Load cross-covariance from SACC format.
+
+        Parameters
+        ----------
+        path : str or None
+            Path to SACC file. If None, returns None.
+
+        Returns
+        -------
+        CrossCov or None
+            Loaded cross-covariance object, or None if path is None.
+        """
+        if path is None:
+            return None
+
+        if not path.endswith((".fits", ".sacc")):
+            raise ValueError("Only .fits or .sacc files are supported!")
+
+        cross_sacc = sacc.Sacc.load_fits(path)
+        cross_cov = cls()
+
+        # Get component names from metadata or infer from tracers
+        if "component_names" in cross_sacc.metadata:
+            # Parse JSON string back to list
+            component_names = json.loads(cross_sacc.metadata["component_names"])
+        else:
+            # Infer from tracer names
+            component_names = list(cross_sacc.tracers.keys())
+
+        # Extract indices for each component
+        component_indices = {}
+        for name in component_names:
+            indices = cross_sacc.indices(tracers=(name, name))
+            component_indices[name] = indices
+
+            # Store component info (cov will be extracted below)
+            cross_cov._component_info[name] = {
+                "size": len(indices),
+                "cov": None,  # Will be filled below
+            }
+
+        # Extract covariance blocks
+        if cross_sacc.covariance is not None:
+            full_cov = cross_sacc.covariance.covmat
+
+            for name_i in component_names:
+                indices_i = component_indices[name_i]
+
+                for name_j in component_names:
+                    indices_j = component_indices[name_j]
+
+                    # Extract the covariance block
+                    cov_block = full_cov[np.ix_(indices_i, indices_j)]
+                    cross_cov[(name_i, name_j)] = cov_block
+
+                    # Update auto-covariance in component_info
+                    if name_i == name_j:
+                        cross_cov._component_info[name_i]["cov"] = cov_block
+
+        return cross_cov
+
+    # Keep old methods for backwards compatibility with existing metadata approach
+    def add_metadata(
+        self,
+        key: tuple[str],
+        tracers: tuple[tuple[str]],
+        data_types: tuple[str],
+        tracer_info: dict[str, dict[str, str | int]] = None,
+    ):
+        """Store metadata for cross-covariance entries (legacy method).
+
+        Parameters
+        ----------
+        key : tuple[str]
+            Component identifier key
+        tracers : tuple[tuple[str]]
+            Tracer pairs for each component
+        data_types : tuple[str]
+            Data types (e.g., "cl_00", "cl_22")
+        tracer_info : dict[str, dict[str, str | int]]
+            Dictionary mapping tracer names to their properties
+        """
         self._metadata[key] = {
             "tracers": tracers,
             "data_types": data_types,
             "tracer_info": tracer_info or {},
         }
 
-    def save(self, path: str):
-        assert path.endswith((".fits", ".sacc")), "Only 'sacc' files are supported!"
-
-        cross_sacc = sacc.Sacc()
-
-        # Collect all unique tracers from metadata
-        all_tracers = set()
-        tracer_info_dict = {}
-
-        for metadata in self._metadata.values():
-            for tracer_pair in metadata["tracers"]:
-                all_tracers.update(tracer_pair)
-
-            # Collect tracer info from metadata
-            if "tracer_info" in metadata:
-                tracer_info_dict.update(metadata["tracer_info"])
-
-        # Add tracers using the stored metadata
-        for tracer_name in sorted(all_tracers):
-            if tracer_name in tracer_info_dict:
-                info = tracer_info_dict[tracer_name]
-                cross_sacc.add_tracer(
-                    "misc", info["name"], quantity=info["quantity"], spin=info["spin"]
-                )
-            else:
-                raise ValueError(
-                    f"No tracer info provided for '{tracer_name}'. "
-                    "Please add tracer info using add_metadata() "
-                    "with tracer_info parameter."
-                )
-
-        # Add minimal data points to establish SACC structure
-        # We need actual data points before we can set covariance
-        for key in self.keys():
-            tracer_1, tracer_2 = key
-            if tracer_1 in tracer_info_dict and tracer_2 in tracer_info_dict:
-                info_1 = tracer_info_dict[tracer_1]
-                info_2 = tracer_info_dict[tracer_2]
-                data_type = f"cl_{info_1['spin']}{info_2['spin']}"
-
-                matrix = self[key]
-                n_ell = matrix.shape[0]
-                ells = np.arange(2, 2 + n_ell)  # Start from ell=2
-                cls = np.zeros(n_ell)  # Dummy Cl values
-
-                cross_sacc.add_ell_cl(data_type, tracer_1, tracer_2, ells, cls)
-
-        # Build full covariance matrix from cross-covariance blocks
-        full_cov = self._build_full_covariance_matrix(cross_sacc)
-        cross_sacc.add_covariance(full_cov)
-
-        cross_sacc.save_fits(path, overwrite=True)
-
-    @classmethod
-    def load(cls, path: str | None) -> Optional["CrossCov"]:
-        """Load cross-covariances from SACC format."""
-        if path is None:
-            return None
-
-        if not path.endswith((".fits", ".sacc")):
-            raise ValueError("Only .fits or .sacc files are supported for CrossCov!")
-
-        cross_sacc = sacc.Sacc.load_fits(path)
-        cross_cov = cls()
-
-        # Rebuild tracer_info from SACC tracers
-        tracer_info_dict = {}
-        for tracer_name, tracer in cross_sacc.tracers.items():
-            tracer_info_dict[tracer_name] = {
-                "name": tracer_name,
-                "quantity": tracer.quantity,
-                "spin": getattr(tracer, "spin", 0),  # Default to 0 if no spin attribute
-            }
-
-        # Extract cross-covariance blocks from the full covariance matrix
-        if hasattr(cross_sacc, "covariance") and cross_sacc.covariance is not None:
-            full_cov = cross_sacc.covariance.covmat
-            tracer_combinations = cross_sacc.get_tracer_combinations()
-
-            # Create mapping from tracer combinations to data indices
-            tracer_to_indices = {}
-            for tracer_comb in tracer_combinations:
-                indices = cross_sacc.indices(tracers=tracer_comb)
-                tracer_to_indices[tracer_comb] = indices
-
-            # Extract cross-covariance blocks
-            for tracer_comb_i in tracer_combinations:
-                indices_i = tracer_to_indices[tracer_comb_i]
-
-                for tracer_comb_j in tracer_combinations:
-                    indices_j = tracer_to_indices[tracer_comb_j]
-
-                    # Extract the covariance block
-                    cov_block = full_cov[np.ix_(indices_i, indices_j)]
-
-                    # Store significant cross-covariances (skip diagonal auto-cov)
-                    if tracer_comb_i != tracer_comb_j and not np.allclose(
-                        cov_block, 0, atol=1e-12
-                    ):
-                        key = (tracer_comb_i[0], tracer_comb_j[0])
-                        cross_cov[key] = cov_block
-
-                        # Add metadata
-                        spin_i0 = getattr(cross_sacc.tracers[tracer_comb_i[0]], "spin", 0)
-                        spin_i1 = getattr(cross_sacc.tracers[tracer_comb_i[1]], "spin", 0)
-                        spin_j0 = getattr(cross_sacc.tracers[tracer_comb_j[0]], "spin", 0)
-                        spin_j1 = getattr(cross_sacc.tracers[tracer_comb_j[1]], "spin", 0)
-
-                        cross_cov._metadata[key] = {
-                            "tracers": (tracer_comb_i, tracer_comb_j),
-                            "data_types": (
-                                f"cl_{spin_i0}{spin_i1}",
-                                f"cl_{spin_j0}{spin_j1}",
-                            ),
-                            "tracer_info": tracer_info_dict,
-                        }
-
-        return cross_cov
-
-    def _build_full_covariance_matrix(self, sacc_obj: sacc.Sacc) -> np.ndarray:
-        """Build the full covariance matrix from cross-covariance blocks."""
-        tracer_combinations = sacc_obj.get_tracer_combinations()
-        n_data = len(sacc_obj.mean)
-        full_cov = np.zeros((n_data, n_data))
-
-        # Create mapping from tracer combinations to data indices
-        tracer_to_indices = {}
-        current_idx = 0
-
-        for tracer_comb in tracer_combinations:
-            indices = sacc_obj.indices(tracers=tracer_comb)
-            tracer_to_indices[tracer_comb] = indices
-            current_idx += len(indices)
-
-        # Fill the covariance matrix with cross-covariance blocks
-        for tracer_comb_i in tracer_combinations:
-            indices_i = tracer_to_indices[tracer_comb_i]
-
-            for tracer_comb_j in tracer_combinations:
-                indices_j = tracer_to_indices[tracer_comb_j]
-
-                # Find the appropriate cross-covariance block
-                cross_cov_block = None
-
-                if tracer_comb_i == tracer_comb_j:
-                    # Diagonal block - use identity if no self-covariance available
-                    if tracer_comb_i in self:
-                        cross_cov_block = self[tracer_comb_i]
-                    else:
-                        cross_cov_block = np.eye(len(indices_i))
-                else:
-                    # Off-diagonal block
-                    if tracer_comb_i in self and tracer_comb_j in self:
-                        # Both tracers have individual data, check for cross-cov
-                        cross_key = (tracer_comb_i[0], tracer_comb_j[0])
-                        rev_cross_key = (tracer_comb_j[0], tracer_comb_i[0])
-
-                        if cross_key in self:
-                            cross_cov_block = self[cross_key]
-                        elif rev_cross_key in self:
-                            cross_cov_block = self[rev_cross_key].T
-                        else:
-                            cross_cov_block = np.zeros((len(indices_i), len(indices_j)))
-                    else:
-                        cross_cov_block = np.zeros((len(indices_i), len(indices_j)))
-
-                # Place the block in the full covariance matrix
-                if cross_cov_block is not None:
-                    for idx_i, global_i in enumerate(indices_i):
-                        for idx_j, global_j in enumerate(indices_j):
-                            if (
-                                idx_i < cross_cov_block.shape[0]
-                                and idx_j < cross_cov_block.shape[1]
-                            ):
-                                full_cov[global_i, global_j] = cross_cov_block[
-                                    idx_i, idx_j
-                                ]
-
-        return full_cov
-
 class MultiGaussianData(GaussianData):
-    """
+    """Combined Gaussian data from multiple components with cross-covariances.
+
+    Assembles multiple ``GaussianData`` objects into a single joint data vector
+    with a combined covariance matrix that includes both auto-covariances and
+    cross-covariances between components.
 
     Parameters
     ----------
@@ -408,35 +462,49 @@ class MultiGaussianData(GaussianData):
     def __init__(
         self,
         data_list: list[GaussianData],
-        cross_covs: dict[tuple[str, str], np.ndarray] | None = None,
+        cross_covs: CrossCov | None = None,
     ):
         if cross_covs is None:
-            cross_covs = {}
+            cross_covs = CrossCov()
 
         self.cross_covs = {}
 
-        # Ensure all cross-covs are proper shape, and fill with zeros if not present
+        # Build covariance blocks: use CrossCov if available, otherwise use defaults
         for d1 in data_list:
             for d2 in data_list:
                 key = (d1.name, d2.name)
-
-                if d1 == d2:
-                    # cross_covs[key] = d1.cov
-                    self.cross_covs[key] = d1.cov
-                    continue
-
                 rev_key = (d2.name, d1.name)
 
+                if d1 == d2:
+                    # Auto-covariance: prefer CrossCov, fallback to individual likelihood
+                    if key in cross_covs:
+                        cov_block = cross_covs[key]
+                        # Only trim if not already the right size
+                        if cov_block.shape == (len(d1), len(d1)):
+                            self.cross_covs[key] = cov_block
+                        else:
+                            self.cross_covs[key] = cov_block[d1.indices, :][:, d1.indices]
+                    else:
+                        # Fallback to individual likelihood's covariance
+                        self.cross_covs[key] = d1.cov
+                    continue
+
+                # Cross-covariance: use CrossCov if available, otherwise zeros
                 if key not in cross_covs and rev_key not in cross_covs:
                     self.cross_covs[key] = np.zeros((len(d1), len(d2)))
                 elif key in cross_covs:
-                    self.cross_covs[key] = cross_covs[key][d1.indices, :][:, d2.indices]
-                    if not self.cross_covs[key].shape == (len(d1), len(d2)):
-                        raise ValueError(
-                            f"Cross-covariance (for {d1.name} x {d2.name}) \
-                              has wrong shape: {self.cross_covs[key].shape} \
-                              instead of {len(d1)} x {len(d2)}!"
-                        )
+                    cov_block = cross_covs[key]
+                    # Only trim if not already the right size
+                    if cov_block.shape == (len(d1), len(d2)):
+                        self.cross_covs[key] = cov_block
+                    else:
+                        self.cross_covs[key] = cov_block[d1.indices, :][:, d2.indices]
+                        if self.cross_covs[key].shape != (len(d1), len(d2)):
+                            raise ValueError(
+                                f"Cross-covariance (for {d1.name} x {d2.name}) "
+                                f"has wrong shape: {self.cross_covs[key].shape} "
+                                f"instead of {len(d1)} x {len(d2)}!"
+                            )
                     self.cross_covs[rev_key] = self.cross_covs[key].T
 
         self.data_list: list[GaussianData] = data_list
