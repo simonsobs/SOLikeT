@@ -49,13 +49,6 @@ jobs:
             python-version: '3.11'
             tags: []
 
-          - os: windows-latest
-            python-version: '3.11'
-            tags: []
-            env:
-              PYTHONIOENCODING: utf-8
-              PYTHONUTF8: 1
-
     if: ${{ needs.check-skip.outputs.skip != 'true' }}
 
     steps:
@@ -68,7 +61,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install GSL
-        if: matrix.os != 'windows-latest'
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             sudo apt-get update

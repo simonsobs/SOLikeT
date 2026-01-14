@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-# Detect platform
-OS="$(uname | tr '[:upper:]' '[:lower:]')"
-
-echo "Running install_likelihoods.sh on $OS"
-
 # Detect Python major/minor
 PY_MAJOR=$(python -c 'import sys; print(sys.version_info.major)')
 PY_MINOR=$(python -c 'import sys; print(sys.version_info.minor)')
@@ -21,12 +16,8 @@ else
   echo "Skipping MFLike on Python ${PY_MAJOR}.${PY_MINOR} (requires <3.13)"
 fi
 
-# Install Planck likelihood only if not on Windows
-if [[ "$OS" != "mingw"* && "$OS" != "cygwin"* && "$OS" != "msys"* ]]; then
-  echo "Installing Planck 2018 HighL Plik Lite Native likelihood..."
-  for i in 1 2 3; do
-    uv run cobaya-install planck_2018_highl_plik.TTTEEE_lite_native --no-set-global && break || sleep 10
-  done
-else
-  echo "Skipping Planck likelihood installation on Windows"
-fi
+# Install Planck likelihood
+echo "Installing Planck 2018 HighL Plik Lite Native likelihood..."
+for i in 1 2 3; do
+  uv run cobaya-install planck_2018_highl_plik.TTTEEE_lite_native --no-set-global && break || sleep 10
+done

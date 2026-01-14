@@ -26,7 +26,7 @@ To install SOLikeT using `uv` and following the preferred procedure, you can fol
    pip install uv  # if you don't have uv already
    uv sync --locked # sync the environment with the uv.lock file
 
-This will ensure full isolation of the environment and reproducibility of the installation, as it will install all the necessary dependencies fixed in the `uv.lock` file. This procedure is tested and works on multiple platforms (explicitly tested for latest ubuntu, MacOS and Windows).
+This will ensure full isolation of the environment and reproducibility of the installation, as it will install all the necessary dependencies fixed in the `uv.lock` file. This procedure is tested and works on multiple platforms (explicitly tested for latest ubuntua and MacOS).
 
 If instead you prefer `venv` to be created automatically, you can use:
 
