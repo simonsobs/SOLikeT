@@ -117,7 +117,7 @@ class GaussianLikelihood(Likelihood):
                 "You have provided sacc_data directly, so datapath will be ignored!"
             )
         else:
-            print(f"Loading data from {self.datapath}...")
+            self.log.info(f"Loading data from {self.datapath}...")
             sacc_data = sacc.Sacc.load_fits(self.datapath)
 
         if self.use_spectra == "all":
@@ -145,11 +145,13 @@ class GaussianLikelihood(Likelihood):
                 if self.sacc_data.tracers[tracer].quantity not in self._allowable_tracers:
                     raise LoggedError(
                         self.log,
-                        f"You have tried to use a \
-                        {self.sacc_data.tracers[tracer].quantity} tracer in \
-                        {self.__class__.__name__}, which only allows \
-                        {self._allowable_tracers}. Please check your \
-                        tracer selection in the ini file.",
+                        (
+                            f"You have tried to use a "
+                            f"{self.sacc_data.tracers[tracer].quantity} tracer in "
+                            f"{self.__class__.__name__}, which only allows "
+                            f"{self._allowable_tracers}. Please check your "
+                            "tracer selection in the ini file."
+                        ),
                     )
 
     def _construct_ell_bins(self) -> np.ndarray:

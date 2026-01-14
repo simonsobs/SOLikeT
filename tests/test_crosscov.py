@@ -39,7 +39,7 @@ def create_toy_sacc_file(name: str, n: int, cov: np.ndarray, seed: int, file_pat
 
 class ToyLikelihood(GaussianLikelihood):
     name = "toy"
-    _allowable_tracers = "cmb_temperature"
+    _allowable_tracers = ("cmb_temperature",)
 
     def _get_theory(self):
         # Get the data size from SACC data

@@ -6,13 +6,9 @@ from astropy.io import fits
 from cobaya.model import get_model
 from cobaya.tools import resolve_packages_path
 
+# Set custom_packages_path to override the default cobaya packages path
 custom_packages_path = None
-
-# Try to resolve global path
-if custom_packages_path is None:
-    packages_path = resolve_packages_path()
-else:
-    packages_path = custom_packages_path
+packages_path = custom_packages_path or resolve_packages_path()
 
 fname = os.path.join(
     packages_path, "data", "LensingLikelihood", "clkk_reconstruction_sim.fits"
