@@ -12,3 +12,8 @@ z: []
 
 # Extra (non-parameter) arguments passed to ccl.Cosmology()
 extra_args:
+
+params:
+  A_mod:
+    value: 1.0
+    latex: A_\mathrm{mod}
