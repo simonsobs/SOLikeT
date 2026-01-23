@@ -227,7 +227,7 @@ class CCL(Theory):
                     )
                     Pk_nonlin = np.flip(Pk_nonlin, axis=0)
 
-                    Pk_tot = Pk_lin+A_mod*(Pk_nonlin-Pk_lin)
+                    Pk_tot = Pk_lin + A_mod * (Pk_nonlin - Pk_lin)
 
                     # Create a CCL cosmology object. Because we are giving it background
                     # quantities, it should not depend on the cosmology parameters given

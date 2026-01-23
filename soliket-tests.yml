@@ -1,4 +1,4 @@
-name: soliket-tests
+name: soliket-tests-conda
 channels:
   - conda-forge
   - nodefaults

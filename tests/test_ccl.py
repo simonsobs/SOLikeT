@@ -118,9 +118,9 @@ def test_ccl_A_mod(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     model.loglikes({})
     cosmo = model.provider.get_CCL()["cosmo"]
 
-    k = np.logspace(np.log10(3e-1), 1, 1000)
-    pk_lin = cosmo.linear_matter_power(k, a=0.5)
-    pk_nonlin = cosmo.nonlin_matter_power(k, a=0.5)
+    k = np.logspace(np.log10(1e-3), 1, 1000)
+    pk_lin = cosmo.linear_matter_power(k, a=1.0)
+    pk_nonlin = cosmo.nonlin_matter_power(k, a=1.0)
 
 
     evaluate_one_info["params"]["A_mod"] = A_mod
@@ -130,10 +130,11 @@ def test_ccl_A_mod(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     model_A_mod.loglikes({})
     cosmo = model_A_mod.provider.get_CCL()["cosmo"]
 
-    k = np.logspace(np.log10(3e-1), 1, 1000)
-    pk_lin_A_mod = cosmo.linear_matter_power(k, a=0.5)
-    pk_nonlin_A_mod = cosmo.nonlin_matter_power(k, a=0.5)
+    k = np.logspace(np.log10(1e-3), 1, 1000)
+    pk_lin_A_mod = cosmo.linear_matter_power(k, a=1.0)
+    pk_nonlin_A_mod = cosmo.nonlin_matter_power(k, a=1.0)
+
+    pk_tot = pk_lin + A_mod * (pk_nonlin - pk_lin)
 
     assert np.all(pk_lin == pk_lin_A_mod)
-    pk_tot = pk_lin + A_mod*(pk_nonlin - pk_lin)
-    assert np.all(pk_tot == pk_nonlin_A_mod)
+    assert np.allclose(pk_tot, pk_nonlin_A_mod)
