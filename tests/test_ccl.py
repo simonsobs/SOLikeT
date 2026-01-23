@@ -136,7 +136,5 @@ def test_ccl_A_mod(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
 
     pk_tot = pk_lin + A_mod * (pk_nonlin - pk_lin)
 
-    import pdb; pdb.set_trace()
-
     assert np.all(pk_lin == pk_lin_A_mod)
     assert np.allclose(pk_tot, pk_nonlin_A_mod)
