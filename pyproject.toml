@@ -65,38 +65,27 @@ jupyter = [
 ]
 
 [build-system]
-requires = ["setuptools>=64", "setuptools_scm>=8"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
-[tool.setuptools]
-zip-safe = false
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools.packages.find]
+[tool.hatch.build.hooks.vcs]
+version-file = "soliket/_version.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["notebooks/"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["soliket"]
+artifacts = ["soliket/_version.py"]
+
+[tool.hatch.build]
 include = [
-    "soliket",
-    "soliket.bandpass",
-    "soliket.bias",
-    "soliket.cash",
-    "soliket.ccl",
-    "soliket.ccl_tracers",
-    "soliket.clusters",
-    "soliket.cosmopower",
-    "soliket.foreground",
-    "soliket.gaussian",
-    "soliket.halo_model",
-    "soliket.lensing",
-    "soliket.mflike",
-    "soliket.poisson",
-    "soliket.xcorr",
-    "tests",
+    "soliket/",
+    "tests/",
 ]
-
-[tool.setuptools.package-data]
-"*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
-"tests" = ['*.py', '*.yaml', '*.txt', '*.fits']
-
-[tool.setuptools_scm]
-version_file = "soliket/_version.py"
 
 [tool.ruff.lint]
 select = ["E713", "E703", "E714", "E741", "E10", "E11", "E20", "E22", "E23", "E25", "E262", "E27", "E301", "E302", "E304", "E9", "F405", "F406", "F5", "F6", "F7", "F8", "E501", "W191", "F401", "W1", "W292", "W293", "W3"]
