@@ -4246,16 +4246,21 @@ requires-dist = [
     { name = "astropy", specifier = ">=5.3.4" },
     { name = "camb", specifier = ">=1.5" },
     { name = "cobaya", specifier = ">=3.5.5" },
+    { name = "cosmopower", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'all'", specifier = ">=0.2.0" },
     { name = "cosmopower", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'emulator'", specifier = ">=0.2.0" },
+    { name = "fgspectra", marker = "python_full_version < '3.13' and extra == 'all'", specifier = ">=1.3.0" },
     { name = "fgspectra", marker = "python_full_version < '3.13' and extra == 'mflike'", specifier = ">=1.3.0" },
     { name = "getdist", specifier = ">=1.3.1" },
     { name = "jupyter", marker = "extra == 'jupyter'", specifier = ">=1.1.1" },
+    { name = "mflike", marker = "python_full_version < '3.13' and extra == 'all'", specifier = ">=1.0.1" },
     { name = "mflike", marker = "python_full_version < '3.13' and extra == 'mflike'", specifier = ">=1.0.1" },
     { name = "numpy", marker = "python_full_version < '3.12'", specifier = ">=1.22.1" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=1.25" },
     { name = "pandas", marker = "python_full_version == '3.12.*'", specifier = "<2.1.0" },
     { name = "pre-commit", marker = "extra == 'dev'" },
+    { name = "pyccl", marker = "python_full_version < '3.13' and sys_platform != 'win32' and extra == 'all'", specifier = ">=3.1.2" },
     { name = "pyccl", marker = "python_full_version < '3.13' and sys_platform != 'win32' and extra == 'pyccl'", specifier = ">=3.1.2" },
+    { name = "pyhalomodel", marker = "python_full_version < '3.13' and extra == 'all'", specifier = ">=1.0.1" },
     { name = "pyhalomodel", marker = "python_full_version < '3.13' and extra == 'pyhalomodel'", specifier = ">=1.0.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=6.2.5" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
@@ -4264,17 +4269,16 @@ requires-dist = [
     { name = "sacc", specifier = ">=0.9" },
     { name = "scikit-learn", marker = "extra == 'dev'", specifier = ">=1.2" },
     { name = "scipy", specifier = ">=1.10.0" },
-    { name = "soliket", extras = ["emulator"], marker = "extra == 'all'" },
-    { name = "soliket", extras = ["mflike"], marker = "extra == 'all'" },
-    { name = "soliket", extras = ["pyccl"], marker = "extra == 'all'" },
-    { name = "soliket", extras = ["pyhalomodel"], marker = "extra == 'all'" },
     { name = "sphinx", marker = "extra == 'docs'" },
     { name = "sphinx-rtd-theme", marker = "extra == 'docs'" },
+    { name = "syslibrary", marker = "python_full_version < '3.13' and extra == 'all'", specifier = ">=0.2.0" },
     { name = "syslibrary", marker = "python_full_version < '3.13' and extra == 'mflike'", specifier = ">=0.2.0" },
+    { name = "tensorflow", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'all'", specifier = ">=2.12" },
     { name = "tensorflow", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'emulator'", specifier = ">=2.12" },
+    { name = "tensorflow-probability", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'all'", specifier = ">=0.20.1" },
     { name = "tensorflow-probability", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'emulator'", specifier = ">=0.20.1" },
 ]
-provides-extras = ["emulator", "pyccl", "pyhalomodel", "mflike", "docs", "dev", "all", "jupyter"]
+provides-extras = ["all", "dev", "docs", "emulator", "jupyter", "mflike", "pyccl", "pyhalomodel"]
 
 [[package]]
 name = "soupsieve"
@@ -4885,11 +4889,14 @@ wheels = [
 
 [[package]]
 name = "wheel"
-version = "0.45.1"
+version = "0.46.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8a/98/2d9906746cdc6a6ef809ae6338005b3f21bb568bea3165cfc6a243fdc25c/wheel-0.45.1.tar.gz", hash = "sha256:661e1abd9198507b1409a20c02106d9670b2576e916d58f520316666abca6729", size = 107545, upload-time = "2024-11-23T00:18:23.513Z" }
+dependencies = [
+    { name = "packaging", marker = "python_full_version < '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9b/92/3a64fa9639b8e290fe8630d8067a66f7c5510845c6d73686ad880c9b04d9/wheel-0.46.2.tar.gz", hash = "sha256:3d79e48fde9847618a5a181f3cc35764c349c752e2fe911e65fa17faab9809b0", size = 60274, upload-time = "2026-01-21T23:55:25.838Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/2c/87f3254fd8ffd29e4c02732eee68a83a1d3c346ae39bc6822dcbcb697f2b/wheel-0.45.1-py3-none-any.whl", hash = "sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248", size = 72494, upload-time = "2024-11-23T00:18:21.207Z" },
+    { url = "https://files.pythonhosted.org/packages/13/2c/5e079cefe955ae58e5a052fe037c850ce493eb7269dedeb960237e78fb0f/wheel-0.46.2-py3-none-any.whl", hash = "sha256:33ae60725d69eaa249bc1982e739943c23b34b58d51f1cb6253453773aca6e65", size = 29971, upload-time = "2026-01-21T23:55:24.447Z" },
 ]
 
 [[package]]
