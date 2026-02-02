@@ -16,7 +16,7 @@ packages_path = resolve_packages_path()
         "multi",
     ],
 )
-def test_installation(lhood, fixed_lensing_data):
+def test_installation(lhood):
     if lhood == "lensing":
         from soliket import LensingLikelihood
 
