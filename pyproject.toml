@@ -19,7 +19,6 @@ dependencies = [
     "numpy (>=1.22.1); python_version < '3.12'", # breaking change
     "numpy (>=1.25); python_version >= '3.12'", # from distutils
     "astropy (>=5.3.4)", # breaking change
-    "pandas (<2.1.0); python_version >= '3.12' and python_version < '3.13'",
 ]
 
 [project.urls]
@@ -44,7 +43,8 @@ mflike = [
     "syslibrary (>=0.2.0); python_version < '3.13'", # from mflike
 ]
 docs = [
-    "sphinx",
+    "sphinx (<9); python_version < '3.12'", # tensorflow 2.13 pins typing-extensions==4.5.0
+    "sphinx; python_version >= '3.12'",
     "sphinx-rtd-theme",
 ]
 dev = [
