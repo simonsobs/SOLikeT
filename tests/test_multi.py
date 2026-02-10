@@ -40,7 +40,7 @@ nuisance_params = {
 }
 
 
-def test_lensing_and_mflike_installations(check_skip_mflike, fixed_lensing_data):
+def test_lensing_and_mflike_installations(check_skip_mflike):
     import mflike
 
     from soliket import LensingLikelihood
@@ -63,7 +63,7 @@ def test_lensing_and_mflike_installations(check_skip_mflike, fixed_lensing_data)
 
 
 def test_multi(
-    test_cosmology_params, check_skip_mflike, likelihood_refs, fixed_lensing_data
+    test_cosmology_params, check_skip_mflike, likelihood_refs
 ):
     ref = likelihood_refs["multi"]
 
