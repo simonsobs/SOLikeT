@@ -5058,6 +5058,7 @@ dependencies = [
 
 [package.optional-dependencies]
 all = [
+    { name = "cosmocnc" },
     { name = "cosmopower", marker = "python_full_version < '3.12' and sys_platform != 'win32'" },
     { name = "fgspectra", marker = "python_full_version < '3.13'" },
     { name = "mflike", marker = "python_full_version < '3.13'" },
@@ -5112,6 +5113,7 @@ requires-dist = [
     { name = "astropy", specifier = ">=5.3.4" },
     { name = "camb", specifier = ">=1.5" },
     { name = "cobaya", specifier = ">=3.5.5" },
+    { name = "cosmocnc", marker = "extra == 'all'", git = "https://github.com/ggalloni/cosmocnc.git?branch=soliket_compatibility" },
     { name = "cosmocnc", marker = "extra == 'cosmocnc'", git = "https://github.com/ggalloni/cosmocnc.git?branch=soliket_compatibility" },
     { name = "cosmopower", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'all'", specifier = ">=0.2.0" },
     { name = "cosmopower", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'emulator'", specifier = ">=0.2.0" },
