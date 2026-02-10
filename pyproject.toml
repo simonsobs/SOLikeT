@@ -58,6 +58,7 @@ dev = [
     "pre-commit",
 ]
 all = [
+    "soliket[cosmocnc]",
     "soliket[emulator]",
     "soliket[pyccl]",
     "soliket[pyhalomodel]",
