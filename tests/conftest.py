@@ -68,6 +68,16 @@ def check_skip_mflike():
 
 
 @pytest.fixture
+def check_skip_cosmocnc():
+    """
+    Check if the cosmocnc module can be imported, otherwise skip the tests.
+    """
+    pytest.importorskip(
+        modname="cosmocnc", reason="Couldn't import 'cosmocnc' module"
+    )
+
+
+@pytest.fixture
 def install_planck_lite():
     """
     Install the Planck 2018 high-l multipoles likelihood.
