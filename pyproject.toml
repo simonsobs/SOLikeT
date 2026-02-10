@@ -131,3 +131,6 @@ exclude_lines = [
     # Don't complain about IPython completion helper
     "def _ipython_key_completions_",
 ]
+
+[tool.uv.sources]
+cosmocnc = { git = "https://github.com/ggalloni/cosmocnc.git", branch = "soliket_compatibility" }

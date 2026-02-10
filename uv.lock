@@ -974,7 +974,7 @@ wheels = [
 [[package]]
 name = "cosmocnc"
 version = "1.0"
-source = { editable = "../cosmocnc" }
+source = { git = "https://github.com/ggalloni/cosmocnc.git?branch=soliket_compatibility#9ebbfeb8bb77668cf121e926c822092e7f002d1c" }
 dependencies = [
     { name = "matplotlib", version = "3.9.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "matplotlib", version = "3.10.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
@@ -986,18 +986,6 @@ dependencies = [
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' and python_full_version < '3.12'" },
     { name = "scipy", version = "1.17.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "cobaya", marker = "extra == 'cobaya'", specifier = ">=3.5" },
-    { name = "matplotlib" },
-    { name = "mcfit" },
-    { name = "multiprocess" },
-    { name = "numpy" },
-    { name = "scipy" },
-    { name = "tensorflow", marker = "extra == 'emulator'" },
-]
-provides-extras = ["cobaya", "emulator"]
 
 [[package]]
 name = "cosmopower"
@@ -5124,7 +5112,7 @@ requires-dist = [
     { name = "astropy", specifier = ">=5.3.4" },
     { name = "camb", specifier = ">=1.5" },
     { name = "cobaya", specifier = ">=3.5.5" },
-    { name = "cosmocnc", marker = "extra == 'cosmocnc'", editable = "../cosmocnc" },
+    { name = "cosmocnc", marker = "extra == 'cosmocnc'", git = "https://github.com/ggalloni/cosmocnc.git?branch=soliket_compatibility" },
     { name = "cosmopower", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'all'", specifier = ">=0.2.0" },
     { name = "cosmopower", marker = "python_full_version < '3.12' and sys_platform != 'win32' and extra == 'emulator'", specifier = ">=0.2.0" },
     { name = "fgspectra", marker = "python_full_version < '3.13' and extra == 'all'", specifier = ">=1.3.0" },
