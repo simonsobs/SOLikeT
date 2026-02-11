@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Likelihood and Theory codes for the Simons Observatory."
 readme = "README.rst"
-requires-python = ">3.9,<3.14" # 3.14 is conflicting with many dependencies
+requires-python = ">3.9,<3.15"
 license = { text = "MIT" }
 
 dependencies = [
@@ -65,6 +65,9 @@ jupyter = [
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.version]
 source = "vcs"
