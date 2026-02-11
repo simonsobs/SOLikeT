@@ -31,7 +31,7 @@ emulator = [
     "tf-keras; python_version < '3.14' and sys_platform != 'win32'", # needed by tensorflow-probability>=0.25
 ]
 pyccl = [
-    "pyccl>=3.1.2 ; sys_platform != 'win32' and python_version < '3.13'", # for stability
+    "pyccl @ git+https://github.com/LSSTDESC/CCL.git@master ; sys_platform != 'win32' and python_version < '3.13'",
 ]
 pyhalomodel = [
     "pyhalomodel (>=1.0.1); python_version < '3.13'", # from python compatibility
