@@ -1,7 +1,9 @@
 import os
+import sys
 from tempfile import gettempdir
 
 import numpy as np
+import pytest
 import sacc
 from sklearn.datasets import make_spd_matrix
 
@@ -47,6 +49,10 @@ class ToyLikelihood(GaussianLikelihood):
         return np.zeros(n)
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="astropy FITS write bug with empty records on Windows (numpy 2)",
+)
 def test_toy():
     n1, n2, n3 = [10, 20, 30]
     full_cov = make_spd_matrix(n1 + n2 + n3, random_state=1234) * 1e-1
