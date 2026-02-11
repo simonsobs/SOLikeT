@@ -27,9 +27,8 @@ Documentation = "https://soliket.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 emulator = [
-    "cosmopower (>=0.2.0); python_version < '3.12' and sys_platform != 'win32'", # from tensorflow
-    "tensorflow-probability (>=0.20.1); python_version < '3.12' and sys_platform != 'win32'", # breaking change
-    "tensorflow (>=2.12); python_version < '3.12' and sys_platform != 'win32'", # from python compatibility
+    "cosmopower @ git+https://github.com/HTJense/cosmopower.git@main ; python_version < '3.14' and sys_platform != 'win32'", # from tensorflow
+    "tf-keras; python_version < '3.14' and sys_platform != 'win32'", # needed by tensorflow-probability>=0.25
 ]
 pyccl = [
     "pyccl>=3.1.2 ; sys_platform != 'win32' and python_version < '3.13'", # for stability
