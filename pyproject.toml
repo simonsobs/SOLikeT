@@ -104,6 +104,13 @@ line-ending = "auto"
 exclude = [".tox", "build", "cobaya_packages", "test", ".eggs"]
 line-length = 90
 
+[tool.uv]
+override-dependencies = [
+    "tensorflow>=2.18",
+    "tensorflow-probability>=0.24",
+    "numpy>=1.24.1",
+]
+
 [tool.coverage.run]
 omit = ["tests/*", "*/tests/*"]
 
