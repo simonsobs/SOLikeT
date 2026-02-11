@@ -30,20 +30,12 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            python-version: '3.13'
+            python-version: '3.14'
             tags: []
-
-          - os: ubuntu-latest
-            python-version: '3.12'
-            tags: []
-
-          - os: ubuntu-latest
-            python-version: '3.11'
-            tags: cov
 
           - os: ubuntu-latest
             python-version: '3.10'
-            tags: []
+            tags: cov
 
           - os: macos-latest
             python-version: '3.11'
