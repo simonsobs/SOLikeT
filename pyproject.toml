@@ -42,8 +42,7 @@ mflike = [
     "syslibrary (>=0.2.0)", # from mflike
 ]
 docs = [
-    "sphinx (<9); python_version < '3.12'", # tensorflow 2.13 pins typing-extensions==4.5.0
-    "sphinx; python_version >= '3.12'",
+    "sphinx",
     "sphinx-rtd-theme",
 ]
 dev = [
