@@ -85,7 +85,7 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
         _, self.binning_matrix = self.get_binning(self.tracer_comb)
 
         # Set the fiducial spectra
-        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
+        self.ls = np.arange(0, self.lmax, dtype=np.int64)
         self._set_fiducial_Cls()
 
         # set the correction terms generate from the script n1so.py
@@ -333,7 +333,7 @@ class LensingLiteLikelihood(GaussianLikelihood):
         self.datapath = self.datapath or os.path.join(data, self.data_filename)
         super().initialize()
         _, self.binning_matrix = self.get_binning(self.tracer_comb)
-        self.ls = np.arange(0, self.lmax, dtype=np.longlong)
+        self.ls = np.arange(0, self.lmax, dtype=np.int64)
 
     def get_requirements(self) -> dict:
         return {"Cl": {"pp": self.lmax}}
