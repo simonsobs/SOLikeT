@@ -141,6 +141,7 @@ class CosmoPower(BoltzmannBase):
                     f"Unknown network type {nettype['type']}\
                                                 for network {spectype}: skipped!"
                 )
+                continue
 
             netdata["type"] = nettype["type"]
             netdata["log"] = nettype.get("log", True)
@@ -151,8 +152,7 @@ class CosmoPower(BoltzmannBase):
 
             self.all_parameters = self.all_parameters | set(network.parameters)
 
-            if network is not None:
-                self.networks[spectype.lower()] = netdata
+            self.networks[spectype.lower()] = netdata
 
         if "lmax" not in self.extra_args:  # pragma: no cover
             self.extra_args["lmax"] = None
