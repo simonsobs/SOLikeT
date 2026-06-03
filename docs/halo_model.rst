@@ -11,9 +11,9 @@ HaloModel Theory
     :members:
 
 
-pyhalomodel Halo Model
+CCL Halo Model
 -----------
 
-.. autoclass:: soliket.halo_model.HaloModel_pyhm
+.. autoclass:: soliket.halo_model.HaloModel_ccl
     :exclude-members: initialize
     :members:

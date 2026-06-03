@@ -50,16 +50,6 @@ def check_skip_pyccl():
 
 
 @pytest.fixture
-def check_skip_pyhalomodel():
-    """
-    Check if the pyhalomodel module can be imported, otherwise skip the tests.
-    """
-    pytest.importorskip(
-        modname="pyhalomodel", reason="Couldn't import 'pyhalomodel' module"
-    )
-
-
-@pytest.fixture
 def check_skip_mflike():
     """
     Check if the LAT_MFLike module can be imported, otherwise skip the tests.

@@ -33,8 +33,6 @@ emulator = [
 pyccl = [
     "pyccl @ git+https://github.com/LSSTDESC/CCL.git@master ; sys_platform != 'win32' and python_version < '3.13'",
 ]
-pyhalomodel = [
-    "pyhalomodel (>=1.0.1); python_version < '3.13'", # from python compatibility
 ]
 mflike = [
     "mflike (>=1.0.1)", # breaking change

@@ -36,13 +36,13 @@ If instead you prefer `venv` to be created automatically, you can use:
    source .venv/bin/activate
    uv sync --locked
 
-On top of this, we define sets of extra dependencies that can be installed to extend the functionality of SOLikeT. They are: `emulator`, `pyccl`, `pyhalomodel`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the PyHaloModel library for halo modeling. The last one will install all of them. Note that these extras are not installed by default, as they are not strictly necessary for running SOLikeT and they introduce additional constraints on the environment. You can install them by adding the `--extra` flag to the `uv sync` command:
+On top of this, we define sets of extra dependencies that can be installed to extend the functionality of SOLikeT. They are: `emulator`, `pyccl`, `mflike`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the MFLike primary CMB likelihood. The last one will install all of them. Note that these extras are not installed by default, as they are not strictly necessary for running SOLikeT and they introduce additional constraints on the environment. You can install them by adding the `--extra` flag to the `uv sync` command:
 
 .. code-block:: bash
 
    uv sync --locked --extra emulator    # for CosmoPower emulator
    uv sync --locked --extra pyccl       # for PyCCL library
-   uv sync --locked --extra pyhalomodel # for PyHaloModel library
+   uv sync --locked --extra mflike      # for MFLike likelihood
    uv sync --locked --extra all         # for all extras
 
 Of course, you can combine multiple extras as needed.
@@ -77,8 +77,8 @@ In these cases, you can also install extras to include optional features:
 
 .. code-block:: bash
 
-   pip install .[emulator,pyccl,pyhalomodel,all] # without PyPI release after cloning or
-   pip install soliket[emulator,pyccl,pyhalomodel,all] # with PyPI release
+   pip install .[emulator,pyccl,mflike,all] # without PyPI release after cloning or
+   pip install soliket[emulator,pyccl,mflike,all] # with PyPI release
 
 Of course, you can install any of the extras individually, e.g. `pip install soliket[emulator]` to install only the CosmoPower emulator.
 
