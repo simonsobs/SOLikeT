@@ -144,3 +144,45 @@ def test_multi(
     d_logp_sum = d_logp1 + d_logp2
 
     assert np.isclose(d_logp, d_logp_sum, rtol=1e-5)
+
+
+def test_multigaussian_with_ccl_derived_param(check_skip_pyccl, test_cosmology_params):
+    # Regression test: a component requesting a derived parameter (here lensing with
+    # pp_ccl=True requests `zstar`) makes that an extra input param of the wrapper.
+    # MultiGaussianLikelihood must set its own provider, else loglikes raises
+    # AttributeError: 'NoneType' object has no attribute 'get_param'.
+    from cobaya.install import install
+
+    install(
+        {"likelihood": {"soliket.lensing.LensingLikelihood": None}},
+        path=packages_path,
+        skip_global=False,
+        force=False,
+        debug=True,
+        no_set_global=True,
+    )
+
+    params = dict(test_cosmology_params)
+    # Neutrino mass put to 0 as it is not included in the ccl wrapper
+    params["mnu"] = 0
+    params["omnuh2"] = 0
+
+    info = {
+        "likelihood": {
+            "soliket.gaussian.MultiGaussianLikelihood": {
+                "components": ["soliket.LensingLikelihood"],
+                "options": [{"pp_ccl": True}],
+                "stop_at_error": True,
+            }
+        },
+        "theory": {
+            "camb": {"extra_args": {"kmax": 0.9}},
+            "soliket.CCL": {"kmax": 10, "nonlinear": True},
+        },
+        "params": params,
+    }
+
+    model = get_model(info)
+    loglikes, _ = model.loglikes({})
+
+    assert np.all(np.isfinite(loglikes))

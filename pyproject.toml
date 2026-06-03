@@ -39,7 +39,7 @@ mflike = [
     "syslibrary (>=0.2.0)", # from mflike
 ]
 cosmocnc = [
-    "cosmocnc (>=1.0)",
+    "cosmocnc (>=1.2)",
 ]
 docs = [
     "sphinx",
@@ -129,6 +129,3 @@ exclude_lines = [
     # Don't complain about IPython completion helper
     "def _ipython_key_completions_",
 ]
-
-[tool.uv.sources]
-cosmocnc = { git = "https://github.com/ggalloni/cosmocnc.git", branch = "soliket_compatibility" }
