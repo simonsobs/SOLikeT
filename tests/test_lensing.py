@@ -112,3 +112,35 @@ def test_lensing_ccl_limber(check_skip_pyccl):
 
     assert np.any(np.not_equal(cl_ccl, cl_camb))
     assert np.allclose(cl_ccl, cl_camb, rtol=1e-2, atol=0)
+
+
+def test_lensing_ccl_in_multigaussian(check_skip_pyccl):
+    from cobaya.install import install
+
+    install(
+        {"likelihood": {"soliket.lensing.LensingLikelihood": None}},
+        path=packages_path,
+        skip_global=False,
+        force=False,
+        debug=True,
+        no_set_global=True,
+    )
+
+    from copy import deepcopy
+
+    info_dict = deepcopy(info)
+    info_dict["params"]["mnu"] = 0
+    info_dict["params"]["omnuh2"] = 0
+    info_dict["likelihood"] = {
+        "soliket.gaussian.MultiGaussianLikelihood": {
+            "components": ["soliket.LensingLikelihood"],
+            "options": [{"pp_ccl": True}],
+            "stop_at_error": True,
+        }
+    }
+    info_dict["theory"]["soliket.CCL"] = {"kmax": 10, "nonlinear": True}
+
+    model = get_model(info_dict)
+    loglikes, _ = model.loglikes({})
+
+    assert np.all(np.isfinite(loglikes))
