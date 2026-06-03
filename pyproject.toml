@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Likelihood and Theory codes for the Simons Observatory."
 readme = "README.rst"
-requires-python = ">3.9,<3.15"
+requires-python = ">=3.10,<3.15"
 license = { text = "MIT" }
 
 dependencies = [
@@ -31,8 +31,7 @@ emulator = [
     "tf-keras; python_version < '3.14' and sys_platform != 'win32'", # needed by tensorflow-probability>=0.25
 ]
 pyccl = [
-    "pyccl @ git+https://github.com/LSSTDESC/CCL.git@master ; sys_platform != 'win32' and python_version < '3.13'",
-]
+    "pyccl>=3.3.4 ; sys_platform != 'win32' and python_version >= '3.10' and python_version < '3.13'", # for stability
 ]
 mflike = [
     "mflike (>=1.0.1)", # breaking change
@@ -53,7 +52,6 @@ dev = [
 all = [
     "soliket[emulator]",
     "soliket[pyccl]",
-    "soliket[pyhalomodel]",
     "soliket[mflike]",
 ]
 jupyter = [
@@ -104,13 +102,6 @@ line-ending = "auto"
 [tool.ruff]
 exclude = [".tox", "build", "cobaya_packages", "test", ".eggs"]
 line-length = 90
-
-[tool.uv]
-override-dependencies = [
-    "tensorflow>=2.18",
-    "tensorflow-probability>=0.24",
-    "numpy>=1.24.1",
-]
 
 [tool.coverage.run]
 omit = ["tests/*", "*/tests/*"]
