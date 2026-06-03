@@ -43,7 +43,7 @@ mflike = [
     "syslibrary (>=0.2.0); python_version < '3.13'", # from mflike
 ]
 cosmocnc = [
-    "cosmocnc (>=1.0)",
+    "cosmocnc (>=1.2)",
 ]
 docs = [
     "sphinx (<9); python_version < '3.12'", # tensorflow 2.13 pins typing-extensions==4.5.0
@@ -132,6 +132,3 @@ exclude_lines = [
     # Don't complain about IPython completion helper
     "def _ipython_key_completions_",
 ]
-
-[tool.uv.sources]
-cosmocnc = { git = "https://github.com/ggalloni/cosmocnc.git", branch = "soliket_compatibility" }
