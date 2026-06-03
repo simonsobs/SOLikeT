@@ -5,8 +5,6 @@ from tempfile import gettempdir
 import numpy as np
 import pytest
 import sacc
-from astropy import __version__ as astropy_version
-from packaging.version import parse as parse_version
 from sklearn.datasets import make_spd_matrix
 
 from soliket import MultiGaussianLikelihood
@@ -52,9 +50,11 @@ class ToyLikelihood(GaussianLikelihood):
 
 
 @pytest.mark.skipif(
-    sys.platform == "win32" and parse_version(astropy_version) < parse_version("7.2.0"),
-    reason="astropy<7.2.0 FITS write bug with empty records on Windows (numpy 2); "
-    "fixed in astropy 7.2.0 (astropy/astropy#16578)",
+    sys.platform == "win32",
+    reason="astropy FITS write crashes on Windows when sacc emits a zero-width "
+    "column: _array_to_file does `_WIN_WRITE_LIMIT // arr.itemsize` with no "
+    "itemsize==0 guard (ZeroDivisionError). Still unfixed on astropy main as of "
+    "7.2.0; skip until an upstream fix ships.",
 )
 def test_toy():
     n1, n2, n3 = [10, 20, 30]
