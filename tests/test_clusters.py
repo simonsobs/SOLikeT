@@ -6,6 +6,140 @@ from cobaya.model import get_model
 import soliket.clusters.survey as survey
 from soliket.clusters import tinker
 
+
+def _get_cosmocnc_common_config():
+    """Common config shared across all cosmocnc cluster tests."""
+    import cosmocnc
+
+    base = cosmocnc.path_to_cosmocnc
+    survey_sr = os.path.join(base, "surveys", "survey_sr_so_sim.py")
+    survey_cat = os.path.join(base, "surveys", "survey_cat_so_sim.py")
+
+    cnc_common = {
+        "stop_at_error": True,
+        "survey_sr": survey_sr,
+        "survey_cat": survey_cat,
+        "cosmology_tool": "cobaya",
+        "power_spectrum_type": "cobaya",
+        "obs_select": "q_so_sim",
+        "cluster_catalogue": "SO_sim_0",
+        "n_points": 2048,
+        "n_z": 50,
+        "z_min": 0.01,
+        "z_max": 3.0,
+        "M_min": 5e13,
+        "M_max": 5e15,
+        "obs_select_min": 5.0,
+        "obs_select_max": 200.0,
+        "hmf_calc": "cnc",
+        "hmf_type": "Tinker08",
+        "mass_definition": "500c",
+        "hmf_type_deriv": "numerical",
+        "interp_tinker": "linear",
+        "cosmo_amplitude_parameter": "sigma_8",
+        "cosmo_param_density": "physical",
+        "cosmocnc_verbose": "none",
+        "number_cores_hmf": 1,
+        "number_cores_abundance": 1,
+        "number_cores_data": 1,
+        "number_cores_stacked": 1,
+    }
+    theory = {
+        "camb": {
+            "extra_args": {
+                "num_massive_neutrinos": 1,
+                "accurate_massive_neutrino_transfers": True,
+                "nonlinear": False,
+                "kmax": 50.0,
+            }
+        },
+    }
+    params = {
+        "ombh2": 0.0224,
+        "omch2": 0.12,
+        "H0": 67.0,
+        "logA": 3.05,
+        "As": {"value": "lambda logA: 1e-10*np.exp(logA)"},
+        "ns": 0.965,
+        "tau": 0.054,
+        "nnu": 3.046,
+        "mnu": 0.06,
+        "A_szifi": -4.3054,
+        "alpha_szifi": 1.12,
+        "sigma_lnq_szifi": 0.173,
+        "bias_sz": 0.8,
+        "dof": 0.0,
+    }
+    return cnc_common, theory, params
+
+
+def _get_cosmocnc_clusters_info(mode="unbinned"):
+    """CNCLike-based cluster likelihood setup for various modes."""
+    cnc_common, theory, params = _get_cosmocnc_common_config()
+
+    if mode == "unbinned":
+        cnc_like = dict(
+            **cnc_common,
+            observables=[["q_so_sim"]],
+            data_lik_from_abundance=True,
+            likelihood_type="unbinned",
+            stacked_likelihood=False,
+        )
+    elif mode == "binned":
+        cnc_like = dict(
+            **cnc_common,
+            observables=[["q_so_sim"]],
+            data_lik_from_abundance=True,
+            likelihood_type="binned",
+            stacked_likelihood=False,
+        )
+    elif mode == "unbinned_backward":
+        cnc_like = dict(
+            **cnc_common,
+            observables=[["q_so_sim"]],
+            data_lik_from_abundance=False,
+            likelihood_type="unbinned",
+            stacked_likelihood=False,
+        )
+    elif mode == "multi_obs":
+        cnc_like = dict(
+            **cnc_common,
+            observables=[["q_so_sim", "p_so_sim"]],
+            data_lik_from_abundance=True,
+            likelihood_type="unbinned",
+            stacked_likelihood=False,
+        )
+        params.update({
+            "bias_cmblens": 0.8,
+            "a_lens": 1.0,
+            "sigma_lnp": 0.2,
+            "corr_lnq_lnp": 0.0,
+        })
+    elif mode == "stacked_lensing":
+        cnc_like = dict(
+            **cnc_common,
+            observables=[["q_so_sim"]],
+            data_lik_from_abundance=False,
+            likelihood_type="unbinned",
+            stacked_likelihood=True,
+            stacked_data=["p_so_sim_stacked"],
+            compute_stacked_cov=True,
+        )
+        params.update({
+            "bias_cmblens": 0.8,
+            "a_lens": 1.0,
+            "sigma_lnp": 0.2,
+            "corr_lnq_lnp": 0.0,
+        })
+
+    return {
+        "likelihood": {"cosmocnc.CNCLike": cnc_like},
+        "theory": theory,
+        "params": params,
+        "sampler": {"evaluate": None},
+    }
+
+
 clusters_like_and_theory = {
     "likelihood": {"soliket.ClusterLikelihood": {"stop_at_error": True}},
     "theory": {
@@ -159,3 +293,51 @@ def test_dn_dlogM_small_grid():
     # Expect output shape (nM, nz)
     assert out.shape[0] == M.shape[0]
     assert out.shape[1] == z.shape[0]
+
+
+# --- cosmocnc-based cluster tests (no pyccl required) ---
+
+
+def test_cosmocnc_clusters_model(check_skip_cosmocnc):
+    info = _get_cosmocnc_clusters_info()
+    _ = get_model(info)
+
+
+def test_cosmocnc_clusters_loglike(check_skip_cosmocnc, likelihood_refs):
+    ref = likelihood_refs["cosmocnc_clusters"]
+    info = _get_cosmocnc_clusters_info()
+    model = get_model(info)
+    lnl = model.loglikes({})[0]
+    assert np.isclose(lnl, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
+
+def test_cosmocnc_clusters_binned(check_skip_cosmocnc, likelihood_refs):
+    ref = likelihood_refs["cosmocnc_clusters_binned"]
+    info = _get_cosmocnc_clusters_info(mode="binned")
+    model = get_model(info)
+    lnl = model.loglikes({})[0]
+    assert np.isclose(lnl, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
+
+def test_cosmocnc_clusters_unbinned_backward(check_skip_cosmocnc, likelihood_refs):
+    ref = likelihood_refs["cosmocnc_clusters_unbinned_backward"]
+    info = _get_cosmocnc_clusters_info(mode="unbinned_backward")
+    model = get_model(info)
+    lnl = model.loglikes({})[0]
+    assert np.isclose(lnl, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
+
+def test_cosmocnc_clusters_multi_obs(check_skip_cosmocnc, likelihood_refs):
+    ref = likelihood_refs["cosmocnc_clusters_multi_obs"]
+    info = _get_cosmocnc_clusters_info(mode="multi_obs")
+    model = get_model(info)
+    lnl = model.loglikes({})[0]
+    assert np.isclose(lnl, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
+
+def test_cosmocnc_clusters_stacked_lensing(check_skip_cosmocnc, likelihood_refs):
+    ref = likelihood_refs["cosmocnc_clusters_stacked_lensing"]
+    info = _get_cosmocnc_clusters_info(mode="stacked_lensing")
+    model = get_model(info)
+    lnl = model.loglikes({})[0]
+    assert np.isclose(lnl, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
