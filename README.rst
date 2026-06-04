@@ -54,13 +54,13 @@ Then, after activating an existing environment (both `conda` or `venv` environme
 
 At this point, you can forget about `uv`, if you want to, and continue using SOLikeT as desired. If you want to re-sync your environment with the lockfile, you can re-run that command.
 
-We define extra dependencies for SOLikeT, which allow you to install additional features or functionalities as needed. In particuar, we define `emulator`, `pyccl`, `pyhalomodel`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the PyHaloModel library for halo modeling. The last one will install all of them. These can be specified when running `uv sync` to install the corresponding dependencies.
+We define extra dependencies for SOLikeT, which allow you to install additional features or functionalities as needed. In particuar, we define `emulator`, `pyccl`, `mflike`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the MFLike primary CMB likelihood. The last one will install all of them. These can be specified when running `uv sync` to install the corresponding dependencies.
 
 .. code-block:: bash
 
    uv sync --locked --extra emulator    # for CosmoPower emulator
    uv sync --locked --extra pyccl       # for PyCCL library
-   uv sync --locked --extra pyhalomodel # for PyHaloModel library
+   uv sync --locked --extra mflike      # for MFLike likelihood
    uv sync --locked --extra all         # for all extras
 
 Of course, you can combine multiple extras as needed. Note that these extra dependencies come with extra constraints, so these may not be compatible with all Python versions or platforms. These are reported in the `pyproject.toml` file, which is used by `uv` to manage dependencies.

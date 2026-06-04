@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Likelihood and Theory codes for the Simons Observatory."
 readme = "README.rst"
-requires-python = ">3.9,<3.14" # 3.14 is conflicting with many dependencies
+requires-python = ">=3.10,<3.15"
 license = { text = "MIT" }
 
 dependencies = [
@@ -27,27 +27,22 @@ Documentation = "https://soliket.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 emulator = [
-    "cosmopower (>=0.2.0); python_version < '3.12' and sys_platform != 'win32'", # from tensorflow
-    "tensorflow-probability (>=0.20.1); python_version < '3.12' and sys_platform != 'win32'", # breaking change
-    "tensorflow (>=2.12); python_version < '3.12' and sys_platform != 'win32'", # from python compatibility
+    "cosmopower @ git+https://github.com/HTJense/cosmopower.git@main ; python_version < '3.14' and sys_platform != 'win32'", # from tensorflow
+    "tf-keras; python_version < '3.14' and sys_platform != 'win32'", # needed by tensorflow-probability>=0.25
 ]
 pyccl = [
-    "pyccl>=3.1.2 ; sys_platform != 'win32' and python_version < '3.13'", # for stability
-]
-pyhalomodel = [
-    "pyhalomodel (>=1.0.1); python_version < '3.13'", # from python compatibility
+    "pyccl>=3.3.4 ; sys_platform != 'win32' and python_version >= '3.10' and python_version < '3.13'", # for stability
 ]
 mflike = [
-    "mflike (>=1.0.1); python_version < '3.13'", # breaking change
-    "fgspectra (>=1.3.0); python_version < '3.13'", # from mflike
-    "syslibrary (>=0.2.0); python_version < '3.13'", # from mflike
+    "mflike (>=1.0.1)", # breaking change
+    "fgspectra (>=1.3.0)", # from mflike
+    "syslibrary (>=0.2.0)", # from mflike
 ]
 cosmocnc = [
     "cosmocnc (>=1.2)",
 ]
 docs = [
-    "sphinx (<9); python_version < '3.12'", # tensorflow 2.13 pins typing-extensions==4.5.0
-    "sphinx; python_version >= '3.12'",
+    "sphinx",
     "sphinx-rtd-theme",
 ]
 dev = [
@@ -61,7 +56,6 @@ all = [
     "soliket[cosmocnc]",
     "soliket[emulator]",
     "soliket[pyccl]",
-    "soliket[pyhalomodel]",
     "soliket[mflike]",
 ]
 jupyter = [
@@ -71,6 +65,9 @@ jupyter = [
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.version]
 source = "vcs"

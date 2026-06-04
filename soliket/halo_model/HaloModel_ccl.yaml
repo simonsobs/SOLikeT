@@ -1,0 +1,28 @@
+# Default parameters for the CCL HaloModel theory.
+# mass_function, halo_bias and concentration are CCL model names (see pyccl.halos).
+# Note that some concentration models are only defined for specific mass_def values
+# (e.g. Duffy08/Bhattacharya13: 200m/200c/vir; Prada12: 200c; Klypin11: vir).
+mass_function: 'Tinker10'
+halo_bias: 'Tinker10'
+concentration: 'Duffy08'
+mass_def: '200m'
+Mmin: 1.e8
+Mmax: 1.e16
+nM: 128
+
+# Maximum k for P(k) (units 1/Mpc). Set to zero if not needed.
+kmax: 10.0
+
+# Maximum k (1/Mpc) of the linear power fed to CCL for the sigma(M) integral.
+# Must exceed kmax so sigma(M) converges for low-mass haloes.
+sigma_kmax: 100.0
+
+# Redshift sampling.
+z: []
+
+# Maximum redshift at which the halo model is evaluated (CCL's mass function is
+# not valid at very high z).
+zmax: 20.0
+
+# Extra (non-parameter) arguments passed to ccl.Cosmology()
+extra_args:

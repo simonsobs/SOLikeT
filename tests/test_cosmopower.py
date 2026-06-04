@@ -113,7 +113,7 @@ def test_cosmopower_loglike(
     )
     model_cp = get_model(info_dict)
 
-    logL_cp = float(model_cp.loglikes({})[0])
+    logL_cp = np.float64(model_cp.loglikes({})[0]).item()
 
     assert np.isclose(logL_cp, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
@@ -121,7 +121,7 @@ def test_cosmopower_loglike(
 def test_cosmopower_against_camb(request, check_skip_cosmopower, install_planck_lite):
     info_dict["theory"] = {"camb": {"stop_at_error": True}}
     model_camb = get_model(info_dict)
-    logL_camb = float(model_camb.loglikes({})[0])
+    logL_camb = np.float64(model_camb.loglikes({})[0]).item()
     camb_cls = model_camb.theory["camb"].get_Cl()
 
     info_dict["theory"] = {
@@ -147,7 +147,7 @@ def test_cosmopower_against_camb(request, check_skip_cosmopower, install_planck_
     }
 
     model_cp = get_model(info_dict)
-    logL_cp = float(model_cp.loglikes({})[0])
+    logL_cp = np.float64(model_cp.loglikes({})[0]).item()
     cp_cls = model_cp.theory["soliket.CosmoPower"].get_Cl()
 
     nanmask = ~np.isnan(cp_cls["tt"])

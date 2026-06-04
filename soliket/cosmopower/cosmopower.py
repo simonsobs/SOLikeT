@@ -125,9 +125,13 @@ class CosmoPower(BoltzmannBase):
             netpath = os.path.join(self.network_path, nettype["filename"])
 
             if nettype["type"] == "NN":
-                network = cp.cosmopower_NN(restore=True, restore_filename=netpath)
+                network = cp.cosmopower_NN(
+                    restore_filename=netpath, allow_pickle=True
+                )
             elif nettype["type"] == "PCAplusNN":
-                network = cp.cosmopower_PCAplusNN(restore=True, restore_filename=netpath)
+                network = cp.cosmopower_PCAplusNN(
+                    restore_filename=netpath, allow_pickle=True
+                )
             elif self.stop_at_error:  # pragma: no cover
                 raise ValueError(
                     f"Unknown network type {nettype['type']} for network {spectype}."
@@ -137,6 +141,7 @@ class CosmoPower(BoltzmannBase):
                     f"Unknown network type {nettype['type']}\
                                                 for network {spectype}: skipped!"
                 )
+                continue
 
             netdata["type"] = nettype["type"]
             netdata["log"] = nettype.get("log", True)
@@ -147,8 +152,7 @@ class CosmoPower(BoltzmannBase):
 
             self.all_parameters = self.all_parameters | set(network.parameters)
 
-            if network is not None:
-                self.networks[spectype.lower()] = netdata
+            self.networks[spectype.lower()] = netdata
 
         if "lmax" not in self.extra_args:  # pragma: no cover
             self.extra_args["lmax"] = None
@@ -309,9 +313,13 @@ class CosmoPowerDerived(Theory):
         netpath = os.path.join(self.network_path, self.network_settings["filename"])
 
         if self.network_settings["type"] == "NN":
-            self.network = cp.cosmopower_NN(restore=True, restore_filename=netpath)
+            self.network = cp.cosmopower_NN(
+                restore_filename=netpath, allow_pickle=True
+            )
         elif self.network_settings["type"] == "PCAplusNN":
-            self.network = cp.cosmopower_PCAplusNN(restore=True, restore_filename=netpath)
+            self.network = cp.cosmopower_PCAplusNN(
+                restore_filename=netpath, allow_pickle=True
+            )
         else:
             raise LoggedError(f"Unknown network type {self.network_settings['type']}.")
 
