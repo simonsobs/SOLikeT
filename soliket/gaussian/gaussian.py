@@ -116,19 +116,43 @@ class GaussianLikelihood(Likelihood):
             self.log.warning(
                 "You have provided sacc_data directly, so datapath will be ignored!"
             )
+            # Work on a copy so the reordering/cuts below do not mutate the
+            # object the caller handed us.
+            sacc_data = self.sacc_data.copy()
         else:
             self.log.info(f"Loading data from {self.datapath}...")
             sacc_data = sacc.Sacc.load_fits(self.datapath)
 
-        if self.use_spectra == "all":
-            pass
-        else:
+        # Canonicalise to "combo-major" order (grouped by tracer combination, as
+        # returned by ``get_tracer_combinations``). This is the order in which
+        # ``_construct_ell_bins`` and every ``_get_theory`` build their vectors,
+        # so reordering the data once here keeps x, y, cov and theory aligned
+        # with no per-call reordering.
+        self._reorder_to_combo_major(sacc_data)
+
+        if self.use_spectra != "all":
             for tracer_comb in sacc_data.get_tracer_combinations():
                 if tracer_comb not in self.use_spectra:
                     sacc_data.remove_selection(tracers=tracer_comb)
+            # Cuts preserve relative order, but re-canonicalise to be safe.
+            self._reorder_to_combo_major(sacc_data)
+
         tracer_combs = sacc_data.get_tracer_combinations()
         assert tracer_combs != [], "No tracer was found!"
+
         return sacc_data
+
+    def _reorder_to_combo_major(self, sacc_data: sacc.Sacc) -> None:
+        """Reorder ``sacc_data`` in place so its data points are grouped by
+        tracer combination, matching the order in which the theory vector is
+        built. ``sacc.reorder`` permutes the data and covariance together, so
+        the data vector and covariance can never desynchronise."""
+        combos = sacc_data.get_tracer_combinations()
+        if not combos:
+            return
+        perm = np.concatenate([sacc_data.indices(tracers=comb) for comb in combos])
+        if not np.array_equal(perm, np.arange(len(perm))):
+            sacc_data.reorder(perm)
 
     def _get_gauss_data(self, **params_values):
         self.x = self._construct_ell_bins()
