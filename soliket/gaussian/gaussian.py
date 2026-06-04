@@ -13,6 +13,63 @@ from soliket.gaussian.gaussian_data import CrossCov, GaussianData, MultiGaussian
 from soliket.utils import get_likelihood
 
 
+def _sacc_point_ids(sacc_data: sacc.Sacc) -> list[tuple]:
+    """Per-bandpower identity ``(data_type, tracers, ell)`` for each data point,
+    in storage order.
+
+    This is the single definition of what identifies a bandpower; everything
+    that aligns covariance blocks to data by identity goes through it.
+    """
+    return [
+        (dp.data_type, tuple(dp.tracers), dp.get_tag("ell"))
+        for dp in sacc_data.data
+    ]
+
+
+def bandpower_ids(like) -> list | None:
+    """Per-bandpower identity keys for a likelihood's data vector.
+
+    Returns one hashable key per element of the data vector, uniquely labelling
+    each bandpower by ``(field/spectrum, channel/tracer pair, ell)``. These keys
+    let ``MultiGaussianData`` align cross-covariance blocks to the data by
+    identity rather than position. Returns ``None`` if no adapter applies.
+
+    Adapters:
+
+    * ``mflike``-style: reconstructed from ``spec_meta`` (``pol``,
+      ``hasYX_xsp``, ``t1``, ``t2``, ``leff``), at the (compressed) data-vector
+      granularity. ``hasYX_xsp`` is required to tell apart the two same-``pol``
+      spectra of a cross-frequency pair (e.g. TE vs ET), which otherwise share
+      ``(pol, t1, t2, ell)``.
+    * SOLikeT ``GaussianLikelihood``: the full-range keys it already computed,
+      or, failing that, its sacc ``(data_type, tracers, ell)``.
+    """
+    spec_meta = getattr(like, "spec_meta", None)
+    if spec_meta:
+        data_vec = getattr(like, "data_vec", None)
+        n = (
+            len(data_vec)
+            if data_vec is not None
+            else int(max(int(np.max(m["ids"])) for m in spec_meta if len(m["ids"]))) + 1
+        )
+        ids: list = [None] * n
+        for m in spec_meta:
+            leff = np.asarray(m["leff"])
+            key_head = (m["pol"], bool(m["hasYX_xsp"]), (m["t1"], m["t2"]))
+            for k, p in enumerate(np.asarray(m["ids"], dtype=int)):
+                ids[int(p)] = (*key_head, float(leff[k]))
+        return None if any(c is None for c in ids) else ids
+
+    full_ids = getattr(like, "_full_ids", None)
+    if full_ids is not None:
+        return list(full_ids)
+
+    sacc_data = getattr(like, "sacc_data", None)
+    if sacc_data is not None:
+        return _sacc_point_ids(sacc_data)
+    return None
+
+
 class GaussianLikelihood(Likelihood):
     """Base class for Gaussian likelihoods in SOLikeT.
 
@@ -130,6 +187,10 @@ class GaussianLikelihood(Likelihood):
         # with no per-call reordering.
         self._reorder_to_combo_major(sacc_data)
 
+        # Identity of every bandpower in the full (pre-cut) data vector, used to
+        # record which ones survive the scale cuts applied below.
+        full_ids = _sacc_point_ids(sacc_data)
+
         if self.use_spectra != "all":
             for tracer_comb in sacc_data.get_tracer_combinations():
                 if tracer_comb not in self.use_spectra:
@@ -139,6 +200,16 @@ class GaussianLikelihood(Likelihood):
 
         tracer_combs = sacc_data.get_tracer_combinations()
         assert tracer_combs != [], "No tracer was found!"
+
+        # Per-bandpower identity of the full (pre-cut) range, in data order. Used
+        # by ``MultiGaussianData`` to align cross-covariance blocks by identity.
+        self._full_ids = full_ids
+
+        # Boolean mask over the full (pre-cut) range, True for kept bandpowers.
+        # ``MultiGaussianLikelihood`` uses this to trim cross-covariances stored
+        # on the full range when probes have different scale cuts.
+        kept = set(_sacc_point_ids(sacc_data))
+        self._kept_indices = np.array([pid in kept for pid in full_ids], dtype=bool)
 
         return sacc_data
 
@@ -159,7 +230,15 @@ class GaussianLikelihood(Likelihood):
         self.y = self.sacc_data.mean
         self.cov = self.sacc_data.covariance.covmat
 
-        data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
+        data = GaussianData(
+            self.name,
+            self.x,
+            self.y,
+            self.cov,
+            self.ncovsims,
+            indices=getattr(self, "_kept_indices", None),
+            ids=getattr(self, "_full_ids", None),
+        )
         return data
 
     def _check_tracers(self):
@@ -314,6 +393,15 @@ class MultiGaussianLikelihood(GaussianLikelihood):
         self.cross_cov: CrossCov | None = CrossCov.load(self.cross_cov_path)
 
         data_list = [like._get_gauss_data() for like in self.likelihoods]
+        # Ensure every component carries per-bandpower identity keys so the
+        # cross-covariance can be aligned to the data by identity (not position).
+        # SOLikeT likelihoods already populate them; external ones (e.g. mflike)
+        # are handled by the adapter below.
+        for like, data in zip(self.likelihoods, data_list):
+            if data.ids is None:
+                ids = bandpower_ids(like)
+                if ids is not None:
+                    data.ids = ids
         self.data = MultiGaussianData(data_list, self.cross_cov)
 
         self.log.info("Initialized.")

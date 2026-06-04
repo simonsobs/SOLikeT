@@ -283,3 +283,284 @@ def test_multigaussiandata_with_crosscov_modes():
     # Verify no cross-cov has zeros in off-diagonal
     assert np.allclose(multi_none.cov[:n1, n1:], 0)
     assert np.allclose(multi_none.cov[n1:, :n1], 0)
+
+
+def create_multi_combo_sacc_file(
+    tracers: list[str], ns: list[int], cov: np.ndarray, file_path: str
+):
+    """Create a SACC file with several auto-spectra (one per tracer).
+
+    This lets us drop part of a probe's data vector via ``use_spectra`` to mimic
+    scale cuts, while the cross-covariance is built over the full (uncut) range.
+    """
+    s = sacc.Sacc()
+    for t in tracers:
+        s.add_tracer("Misc", t, quantity="cmb_temperature", spin=0)
+    for t, n in zip(tracers, ns):
+        for i in range(n):
+            s.add_data_point("cl_00", (t, t), 0.0, ell=float(i))
+    s.add_covariance(cov)
+    s.save_fits(file_path, overwrite=True)
+    return file_path
+
+
+def test_crosscov_different_probe_ranges():
+    """Cross-covariance must be cut correctly when probe ranges differ.
+
+    Reproduces the user-reported bug: when the probes entering a
+    ``MultiGaussianLikelihood`` do not share the same range (i.e. at least one
+    applies a scale cut so its data vector is shorter than the range used to
+    build the cross-covariance), the off-diagonal (and auto) covariance blocks
+    are not cut correctly.
+
+    Root cause: ``GaussianLikelihood._get_gauss_data`` builds its
+    ``GaussianData`` without passing ``indices``, so ``GaussianData.indices``
+    defaults to an all-True mask of the *cut* length. ``MultiGaussianData`` then
+    trims the full-range cross-covariance block with that mask
+    (``cov_block[d1.indices, :][:, d2.indices]``), but the mask length (cut
+    size) no longer matches the block dimension (full size), raising::
+
+        IndexError: boolean index did not match indexed array along dimension 0
+
+    The fix (to be implemented separately) must make the likelihood record which
+    full-range bandpowers it kept so the blocks can be trimmed correctly.
+    """
+    tempdir = gettempdir()
+
+    # Probe A has two auto-spectra (A0: 6 points, A1: 4 points) -> full size 10.
+    # Probe B has a single auto-spectrum (8 points).
+    nA0, nA1, nB = 6, 4, 8
+    nA = nA0 + nA1
+
+    full_cov = make_spd_matrix(nA + nB, random_state=11) + np.eye(nA + nB)
+    cov_A = full_cov[:nA, :nA]
+    cov_B = full_cov[nA:, nA:]
+    cross_AB = full_cov[:nA, nA:]  # full off-diagonal block (10 x 8)
+
+    sacc_A = create_multi_combo_sacc_file(
+        ["A0", "A1"], [nA0, nA1], cov_A, os.path.join(tempdir, "rangeA.sacc.fits")
+    )
+    sacc_B = create_multi_combo_sacc_file(
+        ["B0"], [nB], cov_B, os.path.join(tempdir, "rangeB.sacc.fits")
+    )
+
+    # Cross-covariance built over the FULL range of both probes.
+    cross_cov = CrossCov()
+    cross_cov.add_component("A", cov_A)
+    cross_cov.add_component("B", cov_B)
+    cross_cov.add_cross_covariance("A", "B", cross_AB)
+    cross_cov_path = os.path.join(tempdir, "range_cross_cov.sacc.fits")
+    cross_cov.save(cross_cov_path)
+
+    lhood = "tests.test_crosscov.ToyLikelihood"
+
+    # At runtime probe A keeps ONLY (A0, A0): its range now differs from the
+    # full range used to build the cross-covariance (kept indices = [0..5]).
+    info_A = {"name": "A", "datapath": sacc_A, "use_spectra": [("A0", "A0")]}
+    info_B = {"name": "B", "datapath": sacc_B, "use_spectra": "all"}
+
+    multilike = MultiGaussianLikelihood(
+        {
+            "components": [lhood, lhood],
+            "options": [info_A, info_B],
+            "cross_cov_path": cross_cov_path,
+        }
+    )
+
+    cov = multilike.data.cov
+    nA_cut = nA0  # only A0 survives the cut
+
+    assert cov.shape == (nA_cut + nB, nA_cut + nB)
+
+    # Auto-covariance of A must be the full block restricted to the kept points.
+    assert np.allclose(cov[:nA_cut, :nA_cut], cov_A[:nA_cut, :nA_cut])
+    # Auto-covariance of B is untouched.
+    assert np.allclose(cov[nA_cut:, nA_cut:], cov_B)
+    # Off-diagonal must be the full cross block restricted to A's kept rows.
+    assert np.allclose(cov[:nA_cut, nA_cut:], cross_AB[:nA_cut, :])
+    assert np.allclose(cov[nA_cut:, :nA_cut], cross_AB[:nA_cut, :].T)
+
+
+def test_crosscov_realigned_by_identity():
+    """Cross-covariance blocks must be aligned to the data by *identity*.
+
+    ``CrossCov`` stores raw matrices; ``MultiGaussianData`` looks blocks up by
+    component name and places them in the right block position, but it must not
+    assume the block's internal row/col order matches each probe's data vector.
+
+    Here the cross-covariance is built with component A in a *shuffled* order
+    relative to the ``GaussianData`` it will be combined with. When the components
+    carry per-bandpower identity keys, the blocks must be realigned by matching
+    those keys to the data's keys, so the assembled covariance is correct
+    regardless of the order the cross-covariance was built in.
+
+    Without identity realignment the shuffled block is used positionally and the
+    assembled auto/off-diagonal blocks are silently wrong (yet still symmetric).
+    """
+    from soliket.gaussian.gaussian_data import (
+        CrossCov,
+        GaussianData,
+        MultiGaussianData,
+    )
+
+    nA, nB = 5, 4
+    full = make_spd_matrix(nA + nB, random_state=5) + np.eye(nA + nB)
+    cov_A = full[:nA, :nA]
+    cov_B = full[nA:, nA:]
+    cross_AB = full[:nA, nA:]
+
+    # Per-bandpower identities, in the order the likelihood data uses.
+    ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(nA)]
+    ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(nB)]
+
+    # GaussianData in the canonical (ids_A / ids_B) order.
+    d_A = GaussianData(
+        "A", np.arange(nA, dtype=float), np.zeros(nA), cov_A, ids=ids_A
+    )
+    d_B = GaussianData(
+        "B", np.arange(nB, dtype=float), np.zeros(nB), cov_B, ids=ids_B
+    )
+
+    # Build the CrossCov with component A in a DIFFERENT (shuffled) order.
+    perm = np.array([3, 4, 0, 1, 2])
+    cross_cov = CrossCov()
+    cross_cov.add_component(
+        "A", cov_A[np.ix_(perm, perm)], ids=[ids_A[i] for i in perm]
+    )
+    cross_cov.add_component("B", cov_B, ids=ids_B)
+    cross_cov.add_cross_covariance("A", "B", cross_AB[perm, :])
+
+    multi = MultiGaussianData([d_A, d_B], cross_cov)
+    cov = multi.cov
+
+    # Everything must be realigned back to the data (ids_A) order.
+    assert np.allclose(cov[:nA, :nA], cov_A), "auto-A not realigned to data order"
+    assert np.allclose(cov[:nA, nA:], cross_AB), "off-diagonal not realigned by identity"
+    assert np.allclose(cov[nA:, :nA], cross_AB.T)
+    assert np.allclose(cov[nA:, nA:], cov_B)
+
+
+def test_crosscov_realign_then_trim():
+    """Realignment by identity and trimming by scale cut must compose.
+
+    The CrossCov is built on the FULL range (shuffled), while probe A applies a
+    scale cut. The block must first be realigned to the data's full-range order
+    (``_match_perm``) and then trimmed to the kept rows (``_trim_block``); the two
+    steps together must reproduce the cross block restricted to A's kept points.
+    """
+    from soliket.gaussian.gaussian_data import (
+        CrossCov,
+        GaussianData,
+        MultiGaussianData,
+    )
+
+    nA, nB, keep = 5, 4, 3
+    full = make_spd_matrix(nA + nB, random_state=3) + np.eye(nA + nB)
+    cov_A, cov_B, cross_AB = full[:nA, :nA], full[nA:, nA:], full[:nA, nA:]
+    ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(nA)]
+    ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(nB)]
+
+    # Probe A keeps only its first `keep` points; ids stay on the full range.
+    kept_mask = np.array([i < keep for i in range(nA)], dtype=bool)
+    d_A = GaussianData(
+        "A", np.arange(keep, dtype=float), np.zeros(keep),
+        cov_A[:keep, :keep], indices=kept_mask, ids=ids_A,
+    )
+    d_B = GaussianData("B", np.arange(nB, dtype=float), np.zeros(nB), cov_B, ids=ids_B)
+
+    # CrossCov built on the FULL range, with component A in a shuffled order.
+    perm = np.array([3, 4, 0, 1, 2])
+    cc = CrossCov()
+    cc.add_component("A", cov_A[np.ix_(perm, perm)], ids=[ids_A[i] for i in perm])
+    cc.add_component("B", cov_B, ids=ids_B)
+    cc.add_cross_covariance("A", "B", cross_AB[perm, :])
+
+    cov = MultiGaussianData([d_A, d_B], cc).cov
+
+    assert cov.shape == (keep + nB, keep + nB)
+    # Realigned back to data order, then trimmed to the kept points.
+    assert np.allclose(cov[:keep, :keep], cov_A[:keep, :keep])
+    assert np.allclose(cov[:keep, keep:], cross_AB[:keep, :])
+    assert np.allclose(cov[keep:, :keep], cross_AB[:keep, :].T)
+    assert np.allclose(cov[keep:, keep:], cov_B)
+
+
+def test_crosscov_ids_survive_save_load():
+    """Per-bandpower identity keys must survive save/load and still realign."""
+    from soliket.gaussian.gaussian_data import (
+        CrossCov,
+        GaussianData,
+        MultiGaussianData,
+    )
+
+    nA, nB = 5, 4
+    full = make_spd_matrix(nA + nB, random_state=8) + np.eye(nA + nB)
+    cov_A, cov_B, cross_AB = full[:nA, :nA], full[nA:, nA:], full[:nA, nA:]
+    ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(nA)]
+    ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(nB)]
+
+    perm = np.array([3, 4, 0, 1, 2])
+    cc = CrossCov()
+    cc.add_component("A", cov_A[np.ix_(perm, perm)], ids=[ids_A[i] for i in perm])
+    cc.add_component("B", cov_B, ids=ids_B)
+    cc.add_cross_covariance("A", "B", cross_AB[perm, :])
+
+    path = os.path.join(gettempdir(), "ids_roundtrip.fits")
+    cc.save(path)
+    loaded = CrossCov.load(path)
+
+    # Keys round-trip as (hashable) tuples in the same order.
+    assert loaded.component_ids("A") == [ids_A[i] for i in perm]
+    assert loaded.component_ids("B") == ids_B
+
+    # And realignment through the loaded object is correct.
+    d_A = GaussianData(
+        "A", np.arange(nA, dtype=float), np.zeros(nA), cov_A, ids=ids_A
+    )
+    d_B = GaussianData(
+        "B", np.arange(nB, dtype=float), np.zeros(nB), cov_B, ids=ids_B
+    )
+    cov = MultiGaussianData([d_A, d_B], loaded).cov
+    assert np.allclose(cov[:nA, :nA], cov_A)
+    assert np.allclose(cov[:nA, nA:], cross_AB)
+
+
+def test_bandpower_ids_adapter():
+    """The ids adapter reconstructs keys from mflike spec_meta and from sacc."""
+    from soliket.gaussian.gaussian import bandpower_ids
+
+    # mflike-style component: spec_meta over a (compressed) data vector.
+    # The two "te" entries (TE and ET) of the cross-pair share (pol, t1, t2, ell)
+    # and are disambiguated only by hasYX_xsp.
+    class FakeMflike:
+        data_vec = np.zeros(4)
+        spec_meta = [
+            {"ids": np.array([0, 1]), "pol": "te", "hasYX_xsp": False,
+             "t1": "LAT_93", "t2": "LAT_145", "leff": np.array([100.0, 200.0])},
+            {"ids": np.array([2, 3]), "pol": "te", "hasYX_xsp": True,
+             "t1": "LAT_93", "t2": "LAT_145", "leff": np.array([100.0, 200.0])},
+        ]
+
+    keys = bandpower_ids(FakeMflike())
+    assert keys == [
+        ("te", False, ("LAT_93", "LAT_145"), 100.0),
+        ("te", False, ("LAT_93", "LAT_145"), 200.0),
+        ("te", True, ("LAT_93", "LAT_145"), 100.0),
+        ("te", True, ("LAT_93", "LAT_145"), 200.0),
+    ]
+    assert len(set(keys)) == len(keys), "mflike keys must be unique"
+
+    # sacc-style component.
+    s = sacc.Sacc()
+    s.add_tracer("Misc", "X", quantity="cmb_temperature", spin=0)
+    for ell in (30.0, 60.0, 90.0):
+        s.add_data_point("cl_00", ("X", "X"), 0.0, ell=ell)
+
+    class FakeSoliket:
+        sacc_data = s
+
+    assert bandpower_ids(FakeSoliket()) == [
+        ("cl_00", ("X", "X"), 30.0),
+        ("cl_00", ("X", "X"), 60.0),
+        ("cl_00", ("X", "X"), 90.0),
+    ]
