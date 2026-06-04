@@ -81,13 +81,6 @@ jobs:
             pyproject.toml
             uv.lock
 
-      - name: Cache virtual environment
-        uses: actions/cache@v5
-        id: cache-venv
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
-
       - name: Resolve MFLike version for cache key
         id: mflike-version
         shell: bash
@@ -95,19 +88,23 @@ jobs:
           VERSION=$(grep -A1 '^name = "mflike"$' uv.lock | grep '^version' | head -1 | sed -E 's/version = "(.*)"/\1/')
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Cache cobaya_packages
+      - name: Restore cobaya_packages
         id: cache-cobaya
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           path: ./cobaya_packages
-          # Keyed on the MFLike version (which determines the downloaded data
-          # version), not the whole lockfile, so unrelated dependency bumps no
-          # longer invalidate the data cache and force a flaky NERSC download.
           key: cobaya_packages-${{ runner.os }}-${{ matrix.python-version }}-mflike-${{ steps.mflike-version.outputs.version }}
 
       - name: Install SOLikeT dependencies and likelihoods
         run: |
           bash ci_scripts/install_deps.sh --extras dev all
+
+      - name: Save cobaya_packages
+        if: always() && steps.cache-cobaya.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ./cobaya_packages
+          key: cobaya_packages-${{ runner.os }}-${{ matrix.python-version }}-mflike-${{ steps.mflike-version.outputs.version }}
 
       - name: Run tests (coverage)
         if: contains(matrix.tags, 'cov')
