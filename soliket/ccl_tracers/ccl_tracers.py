@@ -136,6 +136,7 @@ class GalaxyKappaLikelihood(CCLTracersCrossLikelihood):
     r"""
     Likelihood for cross-correlations of galaxy and CMB lensing data.
     """
+
     name: str = "GalaxyKappa"
     _allowable_tracers: ClassVar[list[str]] = ["cmb_convergence", "galaxy_density"]
     params: dict
@@ -177,6 +178,7 @@ class ShearKappaLikelihood(CCLTracersCrossLikelihood):
     r"""
     Likelihood for cross-correlations of galaxy weak lensing shear and CMB lensing data.
     """
+
     name: str = "ShearKappa"
     _allowable_tracers: ClassVar[list[str]] = ["cmb_convergence", "galaxy_shear"]
 

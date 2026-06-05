@@ -62,9 +62,7 @@ def test_lensing_and_mflike_installations(check_skip_mflike):
     )
 
 
-def test_multi(
-    test_cosmology_params, check_skip_mflike, likelihood_refs
-):
+def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
     ref = likelihood_refs["multi"]
 
     lensing_options = {"theory_lmax": 5000}

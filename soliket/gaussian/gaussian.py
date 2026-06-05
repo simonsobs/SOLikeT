@@ -20,10 +20,7 @@ def _sacc_point_ids(sacc_data: sacc.Sacc) -> list[tuple]:
     This is the single definition of what identifies a bandpower; everything
     that aligns covariance blocks to data by identity goes through it.
     """
-    return [
-        (dp.data_type, tuple(dp.tracers), dp.get_tag("ell"))
-        for dp in sacc_data.data
-    ]
+    return [(dp.data_type, tuple(dp.tracers), dp.get_tag("ell")) for dp in sacc_data.data]
 
 
 def bandpower_ids(like) -> list | None:

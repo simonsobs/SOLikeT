@@ -25,6 +25,7 @@ info["params"] = fiducial_params
 def test_lensing_import(request):
     _ = importlib.import_module("soliket.lensing").LensingLikelihood
 
+
 def test_lensing_install(request):
     from cobaya.install import install
 
@@ -37,6 +38,7 @@ def test_lensing_install(request):
         no_set_global=True,
     )
 
+
 def test_lensing_like(request, likelihood_refs):
     from soliket.lensing import LensingLikelihood
 
@@ -48,17 +50,20 @@ def test_lensing_like(request, likelihood_refs):
 
     assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
+
 def test_lensing_regen_fiducial(request, likelihood_refs):
     from soliket.lensing import LensingLikelihood
 
     ref = likelihood_refs["lensing"]
 
-    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood,
-    "fiducial_from_file": False}}
+    info["likelihood"] = {
+        "LensingLikelihood": {"external": LensingLikelihood, "fiducial_from_file": False}
+    }
     model = get_model(info)
     loglikes, derived = model.loglikes()
 
     assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
 
 def test_lensing_get_requirements_flags():
     from soliket.lensing import LensingLikelihood

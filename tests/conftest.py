@@ -72,9 +72,7 @@ def check_skip_cosmocnc():
     """
     Check if the cosmocnc module can be imported, otherwise skip the tests.
     """
-    pytest.importorskip(
-        modname="cosmocnc", reason="Couldn't import 'cosmocnc' module"
-    )
+    pytest.importorskip(modname="cosmocnc", reason="Couldn't import 'cosmocnc' module")
 
 
 @pytest.fixture

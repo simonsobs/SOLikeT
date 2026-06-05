@@ -48,9 +48,7 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
     """
 
     name: str = "CMB Lensing"
-    _url: str = (
-        "https://nersc.simonsobs.org/public/itrharri/soliket_lensinglikelihood_data_270126.tar.gz"
-    )
+    _url: str = "https://nersc.simonsobs.org/public/itrharri/soliket_lensinglikelihood_data_270126.tar.gz"
     install_options: ClassVar = {"download_url": _url}
     data_folder: str = "LensingLikelihood/"
     data_filename: str = "lensing.sacc.fits"

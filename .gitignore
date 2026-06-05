@@ -110,3 +110,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Claude Code local config, plans, and memory
+.claude/

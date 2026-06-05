@@ -53,8 +53,11 @@ def _make_interleaved_sacc(path):
     s.add_tracer("Misc", "B", quantity="cmb_temperature", spin=0)
     # storage order: A,B,A,B,A  -> NOT grouped by combo
     layout = [
-        ("A", "A", 10), ("B", "B", 200), ("A", "A", 11),
-        ("B", "B", 201), ("A", "A", 12),
+        ("A", "A", 10),
+        ("B", "B", 200),
+        ("A", "A", 11),
+        ("B", "B", 201),
+        ("A", "A", 12),
     ]
     for t1, t2, ell in layout:
         s.add_data_point("cl_00", (t1, t2), true_value((t1, t2), ell), ell=float(ell))
@@ -106,9 +109,7 @@ def test_covariance_reordered_consistently():
     )
 
     # Combo-major permutation of the storage-order covariance.
-    perm = np.concatenate(
-        [s.indices(tracers=c) for c in s.get_tracer_combinations()]
-    )
+    perm = np.concatenate([s.indices(tracers=c) for c in s.get_tracer_combinations()])
     expected_cov = cov_storage[np.ix_(perm, perm)]
 
     assert np.allclose(like.data.cov, expected_cov), (

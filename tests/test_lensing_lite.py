@@ -74,6 +74,7 @@ def test_lensing(theory):
 
     assert np.isfinite(lnl)
 
+
 class DummyProviderCl:
     def __init__(self, lmax):
         self.lmax = lmax
@@ -88,6 +89,7 @@ class DummyProviderCl:
             "te": (np.arange(size, dtype=float) + 4.0),
             "bb": (np.arange(size, dtype=float) + 5.0),
         }
+
 
 def test_lensinglite_get_theory_basic():
     lmax = 5

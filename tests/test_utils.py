@@ -34,6 +34,7 @@ def test_binning():
     assert np.allclose(bincent, centers_test)
     assert np.allclose(binval, values_test)
 
+
 def test_get_likelihood_and_onewithcls(tmp_path, monkeypatch):
     # create a dummy module with a Likelihood subclass
     module_code = """
@@ -70,4 +71,3 @@ class DummyLikelihood(Likelihood):
         assert all(k in req["Cl"] for k in ["pp", "tt", "te", "ee", "bb"])
     finally:
         sys.path.pop(0)
-
