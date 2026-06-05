@@ -140,36 +140,43 @@ class GaussianData:
 
 
 class CrossCov(dict):
-    """Cross-covariance container for multi-component Gaussian likelihoods.
+    """Labelled-block covariance store for multi-component Gaussian likelihoods.
 
-    Stores cross-covariances between named components (e.g., "mflike", "lensing")
-    and optionally the full covariances for each component. Supports saving and
-    loading in SACC format for persistence.
+    A ``CrossCov`` is a labelled-block store: a dict whose keys are pairs of
+    component names (e.g. ``("mflike", "lensing")``) and whose values are the
+    corresponding covariance blocks. Diagonal keys ``(name, name)`` hold a
+    component's auto-covariance; off-diagonal keys ``(name1, name2)`` hold a
+    cross-covariance. ``add_component`` and ``add_cross_covariance`` are the same
+    underlying store operation — they only differ in whether the block lands on
+    the diagonal or off it.
 
-    The dictionary keys are tuples of component names, e.g., ("mflike", "lensing").
-    Values are the corresponding covariance matrices.
+    Each block may carry per-axis bandpower identities (``ids``), recorded in
+    ``_block_ids_map`` keyed by the block's ``(row, col)`` tuple. These labels let
+    a block be aligned to a target order regardless of how it was stored: blocks
+    may be supplied in any order, on a full (un-cut, shuffled) range, with no
+    reliance on positional or borrowed ids. ``MultiGaussianData`` canonicalises
+    the store to the data order at assembly time via :meth:`to_canonical`, which
+    fuses realignment and scale-cut trimming into one identity gather per axis.
+    Supports saving and loading in SACC format for persistence.
 
-    For the full joint covariance, use:
-
-    - Diagonal blocks: ``(name, name)`` -> auto-covariance matrix
-    - Off-diagonal blocks: ``(name1, name2)`` -> cross-covariance matrix
+    See ``.claude/plans/2026-06-05-crosscov-labelled-blocks-design.md`` for the
+    design rationale.
 
     Examples
     --------
-    **Mode 1: Full covariance specification**
-
-    Use ``add_component()`` for auto-covariances and ``add_cross_covariance()``
-    for off-diagonal blocks::
+    Auto blocks via ``add_component`` and cross blocks via
+    ``add_cross_covariance``, optionally labelled with per-axis ids::
 
         cross_cov = CrossCov()
-        cross_cov.add_component("mflike", mflike_cov)
-        cross_cov.add_component("lensing", lensing_cov)
-        cross_cov.add_cross_covariance("mflike", "lensing", cross_block)
+        cross_cov.add_component("mflike", mflike_cov, ids=mflike_ids)
+        cross_cov.add_component("lensing", lensing_cov, ids=lensing_ids)
+        cross_cov.add_cross_covariance(
+            "mflike", "lensing", cross_block, ids1=mflike_ids, ids2=lensing_ids
+        )
         cross_cov.save("cross_cov.fits")
 
-    **Mode 2: Cross-covariance only**
-
-    If auto-covariances will come from individual likelihoods::
+    Auto-covariances may be omitted; assembly then falls back to each
+    likelihood's own ``cov``::
 
         cross_cov = CrossCov()
         cross_cov.add_cross_covariance("mflike", "lensing", cross_block)
@@ -183,98 +190,160 @@ class CrossCov(dict):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._metadata = {}
         self._component_info: dict[str, dict] = {}
-        # Per-component list of bandpower identities (keys), in the order of the
-        # rows/cols of that component's blocks. Used by ``MultiGaussianData`` to
-        # align blocks to the data by identity rather than by position.
-        self._component_ids: dict[str, list | None] = {}
+        # Per-block bandpower identities, keyed by the block's (row, col) tuple.
+        # Each value is ``(row_ids, col_ids)``. Two blocks may label the same
+        # component in different orders; each canonicalises independently.
+        self._block_ids_map: dict[tuple, tuple] = {}
 
-    def component_ids(self, name: str) -> list | None:
-        """Return the per-bandpower identity keys for a component, or None."""
-        return self._component_ids.get(name)
+    @staticmethod
+    def _axis_gather(
+        block_ids, target, name: str, which: str, n_block: int
+    ) -> np.ndarray:
+        """Index array that maps a block axis into `target`.
 
-    def add_component(
-        self,
-        name: str,
-        cov: np.ndarray,
-        ids: Sequence | None = None,
-    ):
-        """Add a component with its full covariance.
-
-        Parameters
-        ----------
-        name : str
-            Component name (e.g., "mflike", "kk")
-        cov : np.ndarray
-            Full covariance matrix for this component
-        ids : sequence, optional
-            Per-bandpower identity keys (one per row/col of ``cov``), used to
-            align this component's blocks to the data by identity. When omitted,
-            blocks are aligned positionally.
+        `target` is either a sequence of identity keys (identity mode) or an int
+        (positional mode). `n_block` is the length of the block axis being
+        mapped. The decision is per axis:
+          - target ids + block ids   -> gather by identity (realign + trim)
+          - no target ids + no block  -> positional (size must match)
+          - target ids + no block     -> raise (refuse to guess)
+          - no target ids + block ids -> raise (can't map labels onto positions)
         """
-        if isinstance(cov, dict):
-            raise TypeError(
-                f"cov must be a numpy array, not a dict. Got: {type(cov)}"
+        positional_target = isinstance(target, int)
+
+        if block_ids is None:
+            if positional_target:
+                if target != n_block:
+                    raise ValueError(
+                        f"the {which} axis of a covariance block for '{name}' has "
+                        f"length {n_block} but the target size is {target}; an "
+                        f"unlabelled block must already match the target size."
+                    )
+                return np.arange(n_block)
+            raise ValueError(
+                f"the {which} axis of a covariance block for '{name}' does not "
+                f"carry bandpower identities, but the data does; pass ids so it "
+                f"can be aligned — positional alignment is unsafe because the "
+                f"data is reordered to canonical order."
             )
-        cov_array = np.asarray(cov)
-        self._component_info[name] = {
-            "size": cov_array.shape[0],
-            "cov": cov_array,
+
+        if positional_target:
+            raise ValueError(
+                f"the {which} axis of a covariance block for '{name}' carries "
+                f"bandpower identities but the target order does not; cannot map "
+                f"identities onto unknown positions."
+            )
+
+        if len(block_ids) != n_block:
+            raise ValueError(
+                f"the {which} axis of a covariance block for '{name}' has length "
+                f"{n_block} but carries {len(block_ids)} ids; ids must describe the "
+                f"block as stored."
+            )
+
+        position = {key: i for i, key in enumerate(block_ids)}
+        if len(position) != len(block_ids):
+            raise ValueError(
+                f"covariance block ids for '{name}' are not unique; cannot align."
+            )
+        try:
+            return np.array([position[key] for key in target], dtype=int)
+        except KeyError as exc:
+            raise ValueError(
+                f"covariance for '{name}' is missing bandpower {exc.args[0]!r} "
+                f"present in the data; built on a different bandpower set."
+            ) from None
+
+    def to_canonical(self, order: dict) -> np.ndarray:
+        """Assemble the full joint covariance in the given per-component order.
+
+        `order` maps component name -> target ids (canonical; already scale-cut
+        for a trimmed matrix) OR an int size (positional, when the data has no
+        ids). Missing blocks are left as zeros. Realign and trim fuse into one
+        gather per axis.
+        """
+        names = list(order.keys())
+        sizes = {
+            n: (order[n] if isinstance(order[n], int) else len(order[n])) for n in names
         }
-        self._set_component_ids(name, ids, cov_array.shape[0])
-        # Also store the auto-covariance in the dict
-        self[(name, name)] = cov_array
+        starts, s = {}, 0
+        for n in names:
+            starts[n] = s
+            s += sizes[n]
+        total = s
+        full = np.zeros((total, total))
 
-    def add_cross_covariance(
-        self,
-        name1: str,
-        name2: str,
-        cross_cov: np.ndarray,
-        ids1: Sequence | None = None,
-        ids2: Sequence | None = None,
-    ):
-        """Add cross-covariance between two components.
+        for ni in names:
+            for nj in names:
+                block = self.get((ni, nj))
+                if block is None:
+                    rev = self.get((nj, ni))
+                    if rev is None:
+                        continue
+                    block = np.asarray(rev).T
+                else:
+                    block = np.asarray(block)
+                row_ids, col_ids = self._block_ids((ni, nj))
+                rows = self._axis_gather(row_ids, order[ni], ni, "row", block.shape[0])
+                cols = self._axis_gather(col_ids, order[nj], nj, "col", block.shape[1])
+                sub = block[np.ix_(rows, cols)]
+                full[
+                    starts[ni] : starts[ni] + sizes[ni],
+                    starts[nj] : starts[nj] + sizes[nj],
+                ] = sub
+        return full
 
-        Parameters
-        ----------
-        name1 : str
-            First component name
-        name2 : str
-            Second component name
-        cross_cov : np.ndarray
-            Cross-covariance matrix with shape (n1, n2)
-        ids1, ids2 : sequence, optional
-            Per-bandpower identity keys for the rows (``name1``) and columns
-            (``name2``). Only needed if not already provided via
-            ``add_component``; they let the block be aligned by identity.
-        """
-        block = np.asarray(cross_cov)
-        self[(name1, name2)] = block
-        # Also store the transpose for convenience
-        self[(name2, name1)] = block.T
-        self._set_component_ids(name1, ids1, block.shape[0])
-        self._set_component_ids(name2, ids2, block.shape[1])
-
-    def _set_component_ids(
-        self, name: str, ids: Sequence | None, expected_len: int
-    ) -> None:
-        """Record per-bandpower identity keys for a component (idempotent)."""
+    @staticmethod
+    def _check_ids(ids, dim, name):
         if ids is None:
-            self._component_ids.setdefault(name, None)
-            return
+            return None
         ids = list(ids)
-        if len(ids) != expected_len:
+        if len(ids) != dim:
             raise ValueError(
-                f"ids for component '{name}' has length {len(ids)}, "
-                f"expected {expected_len}."
+                f"ids for '{name}' have length {len(ids)}, expected {dim} "
+                f"(one per row/col of the block as stored)."
             )
-        existing = self._component_ids.get(name)
-        if existing is not None and list(existing) != ids:
-            raise ValueError(
-                f"Inconsistent ids provided for component '{name}'."
-            )
-        self._component_ids[name] = ids
+        return ids
+
+    def _add_block(self, row, col, block, row_ids, col_ids):
+        """Shared core: store a labelled covariance block (and its transpose for
+        off-diagonal blocks). The single place blocks + ids are written."""
+        block = np.asarray(block)
+        row_ids = self._check_ids(row_ids, block.shape[0], row)
+        col_ids = self._check_ids(col_ids, block.shape[1], col)
+        self[(row, col)] = block
+        self._block_ids_map[(row, col)] = (row_ids, col_ids)
+        if row != col:
+            self[(col, row)] = block.T
+            self._block_ids_map[(col, row)] = (col_ids, row_ids)
+
+    def add_component(self, name, cov, ids=None):
+        """Register a component's auto-covariance (diagonal block)."""
+        if isinstance(cov, dict):
+            raise TypeError(f"cov must be a numpy array, not a dict. Got: {type(cov)}")
+        cov_array = np.asarray(cov)
+        self._add_block(name, name, cov_array, ids, ids)
+        self._component_info[name] = {"size": cov_array.shape[0], "cov": cov_array}
+
+    def add_cross_covariance(self, name1, name2, cross_cov, ids1=None, ids2=None):
+        """Register the cross term between two components (off-diagonal block)."""
+        self._add_block(name1, name2, cross_cov, ids1, ids2)
+
+    def component_ids(self, name):
+        """Derived per-component ids: the diagonal block's, else any block's."""
+        diag = self._block_ids_map.get((name, name))
+        if diag is not None and diag[0] is not None:
+            return diag[0]
+        for (a, b), (ia, ib) in self._block_ids_map.items():
+            if a == name and ia is not None:
+                return ia
+            if b == name and ib is not None:
+                return ib
+        return None
+
+    def _block_ids(self, key: tuple) -> tuple:
+        return self._block_ids_map.get(key, (None, None))
 
     @property
     def component_names(self) -> list[str]:
@@ -318,58 +387,54 @@ class CrossCov(dict):
                 "cov": self.get((name, name)),  # May be None if only cross-covs
             }
 
-    def save(self, path: str):
-        """Save cross-covariance to SACC format.
+    def _canonical_component_ids(self, names):
+        """One id list per component, consistent across all its blocks.
 
-        The SACC file will contain:
-        - A misc tracer for each component
-        - Dummy data points to establish the data vector structure
-        - The full joint covariance matrix
-
-        Parameters
-        ----------
-        path : str
-            Output path (must end with .fits or .sacc)
+        Raises if two blocks label a component in conflicting orders. Returns
+        ``{name: ids_or_None}``.
         """
+        out = {}
+        for name in names:
+            chosen = None
+            for (a, b), (ia, ib) in self._block_ids_map.items():
+                for who, ids in ((a, ia), (b, ib)):
+                    if who != name or ids is None:
+                        continue
+                    if chosen is None:
+                        chosen = list(ids)
+                    elif list(ids) != chosen:
+                        raise ValueError(
+                            f"component '{name}' has blocks with conflicting id "
+                            f"orders; assemble/align the cross-covariance before "
+                            f"saving."
+                        )
+            out[name] = chosen
+        return out
+
+    def save(self, path: str):
         if not path.endswith((".fits", ".sacc")):
             raise ValueError("Only .fits or .sacc files are supported!")
 
-        # If no components were added explicitly, infer sizes from cross-covariances
         if not self._component_info:
             self._infer_component_info()
 
+        comp_ids = self._canonical_component_ids(self.component_names)
+
         cross_sacc = sacc.Sacc()
-
-        # Add metadata about component order (as JSON string for FITS compatibility)
         cross_sacc.metadata["component_names"] = json.dumps(self.component_names)
+        cross_sacc.metadata["component_ids"] = json.dumps(comp_ids)
+        cross_sacc.metadata["auto_components"] = json.dumps(
+            [n for n in self.component_names if (n, n) in self]
+        )
 
-        # Persist per-bandpower identity keys so blocks can be realigned to the
-        # data by identity after loading (tuples serialise as nested lists).
-        ids_map = {
-            name: self._component_ids.get(name) for name in self.component_names
-        }
-        if any(v is not None for v in ids_map.values()):
-            cross_sacc.metadata["component_ids"] = json.dumps(ids_map)
-
-        # Add a misc tracer for each component
         for name in self.component_names:
             cross_sacc.add_tracer("misc", name, quantity="generic", spin=0)
-
-        # Add dummy data points to establish SACC structure
-        # (SACC requires data points before covariance can be added)
-        # The actual data values are not meaningful - only the covariance matters
         for name in self.component_names:
-            n_points = self._component_info[name]["size"]
+            for i in range(self._component_info[name]["size"]):
+                cross_sacc.add_data_point("generic", (name, name), 0.0, ell=float(i))
 
-            for i in range(n_points):
-                cross_sacc.add_data_point(
-                    "generic", (name, name), 0.0, ell=float(i)
-                )
-
-        # Build and add the full joint covariance matrix
         full_cov = self._build_full_covariance()
         cross_sacc.add_covariance(full_cov)
-
         cross_sacc.save_fits(path, overwrite=True)
 
     def _build_full_covariance(self) -> np.ndarray:
@@ -399,103 +464,61 @@ class CrossCov(dict):
 
     @classmethod
     def load(cls, path: str | None) -> Optional["CrossCov"]:
-        """Load cross-covariance from SACC format.
-
-        Parameters
-        ----------
-        path : str or None
-            Path to SACC file. If None, returns None.
-
-        Returns
-        -------
-        CrossCov or None
-            Loaded cross-covariance object, or None if path is None.
-        """
         if path is None:
             return None
-
         if not path.endswith((".fits", ".sacc")):
             raise ValueError("Only .fits or .sacc files are supported!")
 
         cross_sacc = sacc.Sacc.load_fits(path)
-        cross_cov = cls()
+        if "component_ids" not in cross_sacc.metadata:
+            raise ValueError(
+                "this cross-covariance file carries no bandpower identities "
+                "(old format); regenerate it with the current CrossCov.save."
+            )
 
-        # Get component names from metadata or infer from tracers
         if "component_names" in cross_sacc.metadata:
-            # Parse JSON string back to list
             component_names = json.loads(cross_sacc.metadata["component_names"])
         else:
-            # Infer from tracer names
             component_names = list(cross_sacc.tracers.keys())
 
-        # Restore per-bandpower identity keys (saved as nested lists -> tuples).
-        ids_map = {}
-        if "component_ids" in cross_sacc.metadata:
-            raw = json.loads(cross_sacc.metadata["component_ids"])
-            ids_map = {
-                name: ([_to_hashable(c) for c in ids] if ids is not None else None)
-                for name, ids in raw.items()
-            }
+        raw = json.loads(cross_sacc.metadata["component_ids"])
+        ids_map = {
+            name: ([_to_hashable(c) for c in ids] if ids is not None else None)
+            for name, ids in raw.items()
+        }
+        auto_components = set(
+            json.loads(
+                cross_sacc.metadata.get("auto_components", json.dumps(component_names))
+            )
+        )
 
-        # Extract indices for each component
-        component_indices = {}
+        cross_cov = cls()
+        component_indices = {
+            name: cross_sacc.indices(tracers=(name, name)) for name in component_names
+        }
         for name in component_names:
-            indices = cross_sacc.indices(tracers=(name, name))
-            component_indices[name] = indices
-
-            # Store component info (cov will be extracted below)
             cross_cov._component_info[name] = {
-                "size": len(indices),
-                "cov": None,  # Will be filled below
+                "size": len(component_indices[name]),
+                "cov": None,
             }
-            cross_cov._component_ids[name] = ids_map.get(name)
 
-        # Extract covariance blocks
         if cross_sacc.covariance is not None:
             full_cov = cross_sacc.covariance.covmat
-
-            for name_i in component_names:
-                indices_i = component_indices[name_i]
-
-                for name_j in component_names:
-                    indices_j = component_indices[name_j]
-
-                    # Extract the covariance block
-                    cov_block = full_cov[np.ix_(indices_i, indices_j)]
-                    cross_cov[(name_i, name_j)] = cov_block
-
-                    # Update auto-covariance in component_info
-                    if name_i == name_j:
-                        cross_cov._component_info[name_i]["cov"] = cov_block
+            for ni in component_names:
+                for nj in component_names:
+                    if ni == nj and ni not in auto_components:
+                        continue  # no real auto block; assembly falls back to d.cov
+                    block = full_cov[np.ix_(component_indices[ni], component_indices[nj])]
+                    cross_cov[(ni, nj)] = block
+                    cross_cov._block_ids_map[(ni, nj)] = (
+                        ids_map.get(ni),
+                        ids_map.get(nj),
+                    )
+                    if ni == nj:
+                        cross_cov._component_info[ni]["cov"] = block
 
         return cross_cov
 
-    # Keep old methods for backwards compatibility with existing metadata approach
-    def add_metadata(
-        self,
-        key: tuple[str],
-        tracers: tuple[tuple[str]],
-        data_types: tuple[str],
-        tracer_info: dict[str, dict[str, str | int]] = None,
-    ):
-        """Store metadata for cross-covariance entries (legacy method).
-
-        Parameters
-        ----------
-        key : tuple[str]
-            Component identifier key
-        tracers : tuple[tuple[str]]
-            Tracer pairs for each component
-        data_types : tuple[str]
-            Data types (e.g., "cl_00", "cl_22")
-        tracer_info : dict[str, dict[str, str | int]]
-            Dictionary mapping tracer names to their properties
-        """
-        self._metadata[key] = {
-            "tracers": tracers,
-            "data_types": data_types,
-            "tracer_info": tracer_info or {},
-        }
 
 class MultiGaussianData(GaussianData):
     """Combined Gaussian data from multiple components with cross-covariances.
@@ -504,15 +527,28 @@ class MultiGaussianData(GaussianData):
     with a combined covariance matrix that includes both auto-covariances and
     cross-covariances between components.
 
+    A thin caller over the :class:`CrossCov` store: the ``data_list`` is the
+    single source of truth for order. Each component's target order is its data
+    vector's own ids (already scale-cut), and the cross-covariance blocks are
+    aligned to it by identity via :meth:`CrossCov.to_canonical`. Alignment is
+    decided per axis: an identity gather when both the target and the block carry
+    ids; positional alignment only when neither does; and a raise when the data
+    carries ids but a block does not (it refuses to guess, since the data is
+    reordered to canonical order). Missing auto blocks fall back to each
+    likelihood's own ``cov``, which is already in canonical data order.
+
+    See ``.claude/plans/2026-06-05-crosscov-labelled-blocks-design.md`` for the
+    design rationale.
+
     Parameters
     ----------
     data_list : list of GaussianData
         Individual data objects to combine
     cross_covs : CrossCov, optional
-        Cross-covariance container. If None, components are assumed independent.
-        Auto-covariances can come from either the CrossCov or the individual
-        GaussianData objects (individual data takes precedence if CrossCov
-        doesn't contain auto-covariance for a component).
+        Labelled-block cross-covariance store. If None, components are assumed
+        independent. Auto-covariances can come from either the CrossCov or the
+        individual GaussianData objects (individual data is used whenever the
+        CrossCov doesn't contain an auto-covariance for a component).
 
     Attributes
     ----------
@@ -542,151 +578,37 @@ class MultiGaussianData(GaussianData):
         loglike = multi_data.loglike(theory_vector)
     """
 
-    def __init__(
-        self,
-        data_list: list[GaussianData],
-        cross_covs: CrossCov | None = None,
-    ):
+    def __init__(self, data_list, cross_covs=None):
         if cross_covs is None:
             cross_covs = CrossCov()
-
-        self.cross_covs = {}
-
-        # Build covariance blocks: use CrossCov if available, otherwise use defaults
-        for d1 in data_list:
-            for d2 in data_list:
-                key = (d1.name, d2.name)
-                rev_key = (d2.name, d1.name)
-
-                if d1 == d2:
-                    # Auto-covariance: prefer CrossCov, fallback to individual likelihood
-                    if key in cross_covs:
-                        cov_block = self._realign_block(cross_covs, key, d1, d1)
-                        # Only trim if not already the right size
-                        if cov_block.shape == (len(d1), len(d1)):
-                            self.cross_covs[key] = cov_block
-                        else:
-                            self.cross_covs[key] = self._trim_block(cov_block, d1, d1)
-                    else:
-                        # Fallback to individual likelihood's covariance
-                        self.cross_covs[key] = d1.cov
-                    continue
-
-                # Cross-covariance: use CrossCov if available, otherwise zeros
-                if key not in cross_covs and rev_key not in cross_covs:
-                    self.cross_covs[key] = np.zeros((len(d1), len(d2)))
-                elif key in cross_covs:
-                    cov_block = self._realign_block(cross_covs, key, d1, d2)
-                    # Only trim if not already the right size
-                    if cov_block.shape == (len(d1), len(d2)):
-                        self.cross_covs[key] = cov_block
-                    else:
-                        self.cross_covs[key] = self._trim_block(cov_block, d1, d2)
-                    self.cross_covs[rev_key] = self.cross_covs[key].T
-
-        self.data_list: list[GaussianData] = data_list
-        self.lengths: list[int] = [len(d) for d in data_list]
-        self.names: list[str] = [d.name for d in data_list]
-
-        self._data: np.ndarray | None = None
+        self.cross_covs = cross_covs
+        self.data_list = data_list
+        self.lengths = [len(d) for d in data_list]
+        self.names = [d.name for d in data_list]
+        self._data = None
 
     @staticmethod
-    def _trim_block(
-        cov_block: np.ndarray, row_data: GaussianData, col_data: GaussianData
-    ) -> np.ndarray:
-        """Trim a full-range covariance block down to the kept bandpowers.
+    def _kept_order(d):
+        """Target identity order for a component: its data vector's own ids.
 
-        ``row_data.indices`` / ``col_data.indices`` are boolean masks over the
-        *full* (pre-scale-cut) range of each component, so they must match the
-        block's dimensions. Raises a clear error when they do not, instead of a
-        cryptic ``IndexError`` from boolean indexing.
+        When ``d.ids`` already describes the data vector element-for-element
+        (``len(d.ids) == len(d)``) it IS the target order — e.g. mflike, whose
+        data vector is already cut, so no further trimming applies. When
+        ``d.ids`` spans a wider full range alongside a kept mask of the same
+        length (SOLikeT scale cuts: ``len(d.ids) == len(d.indices)``), the
+        target is the kept subset. Falls back to the positional size when there
+        are no usable ids.
         """
-        ri, ci = row_data.indices, col_data.indices
-        if cov_block.shape != (len(ri), len(ci)):
-            raise ValueError(
-                f"Cannot trim cross-covariance block for "
-                f"({row_data.name} x {col_data.name}): block shape "
-                f"{cov_block.shape} does not match the full-range index masks "
-                f"({len(ri)} x {len(ci)}). The stored covariance was most likely "
-                f"built on a different range than the likelihood data."
-            )
-        trimmed = cov_block[ri, :][:, ci]
-        expected = (len(row_data), len(col_data))
-        if trimmed.shape != expected:
-            raise ValueError(
-                f"Trimmed cross-covariance for ({row_data.name} x "
-                f"{col_data.name}) has shape {trimmed.shape}, expected {expected}: "
-                f"index masks keep {int(ri.sum())} and {int(ci.sum())} points."
-            )
-        return trimmed
-
-    @staticmethod
-    def _realign_block(
-        cross_covs, key: tuple, row_data: GaussianData, col_data: GaussianData
-    ) -> np.ndarray:
-        """Reorder a stored block so its rows/cols match the data by identity.
-
-        Uses the per-bandpower identity keys carried by the ``CrossCov``
-        (``component_ids``) and by the ``GaussianData`` (``ids``). When either
-        side lacks keys for an axis, that axis is left in its stored (positional)
-        order, preserving backwards-compatible behaviour.
-        """
-        block = cross_covs[key]
-        get_cc = getattr(cross_covs, "component_ids", None)
-        if get_cc is None:
-            return block
-        row_perm = MultiGaussianData._match_perm(
-            block.shape[0], get_cc(row_data.name), row_data
-        )
-        col_perm = MultiGaussianData._match_perm(
-            block.shape[1], get_cc(col_data.name), col_data
-        )
-        if row_perm is None and col_perm is None:
-            return block
-        if row_perm is None:
-            row_perm = np.arange(block.shape[0])
-        if col_perm is None:
-            col_perm = np.arange(block.shape[1])
-        return block[np.ix_(row_perm, col_perm)]
-
-    @staticmethod
-    def _match_perm(n: int, cc_ids, data: GaussianData):
-        """Permutation that reorders a block axis (in ``cc_ids`` order) into the
-        data's order, matching by identity. Returns None to keep positional order.
-
-        ``data.ids`` are full-range identity keys (one per ``data.indices``). The
-        stored block axis is either on the full range (``n == len(indices)``) or
-        already trimmed to the data (``n == len(data)``); the matching target is
-        the data identities at whichever granularity the block uses.
-        """
-        if cc_ids is None or data.ids is None or len(cc_ids) != n:
-            # No keys for this axis, or they don't describe it (size mismatch):
-            # leave it positional and let _trim_block / shape checks handle it.
-            return None
-
-        full_ids = list(data.ids)
-        if n == len(full_ids):
-            target = full_ids  # block on the full range
-        elif n == len(data):
-            target = [k for k, keep in zip(full_ids, data.indices) if keep]
-        else:
-            return None
-
-        position = {key: i for i, key in enumerate(cc_ids)}
-        if len(position) != len(cc_ids):
-            raise ValueError(
-                f"Cross-covariance ids for '{data.name}' are not unique; "
-                f"cannot align by identity."
-            )
-        try:
-            perm = np.array([position[key] for key in target], dtype=int)
-        except KeyError as exc:
-            raise ValueError(
-                f"Cross-covariance for '{data.name}' is missing a bandpower "
-                f"present in the data: {exc.args[0]!r}. The cross-covariance was "
-                f"built on a different set of bandpowers than the likelihood."
-            ) from None
-        return perm
+        if d.ids is None:
+            return len(d)
+        ids = list(d.ids)
+        if len(ids) == len(d):
+            return ids
+        if d.indices is not None and len(d.indices) == len(ids):
+            kept = [k for k, keep in zip(ids, d.indices) if keep]
+            if len(kept) == len(d):
+                return kept
+        return len(d)
 
     @property
     def data(self) -> GaussianData:
@@ -721,35 +643,24 @@ class MultiGaussianData(GaussianData):
             for x in y
         ]
 
-    def _index_range(self, name: str) -> tuple[int, int]:
-        if name not in self.names:
-            raise ValueError(f"{name} not in {self.names}!")
-
-        i0 = 0
-        for n, length in zip(self.names, self.lengths):
-            if n == name:
-                i1 = i0 + length
-                break
-            i0 += length
-        return i0, i1
-
-    def _slice(self, *names: str) -> slice:
-        if isinstance(names, str):
-            names = [names]
-
-        return np.s_[tuple(slice(*self._index_range(n)) for n in names)]
-
     def _assemble_data(self):
+        order = {d.name: self._kept_order(d) for d in self.data_list}
+
+        # Ensure every diagonal exists: fall back to each likelihood's own cov,
+        # which is already in canonical (kept) data order.
+        work = CrossCov()
+        work.update(self.cross_covs)
+        work._block_ids_map = dict(getattr(self.cross_covs, "_block_ids_map", {}))
+        for d in self.data_list:
+            if (d.name, d.name) not in work:
+                work[(d.name, d.name)] = d.cov
+                tgt = self._kept_order(d)
+                ids = tgt if isinstance(tgt, list) else None
+                work._block_ids_map[(d.name, d.name)] = (ids, ids)
+
         x = np.concatenate([d.x for d in self.data_list])
         y = np.concatenate([d.y for d in self.data_list])
-
-        N = sum([len(d) for d in self.data_list])
-
-        cov = np.zeros((N, N))
-        for n1 in self.names:
-            for n2 in self.names:
-                cov[self._slice(n1, n2)] = self.cross_covs[(n1, n2)]
-
+        cov = work.to_canonical(order)
         self._data = GaussianData(" + ".join(self.names), x, y, cov)
 
     def plot_cov(self, **kwargs):

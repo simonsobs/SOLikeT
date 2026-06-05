@@ -2,6 +2,7 @@ import os
 from tempfile import gettempdir
 
 import numpy as np
+import pytest
 import sacc
 from sklearn.datasets import make_spd_matrix
 
@@ -70,35 +71,18 @@ def test_toy():
 
     cross_cov = CrossCov()
 
-    cross_cov.add_cross_covariance(name1, name2, full_cov[:n1, n1 : n1 + n2])
-    cross_cov.add_cross_covariance(name1, name3, full_cov[:n1, n1 + n2 :])
-    cross_cov.add_cross_covariance(name2, name3, full_cov[n1 : n1 + n2, n1 + n2 :])
+    ids1 = [("cl_00", (name1, name1), float(i)) for i in range(n1)]
+    ids2 = [("cl_00", (name2, name2), float(i)) for i in range(n2)]
+    ids3 = [("cl_00", (name3, name3), float(i)) for i in range(n3)]
 
-    # Add required metadata for SACC format
-    tracer_info = {
-        name1: {"name": name1, "quantity": "cmb_temperature", "spin": 0},
-        name2: {"name": name2, "quantity": "cmb_temperature", "spin": 0},
-        name3: {"name": name3, "quantity": "cmb_temperature", "spin": 0},
-    }
-
-    # Add metadata for each cross-covariance block
-    cross_cov.add_metadata(
-        key=(name1, name2),
-        tracers=((name1, name1), (name2, name2)),
-        data_types=("cl_00", "cl_00"),
-        tracer_info=tracer_info,
+    cross_cov.add_cross_covariance(
+        name1, name2, full_cov[:n1, n1 : n1 + n2], ids1=ids1, ids2=ids2
     )
-    cross_cov.add_metadata(
-        key=(name1, name3),
-        tracers=((name1, name1), (name3, name3)),
-        data_types=("cl_00", "cl_00"),
-        tracer_info=tracer_info,
+    cross_cov.add_cross_covariance(
+        name1, name3, full_cov[:n1, n1 + n2 :], ids1=ids1, ids2=ids3
     )
-    cross_cov.add_metadata(
-        key=(name2, name3),
-        tracers=((name2, name2), (name3, name3)),
-        data_types=("cl_00", "cl_00"),
-        tracer_info=tracer_info,
+    cross_cov.add_cross_covariance(
+        name2, name3, full_cov[n1 : n1 + n2, n1 + n2 :], ids1=ids2, ids2=ids3
     )
 
     cross_cov_path = os.path.join(tempdir, "toy_cross_cov.sacc.fits")
@@ -346,9 +330,13 @@ def test_crosscov_different_probe_ranges():
 
     # Cross-covariance built over the FULL range of both probes.
     cross_cov = CrossCov()
-    cross_cov.add_component("A", cov_A)
-    cross_cov.add_component("B", cov_B)
-    cross_cov.add_cross_covariance("A", "B", cross_AB)
+    ids_A = [("cl_00", ("A0", "A0"), float(i)) for i in range(nA0)] + [
+        ("cl_00", ("A1", "A1"), float(i)) for i in range(nA1)
+    ]
+    ids_B = [("cl_00", ("B0", "B0"), float(i)) for i in range(nB)]
+    cross_cov.add_component("A", cov_A, ids=ids_A)
+    cross_cov.add_component("B", cov_B, ids=ids_B)
+    cross_cov.add_cross_covariance("A", "B", cross_AB, ids1=ids_A, ids2=ids_B)
     cross_cov_path = os.path.join(tempdir, "range_cross_cov.sacc.fits")
     cross_cov.save(cross_cov_path)
 
@@ -414,21 +402,21 @@ def test_crosscov_realigned_by_identity():
     ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(nB)]
 
     # GaussianData in the canonical (ids_A / ids_B) order.
-    d_A = GaussianData(
-        "A", np.arange(nA, dtype=float), np.zeros(nA), cov_A, ids=ids_A
-    )
-    d_B = GaussianData(
-        "B", np.arange(nB, dtype=float), np.zeros(nB), cov_B, ids=ids_B
-    )
+    d_A = GaussianData("A", np.arange(nA, dtype=float), np.zeros(nA), cov_A, ids=ids_A)
+    d_B = GaussianData("B", np.arange(nB, dtype=float), np.zeros(nB), cov_B, ids=ids_B)
 
     # Build the CrossCov with component A in a DIFFERENT (shuffled) order.
     perm = np.array([3, 4, 0, 1, 2])
     cross_cov = CrossCov()
-    cross_cov.add_component(
-        "A", cov_A[np.ix_(perm, perm)], ids=[ids_A[i] for i in perm]
-    )
+    cross_cov.add_component("A", cov_A[np.ix_(perm, perm)], ids=[ids_A[i] for i in perm])
     cross_cov.add_component("B", cov_B, ids=ids_B)
-    cross_cov.add_cross_covariance("A", "B", cross_AB[perm, :])
+    cross_cov.add_cross_covariance(
+        "A",
+        "B",
+        cross_AB[perm, :],
+        ids1=[ids_A[i] for i in perm],
+        ids2=ids_B,
+    )
 
     multi = MultiGaussianData([d_A, d_B], cross_cov)
     cov = multi.cov
@@ -444,9 +432,9 @@ def test_crosscov_realign_then_trim():
     """Realignment by identity and trimming by scale cut must compose.
 
     The CrossCov is built on the FULL range (shuffled), while probe A applies a
-    scale cut. The block must first be realigned to the data's full-range order
-    (``_match_perm``) and then trimmed to the kept rows (``_trim_block``); the two
-    steps together must reproduce the cross block restricted to A's kept points.
+    scale cut. ``CrossCov.to_canonical`` realigns each block to the data's order
+    and trims it to the kept points in a single identity gather per axis; the
+    result must reproduce the cross block restricted to A's kept points.
     """
     from soliket.gaussian.gaussian_data import (
         CrossCov,
@@ -463,8 +451,12 @@ def test_crosscov_realign_then_trim():
     # Probe A keeps only its first `keep` points; ids stay on the full range.
     kept_mask = np.array([i < keep for i in range(nA)], dtype=bool)
     d_A = GaussianData(
-        "A", np.arange(keep, dtype=float), np.zeros(keep),
-        cov_A[:keep, :keep], indices=kept_mask, ids=ids_A,
+        "A",
+        np.arange(keep, dtype=float),
+        np.zeros(keep),
+        cov_A[:keep, :keep],
+        indices=kept_mask,
+        ids=ids_A,
     )
     d_B = GaussianData("B", np.arange(nB, dtype=float), np.zeros(nB), cov_B, ids=ids_B)
 
@@ -473,7 +465,13 @@ def test_crosscov_realign_then_trim():
     cc = CrossCov()
     cc.add_component("A", cov_A[np.ix_(perm, perm)], ids=[ids_A[i] for i in perm])
     cc.add_component("B", cov_B, ids=ids_B)
-    cc.add_cross_covariance("A", "B", cross_AB[perm, :])
+    cc.add_cross_covariance(
+        "A",
+        "B",
+        cross_AB[perm, :],
+        ids1=[ids_A[i] for i in perm],
+        ids2=ids_B,
+    )
 
     cov = MultiGaussianData([d_A, d_B], cc).cov
 
@@ -503,7 +501,13 @@ def test_crosscov_ids_survive_save_load():
     cc = CrossCov()
     cc.add_component("A", cov_A[np.ix_(perm, perm)], ids=[ids_A[i] for i in perm])
     cc.add_component("B", cov_B, ids=ids_B)
-    cc.add_cross_covariance("A", "B", cross_AB[perm, :])
+    cc.add_cross_covariance(
+        "A",
+        "B",
+        cross_AB[perm, :],
+        ids1=[ids_A[i] for i in perm],
+        ids2=ids_B,
+    )
 
     path = os.path.join(gettempdir(), "ids_roundtrip.fits")
     cc.save(path)
@@ -514,12 +518,8 @@ def test_crosscov_ids_survive_save_load():
     assert loaded.component_ids("B") == ids_B
 
     # And realignment through the loaded object is correct.
-    d_A = GaussianData(
-        "A", np.arange(nA, dtype=float), np.zeros(nA), cov_A, ids=ids_A
-    )
-    d_B = GaussianData(
-        "B", np.arange(nB, dtype=float), np.zeros(nB), cov_B, ids=ids_B
-    )
+    d_A = GaussianData("A", np.arange(nA, dtype=float), np.zeros(nA), cov_A, ids=ids_A)
+    d_B = GaussianData("B", np.arange(nB, dtype=float), np.zeros(nB), cov_B, ids=ids_B)
     cov = MultiGaussianData([d_A, d_B], loaded).cov
     assert np.allclose(cov[:nA, :nA], cov_A)
     assert np.allclose(cov[:nA, nA:], cross_AB)
@@ -535,10 +535,22 @@ def test_bandpower_ids_adapter():
     class FakeMflike:
         data_vec = np.zeros(4)
         spec_meta = [
-            {"ids": np.array([0, 1]), "pol": "te", "hasYX_xsp": False,
-             "t1": "LAT_93", "t2": "LAT_145", "leff": np.array([100.0, 200.0])},
-            {"ids": np.array([2, 3]), "pol": "te", "hasYX_xsp": True,
-             "t1": "LAT_93", "t2": "LAT_145", "leff": np.array([100.0, 200.0])},
+            {
+                "ids": np.array([0, 1]),
+                "pol": "te",
+                "hasYX_xsp": False,
+                "t1": "LAT_93",
+                "t2": "LAT_145",
+                "leff": np.array([100.0, 200.0]),
+            },
+            {
+                "ids": np.array([2, 3]),
+                "pol": "te",
+                "hasYX_xsp": True,
+                "t1": "LAT_93",
+                "t2": "LAT_145",
+                "leff": np.array([100.0, 200.0]),
+            },
         ]
 
     keys = bandpower_ids(FakeMflike())
@@ -564,3 +576,279 @@ def test_bandpower_ids_adapter():
         ("cl_00", ("X", "X"), 60.0),
         ("cl_00", ("X", "X"), 90.0),
     ]
+
+
+def test_to_canonical_identity_gather_and_trim():
+    """to_canonical reshuffles a shuffled block into the target order and trims."""
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    nA, nB = 5, 4
+    full = make_spd_matrix(nA + nB, random_state=5) + np.eye(nA + nB)
+    cov_A, cov_B, cross_AB = full[:nA, :nA], full[nA:, nA:], full[:nA, nA:]
+    ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(nA)]
+    ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(nB)]
+
+    perm = [3, 4, 0, 1, 2]
+    cc = CrossCov()
+    cc.add_component("A", cov_A[np.ix_(perm, perm)], ids=[ids_A[i] for i in perm])
+    cc.add_component("B", cov_B, ids=ids_B)
+    cc.add_cross_covariance(
+        "A",
+        "B",
+        cross_AB[perm, :],
+        ids1=[ids_A[i] for i in perm],
+        ids2=ids_B,
+    )
+
+    # Full target order -> realign only.
+    full_out = cc.to_canonical({"A": ids_A, "B": ids_B})
+    assert np.allclose(full_out[:nA, :nA], cov_A)
+    assert np.allclose(full_out[:nA, nA:], cross_AB)
+    assert np.allclose(full_out[nA:, nA:], cov_B)
+
+    # Trimmed target (keep A's first 3) -> realign + trim fused.
+    keep = ids_A[:3]
+    out = cc.to_canonical({"A": keep, "B": ids_B})
+    assert out.shape == (3 + nB, 3 + nB)
+    assert np.allclose(out[:3, :3], cov_A[:3, :3])
+    assert np.allclose(out[:3, 3:], cross_AB[:3, :])
+
+
+def test_to_canonical_missing_block_is_zeros():
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(2)]
+    ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(3)]
+    cc = CrossCov()
+    cc.add_component("A", np.eye(2), ids=ids_A)
+    cc.add_component("B", np.eye(3), ids=ids_B)
+    # no A-B cross block
+    out = cc.to_canonical({"A": ids_A, "B": ids_B})
+    assert np.allclose(out[:2, 2:], 0.0)
+    assert np.allclose(out[2:, :2], 0.0)
+
+
+def test_to_canonical_superset_block_sliced_by_identity():
+    """A block built on a WIDER range is sliced down by identity."""
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    ids_full = [("cl_00", ("A", "A"), float(i)) for i in range(4)]
+    cc = CrossCov()
+    cc.add_component("A", np.diag([1.0, 2.0, 3.0, 4.0]), ids=ids_full)
+    # Ask only for a subset, in a different order.
+    target = [ids_full[2], ids_full[0]]
+    out = cc.to_canonical({"A": target})
+    assert np.allclose(out, np.diag([3.0, 1.0]))
+
+
+def test_to_canonical_missing_bandpower_raises():
+    import pytest
+
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    ids = [("cl_00", ("A", "A"), float(i)) for i in range(3)]
+    cc = CrossCov()
+    cc.add_component("A", np.eye(3), ids=ids)
+    bogus = ("cl_00", ("A", "A"), 99.0)
+    with pytest.raises(ValueError, match="missing bandpower"):
+        cc.to_canonical({"A": ids[:2] + [bogus]})
+
+
+def test_to_canonical_target_ids_block_unlabelled_raises():
+    """Target carries ids but the block does not -> refuse to guess."""
+    import pytest
+
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    ids = [("cl_00", ("A", "A"), float(i)) for i in range(3)]
+    cc = CrossCov()
+    cc.add_component("A", np.eye(3))  # NO ids on the block
+    with pytest.raises(ValueError, match="does not carry bandpower identities"):
+        cc.to_canonical({"A": ids})
+
+
+def test_to_canonical_positional_when_no_ids_anywhere():
+    """Neither target nor block has ids -> positional (size-based)."""
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    cc = CrossCov()
+    cc.add_component("A", np.diag([1.0, 2.0]))
+    cc.add_component("B", np.diag([3.0]))
+    cc.add_cross_covariance("A", "B", np.array([[0.1], [0.2]]))
+    out = cc.to_canonical({"A": 2, "B": 1})  # int sizes = positional
+    assert out.shape == (3, 3)
+    assert np.allclose(out[:2, :2], np.diag([1.0, 2.0]))
+    assert np.allclose(out[:2, 2:], np.array([[0.1], [0.2]]))
+
+
+def test_to_canonical_positional_size_mismatch_raises():
+    import pytest
+
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    cc = CrossCov()
+    cc.add_component("A", np.eye(3))  # block axis length 3, no ids
+    with pytest.raises(ValueError, match="must already match the target size"):
+        cc.to_canonical({"A": 2})  # positional target of wrong size
+
+
+def test_to_canonical_fills_transpose_from_one_direction():
+    """An upper-triangle-only CrossCov still assembles a symmetric matrix."""
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    cc = CrossCov()
+    cc.add_component("A", np.diag([1.0, 2.0]))
+    cc.add_component("B", np.diag([3.0]))
+    cc[("A", "B")] = np.array([[0.5], [0.7]])  # only one direction, no ("B","A")
+    out = cc.to_canonical({"A": 2, "B": 1})
+    assert np.allclose(out, out.T)
+    assert np.allclose(out[:2, 2:], np.array([[0.5], [0.7]]))
+    assert np.allclose(out[2:, :2], np.array([[0.5, 0.7]]))
+
+
+def test_kept_order_uses_ids_at_data_vector_granularity():
+    """mflike-like case: ids describe the data vector directly while indices is
+    a longer, mismatched mask. _kept_order must use the ids, not zip-truncate."""
+    from soliket.gaussian.gaussian_data import GaussianData, MultiGaussianData
+
+    ids = [("te", float(i)) for i in range(3)]
+    d = GaussianData("m", np.arange(3.0), np.zeros(3), np.eye(3), ids=ids)
+    # Simulate mflike's mismatched, longer indices (len 4, not 3).
+    d.indices = np.array([True, True, False, True])
+    assert MultiGaussianData._kept_order(d) == ids
+
+
+def test_kept_order_trims_on_full_range_mask():
+    """SOLikeT scale-cut case: ids span the full range with a same-length kept
+    mask; _kept_order returns the kept subset matching the data length."""
+    from soliket.gaussian.gaussian_data import GaussianData, MultiGaussianData
+
+    full_ids = [("cl_00", float(i)) for i in range(5)]
+    mask = np.array([True, True, False, True, False])  # keep 3
+    d = GaussianData(
+        "s", np.arange(3.0), np.zeros(3), np.eye(3), indices=mask, ids=full_ids
+    )
+    assert MultiGaussianData._kept_order(d) == [full_ids[0], full_ids[1], full_ids[3]]
+
+
+def test_arbitrary_order_blocks_not_rejected():
+    """Two blocks labelling the same component in different orders are accepted
+    and each canonicalises independently to the data order."""
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(3)]
+    ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(2)]
+    ids_C = [("cl_00", ("C", "C"), float(i)) for i in range(2)]
+
+    cc = CrossCov()
+    cc.add_component("A", np.diag([1.0, 2.0, 3.0]), ids=ids_A)
+    cc.add_cross_covariance(
+        "A", "B", np.arange(6.0).reshape(3, 2), ids1=ids_A, ids2=ids_B
+    )
+    perm = [2, 0, 1]
+    cc.add_cross_covariance(
+        "A",
+        "C",
+        np.arange(6.0).reshape(3, 2)[perm, :],
+        ids1=[ids_A[i] for i in perm],
+        ids2=ids_C,
+    )
+
+    out = cc.to_canonical({"A": ids_A, "B": ids_B, "C": ids_C})
+    assert np.allclose(out[:3, 3:5], np.arange(6.0).reshape(3, 2))
+    assert np.allclose(out[:3, 5:7], np.arange(6.0).reshape(3, 2))
+
+
+def test_input_validation_ids_length():
+    import pytest
+
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    cc = CrossCov()
+    with pytest.raises(ValueError, match="length"):
+        cc.add_component("A", np.eye(3), ids=[("x",), ("y",)])  # 2 ids, dim 3
+    with pytest.raises(ValueError, match="length"):
+        cc.add_cross_covariance("A", "B", np.ones((3, 2)), ids1=[("a",)], ids2=None)
+
+
+def test_save_rejects_conflicting_orders():
+    ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(3)]
+    ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(2)]
+    ids_C = [("cl_00", ("C", "C"), float(i)) for i in range(2)]
+    cc = CrossCov()
+    cc.add_component("A", np.eye(3), ids=ids_A)
+    cc.add_cross_covariance("A", "B", np.ones((3, 2)), ids1=ids_A, ids2=ids_B)
+    cc.add_cross_covariance(
+        "A", "C", np.ones((3, 2)), ids1=[ids_A[i] for i in [2, 0, 1]], ids2=ids_C
+    )
+    with pytest.raises(ValueError, match="conflicting"):
+        cc.save(os.path.join(gettempdir(), "conflict.fits"))
+
+
+def test_load_rejects_unlabelled_file(tmp_path):
+    """Clean break: a cross-cov saved without ids metadata cannot be loaded."""
+    s = sacc.Sacc()
+    s.add_tracer("misc", "A", quantity="generic", spin=0)
+    for i in range(2):
+        s.add_data_point("generic", ("A", "A"), 0.0, ell=float(i))
+    s.add_covariance(np.eye(2))
+    path = str(tmp_path / "old.fits")
+    s.save_fits(path, overwrite=True)
+    with pytest.raises(ValueError, match="regenerate"):
+        CrossCov.load(path)
+
+
+def test_mflike_style_component_assembles_to_dcov_untrimmed():
+    """Regression for the mflike granularity case.
+
+    mflike's GaussianData carries ``ids`` at the data-vector granularity
+    (``len(ids) == len(d)``) alongside a longer, mismatched ``indices`` mask (in
+    production: 3087 ids vs a 3108-long mask). Such a component must NOT be
+    trimmed or reordered at assembly: its block in the joint covariance must be
+    its own ``d.cov`` byte-for-byte. This pins both ``_kept_order`` (returns the
+    data-vector ids, never zip-truncating against the mismatched mask) and the
+    end-to-end assembly, standalone and with a cross-covariance present.
+    """
+    from soliket.gaussian.gaussian_data import (
+        CrossCov,
+        GaussianData,
+        MultiGaussianData,
+    )
+
+    nM, nL = 4, 3
+    full = make_spd_matrix(nM + nL, random_state=17) + np.eye(nM + nL)
+    cov_M = full[:nM, :nM]
+    cov_L = full[nM:, nM:]
+    cross_ML = full[:nM, nM:]
+
+    # mflike-style: ids label the data vector (length nM == len(d)).
+    ids_M = [("te", False, ("LAT_93", "LAT_145"), float(i)) for i in range(nM)]
+    ids_L = [("cl_00", ("CMBk", "CMBk"), float(i)) for i in range(nL)]
+
+    d_M = GaussianData(
+        "mflike", np.arange(nM, dtype=float), np.zeros(nM), cov_M, ids=ids_M
+    )
+    # Simulate mflike's mismatched, LONGER kept-mask (len nM+2 != len(ids_M)).
+    d_M.indices = np.array([True] * nM + [False, True])
+    d_L = GaussianData(
+        "CMBk", np.arange(nL, dtype=float), np.zeros(nL), cov_L, ids=ids_L
+    )
+
+    # _kept_order must use the data-vector ids, not zip-truncate the mask.
+    assert MultiGaussianData._kept_order(d_M) == ids_M
+
+    # (a) Standalone (no cross-cov): the mflike block is d.cov, byte-for-byte.
+    cov_a = MultiGaussianData([d_M, d_L]).cov
+    assert np.array_equal(cov_a[:nM, :nM], cov_M)
+    assert np.array_equal(cov_a[nM:, nM:], cov_L)
+    assert np.allclose(cov_a[:nM, nM:], 0.0)
+
+    # (b) With a labelled cross-cov: diagonals stay exactly d.cov; the off-
+    # diagonal is placed by identity. No trim/reorder despite the bad mask.
+    cc = CrossCov()
+    cc.add_cross_covariance("mflike", "CMBk", cross_ML, ids1=ids_M, ids2=ids_L)
+    cov_b = MultiGaussianData([d_M, d_L], cc).cov
+    assert np.array_equal(cov_b[:nM, :nM], cov_M)
+    assert np.array_equal(cov_b[nM:, nM:], cov_L)
+    assert np.allclose(cov_b[:nM, nM:], cross_ML)
+    assert np.allclose(cov_b[nM:, :nM], cross_ML.T)
