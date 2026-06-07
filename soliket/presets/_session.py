@@ -9,16 +9,24 @@ import copy
 from importlib import resources
 
 import yaml
-from cobaya.cosmo_input.input_database import neutrinos as _cobaya_neutrinos
 
 from ._aliases import resolve_aliases
 from ._loader import load_params
 
-# cobaya's standard single-massive setup (m=0.06, Neff=3.044), keyed by Boltzmann
-# code. Sourced live from cobaya so the preset can't drift from upstream; see
-# https://cobaya.readthedocs.io (cosmo_input). The SO normal-hierarchy setup is
-# an ISO-sims override, not a preset default.
-_ONE_HEAVY = _cobaya_neutrinos["one_heavy_planck"]["theory"]
+# Single-massive neutrino baseline (m=0.06, Neff=3.044), keyed by Boltzmann code.
+# Transcribed from cobaya's cosmo_input ``one_heavy_planck`` as a starting point;
+# edit it here to change the preset's neutrino setup. The SO normal-hierarchy setup
+# is an ISO-sims override, not a preset default.
+_ONE_HEAVY = {
+    "camb": {
+        "extra_args": {"num_massive_neutrinos": 1, "nnu": 3.044},
+        "params": {"mnu": 0.06},
+    },
+    "classy": {
+        "extra_args": {"N_ncdm": 1, "N_ur": 2.0328},
+        "params": {"m_ncdm": {"value": 0.06, "renames": "mnu"}},
+    },
+}
 
 # preset name -> info template file + the Fiducial-map groups it needs
 PRESETS = {
@@ -47,8 +55,8 @@ def build_info(preset, sample=None, theory="camb", params_dir=None):
 
     ``sample`` is the explicit list of dual parameters to vary; the rest are fixed
     to their fiducial values. ``theory`` selects the Boltzmann solver: ``"camb"``
-    (default) or ``"classy"``; both get cobaya's ``one_heavy_planck`` single-massive
-    neutrino setup (see :func:`_apply_neutrinos`). ``params_dir`` optionally points
+    (default) or ``"classy"``; both get the single-massive neutrino baseline
+    (see :func:`_apply_neutrinos` / :data:`_ONE_HEAVY`). ``params_dir`` optionally points
     at a directory of override ``<group>.yaml`` files (per-file fallback to the
     bundled defaults). A relative ``params_dir`` is resolved against the process
     working directory. Returns a fresh dict each call.
@@ -67,14 +75,14 @@ def build_info(preset, sample=None, theory="camb", params_dir=None):
 
 
 def _apply_neutrinos(info, theory):
-    """Inject cobaya's ``one_heavy_planck`` neutrino sub-block for ``theory`` in place.
+    """Inject the :data:`_ONE_HEAVY` neutrino sub-block for ``theory`` in place.
 
-    Single massive neutrino (m=0.06, Neff=3.044), sourced live from cobaya. Injected
-    with ``setdefault`` so anything the preset/override already pins wins — e.g. the
-    ISO-sims normal-hierarchy override that sets ``mnu`` and its own camb
-    ``extra_args``. For ``classy``, drops the camb Boltzmann block (its precision
-    ``extra_args`` do not translate) while preserving non-Boltzmann theory entries
-    (e.g. ``mflike.BandpowerForeground``).
+    Single massive neutrino (m=0.06, Neff=3.044). Injected with ``setdefault`` so
+    anything the preset/override already pins wins — e.g. the ISO-sims
+    normal-hierarchy override that sets ``mnu`` and its own camb ``extra_args``.
+    For ``classy``, drops the camb Boltzmann block (its precision ``extra_args`` do
+    not translate) while preserving non-Boltzmann theory entries (e.g.
+    ``mflike.BandpowerForeground``).
     """
     nu = copy.deepcopy(_ONE_HEAVY[theory])
     if theory == "classy":

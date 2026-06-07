@@ -70,7 +70,7 @@ def test_build_info_defaults_to_camb_theory():
     assert "camb" in build_info("mflike")["theory"]
 
 
-def test_build_info_camb_uses_cobaya_single_massive_neutrino():
+def test_build_info_camb_uses_single_massive_neutrino():
     info = build_info("mflike")
     ea = info["theory"]["camb"]["extra_args"]
     assert ea["num_massive_neutrinos"] == 1
@@ -84,7 +84,7 @@ def test_build_info_camb_uses_cobaya_single_massive_neutrino():
 
 def test_build_info_neutrino_default_does_not_clobber_override(tmp_path):
     # An override that pins mnu (the ISO normal-hierarchy case) must win over
-    # the injected cobaya default of 0.06.
+    # the injected single-massive default of 0.06.
     (tmp_path / "cosmo.yaml").write_text(
         "ns: {value: 0.9649, latex: 'n_s'}\n"
         "mnu: {value: 0.12, latex: '\\\\sum m_\\\\nu'}\n"
@@ -98,7 +98,7 @@ def test_build_info_rejects_unknown_theory():
         build_info("mflike", theory="cosmomc")
 
 
-def test_build_info_classy_uses_cobaya_classy_neutrino_subblock():
+def test_build_info_classy_uses_classy_neutrino_subblock():
     info = build_info("mflike", theory="classy")
 
     assert "classy" in info["theory"]
@@ -331,16 +331,16 @@ def test_presets_foreground_matches_mflike_defaults():
     )
 
 
-def test_build_info_does_not_mutate_cobaya_neutrino_global():
-    # build_info deepcopies cobaya's one_heavy_planck sub-block before injecting,
-    # so mutating the returned info must not corrupt cobaya's module global.
-    from cobaya.cosmo_input.input_database import neutrinos
+def test_build_info_does_not_mutate_neutrino_baseline():
+    # build_info deepcopies the _ONE_HEAVY baseline before injecting, so mutating
+    # the returned info must not corrupt the shared module-level dict across calls.
+    from soliket.presets._session import _ONE_HEAVY
 
     info = build_info("mflike", theory="classy")
     info["params"]["m_ncdm"]["value"] = 999
     info["theory"]["classy"]["extra_args"]["N_ncdm"] = 999
 
-    fresh = neutrinos["one_heavy_planck"]["theory"]["classy"]
+    fresh = _ONE_HEAVY["classy"]
     assert fresh["params"]["m_ncdm"]["value"] == 0.06
     assert fresh["extra_args"]["N_ncdm"] == 1
 
