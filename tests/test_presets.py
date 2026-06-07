@@ -68,12 +68,47 @@ def test_build_info_defaults_to_camb_theory():
     assert "camb" in build_info("mflike")["theory"]
 
 
-def test_build_info_classy_swaps_boltzmann_keeping_other_theories():
+def test_build_info_camb_uses_cobaya_single_massive_neutrino():
+    info = build_info("mflike")
+    ea = info["theory"]["camb"]["extra_args"]
+    assert ea["num_massive_neutrinos"] == 1
+    assert ea["nnu"] == 3.044
+    assert info["params"]["mnu"] == 0.06
+    # the camb precision extra_args survive the injection
+    assert ea["lens_potential_accuracy"] == 1
+    # the old normal-hierarchy keys are gone from the bundled preset
+    assert "nu_mass_eigenstates" not in ea
+
+
+def test_build_info_neutrino_default_does_not_clobber_override(tmp_path):
+    # An override that pins mnu (the ISO normal-hierarchy case) must win over
+    # the injected cobaya default of 0.06.
+    (tmp_path / "cosmo.yaml").write_text(
+        "ns: {value: 0.9649, latex: 'n_s'}\n"
+        "mnu: {value: 0.12, latex: '\\\\sum m_\\\\nu'}\n"
+    )
+    info = build_info("lensing", params_dir=str(tmp_path))
+    assert info["params"]["mnu"]["value"] == 0.12
+
+
+def test_build_info_rejects_unknown_theory():
+    with pytest.raises(ValueError, match="unknown theory"):
+        build_info("mflike", theory="cosmomc")
+
+
+def test_build_info_classy_uses_cobaya_classy_neutrino_subblock():
     info = build_info("mflike", theory="classy")
 
     assert "classy" in info["theory"]
     assert "camb" not in info["theory"]
     assert "mflike.BandpowerForeground" in info["theory"]  # non-Boltzmann preserved
+    ea = info["theory"]["classy"]["extra_args"]
+    assert ea["N_ncdm"] == 1
+    assert ea["N_ur"] == 2.0328
+    # classy-native neutrino param, with the camb-name alias
+    assert info["params"]["m_ncdm"]["value"] == 0.06
+    assert info["params"]["m_ncdm"]["renames"] == "mnu"
+    assert "mnu" not in info["params"]  # mnu is camb-only; not injected under classy
 
 
 def test_build_info_honors_params_dir_override(tmp_path):

@@ -41,8 +41,3 @@ omegamh2:
   derived: 'lambda omegam, H0: omegam*(H0/100)**2'
   latex: '\Omega_\mathrm{m} h^2'
 sigma8: {derived: true, latex: '\sigma_8'}
-mnu1: {value: 0.0, drop: true}
-mnu2: {value: 'lambda: np.sqrt(7.5e-5)', drop: true}
-mnu3: {value: 'lambda: np.sqrt(2.5e-3)', drop: true}
-mnu: {value: 'lambda mnu1, mnu2, mnu3: mnu1 + mnu2 + mnu3', latex: '\sum m_\nu'}
-nnu: {value: 3.044, latex: 'N_\mathrm{eff}'}
