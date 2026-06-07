@@ -98,6 +98,16 @@ def _group_names():
     )
 
 
+def _as_mapping(text, source):
+    """Parse a group YAML file, requiring a mapping of param specs."""
+    doc = yaml.safe_load(text)
+    if not isinstance(doc, dict):
+        raise ValueError(
+            f"{source}: expected a mapping of param specs, got {type(doc).__name__}"
+        )
+    return doc
+
+
 def _read_group(group, params_dir):
     """Read one group's param dict, preferring an override file in ``params_dir``.
 
@@ -107,8 +117,9 @@ def _read_group(group, params_dir):
     if params_dir is not None:
         override = Path(params_dir) / f"{group}.yaml"
         if override.is_file():
-            return yaml.safe_load(override.read_text())
-    return yaml.safe_load(_bundled_params_dir().joinpath(f"{group}.yaml").read_text())
+            return _as_mapping(override.read_text(), override)
+    bundled = _bundled_params_dir().joinpath(f"{group}.yaml")
+    return _as_mapping(bundled.read_text(), bundled)
 
 
 def load_fiducial_map(params_dir=None):

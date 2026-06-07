@@ -203,6 +203,16 @@ def test_load_params_override_dir_replaces_one_group(tmp_path):
     assert params["cal_LAT_93"]["value"] == 1      # systematics fell back to bundled
 
 
+def test_load_params_rejects_non_mapping_override(tmp_path):
+    # A malformed hand-edited override (here: a YAML list) must fail with a clear
+    # error naming the file, not a cryptic AttributeError deep in build_params.
+    bad = tmp_path / "cosmo.yaml"
+    bad.write_text("- not\n- a\n- mapping\n")
+
+    with pytest.raises(ValueError, match="cosmo.yaml"):
+        load_params(params_dir=str(tmp_path))
+
+
 def test_dual_param_fixed_to_central_when_not_sampled():
     spec = {
         "cosmo": {
