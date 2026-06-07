@@ -47,7 +47,8 @@ def build_info(preset, sample=None, theory="camb", params_dir=None):
     to their fiducial values. ``theory`` selects the Boltzmann solver: ``"camb"``
     (default) or ``"classy"`` (provisional — see :data:`_CLASSY_THEORY`).
     ``params_dir`` optionally points at a directory of override ``<group>.yaml``
-    files (per-file fallback to the bundled defaults). Returns a fresh dict each
+    files (per-file fallback to the bundled defaults). A relative ``params_dir``
+    is resolved against the process working directory. Returns a fresh dict each
     call.
     """
     if preset not in PRESETS:
@@ -104,7 +105,8 @@ def quickstart(
     (``"camb"`` or provisional ``"classy"``). ``packages_path`` overrides
     Cobaya's default location for installed likelihood data. ``params_dir``
     optionally points at a directory of override ``<group>.yaml`` files (per-file
-    fallback to the bundled defaults).
+    fallback to the bundled defaults). A relative ``params_dir`` is resolved
+    against the process working directory.
     """
     from cobaya.model import get_model
     from cobaya.tools import resolve_packages_path

@@ -42,7 +42,16 @@ def build_params(spec, sample=None, groups=None):
     (e.g. ``["cosmo"]``); by default every group is included.
     """
     sample = set(sample or [])
-    selected = spec if groups is None else {g: spec[g] for g in groups}
+    if groups is None:
+        selected = spec
+    else:
+        missing = [g for g in groups if g not in spec]
+        if missing:
+            raise ValueError(
+                f"missing parameter group(s) {missing}: no params/<group>.yaml "
+                f"provides them; available groups: {sorted(spec)}"
+            )
+        selected = {g: spec[g] for g in groups}
     params = {}
     for group in selected.values():
         for name, pspec in group.items():
@@ -123,7 +132,8 @@ def _read_group(group, params_dir):
 
 
 def load_fiducial_map(params_dir=None):
-    """Parse the packaged Fiducial map into its grouped form.
+    """Parse the Fiducial map (packaged defaults, optionally with per-group
+    overrides) into its grouped form.
 
     Each top-level group is one ``params/<group>.yaml`` file. ``params_dir``
     optionally supplies override files; any ``<group>.yaml`` it contains replaces
@@ -133,7 +143,8 @@ def load_fiducial_map(params_dir=None):
 
 
 def load_params(sample=None, groups=None, params_dir=None):
-    """Return the Cobaya ``params`` dict for the Fiducial map.
+    """Return the Cobaya ``params`` dict for the Fiducial map (packaged defaults,
+    optionally with per-group overrides).
 
     ``sample`` is the explicit list of dual parameters to vary; every other dual
     parameter is fixed to its fiducial central value. ``groups`` optionally

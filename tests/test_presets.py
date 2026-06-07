@@ -221,6 +221,13 @@ def test_load_params_rejects_non_mapping_override(tmp_path):
         load_params(params_dir=str(tmp_path))
 
 
+def test_build_params_errors_on_missing_group():
+    # A preset requesting a group with no params/<group>.yaml must fail clearly,
+    # naming the missing group, not raise a bare KeyError.
+    with pytest.raises(ValueError, match="systematics"):
+        build_params({"cosmo": {}}, groups=["cosmo", "systematics"])
+
+
 def test_dual_param_fixed_to_central_when_not_sampled():
     spec = {
         "cosmo": {
