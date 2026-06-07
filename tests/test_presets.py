@@ -76,6 +76,14 @@ def test_build_info_classy_swaps_boltzmann_keeping_other_theories():
     assert "mflike.BandpowerForeground" in info["theory"]  # non-Boltzmann preserved
 
 
+def test_build_info_honors_params_dir_override(tmp_path):
+    (tmp_path / "cosmo.yaml").write_text("ns: {value: 0.5, latex: 'n_s'}\n")
+
+    info = build_info("lensing", params_dir=str(tmp_path))
+
+    assert info["params"]["ns"]["value"] == 0.5
+
+
 def test_build_info_rejects_unknown_preset():
     with pytest.raises(ValueError, match="unknown preset"):
         build_info("nope")
