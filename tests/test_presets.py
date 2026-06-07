@@ -6,10 +6,12 @@ its central value unless it appears in the explicit ``sample`` list.
 """
 
 import os
+from importlib import resources
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
+import yaml
 from cobaya.theories.camb.camb import CAMB
 from cobaya.tools import resolve_packages_path
 from mflike import TTTEEE, BandpowerForeground
@@ -261,6 +263,86 @@ def test_build_params_errors_on_missing_group():
     # naming the missing group, not raise a bare KeyError.
     with pytest.raises(ValueError, match="systematics"):
         build_params({"cosmo": {}}, groups=["cosmo", "systematics"])
+
+
+def _mflike_fg_defaults():
+    """Merge mflike's shipped foreground param defaults into one flat dict.
+
+    The ``fg_*.yaml`` files are flat param dicts; ``Foreground.yaml`` carries a
+    top-level ``params:`` block with the always-used foreground params.
+    """
+    merged = {}
+    for spec in ("TT", "TE", "EE"):
+        txt = resources.files("mflike").joinpath(f"fg_{spec}.yaml").read_text()
+        merged.update(yaml.safe_load(txt) or {})
+    fg = yaml.safe_load(resources.files("mflike").joinpath("Foreground.yaml").read_text())
+    merged.update((fg or {}).get("params") or {})
+    return merged
+
+
+def test_presets_foreground_matches_mflike_defaults():
+    """Drift tripwire: presets foreground priors must match mflike's defaults.
+
+    ``soliket/presets/params/foreground.yaml`` DUPLICATES the ``prior``,
+    ``proposal`` and ``latex`` values from mflike's shipped foreground defaults
+    (``fg_TT.yaml``, ``fg_TE.yaml``, ``fg_EE.yaml`` and the ``params:`` block of
+    ``Foreground.yaml``), adding an SO-specific ``ref`` that mflike does not ship.
+    We deliberately keep foreground explicit rather than auto-pulling from mflike,
+    so this test exists purely as a tripwire: if an mflike version bump changes a
+    default we copied, this fails loudly instead of silently shifting our priors.
+
+    When it fails: review mflike's change and deliberately re-pin
+    ``soliket/presets/params/foreground.yaml`` to match (or, if the deviation is
+    an intentional SO choice, add a documented exclusion here). Do NOT just
+    force it green.
+
+    Only the INTERSECTION of param names is compared (SO-specific params absent
+    from mflike, and mflike params absent from presets, are ignored), and only
+    the ``prior``/``proposal``/``latex`` fields — the presets-only ``ref`` is
+    ignored.
+    """
+    from soliket.presets import load_fiducial_map
+
+    presets_fg = load_fiducial_map()["foreground"]
+    mflike_fg = _mflike_fg_defaults()
+
+    fields = ("prior", "proposal", "latex")
+    mismatches = []
+    for name in sorted(set(presets_fg) & set(mflike_fg)):
+        p, m = presets_fg[name], mflike_fg[name]
+        for field in fields:
+            # Treat absence consistently: a key missing on either side reads as
+            # None, so "present here / absent there" surfaces as a mismatch.
+            pv, mv = p.get(field), m.get(field)
+            if pv != mv:
+                mismatches.append((name, field, pv, mv))
+
+    assert not mismatches, (
+        "Presets foreground priors have DRIFTED from mflike's shipped defaults. "
+        "This tripwire guards against an mflike bump silently changing the "
+        "foreground priors we duplicated in "
+        "soliket/presets/params/foreground.yaml. Review mflike's change and "
+        "deliberately re-pin that file (or add a documented exclusion). "
+        "Mismatches (name, field, presets_value, mflike_value): "
+        + "; ".join(
+            f"{name}.{field}: presets={pv!r} mflike={mv!r}"
+            for name, field, pv, mv in mismatches
+        )
+    )
+
+
+def test_build_info_does_not_mutate_cobaya_neutrino_global():
+    # build_info deepcopies cobaya's one_heavy_planck sub-block before injecting,
+    # so mutating the returned info must not corrupt cobaya's module global.
+    from cobaya.cosmo_input.input_database import neutrinos
+
+    info = build_info("mflike", theory="classy")
+    info["params"]["m_ncdm"]["value"] = 999
+    info["theory"]["classy"]["extra_args"]["N_ncdm"] = 999
+
+    fresh = neutrinos["one_heavy_planck"]["theory"]["classy"]
+    assert fresh["params"]["m_ncdm"]["value"] == 0.06
+    assert fresh["extra_args"]["N_ncdm"] == 1
 
 
 def test_dual_param_fixed_to_central_when_not_sampled():
