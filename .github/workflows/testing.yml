@@ -129,7 +129,7 @@ jobs:
 
       - if: contains(matrix.tags, 'cov')
         name: Report Coverage
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
