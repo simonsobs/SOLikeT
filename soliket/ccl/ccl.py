@@ -130,7 +130,7 @@ class CCL(Theory):
     def get_requirements(self) -> set:
         # These are currently required to construct a CCL cosmology object.
         # Ultimately CCL should depend only on observable not parameters
-        return {"omch2", "ombh2"}
+        return {"omch2", "ombh2", "A_mod"}
 
     def must_provide(self, **requirements) -> dict:
         # requirements is dictionary of things requested by likelihoods
@@ -199,6 +199,9 @@ class CCL(Theory):
 
         Omega_c = self.provider.get_param("omch2") / h**2
         Omega_b = self.provider.get_param("ombh2") / h**2
+
+        A_mod = self.provider.get_param("A_mod")
+
         # Array z is sorted in ascending order. CCL requires an ascending scale factor
         # as input
         # Flip the arrays to make them a function of the increasing scale factor.
@@ -224,6 +227,8 @@ class CCL(Theory):
                     )
                     Pk_nonlin = np.flip(Pk_nonlin, axis=0)
 
+                    Pk_tot = Pk_lin + A_mod * (Pk_nonlin - Pk_lin)
+
                     # Create a CCL cosmology object. Because we are giving it background
                     # quantities, it should not depend on the cosmology parameters given
                     cosmo = self.ccl.CosmologyCalculator(
@@ -237,7 +242,7 @@ class CCL(Theory):
                         pk_nonlin={
                             "a": a,
                             "k": k,
-                            "delta_matter:delta_matter": Pk_nonlin,
+                            "delta_matter:delta_matter": Pk_tot,
                         },
                     )
 

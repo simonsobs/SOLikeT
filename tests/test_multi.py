@@ -6,12 +6,14 @@ packages_path = resolve_packages_path()
 
 nuisance_params = {
     "a_tSZ": 3.3044404448917724,
+    "alpha_tSZ": 0.0,
     "a_kSZ": 1.6646620740058649,
     "a_p": 6.912474322461401,
     "beta_p": 2.077474196171309,
     "a_c": 4.88617700670901,
     "beta_c": 2.2030316332596014,
     "a_s": 3.099214100532393,
+    "beta_s": -2.5,
     "T_d": 9.60,
     "a_gtt": 0,
     "a_gte": 0,
@@ -60,7 +62,9 @@ def test_lensing_and_mflike_installations(check_skip_mflike):
     )
 
 
-def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
+def test_multi(
+    test_cosmology_params, check_skip_mflike, likelihood_refs
+):
     ref = likelihood_refs["multi"]
 
     lensing_options = {"theory_lmax": 5000}
@@ -129,7 +133,6 @@ def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
 
     assert np.isclose(d_logp, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
-
     model1_logp_a = model1.loglikes(fg_values_a, cached=False)[0].sum()
     model2_logp_a = model2.loglikes({}, cached=False)[0].sum()
 
@@ -141,3 +144,45 @@ def test_multi(test_cosmology_params, check_skip_mflike, likelihood_refs):
     d_logp_sum = d_logp1 + d_logp2
 
     assert np.isclose(d_logp, d_logp_sum, rtol=1e-5)
+
+
+def test_multigaussian_with_ccl_derived_param(check_skip_pyccl, test_cosmology_params):
+    # Regression test: a component requesting a derived parameter (here lensing with
+    # pp_ccl=True requests `zstar`) makes that an extra input param of the wrapper.
+    # MultiGaussianLikelihood must set its own provider, else loglikes raises
+    # AttributeError: 'NoneType' object has no attribute 'get_param'.
+    from cobaya.install import install
+
+    install(
+        {"likelihood": {"soliket.lensing.LensingLikelihood": None}},
+        path=packages_path,
+        skip_global=False,
+        force=False,
+        debug=True,
+        no_set_global=True,
+    )
+
+    params = dict(test_cosmology_params)
+    # Neutrino mass put to 0 as it is not included in the ccl wrapper
+    params["mnu"] = 0
+    params["omnuh2"] = 0
+
+    info = {
+        "likelihood": {
+            "soliket.gaussian.MultiGaussianLikelihood": {
+                "components": ["soliket.LensingLikelihood"],
+                "options": [{"pp_ccl": True}],
+                "stop_at_error": True,
+            }
+        },
+        "theory": {
+            "camb": {"extra_args": {"kmax": 0.9}},
+            "soliket.CCL": {"kmax": 10, "nonlinear": True},
+        },
+        "params": params,
+    }
+
+    model = get_model(info)
+    loglikes, _ = model.loglikes({})
+
+    assert np.all(np.isfinite(loglikes))

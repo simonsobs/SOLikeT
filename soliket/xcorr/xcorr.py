@@ -14,7 +14,6 @@ from cobaya.theory import Provider
 from scipy.interpolate import InterpolatedUnivariateSpline as Spline
 
 from soliket.gaussian import GaussianData, GaussianLikelihood
-from soliket.utils import binner
 
 from .limber import do_limber
 
@@ -61,11 +60,9 @@ class XcorrLikelihood(GaussianLikelihood):
 
     """
 
-    auto_file: str | None
-    cross_file: str | None
-    dndz_file: str | None
+    name = "Xcorr"
+    use_spectra: str | tuple[str, str] | list[tuple[str, str]] | None
     datapath: str | None
-    covpath: str | None
     k_tracer_name: str | None
     gc_tracer_name: str | None
     high_ell: int | None
@@ -78,27 +75,21 @@ class XcorrLikelihood(GaussianLikelihood):
 
     provider: Provider
 
+    _allowable_tracers = ("cmb_convergence", "galaxy_density")
+
     def initialize(self):
-        self.name: str = "Xcorr"
-        self.log.info("Initialising.")
 
-        if self.datapath is None:
-            self.dndz = np.loadtxt(self.dndz_file)
-            self.x, self.y, self.dy = self._get_data()
-            if self.covpath is None:
-                self.log.info("No xcorr covariance specified. Using diag(dy^2).")
-                self.cov = np.diag(self.dy**2)
-            else:
-                self.cov = self._get_cov()
-        else:
-            # tracer_combinations: str | None = None # TODO: implement with keep_selection
+        super().initialize()
+        _, self.binning_matrix = self.get_binning(self.tracer_comb)
+        assert self.gc_tracer_name in self.sacc_data.tracers, (
+            f"Galaxy clustering tracer {self.gc_tracer_name} not found in sacc data!"
+        )
+        assert self.k_tracer_name in self.sacc_data.tracers, (
+            f"CMB lensing tracer {self.k_tracer_name} not found in sacc data!"
+        )
 
-            self.sacc_data = self._get_sacc_data()
-            self.x = self.sacc_data["x"]
-            self.y = self.sacc_data["y"]
-            self.cov = self.sacc_data["cov"]
-            self.dndz = self.sacc_data["dndz"]
-            self.ngal = self.sacc_data["ngal"]
+        self.dndz = self._get_dndz()
+        self.ngal = self._get_ngal()
 
         # TODO is this resolution limit on zarray a CAMB problem?
         assert self.nz <= 149, "CAMB limitations requires nz <= 149"
@@ -109,11 +100,26 @@ class XcorrLikelihood(GaussianLikelihood):
 
         self.ell_range = np.linspace(1, self.high_ell, int(self.high_ell + 1))
 
-        # TODO expose these defaults
-        self.alpha_auto = 0.9981
-        self.alpha_cross = 0.9977
-
         self.data = GaussianData(self.name, self.x, self.y, self.cov)
+
+    def _get_dndz(self) -> np.ndarray:
+        tracers = self.sacc_data.tracers
+        tracer: sacc.tracers.NZTracer = tracers[self.gc_tracer_name]
+
+        dndz = tracer.nz
+        z = tracer.z
+        assert len(z) == len(dndz), "dndz and z have different lengths!"
+        return np.array([z, dndz]).T
+
+    def _get_ngal(self) -> float:
+        tracers = self.sacc_data.tracers
+        tracer: sacc.tracers.NZTracer = tracers[self.gc_tracer_name]
+        if "ngal" not in tracer.metadata:
+            raise ValueError(
+                f"Tracer {self.gc_tracer_name} does not have ngal in metadata!"
+            )
+        ngal = tracer.metadata["ngal"]
+        return ngal
 
     def get_requirements(self):
         return {
@@ -139,64 +145,6 @@ class XcorrLikelihood(GaussianLikelihood):
             "As": None,
             "ns": None,
         }
-
-    def _bin(
-        self, theory_cl: np.ndarray, lmin: np.ndarray, lmax: np.ndarray
-    ) -> np.ndarray:
-        binned_theory_cl: np.ndarray = np.zeros_like(lmin)
-        for i in range(len(lmin)):
-            binned_theory_cl[i] = np.mean(
-                theory_cl[(self.ell_range >= lmin[i]) & (self.ell_range < lmax[i])]
-            )
-        return binned_theory_cl
-
-    def _get_sacc_data(self, **params_values) -> dict:
-        data_sacc = sacc.Sacc.load_fits(self.datapath)
-
-        # TODO: would be better to use keep_selection
-        data_sacc.remove_selection(tracers=(self.k_tracer_name, self.k_tracer_name))
-
-        ell_auto, cl_auto = data_sacc.get_ell_cl(
-            "cl_00", self.gc_tracer_name, self.gc_tracer_name
-        )
-        ell_cross, cl_cross = data_sacc.get_ell_cl(
-            "cl_00", self.gc_tracer_name, self.k_tracer_name
-        )  # TODO: check order
-        cov = data_sacc.covariance.covmat
-
-        x = np.concatenate([ell_auto, ell_cross])
-        y = np.concatenate([cl_auto, cl_cross])
-
-        dndz = np.column_stack(
-            [
-                data_sacc.tracers[self.gc_tracer_name].z,
-                data_sacc.tracers[self.gc_tracer_name].nz,
-            ]
-        )
-        ngal = data_sacc.tracers[self.gc_tracer_name].metadata["ngal"]
-
-        data = {"x": x, "y": y, "cov": cov, "dndz": dndz, "ngal": ngal}
-
-        return data
-
-    def _get_data(self, **params_values) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        data_auto = np.loadtxt(self.auto_file)
-        data_cross = np.loadtxt(self.cross_file)
-
-        # Get data
-        self.ell_auto = data_auto[0]
-        cl_auto = data_auto[1]
-        cl_auto_err = data_auto[2]
-
-        self.ell_cross = data_cross[0]
-        cl_cross = data_cross[1]
-        cl_cross_err = data_cross[2]
-
-        x = np.concatenate([self.ell_auto, self.ell_cross])
-        y = np.concatenate([cl_auto, cl_cross])
-        dy = np.concatenate([cl_auto_err, cl_cross_err])
-
-        return x, y, dy
 
     def _setup_chi(self) -> dict:
         chival = self.provider.get_comoving_radial_distance(self.zarray)
@@ -244,8 +192,8 @@ class XcorrLikelihood(GaussianLikelihood):
             Pk_interpolator,
             params_values["b1"],
             params_values["b1"],
-            self.alpha_auto,
-            self.alpha_cross,
+            params_values["alpha_auto"],
+            params_values["alpha_cross"],
             setup_chi_out,
             Nchi=self.Nchi,
             # use_zeff=self.use_zeff,
@@ -253,12 +201,7 @@ class XcorrLikelihood(GaussianLikelihood):
             dndz2_mag=self.dndz,
         )
 
-        # TODO: this is not the correct binning,
-        # but there needs to be a consistent way to specify it
-        bin_edges = np.linspace(20, self.high_ell, self.data.x.shape[0] // 2 + 1)
-
-        ell_gg, clobs_gg = binner(self.ell_range, cl_gg, bin_edges)
-        ell_kappag, clobs_kappag = binner(self.ell_range, cl_kappag, bin_edges)
-        # ell_kappakappa, clobs_kappakappa = binner(self.ell_range, cl_kappakappa, bin_edges) # noqa E501
+        clobs_gg = self.binning_matrix.dot(cl_gg)
+        clobs_kappag = self.binning_matrix.dot(cl_kappag)
 
         return np.concatenate([clobs_gg, clobs_kappag])

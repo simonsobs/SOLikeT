@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 import pandas as pd
 
-from soliket.poisson import PoissonData
+from soliket.poisson import PoissonData, PoissonLikelihood
 
 x_min = 0
 x_max = 10
@@ -56,3 +56,12 @@ def test_poisson_experiment(a_true=3, N=100, with_samples=False, Nk=64):
             a_maxlikes.append(a_maxlike)
 
         assert abs(np.mean(a_maxlikes) - a_true) < 0.1
+
+def test_poisson_get_catalog(tmp_path):
+    csv = tmp_path / "cat.csv"
+    csv.write_text("x,y\n1,2\n3,4\n")
+    # avoid calling the full constructor which triggers initialize()
+    pl = PoissonLikelihood.__new__(PoissonLikelihood)
+    pl.data_path = str(csv)
+    cat = PoissonLikelihood._get_catalog(pl)
+    assert "x" in cat.columns and "y" in cat.columns

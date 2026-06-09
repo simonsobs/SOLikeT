@@ -25,6 +25,7 @@ The pages here describe how to install and run SOLikeT, and document the functio
    :maxdepth: 1
    
    install
+   tutorial
 
 .. toctree::
    :caption: Theory codes
@@ -41,6 +42,7 @@ The pages here describe how to install and run SOLikeT, and document the functio
    :caption: Likelihood codes
    :maxdepth: 1
 
+   gaussian
    mflike
    lensing
    clusters

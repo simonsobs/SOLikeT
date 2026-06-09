@@ -19,7 +19,6 @@ dependencies = [
     "numpy (>=1.22.1); python_version < '3.12'", # breaking change
     "numpy (>=1.25); python_version >= '3.12'", # from distutils
     "astropy (>=5.3.4)", # breaking change
-    "pandas (<2.1.0); python_version >= '3.12' and python_version < '3.13'",
 ]
 
 [project.urls]
@@ -39,12 +38,16 @@ pyhalomodel = [
     "pyhalomodel (>=1.0.1); python_version < '3.13'", # from python compatibility
 ]
 mflike = [
-    "mflike (>=1.0.0); python_version < '3.13'", # breaking change
+    "mflike (>=1.0.1); python_version < '3.13'", # breaking change
     "fgspectra (>=1.3.0); python_version < '3.13'", # from mflike
     "syslibrary (>=0.2.0); python_version < '3.13'", # from mflike
 ]
+cosmocnc = [
+    "cosmocnc (>=1.2)",
+]
 docs = [
-    "sphinx",
+    "sphinx (<9); python_version < '3.12'", # tensorflow 2.13 pins typing-extensions==4.5.0
+    "sphinx; python_version >= '3.12'",
     "sphinx-rtd-theme",
 ]
 dev = [
@@ -55,46 +58,38 @@ dev = [
     "pre-commit",
 ]
 all = [
+    "soliket[cosmocnc]",
     "soliket[emulator]",
     "soliket[pyccl]",
     "soliket[pyhalomodel]",
     "soliket[mflike]",
 ]
-
-[build-system]
-requires = ["setuptools>=64", "setuptools_scm>=8"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-zip-safe = false
-
-[tool.setuptools.packages.find]
-include = [
-    "soliket",
-    "soliket.bandpass",
-    "soliket.bias",
-    "soliket.cash",
-    "soliket.ccl",
-    "soliket.clusters",
-    "soliket.cosmopower",
-    "soliket.cross_correlation",
-    "soliket.foreground",
-    "soliket.gaussian",
-    "soliket.halo_model",
-    "soliket.lensing",
-    "soliket.mflike",
-    "soliket.poisson",
-    "soliket.ps",
-    "soliket.xcorr",
-    "tests",
+jupyter = [
+    "jupyter>=1.1.1",
 ]
 
-[tool.setuptools.package-data]
-"*" = ['*.yaml', '*.fits', '*.txt', '*.pkl', '*.gz']
-"tests" = ['*.py', '*.yaml', '*.txt', '*.fits']
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
-[tool.setuptools_scm]
-version_file = "soliket/_version.py"
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "soliket/_version.py"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["notebooks/"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["soliket"]
+artifacts = ["soliket/_version.py"]
+
+[tool.hatch.build]
+include = [
+    "soliket/",
+    "tests/",
+]
 
 [tool.ruff.lint]
 select = ["E713", "E703", "E714", "E741", "E10", "E11", "E20", "E22", "E23", "E25", "E262", "E27", "E301", "E302", "E304", "E9", "F405", "F406", "F5", "F6", "F7", "F8", "E501", "W191", "F401", "W1", "W292", "W293", "W3"]
@@ -125,8 +120,10 @@ exclude_lines = [
     # Don't complain about packages we have installed
     "except ImportError",
     "except ModuleNotFoundError",
-    # Don't complain if tests don't hit assertions
+    "except Exception",
+    # Don't complain if tests don't hit assertions/raise
     "raise AssertionError",
+    "raise LoggedError",
     "raise NotImplementedError",
     # Don't complain about script hooks
     "def main\\(.*\\):",

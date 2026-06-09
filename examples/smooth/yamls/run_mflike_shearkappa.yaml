@@ -1,0 +1,22 @@
+debug: False
+
+sampler:
+  # evaluate: null
+  mcmc:
+    Rminus1_cl_stop: 0.2
+    Rminus1_stop: 0.01
+    drag: false
+    max_tries: 10000
+    oversample_power: 0.4
+    proposal_scale: 1.9
+
+output: chains/mflike_shearkappa
+
+theory: !defaults [theory_camb, theory_ccl, theory_BandpowerForeground]
+# theory: !defaults [theory_cosmopower, theory_bandpass, theory_foregrounds, theory_theoryforge]
+
+priors: !defaults [prior_mflikecosmo_smooth, priors_mflikesyst_smooth]
+
+likelihood: !defaults [like_mflike, like_shearkappa]
+
+params: !defaults [params_cosmo_smooth, params_shearkappanuisance_smooth, params_mflikefg_smooth, params_mflikesyst_smooth]

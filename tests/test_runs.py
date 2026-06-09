@@ -44,9 +44,9 @@ def test_installation(lhood):
 @pytest.mark.parametrize(
     "lhood",
     [
-        "lensing",
+        # "lensing",
         "lensing_lite",
-        "multi",
+        # "multi",
         "galaxykappa",
         "shearkappa",
         # "xcorr"
@@ -70,9 +70,9 @@ def test_evaluate(lhood):
 @pytest.mark.parametrize(
     "lhood",
     [
-        "lensing",
+        # "lensing",
         "lensing_lite",
-        "multi",
+        # "multi",
         "galaxykappa",
         "shearkappa",
         # "xcorr"

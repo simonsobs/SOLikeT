@@ -26,7 +26,7 @@ params:
   mnu: 0.0
   sigma8: 
 likelihood:
-  soliket.cross_correlation.ShearKappaLikelihood:
+  soliket.ccl_tracers.ShearKappaLikelihood:
     datapath: tests/data/des_s-act_kappa.toy-sim.sacc.fits
     use_spectra: all
     ncovsims: null

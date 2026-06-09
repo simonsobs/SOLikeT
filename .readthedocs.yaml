@@ -3,18 +3,9 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
-
-sphinx:
-  configuration: docs/conf.py
-  fail_on_warning: false
-
-python:
-  install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - dev
-        - docs
-        - emulator
+  commands:
+    - pip install uv
+    - uv sync --extra dev --extra docs --extra emulator
+    - uv run sphinx-build -T -b html -d docs/_build/doctrees -D language=en docs $READTHEDOCS_OUTPUT/html
 
 formats: all

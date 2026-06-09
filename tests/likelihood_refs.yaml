@@ -21,6 +21,27 @@ clusters:
   rtol: *rtol
   atol: *atol
 
+cosmocnc_clusters:
+  value: 99492.945
+  rtol: *rtol
+  atol: *atol
+cosmocnc_clusters_binned:
+  value: 49505.109
+  rtol: *rtol
+  atol: *atol
+cosmocnc_clusters_unbinned_backward:
+  value: 99544.550
+  rtol: *rtol
+  atol: *atol
+cosmocnc_clusters_multi_obs:
+  value: 76839.435
+  rtol: *rtol
+  atol: *atol
+cosmocnc_clusters_stacked_lensing:
+  value: 98985.873
+  rtol: *rtol
+  atol: *atol
+
 cosmopower:
   value: -295.139
   rtol: *rtol

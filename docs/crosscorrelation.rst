@@ -1,12 +1,12 @@
-CrossCorrelation
+CCL Tracers Likelihoods
 ======
 
-.. automodule:: soliket.cross_correlation
+.. automodule:: soliket.ccl_tracers
 
-CrossCorrelation Likelihood
+CCL Tracers Likelihood
 --------------------------
 
-.. autoclass:: soliket.cross_correlation.CrossCorrelationLikelihood
+.. autoclass:: soliket.ccl_tracers.CCLTracersLikelihood
     :exclude-members: initialize
     :members:
     :private-members:
@@ -15,7 +15,7 @@ CrossCorrelation Likelihood
 GalaxyKappa Likelihood
 --------------------------
 
-.. autoclass:: soliket.cross_correlation.GalaxyKappaLikelihood
+.. autoclass:: soliket.ccl_tracers.GalaxyKappaLikelihood
     :exclude-members: initialize
     :members:
     :private-members:
@@ -24,7 +24,7 @@ GalaxyKappa Likelihood
 ShearKappa Likelihood
 --------------------------
 
-.. autoclass:: soliket.cross_correlation.ShearKappaLikelihood
+.. autoclass:: soliket.ccl_tracers.ShearKappaLikelihood
     :exclude-members: initialize
     :members:
     :private-members:

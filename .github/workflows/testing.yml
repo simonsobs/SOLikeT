@@ -16,7 +16,7 @@ jobs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run skip-check
         id: check
@@ -26,7 +26,7 @@ jobs:
     needs: check-skip
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - os: ubuntu-latest
@@ -50,27 +50,68 @@ jobs:
             tags: []
 
           - os: windows-latest
-            python-version: '3.11'
+            python-version: '3.12'
             tags: []
-            env:
-              PYTHONIOENCODING: utf-8
-              PYTHONUTF8: 1
 
     if: ${{ needs.check-skip.outputs.skip != 'true' }}
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install GSL
+        if: runner.os != 'Windows'
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            sudo apt-get update
+            sudo apt-get install -y libgsl-dev
+          elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+            brew update
+            brew install gsl
+          fi
+
+      - name: Install uv and set the Python version
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          prune-cache: false
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
+
+      - name: Cache virtual environment
+        uses: actions/cache@v5
+        id: cache-venv
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
+
+      - name: Resolve MFLike version for cache key
+        id: mflike-version
+        shell: bash
+        run: |
+          VERSION=$(grep -A1 '^name = "mflike"$' uv.lock | grep '^version' | head -1 | sed -E 's/version = "(.*)"/\1/')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache cobaya_packages
+        id: cache-cobaya
+        uses: actions/cache@v5
+        with:
+          path: ./cobaya_packages
+          # Keyed on the MFLike version (which determines the downloaded data
+          # version), not the whole lockfile, so unrelated dependency bumps no
+          # longer invalidate the data cache and force a flaky NERSC download.
+          key: cobaya_packages-${{ runner.os }}-${{ matrix.python-version }}-mflike-${{ steps.mflike-version.outputs.version }}
+
       - name: Install SOLikeT dependencies and likelihoods
         run: |
-          pip install uv
-          bash ci_scripts/install_deps.sh --extras dev all --python ${{ matrix.python-version }}
+          bash ci_scripts/install_deps.sh --extras dev all
 
       - name: Run tests (coverage)
         if: contains(matrix.tags, 'cov')
@@ -88,37 +129,12 @@ jobs:
 
       - if: contains(matrix.tags, 'cov')
         name: Report Coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  test-conda:
-    needs: check-skip
-    if: ${{ needs.check-skip.outputs.skip != 'true' }}
-    runs-on: ubuntu-latest
-    name: Conda Test (Python 3.12)
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-activate-base: false
-          environment-file: soliket-tests.yml
-          activate-environment: soliket-tests
-
-      - name: Run tests
-        shell: bash -el {0}
-        run: |
-          pytest -vv
-
   aggregate:
-    needs: [test, test-conda]
+    needs: [test]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     name: 🛠 Aggregate test results
@@ -126,16 +142,11 @@ jobs:
       - name: Show individual results
         run: |
           echo "matrix test result: ${{ needs.test.result }}"
-          echo "conda test result: ${{ needs.test-conda.result }}"
 
       - name: Fail if any failed
         run: |
           if [ "${{ needs.test.result }}" = "failure" ]; then
             echo "❌ matrix test failed"
-            exit 1
-          fi
-          if [ "${{ needs['test-conda'].result }}" = "failure" ]; then
-            echo "❌ test-conda failed"
             exit 1
           fi
           echo "👍 All succeeded or skipped"

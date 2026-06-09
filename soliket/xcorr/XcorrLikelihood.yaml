@@ -1,10 +1,7 @@
-auto_file:
-cross_file:
-dndz_file:
-
 datapath: tests/data/unwise_g-so_kappa.sim.sacc.fits
 k_tracer_name: ck_so
 gc_tracer_name: gc_unwise
+use_spectra: [[gc_unwise, ck_so], [gc_unwise, gc_unwise]]
 # tracer_combinations: gc_unwise-ck_so, gc_unwise-gc_unwise
 
 high_ell: 600
@@ -25,6 +22,10 @@ params:
     proposal: 0.1
   s1: 
     value: 0.4
+  alpha_auto: 
+    value: 0.9981
+  alpha_cross: 
+    value: 0.9977
   H0:
     value: 70.
   omegam:

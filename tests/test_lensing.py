@@ -25,8 +25,7 @@ info["params"] = fiducial_params
 def test_lensing_import(request):
     _ = importlib.import_module("soliket.lensing").LensingLikelihood
 
-
-def test_lensing_like(request, likelihood_refs):
+def test_lensing_install(request):
     from cobaya.install import install
 
     install(
@@ -38,6 +37,7 @@ def test_lensing_like(request, likelihood_refs):
         no_set_global=True,
     )
 
+def test_lensing_like(request, likelihood_refs):
     from soliket.lensing import LensingLikelihood
 
     ref = likelihood_refs["lensing"]
@@ -47,6 +47,30 @@ def test_lensing_like(request, likelihood_refs):
     loglikes, derived = model.loglikes()
 
     assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
+def test_lensing_regen_fiducial(request, likelihood_refs):
+    from soliket.lensing import LensingLikelihood
+
+    ref = likelihood_refs["lensing"]
+
+    info["likelihood"] = {"LensingLikelihood": {"external": LensingLikelihood,
+    "fiducial_from_file": False}}
+    model = get_model(info)
+    loglikes, derived = model.loglikes()
+
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
+
+def test_lensing_get_requirements_flags():
+    from soliket.lensing import LensingLikelihood
+
+    inst = LensingLikelihood.__new__(LensingLikelihood)
+    inst.pp_ccl = False
+    req1 = LensingLikelihood.get_requirements(inst)
+    assert "Cl" in req1 and "pp" in req1["Cl"]
+
+    inst.pp_ccl = True
+    req2 = LensingLikelihood.get_requirements(inst)
+    assert "CCL" in req2 and "zstar" in req2
 
 
 def test_lensing_ccl_limber(check_skip_pyccl):

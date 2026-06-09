@@ -115,10 +115,8 @@ Status checks
 
 A series of automated checks will be run on your pull request, some of which will be required to pass before it can be merged into the main codebase:
 
-  - ``Tests`` (Required) runs the `unit tests`
+  - ``Tests`` (Required) runs the unit tests on Ubuntu (Python 3.10-3.13) and macOS (Python 3.11). Click "Details" to view the output including any failures.
   - ``Code Style`` (Required) runs `ruff <https://docs.astral.sh/ruff/>`_ to check that your code conforms to the `PEP 8 <https://www.python.org/dev/peps/pep-0008/>`_ style guidelines. Click "Details" to view any errors.
-..
-  _ in four predefined environments; `latest supported versions`, `oldest supported versions`, `macOS latest supported` and `Windows latest supported`. Click "Details" to view the output including any failures.
 
   - ``codecov`` reports the test coverage for your pull request; you should aim for `codecov/patch — 100.00%`. Click "Details" to view coverage data.
   - ``docs`` (Required) builds the `docstrings`_ on `readthedocs <https://readthedocs.org/>`_. Click "Details" to view the documentation or the failed build log.
