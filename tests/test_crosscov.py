@@ -986,6 +986,43 @@ def test_save_no_warning_when_already_canonical():
         cc.save(os.path.join(gettempdir(), "warn_none.sacc.fits"))
 
 
+def test_save_keeps_cross_only_components_when_mixed_with_add_component():
+    """Regression: a component present only via add_cross_covariance must not be
+    dropped from the saved file just because *another* component was registered
+    with add_component. Previously save() inferred missing components only when
+    no component had been added explicitly, silently truncating mixed stores.
+    """
+    from soliket.gaussian.gaussian_data import CrossCov, GaussianData, MultiGaussianData
+
+    ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(3)]
+    ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(2)]
+    # Small off-diagonal so the assembled joint covariance stays positive definite.
+    cross_AB = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]])
+
+    # A has an auto; B is cross-only (its auto will be supplied live at runtime).
+    cc = CrossCov()
+    cc.add_component("A", np.diag([1.0, 2.0, 3.0]), ids=ids_A)
+    cc.add_cross_covariance("A", "B", cross_AB, ids1=ids_A, ids2=ids_B)
+
+    path = os.path.join(gettempdir(), "mixed_cross_only.sacc.fits")
+    cc.save(path)
+
+    loaded = CrossCov.load(path)
+    assert set(loaded.component_names) == {"A", "B"}  # B not dropped
+    assert ("A", "B") in loaded  # cross term survived
+    assert np.allclose(loaded[("A", "B")], cross_AB)
+
+    # B is cross-only: assembling with a live B falls back to B's own covariance,
+    # and the cross block is placed by identity.
+    cov_B = np.diag([10.0, 20.0])
+    d_A = GaussianData("A", np.arange(3.0), np.zeros(3), np.diag([1.0, 2.0, 3.0]),
+                       ids=ids_A)
+    d_B = GaussianData("B", np.arange(2.0), np.zeros(2), cov_B, ids=ids_B)
+    cov = MultiGaussianData([d_A, d_B], loaded).cov
+    assert np.allclose(cov[3:, 3:], cov_B)  # B auto from the live likelihood
+    assert np.allclose(cov[:3, 3:], cross_AB)  # cross term placed correctly
+
+
 def test_cross_only_file_reconciles_at_runtime():
     """The 'omit autos, store only the cross term' workflow (as documented in
     notebook 04): a cross-only file, saved with the cross block in a different

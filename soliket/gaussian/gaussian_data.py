@@ -352,41 +352,33 @@ class CrossCov(dict):
         return list(self._component_info.keys())
 
     def _infer_component_info(self):
-        """Infer component sizes from stored covariance blocks.
+        """Ensure every component appearing in a block is registered.
 
-        This is called when save() is invoked without explicit add_component() calls.
-        Sizes are inferred from the shapes of cross-covariance matrices.
+        Explicit :meth:`add_component` entries are authoritative and kept as-is
+        (and in order); any component that appears *only* in cross blocks is
+        added with its size inferred from the block shape and ``cov=None`` (a
+        non-auto component whose auto-covariance is supplied at assembly time).
+        This is additive, so it is safe to call whether components were added
+        explicitly, only via cross-covariances, or a mix of both. Raises if the
+        stored blocks imply inconsistent sizes for a component.
         """
         sizes: dict[str, int] = {}
 
-        for key, cov in self.items():
-            name1, name2 = key
-            n1, n2 = cov.shape
-
-            if name1 in sizes:
-                if sizes[name1] != n1:
+        for (name1, name2), cov in self.items():
+            for name, n in ((name1, cov.shape[0]), (name2, cov.shape[1])):
+                if name in sizes and sizes[name] != n:
                     raise ValueError(
-                        f"Inconsistent sizes for component '{name1}': "
-                        f"{sizes[name1]} vs {n1}"
+                        f"Inconsistent sizes for component '{name}': "
+                        f"{sizes[name]} vs {n}"
                     )
-            else:
-                sizes[name1] = n1
+                sizes[name] = n
 
-            if name2 in sizes:
-                if sizes[name2] != n2:
-                    raise ValueError(
-                        f"Inconsistent sizes for component '{name2}': "
-                        f"{sizes[name2]} vs {n2}"
-                    )
-            else:
-                sizes[name2] = n2
-
-        # Populate _component_info with inferred sizes
         for name, size in sizes.items():
-            self._component_info[name] = {
-                "size": size,
-                "cov": self.get((name, name)),  # May be None if only cross-covs
-            }
+            if name not in self._component_info:
+                self._component_info[name] = {
+                    "size": size,
+                    "cov": self.get((name, name)),
+                }
 
     def _canonical_component_ids(self, names):
         """One canonical id order per component, used to lay out the saved file.
@@ -450,8 +442,9 @@ class CrossCov(dict):
         if not path.endswith((".fits", ".sacc")):
             raise ValueError("Only .fits or .sacc files are supported!")
 
-        if not self._component_info:
-            self._infer_component_info()
+        # Additive, so mixed stores (some autos explicit, some components only
+        # in cross blocks) are saved in full rather than truncated.
+        self._infer_component_info()
 
         comp_ids = self._canonical_component_ids(self.component_names)
         self._warn_reordered_blocks(comp_ids)
