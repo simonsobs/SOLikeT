@@ -771,18 +771,36 @@ def test_input_validation_ids_length():
         cc.add_cross_covariance("A", "B", np.ones((3, 2)), ids1=[("a",)], ids2=None)
 
 
-def test_save_rejects_conflicting_orders():
+def test_save_reconciles_cross_only_component_orders():
+    """A component shared by several blocks in same-set but different orders is
+    reconciled on save (here the A-axis of the A-C block is permuted relative to
+    A's auto block). The round-trip must place each block in the canonical order.
+    """
     ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(3)]
     ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(2)]
     ids_C = [("cl_00", ("C", "C"), float(i)) for i in range(2)]
+
+    cross_AB = np.array([[10.0, 11.0], [12.0, 13.0], [14.0, 15.0]])  # rows a0,a1,a2
+    cross_AC = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])  # rows a0,a1,a2
+    perm = [2, 0, 1]  # store A-C with A-axis as [a2, a0, a1]
+
     cc = CrossCov()
     cc.add_component("A", np.eye(3), ids=ids_A)
-    cc.add_cross_covariance("A", "B", np.ones((3, 2)), ids1=ids_A, ids2=ids_B)
+    cc.add_component("B", np.eye(2), ids=ids_B)
+    cc.add_component("C", np.eye(2), ids=ids_C)
+    cc.add_cross_covariance("A", "B", cross_AB, ids1=ids_A, ids2=ids_B)
     cc.add_cross_covariance(
-        "A", "C", np.ones((3, 2)), ids1=[ids_A[i] for i in [2, 0, 1]], ids2=ids_C
+        "A", "C", cross_AC[perm, :], ids1=[ids_A[i] for i in perm], ids2=ids_C
     )
-    with pytest.raises(ValueError, match="conflicting"):
-        cc.save(os.path.join(gettempdir(), "conflict.fits"))
+
+    path = os.path.join(gettempdir(), "reconcile_multi.sacc.fits")
+    cc.save(path)  # must NOT raise
+
+    loaded = CrossCov.load(path)
+    full = loaded.to_canonical({"A": ids_A, "B": ids_B, "C": ids_C})
+    # A rows 0:3; B cols 3:5; C cols 5:7. Both cross blocks in canonical A order.
+    assert np.allclose(full[0:3, 3:5], cross_AB)
+    assert np.allclose(full[0:3, 5:7], cross_AC)
 
 
 def test_load_rejects_unlabelled_file(tmp_path):
@@ -852,3 +870,157 @@ def test_mflike_style_component_assembles_to_dcov_untrimmed():
     assert np.array_equal(cov_b[nM:, nM:], cov_L)
     assert np.allclose(cov_b[:nM, nM:], cross_ML)
     assert np.allclose(cov_b[nM:, :nM], cross_ML.T)
+
+
+def test_save_reconciles_conflicting_same_set_orders():
+    """save() must reconcile blocks that label a component in conflicting but
+    same-set orders, instead of refusing.
+
+    A user builds a cross-covariance in their own (arbitrary) bandpower order
+    and an auto-covariance in the data order. Both carry genuine identity keys
+    that are permutations of the *same* set. Because every block is labelled,
+    the store has all it needs to realign by identity, so save() should pick a
+    canonical order, write a self-consistent file, and round-trip exactly.
+    """
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    a0 = ("cl_00", ("A", "A"), 0.0)
+    a1 = ("cl_00", ("A", "A"), 1.0)
+    a2 = ("cl_00", ("A", "A"), 2.0)
+    b0 = ("cl_00", ("B", "B"), 0.0)
+    b1 = ("cl_00", ("B", "B"), 1.0)
+
+    full = make_spd_matrix(5, random_state=7) + np.eye(5)
+    cov_AA = full[:3, :3]
+    cov_BB = full[3:, 3:]
+    cross_AB = full[:3, 3:]  # rows in [a0, a1, a2] order
+
+    cc = CrossCov()
+    cc.add_component("A", cov_AA, ids=[a0, a1, a2])  # auto in data order
+    cc.add_component("B", cov_BB, ids=[b0, b1])
+    # Cross block stored with A's axis PERMUTED -> [a2, a0, a1] (same set).
+    perm = [2, 0, 1]
+    cc.add_cross_covariance(
+        "A", "B", cross_AB[perm, :], ids1=[a2, a0, a1], ids2=[b0, b1]
+    )
+
+    path = os.path.join(gettempdir(), "reconcile_cross_cov.sacc.fits")
+    cc.save(path)  # must NOT raise
+
+    loaded = CrossCov.load(path)
+
+    # Realigning to the data order must reproduce the original full covariance,
+    # i.e. the permuted cross block was correctly reconciled on save/load.
+    target = {"A": [a0, a1, a2], "B": [b0, b1]}
+    assert np.allclose(loaded.to_canonical(target), full)
+
+
+def test_save_raises_on_genuine_set_mismatch():
+    """save() must still raise when a component's blocks carry *different sets*
+    of identity keys (not a mere reordering) -- that is genuinely unreconcilable.
+    """
+    from soliket.gaussian.gaussian_data import CrossCov
+
+    a0 = ("cl_00", ("A", "A"), 0.0)
+    a1 = ("cl_00", ("A", "A"), 1.0)
+    a2 = ("cl_00", ("A", "A"), 2.0)
+    aX = ("cl_00", ("A", "A"), 99.0)  # not in the auto's set
+    b0 = ("cl_00", ("B", "B"), 0.0)
+    b1 = ("cl_00", ("B", "B"), 1.0)
+
+    full = make_spd_matrix(5, random_state=8) + np.eye(5)
+    cc = CrossCov()
+    cc.add_component("A", full[:3, :3], ids=[a0, a1, a2])
+    cc.add_component("B", full[3:, 3:], ids=[b0, b1])
+    cc.add_cross_covariance(
+        "A", "B", full[:3, 3:], ids1=[a0, a1, aX], ids2=[b0, b1]
+    )
+
+    path = os.path.join(gettempdir(), "mismatch_cross_cov.sacc.fits")
+    with pytest.raises(ValueError, match="different|bandpower|set"):
+        cc.save(path)
+
+
+def test_save_warns_naming_reordered_block():
+    """When save() realigns a block to the canonical order, it must warn the
+    user, naming the block and the component axis that was reordered.
+    """
+    a0 = ("cl_00", ("A", "A"), 0.0)
+    a1 = ("cl_00", ("A", "A"), 1.0)
+    a2 = ("cl_00", ("A", "A"), 2.0)
+    b0 = ("cl_00", ("B", "B"), 0.0)
+    b1 = ("cl_00", ("B", "B"), 1.0)
+
+    full = make_spd_matrix(5, random_state=3) + np.eye(5)
+    cc = CrossCov()
+    cc.add_component("A", full[:3, :3], ids=[a0, a1, a2])  # canonical A order
+    cc.add_component("B", full[3:, 3:], ids=[b0, b1])
+    cc.add_cross_covariance(
+        "A", "B", full[:3, 3:][[2, 0, 1], :], ids1=[a2, a0, a1], ids2=[b0, b1]
+    )
+
+    with pytest.warns(UserWarning) as record:
+        cc.save(os.path.join(gettempdir(), "warn_reorder.sacc.fits"))
+
+    msgs = "\n".join(str(w.message) for w in record)
+    assert "('A', 'B')" in msgs  # names the block
+    assert "'A'" in msgs  # names the reordered component axis
+    assert ("realign" in msgs) or ("reorder" in msgs)
+
+
+def test_save_no_warning_when_already_canonical():
+    """No reorder => no warning."""
+    import warnings
+
+    a0 = ("cl_00", ("A", "A"), 0.0)
+    a1 = ("cl_00", ("A", "A"), 1.0)
+    b0 = ("cl_00", ("B", "B"), 0.0)
+
+    cc = CrossCov()
+    cc.add_component("A", np.eye(2), ids=[a0, a1])
+    cc.add_component("B", np.eye(1), ids=[b0])
+    cc.add_cross_covariance("A", "B", np.ones((2, 1)), ids1=[a0, a1], ids2=[b0])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # any warning becomes an error
+        cc.save(os.path.join(gettempdir(), "warn_none.sacc.fits"))
+
+
+def test_cross_only_file_reconciles_at_runtime():
+    """The 'omit autos, store only the cross term' workflow (as documented in
+    notebook 04): a cross-only file, saved with the cross block in a different
+    order than the live data, must round-trip and then -- at MultiGaussianData
+    assembly -- take both autos from the live likelihoods and realign the cross
+    block to the data order by identity.
+    """
+    from soliket.gaussian.gaussian_data import CrossCov, GaussianData, MultiGaussianData
+
+    ids_A = [("cl_00", ("A", "A"), float(i)) for i in range(3)]
+    ids_B = [("cl_00", ("B", "B"), float(i)) for i in range(2)]
+    cov_A = np.diag([1.0, 2.0, 3.0])
+    cov_B = np.diag([10.0, 20.0])
+    cross_data = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]])  # in DATA order
+
+    # Cross-only: NO add_component. Store the cross block in a PERMUTED A order.
+    perm = [2, 0, 1]
+    assert not np.allclose(cross_data[perm, :], cross_data)  # realignment matters
+    cc = CrossCov()
+    cc.add_cross_covariance(
+        "A", "B", cross_data[perm, :], ids1=[ids_A[i] for i in perm], ids2=ids_B
+    )
+
+    path = os.path.join(gettempdir(), "cross_only_runtime.sacc.fits")
+    cc.save(path)
+
+    loaded = CrossCov.load(path)
+    assert set(loaded.component_names) == {"A", "B"}
+    assert ("A", "A") not in loaded and ("B", "B") not in loaded  # no autos stored
+
+    d_A = GaussianData("A", np.arange(3.0), np.zeros(3), cov_A, ids=ids_A)
+    d_B = GaussianData("B", np.arange(2.0), np.zeros(2), cov_B, ids=ids_B)
+    cov = MultiGaussianData([d_A, d_B], loaded).cov
+
+    assert np.allclose(cov[:3, :3], cov_A)  # auto A from the live likelihood
+    assert np.allclose(cov[3:, 3:], cov_B)  # auto B from the live likelihood
+    assert np.allclose(cov[:3, 3:], cross_data)  # cross realigned to data order
+    assert np.allclose(cov[3:, :3], cross_data.T)

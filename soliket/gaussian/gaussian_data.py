@@ -1,4 +1,5 @@
 import json
+import warnings
 from collections.abc import Sequence
 from typing import Optional
 
@@ -388,28 +389,62 @@ class CrossCov(dict):
             }
 
     def _canonical_component_ids(self, names):
-        """One id list per component, consistent across all its blocks.
+        """One canonical id order per component, used to lay out the saved file.
 
-        Raises if two blocks label a component in conflicting orders. Returns
-        ``{name: ids_or_None}``.
+        Blocks may label the same component in different orders; as long as they
+        share the same *set* of identity keys the store can reconcile them by
+        identity (this is what :meth:`to_canonical` does), so a reference order
+        is chosen -- the component's own auto/diagonal block when it carries
+        ids, otherwise the first labelled block seen. Raises only when two blocks
+        carry genuinely *different sets* of keys, which no reordering can fix.
+        Returns ``{name: ids_or_None}``.
         """
         out = {}
         for name in names:
-            chosen = None
+            # Prefer the diagonal block's order as the canonical reference.
+            diag = self._block_ids_map.get((name, name))
+            chosen = list(diag[0]) if diag is not None and diag[0] is not None else None
             for (a, b), (ia, ib) in self._block_ids_map.items():
                 for who, ids in ((a, ia), (b, ib)):
                     if who != name or ids is None:
                         continue
                     if chosen is None:
                         chosen = list(ids)
-                    elif list(ids) != chosen:
+                    elif list(ids) != chosen and set(ids) != set(chosen):
                         raise ValueError(
-                            f"component '{name}' has blocks with conflicting id "
-                            f"orders; assemble/align the cross-covariance before "
-                            f"saving."
+                            f"component '{name}' has blocks labelling different "
+                            f"bandpower sets; they cannot be reconciled into a "
+                            f"single covariance (this is not a mere reordering)."
                         )
             out[name] = chosen
         return out
+
+    def _warn_reordered_blocks(self, comp_ids):
+        """Warn for each stored block whose labelling of a component differs from
+        the canonical order, so the realignment :meth:`save` performs is never
+        silent. Each physical block is reported once (its transpose is skipped).
+        """
+        seen = set()
+        for (row, col), (row_ids, col_ids) in self._block_ids_map.items():
+            pair = frozenset((row, col))
+            if pair in seen:
+                continue
+            seen.add(pair)
+            for who, ids in ((row, row_ids), (col, col_ids)):
+                canon = comp_ids.get(who)
+                if ids is None or canon is None or list(ids) == list(canon):
+                    continue
+                # Same set is guaranteed here (a set mismatch already raised).
+                pos = {key: i for i, key in enumerate(ids)}
+                perm = [pos[key] for key in canon]
+                warnings.warn(
+                    f"CrossCov.save: block {(row, col)} stored component "
+                    f"'{who}' in a different order than the canonical one; "
+                    f"realigning it by identity (canonical rows taken from "
+                    f"stored positions {perm}).",
+                    UserWarning,
+                    stacklevel=3,
+                )
 
     def save(self, path: str):
         if not path.endswith((".fits", ".sacc")):
@@ -419,6 +454,7 @@ class CrossCov(dict):
             self._infer_component_info()
 
         comp_ids = self._canonical_component_ids(self.component_names)
+        self._warn_reordered_blocks(comp_ids)
 
         cross_sacc = sacc.Sacc()
         cross_sacc.metadata["component_names"] = json.dumps(self.component_names)
@@ -433,7 +469,17 @@ class CrossCov(dict):
             for i in range(self._component_info[name]["size"]):
                 cross_sacc.add_data_point("generic", (name, name), 0.0, ell=float(i))
 
-        full_cov = self._build_full_covariance()
+        # Realign every block to the canonical order by identity; unlabelled
+        # components fall back to positional (size) ordering.
+        save_order = {
+            name: (
+                comp_ids[name]
+                if comp_ids[name] is not None
+                else self._component_info[name]["size"]
+            )
+            for name in self.component_names
+        }
+        full_cov = self.to_canonical(save_order)
         cross_sacc.add_covariance(full_cov)
         cross_sacc.save_fits(path, overwrite=True)
 
