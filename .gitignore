@@ -113,3 +113,6 @@ venv.bak/
 
 # Claude Code local config, plans, and memory
 .claude/
+
+# git worktrees
+.worktrees/
