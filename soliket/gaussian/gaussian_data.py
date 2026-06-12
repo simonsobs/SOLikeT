@@ -559,6 +559,81 @@ class CrossCov(dict):
         return cross_cov
 
 
+    @classmethod
+    def from_cmb_lensing(cls, mflike, lensing, **overrides):
+        """Compute and assemble the CMB-primary x CMB-lensing cross-covariance.
+
+        Convenience entry point: pulls fsky, fiducial cosmology/accuracy, the CMB
+        bandpower windows and the kappa binning from the two evaluated likelihoods
+        ``mflike`` and ``lensing`` (e.g. ``resolve_aliases(model).mflike`` and
+        ``.lensing`` -- the concrete handles, not a ``Session``), runs CAMB and the
+        cross-covariance kernel, and returns a populated ``CrossCov`` ready to
+        :meth:`save`. ``overrides`` (``fsky``/``cosmo``/``accuracy``/``lmax``) are
+        forwarded to the low-level
+        :func:`soliket.cross_covariance.cmb_lensing_crosscov`.
+
+        The components are keyed by their real ``GaussianData`` names and their
+        auto-covariances are carried alongside the cross block, so the saved file
+        loads back into a :class:`MultiGaussianLikelihood` without the cross block
+        being dropped (name mismatch) or the joint covariance going singular
+        (missing auto-blocks).
+
+        Both likelihoods' model must already be evaluated.
+        """
+        import os
+
+        import numpy as np
+        import sacc
+
+        from soliket.cross_covariance import (
+            bandpower_ell_natural,
+            cmb_combs_from_spec_meta,
+            cmb_lensing_crosscov,
+        )
+
+        # The covariance+bandpower SACC carries the metadata and windows; fall back
+        # to input_file if MFLike was wired without a separate cov_Bbl_file.
+        sacc_file = mflike.cov_Bbl_file or mflike.input_file
+        mflike_sacc = sacc.Sacc.load_fits(os.path.join(mflike.data_folder, sacc_file))
+
+        # Key everything by the components' own GaussianData names, and carry their
+        # auto-covariances so the round-trip through SACC stays self-consistent.
+        mflike_data = mflike._get_gauss_data()
+        lensing_data = lensing._get_gauss_data()
+
+        spec_meta = getattr(mflike, "spec_meta", None)
+        if spec_meta is not None:
+            # Build the block from MFLike's OWN per-spectrum windows + order -- the
+            # same spec_meta that drives the auto-covariance and the smooth-data
+            # binner. The rows are already scale-cut and aligned with the auto-cov by
+            # construction, so only the lensing columns need trimming.
+            combs = cmb_combs_from_spec_meta(spec_meta)
+            block = cmb_lensing_crosscov(mflike_sacc, lensing, combs=combs, **overrides)
+            block = block[:, lensing_data.indices]
+        else:
+            # No likelihood spec_meta (e.g. a SACC-only stub): fall back to the
+            # SACC-derived full block and trim positionally, but first verify by
+            # bandpower ell that the block's natural order matches the auto-cov order,
+            # refusing to emit a silently mis-ordered cross-covariance.
+            block = cmb_lensing_crosscov(mflike_sacc, lensing, **overrides)
+            kept_ell = bandpower_ell_natural(mflike_sacc)[mflike_data.indices]
+            cov_ell = np.asarray(mflike_data.x)
+            if kept_ell.shape != cov_ell.shape or not np.allclose(kept_ell, cov_ell):
+                raise ValueError(
+                    "Cross-covariance row order does not match the MFLike "
+                    "auto-covariance: the SACC's natural bandpower order differs from "
+                    "mflike's data-vector order (e.g. a reordered cov_Bbl file or "
+                    "TE/ET symmetrization). Refusing to emit a mis-ordered "
+                    "cross-covariance."
+                )
+            block = block[mflike_data.indices][:, lensing_data.indices]
+
+        result = cls()
+        result.add_component(mflike_data.name, mflike_data.cov)
+        result.add_component(lensing_data.name, lensing_data.cov)
+        result.add_cross_covariance(mflike_data.name, lensing_data.name, block)
+        return result
+
 class MultiGaussianData(GaussianData):
     """Combined Gaussian data from multiple components with cross-covariances.
 
