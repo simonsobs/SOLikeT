@@ -470,6 +470,33 @@ def test_get_ia_bias_variants():
     assert isinstance(res3, tuple)
 
 
+def test_check_buildable_tracers_rejects_unbuildable_allowed_quantity():
+    """A subclass allowing a quantity _get_tracer cannot build fails at init-time
+    validation, regardless of the data — not silently at first evaluation."""
+    import logging
+
+    from cobaya.log import LoggedError
+
+    from soliket.ccl_tracers import ShearKappaLikelihood
+
+    lk = ShearKappaLikelihood.__new__(ShearKappaLikelihood)
+    lk.log = logging.getLogger("test_buildable")
+    lk._allowable_tracers = ["cmb_convergence", "not_a_real_quantity"]
+    with pytest.raises(LoggedError):
+        lk._check_buildable_tracers()
+
+
+def test_check_buildable_tracers_accepts_supported_quantities():
+    import logging
+
+    from soliket.ccl_tracers import ShearKappaLikelihood
+
+    lk = ShearKappaLikelihood.__new__(ShearKappaLikelihood)
+    lk.log = logging.getLogger("test_buildable")
+    lk._allowable_tracers = ["cmb_convergence", "galaxy_shear"]
+    lk._check_buildable_tracers()  # must not raise
+
+
 # --- merged small cross-correlation unit tests (previously in separate files) ---
 def _make_fake_sacc_for_merging():
     class Tracer:
