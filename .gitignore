@@ -1,6 +1,10 @@
 # soliket specific
 chains/
 
+# ISO_sims generated datasets / cross-covariance (reproducible from the notebooks)
+notebooks/ISO_sims/sims/
+notebooks/ISO_sims/XCov_mflike_lensing.fits
+
 # macos
 .DS_Store
 .tmp
@@ -116,3 +120,6 @@ venv.bak/
 
 # git worktrees
 .worktrees/
+
+CONTEXT.md
+/notebooks/test_chains

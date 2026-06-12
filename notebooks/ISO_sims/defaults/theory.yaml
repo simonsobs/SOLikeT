@@ -1,0 +1,14 @@
+# ISO sims — local theory override for soliket.presets (SO normal hierarchy, camb-only).
+# REPLACES the packaged soliket/presets/params/theory.yaml wholesale (per-file
+# fallback): the packaged single-massive keys (num_massive_neutrinos, nnu) never
+# enter, so there is no conflict to resolve. The neutrino mass sum (mnu) and Neff
+# (nnu) live as params in this folder's cosmo.yaml; the eigenstate structure lives
+# here. Passed to build_info(..., params_dir="params") by the ISO notebooks.
+camb:
+  extra_args:
+    num_nu_massless: 1.044
+    num_nu_massive: 2
+    nu_mass_eigenstates: 2
+    nu_mass_fractions: [0.14763410387308012, 0.8523658961269198]
+    nu_mass_numbers: [1, 1]
+    share_delta_neff: true
