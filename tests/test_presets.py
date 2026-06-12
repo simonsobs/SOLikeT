@@ -75,8 +75,9 @@ def test_build_info_camb_uses_single_massive_neutrino():
     ea = info["theory"]["camb"]["extra_args"]
     assert ea["num_massive_neutrinos"] == 1
     assert ea["nnu"] == 3.044
-    assert info["params"]["mnu"] == 0.06
-    # the camb precision extra_args survive the injection
+    # mnu is now an ordinary cosmo param (lives in cosmo.yaml), not a bare float
+    assert info["params"]["mnu"]["value"] == 0.06
+    # the camb precision extra_args survive the overlay
     assert ea["lens_potential_accuracy"] == 1
     # the old normal-hierarchy keys are gone from the bundled preset
     assert "nu_mass_eigenstates" not in ea
@@ -89,7 +90,7 @@ def test_build_info_neutrino_default_does_not_clobber_override(tmp_path):
         "ns: {value: 0.9649, latex: 'n_s'}\n"
         "mnu: {value: 0.12, latex: '\\\\sum m_\\\\nu'}\n"
     )
-    info = build_info("lensing", params_dir=str(tmp_path))
+    info = build_info("lensing", defaults_dir=str(tmp_path))
     assert info["params"]["mnu"]["value"] == 0.12
 
 
@@ -113,10 +114,10 @@ def test_build_info_classy_uses_classy_neutrino_subblock():
     assert "mnu" not in info["params"]  # mnu is camb-only; not injected under classy
 
 
-def test_build_info_honors_params_dir_override(tmp_path):
+def test_build_info_honors_defaults_dir_override(tmp_path):
     (tmp_path / "cosmo.yaml").write_text("ns: {value: 0.5, latex: 'n_s'}\n")
 
-    info = build_info("lensing", params_dir=str(tmp_path))
+    info = build_info("lensing", defaults_dir=str(tmp_path))
 
     assert info["params"]["ns"]["value"] == 0.5
 
@@ -241,7 +242,7 @@ def test_load_params_override_dir_replaces_one_group(tmp_path):
     # Drop in only cosmo.yaml; foreground/systematics must still come from the package.
     (tmp_path / "cosmo.yaml").write_text("ns: {value: 0.5, latex: 'n_s'}\n")
 
-    params = load_params(params_dir=str(tmp_path))
+    params = load_params(defaults_dir=str(tmp_path))
 
     assert params["ns"]["value"] == 0.5            # overridden file used
     assert params["a_tSZ"]["value"] == 3.30        # foreground fell back to bundled
@@ -255,7 +256,7 @@ def test_load_params_rejects_non_mapping_override(tmp_path):
     bad.write_text("- not\n- a\n- mapping\n")
 
     with pytest.raises(ValueError, match="cosmo.yaml"):
-        load_params(params_dir=str(tmp_path))
+        load_params(defaults_dir=str(tmp_path))
 
 
 def test_build_params_errors_on_missing_group():
@@ -331,18 +332,54 @@ def test_presets_foreground_matches_mflike_defaults():
     )
 
 
-def test_build_info_does_not_mutate_neutrino_baseline():
-    # build_info deepcopies the _ONE_HEAVY baseline before injecting, so mutating
-    # the returned info must not corrupt the shared module-level dict across calls.
-    from soliket.presets._session import _ONE_HEAVY
-
+def test_build_info_calls_are_independent():
+    # The neutrino sector now comes from theory.yaml, loaded fresh per call.
+    # Mutating one returned info must not leak into the next call's defaults.
     info = build_info("mflike", theory="classy")
     info["params"]["m_ncdm"]["value"] = 999
     info["theory"]["classy"]["extra_args"]["N_ncdm"] = 999
 
-    fresh = _ONE_HEAVY["classy"]
+    fresh = build_info("mflike", theory="classy")
     assert fresh["params"]["m_ncdm"]["value"] == 0.06
-    assert fresh["extra_args"]["N_ncdm"] == 1
+    assert fresh["theory"]["classy"]["extra_args"]["N_ncdm"] == 1
+
+
+def test_build_info_theory_dir_override_replaces_neutrino_extra_args(tmp_path):
+    # ISO normal-hierarchy case: a defaults folder carrying its own theory.yaml
+    # REPLACES the packaged single-massive neutrino extra_args wholesale (per-file
+    # fallback), so the conflicting baseline keys never appear -- no merge, no
+    # deletion needed.
+    (tmp_path / "theory.yaml").write_text(
+        "camb:\n"
+        "  extra_args:\n"
+        "    num_nu_massive: 2\n"
+        "    nu_mass_eigenstates: 2\n"
+        "    share_delta_neff: true\n"
+    )
+
+    info = build_info("lensing", defaults_dir=str(tmp_path))
+    ea = info["theory"]["camb"]["extra_args"]
+
+    # the NH override is present...
+    assert ea["num_nu_massive"] == 2
+    assert ea["nu_mass_eigenstates"] == 2
+    # ...the packaged single-massive keys are gone (wholesale replacement)...
+    assert "num_massive_neutrinos" not in ea
+    assert "nnu" not in ea
+    # ...and the preset-skeleton accuracy survives the overlay.
+    assert ea["kmax"] == 0.9
+
+
+def test_build_info_theory_falls_back_to_bundled_when_dir_lacks_it(tmp_path):
+    # A defaults folder that overrides only cosmo must still get the packaged
+    # neutrino theory.yaml (per-file fallback, mirroring the param groups).
+    (tmp_path / "cosmo.yaml").write_text("ns: {value: 0.9649, latex: 'n_s'}\n")
+
+    info = build_info("lensing", defaults_dir=str(tmp_path))
+    ea = info["theory"]["camb"]["extra_args"]
+
+    assert ea["num_massive_neutrinos"] == 1
+    assert ea["nnu"] == 3.044
 
 
 def test_dual_param_fixed_to_central_when_not_sampled():

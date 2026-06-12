@@ -5,28 +5,17 @@ blocks, which Fiducial-map groups). ``build_info`` turns a preset into a Cobaya
 ``info`` dict; sampling runs Python-native via ``cobaya.run`` (no run YAML).
 """
 
-import copy
 from importlib import resources
 
 import yaml
+from cobaya.tools import recursive_update
 
 from ._aliases import resolve_aliases
-from ._loader import load_params
+from ._loader import load_params, load_theory
 
-# Single-massive neutrino baseline (m=0.06, Neff=3.044), keyed by Boltzmann code.
-# Transcribed from cobaya's cosmo_input ``one_heavy_planck`` as a starting point;
-# edit it here to change the preset's neutrino setup. The SO normal-hierarchy setup
-# is an ISO-sims override, not a preset default.
-_ONE_HEAVY = {
-    "camb": {
-        "extra_args": {"num_massive_neutrinos": 1, "nnu": 3.044},
-        "params": {"mnu": 0.06},
-    },
-    "classy": {
-        "extra_args": {"N_ncdm": 1, "N_ur": 2.0328},
-        "params": {"m_ncdm": {"value": 0.06, "renames": "mnu"}},
-    },
-}
+# Boltzmann codes the presets can target; the neutrino baseline for each lives in
+# the Fiducial map's ``theory.yaml`` (folder-overridable), not here.
+_THEORY_CODES = ("camb", "classy")
 
 # preset name -> info template file + the Fiducial-map groups it needs
 PRESETS = {
@@ -50,50 +39,56 @@ def _load_template(filename):
     return yaml.safe_load(text)
 
 
-def build_info(preset, sample=None, theory="camb", params_dir=None):
+def build_info(preset, sample=None, theory="camb", defaults_dir=None):
     """Assemble the Cobaya ``info`` dict for ``preset``.
 
     ``sample`` is the explicit list of dual parameters to vary; the rest are fixed
     to their fiducial values. ``theory`` selects the Boltzmann solver: ``"camb"``
-    (default) or ``"classy"``; both get the single-massive neutrino baseline
-    (see :func:`_apply_neutrinos` / :data:`_ONE_HEAVY`). ``params_dir`` optionally points
-    at a directory of override ``<group>.yaml`` files (per-file fallback to the
-    bundled defaults). A relative ``params_dir`` is resolved against the process
-    working directory. Returns a fresh dict each call.
+    (default) or ``"classy"``. ``defaults_dir`` optionally points at a directory of
+    override files (``<group>.yaml`` for the param groups and ``theory.yaml`` for
+    the neutrino sector), each with per-file fallback to the bundled defaults. A
+    relative ``defaults_dir`` is resolved against the process working directory.
+    Returns a fresh dict each call.
     """
     if preset not in PRESETS:
         raise ValueError(f"unknown preset {preset!r}; choose from {sorted(PRESETS)}")
-    if theory not in _ONE_HEAVY:
-        raise ValueError(f"unknown theory {theory!r}; choose from {sorted(_ONE_HEAVY)}")
+    if theory not in _THEORY_CODES:
+        raise ValueError(
+            f"unknown theory {theory!r}; choose from {sorted(_THEORY_CODES)}"
+        )
     spec = PRESETS[preset]
     info = _load_template(spec["template"])
     info["params"] = load_params(
-        sample=sample, groups=spec["groups"], params_dir=params_dir
+        sample=sample, groups=spec["groups"], defaults_dir=defaults_dir
     )
-    _apply_neutrinos(info, theory)
+    _apply_theory(info, theory, defaults_dir=defaults_dir)
     return info
 
 
-def _apply_neutrinos(info, theory):
-    """Inject the :data:`_ONE_HEAVY` neutrino sub-block for ``theory`` in place.
+def _apply_theory(info, theory, defaults_dir=None):
+    """Overlay the Fiducial map's theory fragment (``theory.yaml``) for ``theory``.
 
-    Single massive neutrino (m=0.06, Neff=3.044). Injected with ``setdefault`` so
-    anything the preset/override already pins wins — e.g. the ISO-sims
-    normal-hierarchy override that sets ``mnu`` and its own camb ``extra_args``.
+    The skeleton template owns the preset-specific precision ``extra_args``; this
+    layers the neutrino-sector ``extra_args`` on top via cobaya's ``recursive_update``
+    (last wins). The neutrino baseline is wholesale-replaceable per-file: a folder
+    ``theory.yaml`` supersedes the bundled one, so a different neutrino setup (e.g.
+    the ISO normal hierarchy) never collides with the packaged single-massive keys.
+
     For ``classy``, drops the camb Boltzmann block (its precision ``extra_args`` do
     not translate) while preserving non-Boltzmann theory entries (e.g.
-    ``mflike.BandpowerForeground``).
+    ``mflike.BandpowerForeground``), and swaps the camb-native ``mnu`` param for the
+    classy-native ``m_ncdm`` carried in ``theory.yaml``.
     """
-    nu = copy.deepcopy(_ONE_HEAVY[theory])
+    block = load_theory(defaults_dir).get(theory, {})
     if theory == "classy":
         info["theory"].pop("camb", None)
         info["theory"].setdefault("classy", {"stop_at_error": True})
-    block = info["theory"][theory]
-    extra = block.setdefault("extra_args", {})
-    for key, value in nu.get("extra_args", {}).items():
-        extra.setdefault(key, value)
-    for name, pspec in nu.get("params", {}).items():
-        info["params"].setdefault(name, pspec)
+        info["params"].pop("mnu", None)  # classy uses m_ncdm (from theory.yaml)
+        for name, pspec in (block.get("params") or {}).items():
+            info["params"][name] = pspec
+    info["theory"][theory] = recursive_update(
+        info["theory"].get(theory, {}), {"extra_args": block.get("extra_args", {})}
+    )
 
 
 class Session:
@@ -128,21 +123,21 @@ class Session:
 
 
 def quickstart(
-    preset, *, sample=None, theory="camb", packages_path=None, params_dir=None
+    preset, *, sample=None, theory="camb", packages_path=None, defaults_dir=None
 ):
     """Build a ready-to-use :class:`Session` for ``preset``.
 
     ``sample`` lists the dual parameters to vary (default: all fixed, ready to
     evaluate at the fiducial point). ``theory`` selects the Boltzmann solver
     (``"camb"`` or ``"classy"``). ``packages_path`` overrides
-    Cobaya's default location for installed likelihood data. ``params_dir``
+    Cobaya's default location for installed likelihood data. ``defaults_dir``
     optionally points at a directory of override ``<group>.yaml`` files (per-file
-    fallback to the bundled defaults). A relative ``params_dir`` is resolved
+    fallback to the bundled defaults). A relative ``defaults_dir`` is resolved
     against the process working directory.
     """
     from cobaya.model import get_model
     from cobaya.tools import resolve_packages_path
 
-    info = build_info(preset, sample=sample, theory=theory, params_dir=params_dir)
+    info = build_info(preset, sample=sample, theory=theory, defaults_dir=defaults_dir)
     info["packages_path"] = packages_path or resolve_packages_path()
     return Session(info, get_model(info))

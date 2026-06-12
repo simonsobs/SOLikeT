@@ -35,6 +35,9 @@ tau:
 Alens:
   value: 1.0
   latex: 'A_\mathrm{lens}'
+mnu:
+  value: 0.06
+  latex: '\sum m_\nu'
 omega_de: {derived: true, latex: '\Omega_\Lambda'}
 omegam: {derived: true, latex: '\Omega_\mathrm{m}'}
 omegamh2:

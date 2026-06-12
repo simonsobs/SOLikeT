@@ -48,7 +48,7 @@ def build_params(spec, sample=None, groups=None):
         missing = [g for g in groups if g not in spec]
         if missing:
             raise ValueError(
-                f"missing parameter group(s) {missing}: no params/<group>.yaml "
+                f"missing parameter group(s) {missing}: no defaults/<group>.yaml "
                 f"provides them; available groups: {sorted(spec)}"
             )
         selected = {g: spec[g] for g in groups}
@@ -93,17 +93,23 @@ def _attach_renames(params):
     return params
 
 
-def _bundled_params_dir():
-    """The packaged ``presets/params/`` directory (a Traversable)."""
-    return resources.files(__package__).joinpath("params")
+def _bundled_defaults_dir():
+    """The packaged ``presets/defaults/`` directory (a Traversable)."""
+    return resources.files(__package__).joinpath("defaults")
+
+
+# Reserved stem: ``theory.yaml`` is the neutrino/theory overlay, not a param
+# group, so it is excluded from group discovery and loaded via ``load_theory``.
+_THEORY_GROUP = "theory"
 
 
 def _group_names():
-    """Canonical group set: the stems of the bundled ``params/*.yaml`` files."""
+    """Canonical group set: the stems of the bundled ``defaults/*.yaml`` files,
+    excluding the reserved ``theory`` overlay."""
     return sorted(
         entry.name[: -len(".yaml")]
-        for entry in _bundled_params_dir().iterdir()
-        if entry.name.endswith(".yaml")
+        for entry in _bundled_defaults_dir().iterdir()
+        if entry.name.endswith(".yaml") and entry.name[: -len(".yaml")] != _THEORY_GROUP
     )
 
 
@@ -117,40 +123,50 @@ def _as_mapping(text, source):
     return doc
 
 
-def _read_group(group, params_dir):
-    """Read one group's param dict, preferring an override file in ``params_dir``.
+def _read_group(group, defaults_dir):
+    """Read one group's param dict, preferring an override file in ``defaults_dir``.
 
-    Per-file fallback: ``params_dir/<group>.yaml`` replaces the bundled file for
+    Per-file fallback: ``defaults_dir/<group>.yaml`` replaces the bundled file for
     that group when present; otherwise the bundled file is used.
     """
-    if params_dir is not None:
-        override = Path(params_dir) / f"{group}.yaml"
+    if defaults_dir is not None:
+        override = Path(defaults_dir) / f"{group}.yaml"
         if override.is_file():
             return _as_mapping(override.read_text(), override)
-    bundled = _bundled_params_dir().joinpath(f"{group}.yaml")
+    bundled = _bundled_defaults_dir().joinpath(f"{group}.yaml")
     return _as_mapping(bundled.read_text(), bundled)
 
 
-def load_fiducial_map(params_dir=None):
+def load_fiducial_map(defaults_dir=None):
     """Parse the Fiducial map (packaged defaults, optionally with per-group
     overrides) into its grouped form.
 
-    Each top-level group is one ``params/<group>.yaml`` file. ``params_dir``
+    Each top-level group is one ``defaults/<group>.yaml`` file. ``defaults_dir``
     optionally supplies override files; any ``<group>.yaml`` it contains replaces
     the bundled file for that group (per-file fallback, mflike-style).
     """
-    return {group: _read_group(group, params_dir) for group in _group_names()}
+    return {group: _read_group(group, defaults_dir) for group in _group_names()}
 
 
-def load_params(sample=None, groups=None, params_dir=None):
+def load_theory(defaults_dir=None):
+    """Read the theory overlay (``theory.yaml``): the neutrino-sector ``extra_args``
+    keyed by Boltzmann code, plus any code-specific neutrino params.
+
+    Per-file fallback like the param groups: ``defaults_dir/theory.yaml`` replaces
+    the bundled file wholesale when present; otherwise the bundled file is used.
+    """
+    return _read_group(_THEORY_GROUP, defaults_dir)
+
+
+def load_params(sample=None, groups=None, defaults_dir=None):
     """Return the Cobaya ``params`` dict for the Fiducial map (packaged defaults,
     optionally with per-group overrides).
 
     ``sample`` is the explicit list of dual parameters to vary; every other dual
     parameter is fixed to its fiducial central value. ``groups`` optionally
-    restricts the output to the named groups. ``params_dir`` optionally points at
+    restricts the output to the named groups. ``defaults_dir`` optionally points at
     a directory of override ``<group>.yaml`` files (per-file fallback).
     """
-    spec = load_fiducial_map(params_dir=params_dir)
+    spec = load_fiducial_map(defaults_dir=defaults_dir)
     params = build_params(spec, sample=sample, groups=groups)
     return _attach_renames(params)
