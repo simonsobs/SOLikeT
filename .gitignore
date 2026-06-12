@@ -1,6 +1,10 @@
 # soliket specific
 chains/
 
+# local tooling (Claude Code, git worktrees)
+.claude/
+.worktrees/
+
 # ISO_sims generated datasets / cross-covariance (reproducible from the notebooks)
 notebooks/ISO_sims/sims/
 notebooks/ISO_sims/XCov_mflike_lensing.fits
