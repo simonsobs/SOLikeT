@@ -14,7 +14,6 @@ import pytest
 import yaml
 from cobaya.theories.camb.camb import CAMB
 from cobaya.tools import resolve_packages_path
-from mflike import TTTEEE, BandpowerForeground
 
 from soliket.gaussian import MultiGaussianLikelihood
 from soliket.lensing import LensingLikelihood
@@ -127,7 +126,9 @@ def test_build_info_rejects_unknown_preset():
         build_info("nope")
 
 
-def test_session_exposes_roles_fiducial_and_loglike():
+def test_session_exposes_roles_fiducial_and_loglike(check_skip_mflike):
+    from mflike import TTTEEE
+
     cosmo, mflike = CAMB.__new__(CAMB), TTTEEE.__new__(TTTEEE)
     fake_model = SimpleNamespace(
         components=[cosmo, mflike],
@@ -155,7 +156,9 @@ def test_session_exposes_roles_fiducial_and_loglike():
         ("multigaussian", True, True),
     ],
 )
-def test_quickstart_builds_runnable_session(preset, expect_mflike, expect_lensing):
+def test_quickstart_builds_runnable_session(
+    preset, expect_mflike, expect_lensing, check_skip_mflike
+):
     s = quickstart(preset)
 
     assert s.cosmo is not None
@@ -164,7 +167,9 @@ def test_quickstart_builds_runnable_session(preset, expect_mflike, expect_lensin
     assert np.isfinite(s.loglike())
 
 
-def test_resolve_aliases_finds_roles_by_class_regardless_of_order():
+def test_resolve_aliases_finds_roles_by_class_regardless_of_order(check_skip_mflike):
+    from mflike import TTTEEE, BandpowerForeground
+
     cosmo, fg, mflike = _bare(CAMB), _bare(BandpowerForeground), _bare(TTTEEE)
     # deliberately scrambled order
     model = SimpleNamespace(components=[fg, mflike, cosmo])
@@ -177,7 +182,9 @@ def test_resolve_aliases_finds_roles_by_class_regardless_of_order():
     assert roles.lensing is None
 
 
-def test_resolve_aliases_recurses_into_multigaussian():
+def test_resolve_aliases_recurses_into_multigaussian(check_skip_mflike):
+    from mflike import TTTEEE
+
     cosmo = _bare(CAMB)
     multi = _bare(MultiGaussianLikelihood)
     multi.likelihoods = [_bare(TTTEEE), _bare(LensingLikelihood)]
@@ -281,7 +288,7 @@ def _mflike_fg_defaults():
     return merged
 
 
-def test_presets_foreground_matches_mflike_defaults():
+def test_presets_foreground_matches_mflike_defaults(check_skip_mflike):
     """Drift tripwire: presets foreground priors must match mflike's defaults.
 
     ``soliket/presets/params/foreground.yaml`` DUPLICATES the ``prior``,

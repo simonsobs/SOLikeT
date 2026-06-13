@@ -117,7 +117,7 @@ def _numeric_fiducial(info):
 
 
 @pytest.mark.skipif(not _mflike_data_available(), reason="MFLike data not installed")
-def test_smooth_mflike_sacc_gives_zero_chi2_round_trip(tmp_path):
+def test_smooth_mflike_sacc_gives_zero_chi2_round_trip(tmp_path, check_skip_mflike):
     # A smooth MFLike dataset is theory binned through MFLike's own windows; the
     # MFLike likelihood evaluated on it at the same fiducial must give chi^2 = 0.
     from cobaya.model import get_model
