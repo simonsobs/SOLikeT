@@ -64,41 +64,13 @@ def cmb_combs_from_sacc(sacc_data):
     tracer-only window lookup is unambiguous.
     """
     combs = []
-    flat = []
     for comb in sacc_data.get_tracer_combinations():
         idx = np.asarray(sacc_data.indices(tracers=comb))
-        flat.append(idx)
         bpw = sacc_data.get_bandpower_windows(idx)
         combs.append(
             (_camb_spectrum_index(sacc_data, comb), np.asarray(bpw.values), bpw.weight.T)
         )
-    # The block rows below are laid out in this per-combination order, but the
-    # cross-covariance is later trimmed with mflike's mask in the SACC's NATURAL
-    # flat order. The two coincide only when each spectrum is stored contiguously;
-    # guard it so a reordered SACC fails loudly instead of silently mis-ordering
-    # the cross-covariance rows. (The auto-cov side is checked in from_cmb_lensing.)
-    flat = np.concatenate(flat) if flat else np.zeros(0, dtype=int)
-    if not np.array_equal(flat, np.arange(flat.size)):
-        raise ValueError(
-            "MFLike SACC bandpowers are not contiguous in tracer-combination order; "
-            "the cross-covariance block rows would not match the SACC's natural "
-            "bandpower order. Re-save the SACC with each spectrum stored contiguously."
-        )
     return combs
-
-
-def bandpower_ell_natural(sacc_data):
-    """Effective multipole of every SACC bandpower, in the SACC's natural flat order.
-
-    Used to verify, by bandpower identity, that a cross-covariance block (laid out
-    in natural order) lines up with a likelihood's auto-covariance before trimming.
-    """
-    ell = np.empty(sacc_data.mean.size)
-    for comb in sacc_data.get_tracer_combinations():
-        dtype = sacc_data.get_data_types(tracers=comb)[0]
-        comb_ell, _, ind = sacc_data.get_ell_cl(dtype, *comb, return_ind=True)
-        ell[ind] = comb_ell
-    return ell
 
 
 # spec_meta polarisation -> CAMB lensed-Cl derivative row (TT=0, EE=1, BB=2, TE=3).

@@ -1,7 +1,6 @@
 """Cross-covariance computation between CMB primary, CMB lensing and LSS."""
 
 from ._build import (
-    bandpower_ell_natural,
     camb_lensing_derivatives_from_sacc,
     cmb_combs_from_sacc,
     cmb_combs_from_spec_meta,
@@ -19,7 +18,6 @@ from ._kernels import (
 )
 
 __all__ = [
-    "bandpower_ell_natural",
     "camb_lensing_derivatives",
     "camb_lensing_derivatives_from_sacc",
     "cmb_combs_from_sacc",

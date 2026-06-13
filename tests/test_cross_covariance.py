@@ -136,13 +136,44 @@ def test_shared_derivatives_match_per_block_computation():
     )
 
 
+def _tiny_spec_meta(sacc_data):
+    """A one-TT-spectrum ``spec_meta`` for ``_tiny_mflike_sacc``, in mflike's shape
+    (``pol``, ``hasYX_xsp``, ``t1``, ``t2``, ``bpw``, ``leff``, ``ids``)."""
+    ell, _, ind = sacc_data.get_ell_cl(
+        "cl_00", "LAT_93_s0", "LAT_93_s0", return_ind=True
+    )
+    bpw = sacc_data.get_bandpower_windows(ind)
+    return [
+        {
+            "pol": "tt",
+            "hasYX_xsp": False,
+            "t1": "LAT_93",
+            "t2": "LAT_93",
+            "bpw": bpw,
+            "leff": ell,
+            "ids": np.arange(len(ell)),
+        }
+    ]
+
+
+def _mflike_ids(spec_meta):
+    """The per-row bandpower identities for a ``spec_meta``, matching
+    ``gaussian.bandpower_ids`` and ``from_cmb_lensing``'s row labels."""
+    return [
+        (m["pol"], bool(m["hasYX_xsp"]), (m["t1"], m["t2"]), float(leff))
+        for m in spec_meta
+        for leff in np.asarray(m["leff"])
+    ]
+
+
 def test_from_cmb_lensing_roundtrips_into_multigaussian(tmp_path):
     """``CrossCov.from_cmb_lensing`` must produce a file that loads back usably.
 
-    Two regressions are pinned: the cross block has to be keyed by the components'
-    real ``GaussianData`` names (else ``MultiGaussianData`` silently drops it), and
-    the component auto-covariances have to be carried (else the saved file's zero
-    auto-blocks make the joint covariance singular on load).
+    The cross block is keyed by the components' real ``GaussianData`` names (else
+    ``MultiGaussianData`` silently drops it), and the component auto-covariances are
+    carried alongside it so the saved file is a self-contained, non-singular joint
+    covariance. Every block carries bandpower ids, so it realigns to each component's
+    data by identity on load.
     """
     from soliket.gaussian.gaussian_data import (
         CrossCov,
@@ -151,16 +182,19 @@ def test_from_cmb_lensing_roundtrips_into_multigaussian(tmp_path):
     )
 
     sacc_data = _tiny_mflike_sacc()
-    sacc_path = tmp_path / "mflike_cov.fits"
-    sacc_data.save_fits(str(sacc_path), overwrite=True)
+    sacc_data.save_fits(str(tmp_path / "mflike_cov.fits"), overwrite=True)
+    spec_meta = _tiny_spec_meta(sacc_data)
 
     n_cmb, n_kk = 3, 2
-    # auto-cov labels (x) must be the SACC's bandpower ells: from_cmb_lensing checks
-    # the cross block lines up with the auto-cov by bandpower identity.
-    cmb_ell = sacc_data.get_ell_cl("cl_00", "LAT_93_s0", "LAT_93_s0")[0]
-    mf_data = GaussianData("mflike", cmb_ell, np.zeros(n_cmb), np.eye(n_cmb))
+    le_ids = [("pp", ("kappa", "kappa"), float(i)) for i in range(n_kk)]
+    # the assembled components carry the same ids the saved block is labelled with
+    mf_data = GaussianData(
+        "mflike", np.arange(n_cmb), np.zeros(n_cmb), np.eye(n_cmb),
+        ids=_mflike_ids(spec_meta),
+    )
     le_data = GaussianData(
-        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15
+        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15,
+        ids=le_ids,
     )
 
     lmax_kk = 25
@@ -178,11 +212,12 @@ def test_from_cmb_lensing_roundtrips_into_multigaussian(tmp_path):
         data_folder=str(tmp_path),
         cov_Bbl_file="mflike_cov.fits",
         input_file="mflike_cov.fits",
+        spec_meta=spec_meta,
         _get_gauss_data=lambda: mf_data,
     )
     xcov = CrossCov.from_cmb_lensing(mflike, lensing)
 
-    # cross block keyed by the real component names, with its auto-covariances
+    # the off-diagonal block plus both auto-covariances, keyed by the real names
     assert ("mflike", "CMB Lensing") in xcov
     assert xcov[("mflike", "CMB Lensing")].shape == (n_cmb, n_kk)
     np.testing.assert_array_equal(xcov[("mflike", "mflike")], mf_data.cov)
@@ -195,11 +230,12 @@ def test_from_cmb_lensing_roundtrips_into_multigaussian(tmp_path):
     assert np.all(np.isfinite(multi.inv_cov))
 
 
-def test_from_cmb_lensing_trims_block_to_used_bandpowers(tmp_path):
-    """The cross block spans every SACC bandpower, but the likelihood uses only the
-    bins surviving its scale cuts. ``from_cmb_lensing`` must trim the block to those
-    used bins (via each component's ``indices``) so it matches the auto-covariances
-    and ``save`` does not raise a broadcast error.
+def test_from_cmb_lensing_trims_lensing_axis_to_used_bandpowers(tmp_path):
+    """The cross block is computed on the full kappa range, but the lensing
+    likelihood may keep only the bins surviving its scale cuts. ``from_cmb_lensing``
+    trims the columns to those kept bins (via the lensing data's ``indices``) and
+    labels them with the kept ids, so the cross block and the lensing auto share one
+    column order and the joint covariance assembles cleanly.
     """
     from soliket.gaussian.gaussian_data import (
         CrossCov,
@@ -209,20 +245,25 @@ def test_from_cmb_lensing_trims_block_to_used_bandpowers(tmp_path):
 
     sacc_data = _tiny_mflike_sacc()  # 3 CMB bandpowers
     sacc_data.save_fits(str(tmp_path / "mflike_cov.fits"), overwrite=True)
+    spec_meta = _tiny_spec_meta(sacc_data)
+    n_cmb = 3
 
-    # MFLike keeps only 2 of the 3 bandpowers; ``indices`` maps full -> used.
-    used = np.array([True, True, False])
-    n_used, n_kk = 2, 2
-    cmb_ell = sacc_data.get_ell_cl("cl_00", "LAT_93_s0", "LAT_93_s0")[0]
+    # Lensing has 2 full kappa bins but keeps only 1 (a scale cut): ids span the
+    # full range, indices is the kept mask, and the data vector is the kept bin.
+    n_kk_full, n_kept = 2, 1
+    kk_ids = [("pp", ("kappa", "kappa"), float(i)) for i in range(n_kk_full)]
+    kept_mask = np.array([True, False])
     mf_data = GaussianData(
-        "mflike", cmb_ell[used], np.zeros(n_used), np.eye(n_used), indices=used
+        "mflike", np.arange(n_cmb), np.zeros(n_cmb), np.eye(n_cmb),
+        ids=_mflike_ids(spec_meta),
     )
     le_data = GaussianData(
-        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15
+        "CMB Lensing", np.arange(n_kept), np.zeros(n_kept), np.eye(n_kept) * 1e-15,
+        indices=kept_mask, ids=kk_ids,
     )
 
     lmax_kk = 25
-    binning = np.zeros((n_kk, lmax_kk))
+    binning = np.zeros((n_kk_full, lmax_kk))
     binning[0, 2:12] = 0.1
     binning[1, 12:lmax_kk] = 0.1
     lensing = SimpleNamespace(
@@ -236,35 +277,45 @@ def test_from_cmb_lensing_trims_block_to_used_bandpowers(tmp_path):
         data_folder=str(tmp_path),
         cov_Bbl_file="mflike_cov.fits",
         input_file="mflike_cov.fits",
+        spec_meta=spec_meta,
         _get_gauss_data=lambda: mf_data,
     )
     xcov = CrossCov.from_cmb_lensing(mflike, lensing)
 
-    # block trimmed from the 3 SACC bandpowers down to the 2 the likelihood uses
-    assert xcov[("mflike", "CMB Lensing")].shape == (n_used, n_kk)
+    # the stored block is trimmed to the kept kappa bin, matching the lensing auto
+    assert xcov[("mflike", "CMB Lensing")].shape == (n_cmb, n_kept)
 
     out = tmp_path / "xcov.fits"
     xcov.save(str(out))  # must not raise a broadcast error
     multi = MultiGaussianData([mf_data, le_data], CrossCov.load(str(out)))
     assert np.all(np.isfinite(multi.inv_cov))
+    # the assembled joint covariance keeps the cross block at the kept granularity
+    assert multi.cov[:n_cmb, n_cmb:].shape == (n_cmb, n_kept)
 
 
-def test_from_cmb_lensing_rejects_auto_cov_order_mismatch(tmp_path):
-    # Robustness guard: if mflike's auto-covariance is in a different bandpower order
-    # than the SACC's natural order (a reordered cov_Bbl file, or TE/ET
-    # symmetrization), the positional trim would silently mis-order the cross-cov.
-    # from_cmb_lensing must detect the bandpower-ell mismatch and refuse.
-    from soliket.gaussian.gaussian_data import CrossCov, GaussianData
+def test_from_cmb_lensing_aligns_reordered_block_in_joint_cov(tmp_path):
+    # The whole point of labelling: when the data is in a DIFFERENT order than the
+    # block was built in, assembly must realign the cross block by identity (not
+    # position). Here the mflike data carries the bandpower ids in reversed order,
+    # so the assembled cross block rows must come out reversed relative to the block
+    # as built. With the old positional cross-cov this either mis-orders silently or
+    # raises (data has ids, block does not).
+    from soliket.gaussian.gaussian_data import CrossCov, GaussianData, MultiGaussianData
 
     sacc_data = _tiny_mflike_sacc()
     sacc_data.save_fits(str(tmp_path / "mflike_cov.fits"), overwrite=True)
-
+    spec_meta = _tiny_spec_meta(sacc_data)
     n_cmb, n_kk = 3, 2
-    cmb_ell = sacc_data.get_ell_cl("cl_00", "LAT_93_s0", "LAT_93_s0")[0]
-    # auto-cov labelled in a DIFFERENT order than the SACC's natural bandpowers
-    mf_data = GaussianData("mflike", cmb_ell[::-1], np.zeros(n_cmb), np.eye(n_cmb))
+
+    le_ids = [("pp", ("kappa", "kappa"), float(i)) for i in range(n_kk)]
+    # mflike data ids REVERSED relative to the block's spec_meta build order
+    rev_ids = _mflike_ids(spec_meta)[::-1]
+    mf_data = GaussianData(
+        "mflike", np.arange(n_cmb), np.zeros(n_cmb), np.eye(n_cmb), ids=rev_ids
+    )
     le_data = GaussianData(
-        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15
+        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15,
+        ids=le_ids,
     )
 
     lmax_kk = 25
@@ -282,10 +333,16 @@ def test_from_cmb_lensing_rejects_auto_cov_order_mismatch(tmp_path):
         data_folder=str(tmp_path),
         cov_Bbl_file="mflike_cov.fits",
         input_file="mflike_cov.fits",
+        spec_meta=spec_meta,
         _get_gauss_data=lambda: mf_data,
     )
-    with pytest.raises(ValueError, match="row order"):
-        CrossCov.from_cmb_lensing(mflike, lensing)
+    xcov = CrossCov.from_cmb_lensing(mflike, lensing)
+    block_as_built = np.array(xcov[("mflike", "CMB Lensing")])
+
+    multi = MultiGaussianData([mf_data, le_data], xcov)
+    cross = multi.cov[:n_cmb, n_cmb:]
+    # data is reversed vs the build order, so the assembled rows are reversed
+    np.testing.assert_allclose(cross, block_as_built[::-1])
 
 
 def test_cmb_combs_from_spec_meta_follows_spec_meta_order_and_pol():
@@ -311,10 +368,12 @@ def test_cmb_combs_from_spec_meta_follows_spec_meta_order_and_pol():
         assert weight_out.shape == (m["bpw"].weight.shape[1], m["bpw"].weight.shape[0])
 
 
-def test_from_cmb_lensing_uses_spec_meta_when_available(tmp_path):
-    # When the likelihood exposes spec_meta, the block is built from it (MFLike's own
-    # order/windows) and needs no positional row trim -- aligned with the auto-cov by
-    # construction. We check the path runs end-to-end and is shaped from spec_meta.
+def test_from_cmb_lensing_labels_block_by_bandpower_identity(tmp_path):
+    # The cross block must carry per-row/col bandpower identities so CrossCov can
+    # realign it to the data by identity (not by build order). Rows use mflike's
+    # spec_meta vocabulary (pol, hasYX_xsp, (t1, t2), leff) -- exactly what
+    # gaussian.bandpower_ids reconstructs -- and columns reuse the lensing data's
+    # own ids. Without these labels the block is silently positional.
     from soliket.gaussian.gaussian_data import CrossCov, GaussianData
 
     sacc_data = _tiny_mflike_sacc()
@@ -323,12 +382,24 @@ def test_from_cmb_lensing_uses_spec_meta_when_available(tmp_path):
         "cl_00", "LAT_93_s0", "LAT_93_s0", return_ind=True
     )
     bpw = sacc_data.get_bandpower_windows(ind)
-    spec_meta = [{"pol": "tt", "bpw": bpw, "leff": ell, "ids": np.arange(len(ell))}]
+    spec_meta = [
+        {
+            "pol": "tt",
+            "hasYX_xsp": False,
+            "t1": "LAT_93",
+            "t2": "LAT_93",
+            "bpw": bpw,
+            "leff": ell,
+            "ids": np.arange(len(ell)),
+        }
+    ]
 
     n_cmb, n_kk = len(ell), 2
+    le_ids = [("pp", ("kappa", "kappa"), float(i)) for i in range(n_kk)]
     mf_data = GaussianData("mflike", ell, np.zeros(n_cmb), np.eye(n_cmb))
     le_data = GaussianData(
-        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15
+        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15,
+        ids=le_ids,
     )
     lmax_kk = 25
     binning = np.zeros((n_kk, lmax_kk))
@@ -350,10 +421,15 @@ def test_from_cmb_lensing_uses_spec_meta_when_available(tmp_path):
     )
 
     xcov = CrossCov.from_cmb_lensing(mflike, lensing)
-    block = xcov[("mflike", "CMB Lensing")]
 
-    assert block.shape == (n_cmb, n_kk)  # rows from spec_meta, no positional row trim
+    block = xcov[("mflike", "CMB Lensing")]
+    assert block.shape == (n_cmb, n_kk)  # rows from spec_meta, cols full kappa range
     assert np.all(np.isfinite(block))
+
+    row_ids, col_ids = xcov._block_ids_map[("mflike", "CMB Lensing")]
+    expected_rows = [("tt", False, ("LAT_93", "LAT_93"), float(leff)) for leff in ell]
+    assert row_ids == expected_rows
+    assert col_ids == le_ids
 
 
 @pytest.mark.skipif(_mflike_cov_sacc_path() is None, reason="MFLike data not installed")
@@ -402,12 +478,14 @@ def test_cmb_combs_from_sacc_accepts_contiguous_multi_spectrum():
     assert [ind_camb for ind_camb, _, _ in combs] == [0, 0]  # both TT -> CAMB row 0
 
 
-def test_cmb_combs_from_sacc_rejects_non_contiguous_spectra():
-    # A spectrum stored non-contiguously breaks the assumption that the block rows
-    # follow the SACC's natural bandpower order, so the cross-covariance would be
-    # silently mis-ordered. The builder must reject it loudly.
-    with pytest.raises(ValueError, match="contiguous"):
-        cmb_combs_from_sacc(_tt_sacc(interleave=True))
+def test_cmb_combs_from_sacc_accepts_non_contiguous_spectra():
+    # Storage order no longer matters: blocks are aligned to the data by bandpower
+    # identity (CrossCov.to_canonical), not by position, so the builder accepts a
+    # non-contiguously-stored SACC and just yields one triple per tracer combination.
+    combs = cmb_combs_from_sacc(_tt_sacc(interleave=True))
+
+    assert len(combs) == 2
+    assert [ind_camb for ind_camb, _, _ in combs] == [0, 0]  # both TT -> CAMB row 0
 
 
 
