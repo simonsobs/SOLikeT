@@ -389,6 +389,83 @@ def test_build_info_theory_falls_back_to_bundled_when_dir_lacks_it(tmp_path):
     assert ea["nnu"] == 3.044
 
 
+def test_build_info_template_dir_override_patches_likelihood_option(tmp_path):
+    # A defaults folder carrying templates/<preset>.yaml overlays the packaged
+    # skeleton (recursive_update): the named option changes...
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    (templates / "lensing.yaml").write_text(
+        "likelihood:\n"
+        "  soliket.LensingLikelihood:\n"
+        "    theory_lmax: 3000\n"
+    )
+
+    info = build_info("lensing", defaults_dir=str(tmp_path))
+    like = info["likelihood"]["soliket.LensingLikelihood"]
+
+    # the override wins...
+    assert like["theory_lmax"] == 3000
+    # ...and the rest of the packaged skeleton is inherited (overlay, not replace).
+    assert info["theory"]["camb"]["extra_args"]["kmax"] == 0.9
+    assert "evaluate" in info["sampler"]
+
+
+def test_build_info_template_falls_back_to_bundled_when_dir_lacks_it(tmp_path):
+    # A defaults folder overriding only params (no templates/) leaves the packaged
+    # likelihood skeleton untouched.
+    (tmp_path / "cosmo.yaml").write_text("ns: {value: 0.9649, latex: 'n_s'}\n")
+
+    info = build_info("lensing", defaults_dir=str(tmp_path))
+    assert info["likelihood"]["soliket.LensingLikelihood"]["theory_lmax"] == 5000
+
+
+def _mgl_options(info):
+    mgl = info["likelihood"]["soliket.gaussian.MultiGaussianLikelihood"]
+    return mgl["components"], mgl["options"]
+
+
+def test_multigaussian_composes_options_from_members_in_component_order():
+    # The joint skeleton declares only `components`; build_info fills `options`
+    # positionally from the member presets (mflike.yaml / lensing.yaml).
+    info = build_info("multigaussian")
+    components, options = _mgl_options(info)
+
+    assert components == ["mflike.TTTEEE", "soliket.LensingLikelihood"]
+    assert options[0]["input_file"] == "LAT_simu_sacc_00044.fits"  # from mflike.yaml
+    assert options[1]["theory_lmax"] == 5000  # from lensing.yaml
+
+
+def test_multigaussian_theory_unions_member_precision():
+    # Regression: the joint camb extra_args must carry BOTH members' precision
+    # (mflike's Transfer.* and lensing's kmax), not silently drop either.
+    ea = build_info("multigaussian")["theory"]["camb"]["extra_args"]
+
+    assert ea["kmax"] == 0.9  # from lensing.yaml
+    assert ea["Transfer.kmax"] == 1.2  # from mflike.yaml
+    assert ea["WantTransfer"] is True  # from mflike.yaml
+    # the joint-level skeleton override is applied last (last wins)
+    assert build_info("multigaussian")["theory"]["camb"]["stop_at_error"] is False
+    # the foreground theory component rides in from the mflike member
+    assert "mflike.BandpowerForeground" in build_info("multigaussian")["theory"]
+
+
+def test_member_template_override_flows_to_standalone_and_joint(tmp_path):
+    # A single folder override on a member template reaches BOTH the standalone
+    # member preset and the joint preset that composes it -- so an imprint built
+    # from `lensing` and a fit built from `multigaussian` stay consistent.
+    templates = tmp_path / "templates"
+    templates.mkdir()
+    (templates / "lensing.yaml").write_text(
+        "likelihood:\n  soliket.LensingLikelihood:\n    theory_lmax: 3000\n"
+    )
+
+    solo = build_info("lensing", defaults_dir=str(tmp_path))
+    _, joint_options = _mgl_options(build_info("multigaussian", defaults_dir=str(tmp_path)))
+
+    assert solo["likelihood"]["soliket.LensingLikelihood"]["theory_lmax"] == 3000
+    assert joint_options[1]["theory_lmax"] == 3000
+
+
 def test_dual_param_fixed_to_central_when_not_sampled():
     spec = {
         "cosmo": {
