@@ -251,9 +251,9 @@ def test_load_params_override_dir_replaces_one_group(tmp_path):
 
     params = load_params(defaults_dir=str(tmp_path))
 
-    assert params["ns"]["value"] == 0.5            # overridden file used
-    assert params["a_tSZ"]["value"] == 3.30        # foreground fell back to bundled
-    assert params["cal_LAT_93"]["value"] == 1      # systematics fell back to bundled
+    assert params["ns"]["value"] == 0.5  # overridden file used
+    assert params["a_tSZ"]["value"] == 3.30  # foreground fell back to bundled
+    assert params["cal_LAT_93"]["value"] == 1  # systematics fell back to bundled
 
 
 def test_load_params_rejects_non_mapping_override(tmp_path):
@@ -395,9 +395,7 @@ def test_build_info_template_dir_override_patches_likelihood_option(tmp_path):
     templates = tmp_path / "templates"
     templates.mkdir()
     (templates / "lensing.yaml").write_text(
-        "likelihood:\n"
-        "  soliket.LensingLikelihood:\n"
-        "    theory_lmax: 3000\n"
+        "likelihood:\n  soliket.LensingLikelihood:\n    theory_lmax: 3000\n"
     )
 
     info = build_info("lensing", defaults_dir=str(tmp_path))
@@ -460,7 +458,9 @@ def test_member_template_override_flows_to_standalone_and_joint(tmp_path):
     )
 
     solo = build_info("lensing", defaults_dir=str(tmp_path))
-    _, joint_options = _mgl_options(build_info("multigaussian", defaults_dir=str(tmp_path)))
+    _, joint_options = _mgl_options(
+        build_info("multigaussian", defaults_dir=str(tmp_path))
+    )
 
     assert solo["likelihood"]["soliket.LensingLikelihood"]["theory_lmax"] == 3000
     assert joint_options[1]["theory_lmax"] == 3000
