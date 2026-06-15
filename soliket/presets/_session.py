@@ -6,6 +6,7 @@ blocks, which Fiducial-map groups). ``build_info`` turns a preset into a Cobaya
 """
 
 from importlib import resources
+from pathlib import Path
 
 import yaml
 from cobaya.tools import recursive_update
@@ -30,13 +31,29 @@ PRESETS = {
     "multigaussian": {
         "template": "multigaussian.yaml",
         "groups": ["cosmo", "foreground", "systematics"],
+        # Per-component options and precision are composed from these member
+        # presets (single source of truth), not duplicated in the skeleton.
+        "members": ["mflike", "lensing"],
     },
 }
 
 
-def _load_template(filename):
+def _load_template(filename, defaults_dir=None):
+    """Load the packaged info skeleton, optionally overlaid by a folder template.
+
+    Unlike the param groups (wholesale per-file replacement), a folder
+    ``defaults_dir/templates/<filename>`` is layered onto the packaged skeleton via
+    cobaya's ``recursive_update`` (last wins): it patches only the keys it sets --
+    e.g. a single ``theory_lmax`` -- and inherits the rest, so it tracks future
+    package-template changes. Absent the file, the packaged skeleton is used as-is.
+    """
     text = resources.files(__package__).joinpath("templates", filename).read_text()
-    return yaml.safe_load(text)
+    info = yaml.safe_load(text)
+    if defaults_dir is not None:
+        override = Path(defaults_dir) / "templates" / filename
+        if override.is_file():
+            info = recursive_update(info, yaml.safe_load(override.read_text()))
+    return info
 
 
 def build_info(preset, sample=None, theory="camb", defaults_dir=None):
@@ -45,10 +62,12 @@ def build_info(preset, sample=None, theory="camb", defaults_dir=None):
     ``sample`` is the explicit list of dual parameters to vary; the rest are fixed
     to their fiducial values. ``theory`` selects the Boltzmann solver: ``"camb"``
     (default) or ``"classy"``. ``defaults_dir`` optionally points at a directory of
-    override files (``<group>.yaml`` for the param groups and ``theory.yaml`` for
-    the neutrino sector), each with per-file fallback to the bundled defaults. A
-    relative ``defaults_dir`` is resolved against the process working directory.
-    Returns a fresh dict each call.
+    override files: ``<group>.yaml`` for the param groups and ``theory.yaml`` for
+    the neutrino sector (per-file wholesale replacement, fallback to the bundled
+    defaults), plus ``templates/<preset>.yaml`` to overlay likelihood/theory options
+    onto the packaged skeleton (``recursive_update``, last wins). A relative
+    ``defaults_dir`` is resolved against the process working directory. Returns a
+    fresh dict each call.
     """
     if preset not in PRESETS:
         raise ValueError(f"unknown preset {preset!r}; choose from {sorted(PRESETS)}")
@@ -57,12 +76,55 @@ def build_info(preset, sample=None, theory="camb", defaults_dir=None):
             f"unknown theory {theory!r}; choose from {sorted(_THEORY_CODES)}"
         )
     spec = PRESETS[preset]
-    info = _load_template(spec["template"])
+    info = _load_template(spec["template"], defaults_dir=defaults_dir)
+    if "members" in spec:
+        _compose_members(info, spec["members"], defaults_dir=defaults_dir)
     info["params"] = load_params(
         sample=sample, groups=spec["groups"], defaults_dir=defaults_dir
     )
     _apply_theory(info, theory, defaults_dir=defaults_dir)
     return info
+
+
+def _compose_members(info, members, defaults_dir=None):
+    """Fill a multi-component preset's per-component options and theory from its
+    member presets, so each member's config lives in ONE place (its own template)
+    instead of being duplicated in the joint skeleton.
+
+    Options are matched to the skeleton's ``components`` by likelihood class name and
+    emitted in that order -- the positional list ``MultiGaussianLikelihood`` zips
+    against ``components``. Theory blocks are unioned across members via
+    ``recursive_update``, then the skeleton's own theory is applied last as the
+    joint-level override. The merge is **last-wins, so member order is significant**:
+    a coherent joint analysis is expected to carry coherent member precision (we do
+    not reconcile conflicting accuracy keys). Because the members are loaded through
+    ``_load_template``, a folder override on a member (``templates/<member>.yaml``)
+    flows in here too -- one override reaches both the standalone member preset and
+    this joint preset, keeping e.g. an imprint and its fit consistent by construction.
+    """
+    member_infos = [
+        _load_template(PRESETS[m]["template"], defaults_dir=defaults_dir)
+        for m in members
+    ]
+    options_by_class = {}
+    for minfo in member_infos:
+        for cls, opts in minfo.get("likelihood", {}).items():
+            options_by_class[cls] = opts or {}
+
+    _, mgl = next(iter(info["likelihood"].items()))
+    components = mgl["components"]
+    missing = [c for c in components if c not in options_by_class]
+    if missing:
+        raise ValueError(
+            f"preset members {members} provide no options for component(s) {missing}; "
+            f"members expose: {sorted(options_by_class)}"
+        )
+    mgl["options"] = [options_by_class[c] for c in components]
+
+    composed = {}
+    for minfo in member_infos:
+        composed = recursive_update(composed, minfo.get("theory", {}))
+    info["theory"] = recursive_update(composed, info.get("theory", {}))
 
 
 def _apply_theory(info, theory, defaults_dir=None):

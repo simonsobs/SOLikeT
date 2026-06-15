@@ -1,22 +1,18 @@
 # Cobaya info template for the `multigaussian` preset (MFLike + lensing combined).
-# Params are supplied separately by the loader from the Fiducial map.
+# Only joint-level concerns live here. Each component's options and precision come
+# from its member preset template (mflike.yaml / lensing.yaml), composed by
+# build_info -- so they have a single source of truth and a folder override on a
+# member (templates/<member>.yaml) reaches this preset too. The composed `options`
+# list is emitted in `components` order. The `theory` block below is the joint-level
+# override, applied last over the composed member theory (last wins).
 likelihood:
   soliket.gaussian.MultiGaussianLikelihood:
     components:
       - mflike.TTTEEE
       - soliket.LensingLikelihood
-    options:
-      - input_file: LAT_simu_sacc_00044.fits
-        cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
-      - theory_lmax: 5000
-        stop_at_error: true
     stop_at_error: true
 theory:
   camb:
-    extra_args:
-      lens_potential_accuracy: 1
-    stop_at_error: false
-  mflike.BandpowerForeground:
-    stop_at_error: true
+    stop_at_error: false  # a single camb failure shouldn't halt the joint run
 sampler:
   evaluate:
