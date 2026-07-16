@@ -11,13 +11,22 @@ import numpy as np
 
 
 def top_hat_windows(ell_max, n_bins):
-    """Uniform top-hat bandpower windows partitioning ``[0, ell_max]``.
+    """Normalised top-hat bandpower windows partitioning ``[0, ell_max]``.
 
     Returns ``(ells, window)`` where ``ells`` are the bin-centre multipoles and
-    ``window`` is a :class:`sacc.BandpowerWindow` with one unit-weight top-hat per
-    bin. The bins partition every multipole in ``0..ell_max`` inclusive with no
-    gaps; when ``ell_max + 1`` is not divisible by ``n_bins`` the bin widths differ
-    by at most one multipole rather than leaving the high-ell tail unbinned.
+    ``window`` is a :class:`sacc.BandpowerWindow` whose per-bin weights **sum to
+    one**, so binning a spectrum through it gives the bin *mean*. The bins partition
+    every multipole in ``0..ell_max`` inclusive with no gaps; when ``ell_max + 1`` is
+    not divisible by ``n_bins`` the bin widths differ by at most one multipole rather
+    than leaving the high-ell tail unbinned.
+
+    The normalisation matters: a likelihood bins theory as ``w_bins @ cl`` (a plain
+    contraction, no implicit averaging), so the data stored against this window must
+    be in the same units the window produces. Mean-normalised weights let a dataset
+    store ``C_ell`` at the bin centres -- which is what the simulation notebooks
+    compute and plot against unbinned theory. Real datasets whose windows sum to
+    ``delta_ell`` instead store bandpower *sums*; both are self-consistent, and the
+    likelihood is agnostic as long as ``data == w_bins @ cl_true``.
     """
     import sacc
 
@@ -26,7 +35,7 @@ def top_hat_windows(ell_max, n_bins):
     ells = np.array([seg.mean() for seg in segments])
     weights = np.zeros((n_bins, len(ells_win)))
     for i, seg in enumerate(segments):
-        weights[i, seg] = 1.0
+        weights[i, seg] = 1.0 / len(seg)
     return ells, sacc.BandpowerWindow(ells_win, weights.T)
 
 
@@ -40,8 +49,12 @@ def gaussian_covariance(cls, ells, delta_ell, fsky):
         the first two axes.
     ells : ndarray, shape (n_ell,)
         Bin-centre multipoles.
-    delta_ell : float
-        Bin width.
+    delta_ell : float or ndarray, shape (n_ell,)
+        Bin width, broadcast against ``ells``. Pass a per-bin array when the bins
+        are not uniform -- Knox variance goes as ``1 / delta_ell``, so a single bin
+        one multipole wider than the rest is a real (few-percent) error, not a wash.
+        Reading the widths off the bandpower window keeps them honest:
+        ``(window.weight.T != 0).sum(axis=1)``.
     fsky : float
         Sky fraction.
 
@@ -170,9 +183,13 @@ def smooth_mflike_sacc(mflike, dls, fg_totals, params, *, out_path=None, beam_lm
         for spin, quantity in (("s0", "cmb_temperature"), ("s2", "cmb_polarization")):
             band = mflike.bands[f"{freq}_{spin}"]
             s.add_tracer(
-                "NuMap", f"{freq}_{spin}", quantity=quantity,
+                "NuMap",
+                f"{freq}_{spin}",
+                quantity=quantity,
                 spin=0 if spin == "s0" else 2,
-                nu=band["nu"], bandpass=band["bandpass"], **beam,
+                nu=band["nu"],
+                bandpass=band["bandpass"],
+                **beam,
             )
 
     for ia, fa in enumerate(freqs):
@@ -180,11 +197,12 @@ def smooth_mflike_sacc(mflike, dls, fg_totals, params, *, out_path=None, beam_lm
             if ia > ib:
                 continue
             for ipa, pa in enumerate(_POLS):
-                for pb in (_POLS[ipa:] if fa == fb else _POLS):
+                for pb in _POLS[ipa:] if fa == fb else _POLS:
                     ta = f"{fa}_s0" if pa == "T" else f"{fa}_s2"
                     tb = f"{fb}_s0" if pb == "T" else f"{fb}_s2"
                     cl_type = "cl_" + (
-                        _MAP_TYPE[pb] + _MAP_TYPE[pa] if pb == "T"
+                        _MAP_TYPE[pb] + _MAP_TYPE[pa]
+                        if pb == "T"
                         else _MAP_TYPE[pa] + _MAP_TYPE[pb]
                     )
                     pair = ps_dic[f"{fa}x{fb}"]

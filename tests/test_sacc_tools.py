@@ -30,8 +30,7 @@ def test_top_hat_windows_shapes_and_partition():
     assert weights.shape[1] == 20
     assert weights.shape[0] == 601  # every multipole 0..ell_max has a support slot
     # top-hat partition: every multipole, including ell_max, lands in exactly one bin
-    covered = weights.sum(axis=1)
-    np.testing.assert_array_equal(covered, np.ones(601))
+    np.testing.assert_array_equal((weights != 0).sum(axis=1), np.ones(601))
 
 
 def test_top_hat_windows_covers_tail_when_not_divisible():
@@ -40,8 +39,21 @@ def test_top_hat_windows_covers_tail_when_not_divisible():
     ells, window = top_hat_windows(ell_max=100, n_bins=3)
 
     assert ells.shape == (3,)
-    covered = window.weight.sum(axis=1)
-    np.testing.assert_array_equal(covered, np.ones(101))
+    np.testing.assert_array_equal((window.weight != 0).sum(axis=1), np.ones(101))
+
+
+def test_top_hat_windows_bin_a_constant_to_itself():
+    # Pins the *normalisation*, which the partition assertions above cannot see: a
+    # likelihood bins theory as `w_bins @ cl` with no implicit averaging, so a
+    # window whose per-bin weights sum to one must return a constant spectrum
+    # unchanged. Unit-weight (sum) windows would return delta_ell * const instead,
+    # silently mismatching data stored at the bin centres by a factor ~30.
+    for ell_max, n_bins in [(600, 20), (100, 3)]:  # divisible and not
+        _, window = top_hat_windows(ell_max=ell_max, n_bins=n_bins)
+        w_bins = window.weight.T
+        np.testing.assert_allclose(w_bins.sum(axis=1), np.ones(n_bins))
+        cl = np.full(ell_max + 1, 3.7)
+        np.testing.assert_allclose(w_bins @ cl, np.full(n_bins, 3.7))
 
 
 def test_gaussian_covariance_is_symmetric_positive_diagonal():
@@ -76,14 +88,26 @@ def _tiny_lensing_sacc(values):
     """A one-spectrum (cl_00, ck x ck) SACC with windows and a covariance."""
     n = len(values)
     s = sacc.Sacc()
-    s.add_tracer("Map", "ck", quantity="cmb_convergence", spin=0,
-                 ell=np.arange(100), beam=np.ones(100))
+    s.add_tracer(
+        "Map",
+        "ck",
+        quantity="cmb_convergence",
+        spin=0,
+        ell=np.arange(100),
+        beam=np.ones(100),
+    )
     support = np.arange(2, 2 + 3 * n)
     weight = np.zeros((len(support), n))
     for b, idx in enumerate(np.array_split(np.arange(len(support)), n)):
         weight[idx, b] = 1.0 / len(idx)
-    s.add_ell_cl("cl_00", "ck", "ck", np.arange(n), values,
-                 window=sacc.BandpowerWindow(support, weight))
+    s.add_ell_cl(
+        "cl_00",
+        "ck",
+        "ck",
+        np.arange(n),
+        values,
+        window=sacc.BandpowerWindow(support, weight),
+    )
     s.add_covariance(np.diag(np.full(n, 4.0)))
     return s
 
@@ -97,11 +121,11 @@ def test_smooth_twin_sacc_replaces_mean_and_reuses_windows_and_cov(tmp_path):
 
     twin = smooth_twin_sacc(src, "cl_00", "ck", "ck", theory, out_path=out)
 
-    np.testing.assert_array_equal(twin.mean, theory)            # data == theory
+    np.testing.assert_array_equal(twin.mean, theory)  # data == theory
     np.testing.assert_array_equal(twin.covariance.covmat, src.covariance.covmat)
-    assert "ck" in twin.tracers                                 # tracer carried over
+    assert "ck" in twin.tracers  # tracer carried over
     reloaded = sacc.Sacc.load_fits(str(out))
-    np.testing.assert_array_equal(reloaded.mean, theory)        # survives round-trip
+    np.testing.assert_array_equal(reloaded.mean, theory)  # survives round-trip
     assert reloaded.get_bandpower_windows(np.arange(len(theory))) is not None
 
 
