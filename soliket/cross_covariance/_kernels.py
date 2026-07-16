@@ -138,6 +138,11 @@ def n1_crosscov_block(dCllens, clp, n1_normed_mat, fsky, cmb_combs, kk_binning):
     derivative. Pure given ``n1_normed_mat`` -- the lensitbiases dependency lives
     only in generating that matrix.
 
+    This is a **diagnostic**, not part of the assembled covariance: it sizes the N1
+    contribution to the kappa cross-block, and no covariance builder (including
+    :meth:`CrossCov.from_cmb_lensing`) calls it. The dev notebook computes, saves and
+    plots it, then stops there.
+
     Parameters
     ----------
     dCllens : ndarray, shape (n_spec, lmax+1, lmax+1)
@@ -145,7 +150,13 @@ def n1_crosscov_block(dCllens, clp, n1_normed_mat, fsky, cmb_combs, kk_binning):
     clp : ndarray
         Fiducial lensing-potential power.
     n1_normed_mat : ndarray, shape (>= lmax_kk, n_ell)
-        Normalised, smoothed N1 transfer matrix.
+        Normalised, smoothed N1 transfer matrix. **Rows must be indexed by lensing
+        multipole from L=0**, so that row ``L`` aligns with column ``L`` of
+        ``kk_binning``; only the first ``lmax_kk`` rows are read. Note the
+        lensitbiases recipe in the notebook builds its rows over
+        ``Ls_n1 = arange(lminbox, ...)`` (``lminbox=20``), i.e. row ``i`` is
+        ``L = lminbox + i`` -- such a matrix must be zero-padded up to L=0 before it
+        is passed here, or every row lands ``lminbox`` multipoles off.
     fsky : float
         Sky fraction.
     cmb_combs : list of (int, ndarray, ndarray)
