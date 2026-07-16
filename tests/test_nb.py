@@ -36,9 +36,7 @@ def test_theory_dls_reads_from_the_model_provider():
 
 def test_foreground_totals_reads_from_the_foreground_role():
     sentinel = object()
-    session = SimpleNamespace(
-        foreground=SimpleNamespace(get_fg_totals=lambda: sentinel)
-    )
+    session = SimpleNamespace(foreground=SimpleNamespace(get_fg_totals=lambda: sentinel))
 
     assert _load_nb().foreground_totals(session) is sentinel
 

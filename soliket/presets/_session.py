@@ -103,8 +103,7 @@ def _compose_members(info, members, defaults_dir=None):
     this joint preset, keeping e.g. an imprint and its fit consistent by construction.
     """
     member_infos = [
-        _load_template(PRESETS[m]["template"], defaults_dir=defaults_dir)
-        for m in members
+        _load_template(PRESETS[m]["template"], defaults_dir=defaults_dir) for m in members
     ]
     options_by_class = {}
     for minfo in member_infos:
