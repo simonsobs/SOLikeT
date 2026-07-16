@@ -52,6 +52,16 @@ def build_params(spec, sample=None, groups=None):
                 f"provides them; available groups: {sorted(spec)}"
             )
         selected = {g: spec[g] for g in groups}
+    # Only dual parameters (those carrying a prior) can be sampled, so an unknown
+    # name -- a typo, a param from a group this preset does not load, or one fixed
+    # by value -- would otherwise be dropped in silence and yield a fully-fixed run.
+    sampleable = {n for g in selected.values() for n, p in g.items() if "prior" in p}
+    unknown = sample - sampleable
+    if unknown:
+        raise ValueError(
+            f"cannot sample {sorted(unknown)}: not a dual parameter in group(s) "
+            f"{sorted(selected)}; sampleable here: {sorted(sampleable)}"
+        )
     params = {}
     for group in selected.values():
         for name, pspec in group.items():

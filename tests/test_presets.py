@@ -21,6 +21,7 @@ from soliket.presets import (
     Session,
     build_info,
     build_params,
+    load_fiducial_map,
     load_params,
     quickstart,
     resolve_aliases,
@@ -235,6 +236,23 @@ def test_load_params_keeps_prior_for_sampled_params():
     assert "prior" in params["a_tSZ"]
     # Unlisted dual params stay fixed.
     assert params["ns"]["value"] == 0.9649
+
+
+def test_load_params_rejects_unsampleable_names():
+    # A name that matches nothing is a typo, and silently returning a fully-fixed
+    # info would send an MCMC off sampling zero parameters.
+    with pytest.raises(ValueError, match="cannot sample"):
+        load_params(sample=["taau"])
+
+    # A real dual param, but from a group this call does not load.
+    with pytest.raises(ValueError, match="cannot sample"):
+        load_params(sample=["a_tSZ"], groups=["cosmo"])
+
+    # A param that exists in the group but carries no prior, so cannot be varied.
+    fixed = [n for n, p in load_fiducial_map()["cosmo"].items() if "prior" not in p]
+    if fixed:
+        with pytest.raises(ValueError, match="cannot sample"):
+            load_params(sample=[fixed[0]], groups=["cosmo"])
 
 
 def test_load_fiducial_map_reads_all_groups():
