@@ -70,10 +70,10 @@ class XcorrLikelihood(GaussianLikelihood):
     Nchi: int | None
     Nchi_mag: int | None
     Pk_interp_kmax: int | float | None
-    b1: int | float
-    s1: int | float
 
     provider: Provider
+
+    _enforce_types: bool = True
 
     _allowable_tracers = ("cmb_convergence", "galaxy_density")
 

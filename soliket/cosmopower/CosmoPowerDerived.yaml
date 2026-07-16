@@ -8,10 +8,6 @@ network_settings:
   type: NN   # Either NN or PCAplusNN, depending on the network type
   log: false # Set this to true if this network calculates log(X) for all parameters X.
 
-# Optional extra arguments for the theory code.
-extra_args:
-  # (Currently, no extra arguments exist yet for the derived network).
-
 # A list of all names for the derived parameters of this network.
 derived_parameters: []
 

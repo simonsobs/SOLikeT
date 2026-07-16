@@ -24,6 +24,8 @@ from cobaya.theory import Provider
 from soliket.ccl import CCL
 from soliket.gaussian import GaussianLikelihood
 
+from ._corrections import LensingCorrections
+
 
 class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
     r"""
@@ -130,36 +132,9 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
             s = sacc.Sacc.load_fits(
                 os.path.join(self.data_folder, self.correction_filename)
             )
-
-            _, self.N0cltt = self._get_spectrum_from_sacc(
-                s, "ct", "ct", data_type="N0_00"
+            self.corrections = LensingCorrections.from_sacc(
+                s, fiducial=self._fiducial_cls
             )
-            _, self.N0clte = self._get_spectrum_from_sacc(
-                s, "ct", "ce", data_type="N0_0e"
-            )
-            _, self.N0clee = self._get_spectrum_from_sacc(
-                s, "ce", "ce", data_type="N0_ee"
-            )
-            _, self.N0clbb = self._get_spectrum_from_sacc(
-                s, "cb", "cb", data_type="N0_bb"
-            )
-            _, self.N1clpp = self._get_spectrum_from_sacc(
-                s, "cp", "cp", data_type="N1_00"
-            )
-            _, self.N1cltt = self._get_spectrum_from_sacc(
-                s, "ct", "ct", data_type="N1_00"
-            )
-            _, self.N1clte = self._get_spectrum_from_sacc(
-                s, "ct", "ce", data_type="N1_0e"
-            )
-            _, self.N1clee = self._get_spectrum_from_sacc(
-                s, "ce", "ce", data_type="N1_ee"
-            )
-            _, self.N1clbb = self._get_spectrum_from_sacc(
-                s, "cb", "cb", data_type="N1_bb"
-            )
-            _, self.n0 = self._get_spectrum_from_sacc(s, "n0", "n0", data_type="N0_00")
-            self.n0 = self.n0[0]
         else:
             raise LoggedError(
                 self.log,
@@ -223,11 +198,9 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
             Cls = model_fiducial.provider.get_Cl(ell_factor=False)
             Cls["kk"] = Cls["pp"][0 : self.lmax] * (self.ls * (self.ls + 1)) ** 2 * 0.25
 
-        self.fcltt = Cls["tt"][0 : self.lmax]
-        self.fclee = Cls["ee"][0 : self.lmax]
-        self.fclte = Cls["te"][0 : self.lmax]
-        self.fclbb = Cls["bb"][0 : self.lmax]
-        self.thetaclkk = Cls["kk"][0 : self.lmax]
+        self._fiducial_cls = {
+            spec: Cls[spec][0 : self.lmax] for spec in ("tt", "ee", "te", "bb", "kk")
+        }
         return Cls
 
     def get_requirements(self) -> dict:
@@ -283,31 +256,13 @@ class LensingLikelihood(GaussianLikelihood, InstallableLikelihood):
             cmbk = ccl.CMBLensingTracer(cosmo, z_source=zstar)
             Clkk_theo = ccl.angular_cl(cosmo, cmbk, cmbk, self.ls)
 
-        Cl_tt = cl["tt"][0 : self.lmax]
-        Cl_ee = cl["ee"][0 : self.lmax]
-        Cl_te = cl["te"][0 : self.lmax]
-        Cl_bb = cl["bb"][0 : self.lmax]
-
         Clkk_binned = self.binning_matrix.dot(Clkk_theo)
 
-        correction = (
-            2
-            * (self.thetaclkk / self.n0)
-            * (
-                np.dot(self.N0cltt, Cl_tt - self.fcltt)
-                + np.dot(self.N0clee, Cl_ee - self.fclee)
-                + np.dot(self.N0clbb, Cl_bb - self.fclbb)
-                + np.dot(self.N0clte, Cl_te - self.fclte)
-            )
-            + np.dot(self.N1clpp, Clkk_theo - self.thetaclkk)
-            + np.dot(self.N1cltt, Cl_tt - self.fcltt)
-            + np.dot(self.N1clee, Cl_ee - self.fclee)
-            + np.dot(self.N1clbb, Cl_bb - self.fclbb)
-            + np.dot(self.N1clte, Cl_te - self.fclte)
+        correction = self.corrections.compute(
+            cls={spec: cl[spec][0 : self.lmax] for spec in ("tt", "te", "ee", "bb")},
+            clkk_theo=Clkk_theo,
+            binning_matrix=self.binning_matrix,
         )
-
-        # put the correction term into bandpowers
-        correction = self.binning_matrix.dot(correction)
 
         return Clkk_binned + correction
 

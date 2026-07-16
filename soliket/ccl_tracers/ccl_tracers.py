@@ -30,6 +30,8 @@ class CCLTracersLikelihood(GaussianLikelihood):
     ncovsims: int | None
     provider: Provider
 
+    _enforce_types: bool = True
+
     def initialize(self):
         super().initialize()
 
