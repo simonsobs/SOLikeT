@@ -284,9 +284,24 @@ class GaussianLikelihood(Likelihood):
         twice -- once in :meth:`_get_unbinned_theory` for the theory's ell support
         and once in :meth:`_get_theory` to bin -- each time hitting the SACC index
         and bandpower-window lookups.
+
+        The window is looked up by tracers alone (not by data type: the shear
+        cross-correlations are ``cl_0e``/``cl_e0``, not ``cl_00``), so a pair
+        carrying several data types would silently yield a window spanning all of
+        them. Rejected here, in the shared lookup, rather than in each caller --
+        :meth:`_get_unbinned_theory` reads the ell support from here too, and would
+        otherwise spend a Limber calculation on the doubled grid before
+        :meth:`_get_theory` noticed.
         """
         cache = self.__dict__.setdefault("_binning_cache", {})
         if tracer_comb not in cache:
+            dtypes = self.sacc_data.get_data_types(tracers=tracer_comb)
+            if len(dtypes) != 1:
+                raise ValueError(
+                    f"tracers {tracer_comb} carry data types {dtypes}; a likelihood "
+                    "using the default binning assumes exactly one spectrum per "
+                    "tracer pair and must otherwise override _get_theory."
+                )
             bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
             bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
             ells_theory = np.asarray(bpw.values, dtype=int)
