@@ -108,19 +108,15 @@ def _bundled_defaults_dir():
     return resources.files(__package__).joinpath("defaults")
 
 
-# Reserved stem: ``theory.yaml`` is the neutrino/theory overlay, not a param
-# group, so it is excluded from group discovery and loaded via ``load_theory``.
+# ``theory.yaml`` is the neutrino/theory overlay rather than a param group, so it is
+# not listed in _GROUPS and is loaded via ``load_theory``.
 _THEORY_GROUP = "theory"
 
-
-def _group_names():
-    """Canonical group set: the stems of the bundled ``defaults/*.yaml`` files,
-    excluding the reserved ``theory`` overlay."""
-    return sorted(
-        entry.name[: -len(".yaml")]
-        for entry in _bundled_defaults_dir().iterdir()
-        if entry.name.endswith(".yaml") and entry.name[: -len(".yaml")] != _THEORY_GROUP
-    )
+# The param groups, one bundled ``defaults/<group>.yaml`` each. An override folder
+# can only replace a bundled group's file, never add a group, so this is the full
+# set by construction; adding one means shipping the yaml AND naming it here (plus
+# in the presets that want it -- see PRESETS["<preset>"]["groups"]).
+_GROUPS = ("cosmo", "foreground", "systematics")
 
 
 def _as_mapping(text, source):
@@ -155,7 +151,7 @@ def load_fiducial_map(defaults_dir=None):
     optionally supplies override files; any ``<group>.yaml`` it contains replaces
     the bundled file for that group (per-file fallback, mflike-style).
     """
-    return {group: _read_group(group, defaults_dir) for group in _group_names()}
+    return {group: _read_group(group, defaults_dir) for group in _GROUPS}
 
 
 def load_theory(defaults_dir=None):
