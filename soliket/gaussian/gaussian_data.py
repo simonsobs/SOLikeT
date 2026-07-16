@@ -368,8 +368,7 @@ class CrossCov(dict):
             for name, n in ((name1, cov.shape[0]), (name2, cov.shape[1])):
                 if name in sizes and sizes[name] != n:
                     raise ValueError(
-                        f"Inconsistent sizes for component '{name}': "
-                        f"{sizes[name]} vs {n}"
+                        f"Inconsistent sizes for component '{name}': {sizes[name]} vs {n}"
                     )
                 sizes[name] = n
 
@@ -558,7 +557,6 @@ class CrossCov(dict):
 
         return cross_cov
 
-
     @classmethod
     def from_cmb_lensing(cls, mflike, lensing, **overrides):
         """Compute the CMB-primary x CMB-lensing cross-covariance, labelled by id.
@@ -617,7 +615,7 @@ class CrossCov(dict):
         # Build the block from mflike's per-spectrum windows. The build order does
         # not matter: the labels below carry each row's true identity.
         combs = cmb_combs_from_spec_meta(spec_meta)
-        block = cmb_lensing_crosscov(mflike_sacc, lensing, combs=combs, **overrides)
+        block = cmb_lensing_crosscov(mflike_sacc, lensing, combs, **overrides)
 
         # Per-row CMB bandpower identities, in the block's own (spec_meta) build
         # order, in the same vocabulary as gaussian.bandpower_ids for mflike.

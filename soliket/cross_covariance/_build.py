@@ -27,52 +27,6 @@ def _cosmo_camb_kwargs(cosmo):
     }
 
 
-# SACC CMB data type -> CAMB lensed_cl_derivatives row (0=TT, 1=EE, 2=BB, 3=TE).
-_CAMB_SPECTRUM_ROW = {"cl_00": 0, "cl_ee": 1, "cl_bb": 2, "cl_0e": 3}
-
-
-def _camb_spectrum_index(sacc_data, tracer_comb):
-    """Row of the CAMB lensed-Cl derivative for a CMB tracer pair (TT=0/EE=1/BB=2/TE=3).
-
-    Resolved from the SACC ``data_type`` rather than the tracer-name spin suffix:
-    EE and BB share the ``_s2 x _s2`` tracer pair and are indistinguishable by name.
-    The rest of this module assumes one spectrum per tracer pair, so a pair carrying
-    several data types -- or a type CAMB has no lensed-Cl derivative row for (e.g.
-    TB/EB) -- is rejected here rather than silently mapped to the wrong row.
-    """
-    dtypes = sacc_data.get_data_types(tracers=tracer_comb)
-    if len(dtypes) != 1:
-        raise ValueError(
-            f"tracer pair {tracer_comb} carries data types {dtypes}; the "
-            "cross-covariance assumes exactly one CMB spectrum per tracer pair."
-        )
-    dtype = dtypes[0]
-    if dtype not in _CAMB_SPECTRUM_ROW:
-        raise ValueError(
-            f"data type {dtype!r} for tracers {tracer_comb} has no CAMB lensed-Cl "
-            "derivative row (supported: TT=cl_00, EE=cl_ee, BB=cl_bb, TE=cl_0e)."
-        )
-    return _CAMB_SPECTRUM_ROW[dtype]
-
-
-def cmb_combs_from_sacc(sacc_data):
-    """Per CMB tracer combination, the ``(ind_camb, support, weight)`` triple.
-
-    The bandpower windows are fetched the same way every likelihood does
-    (``indices(tracers=comb)``); only the CAMB-spectrum row is cross-covariance
-    specific. For MFLike each tracer pair carries a single spectrum, so the
-    tracer-only window lookup is unambiguous.
-    """
-    combs = []
-    for comb in sacc_data.get_tracer_combinations():
-        idx = np.asarray(sacc_data.indices(tracers=comb))
-        bpw = sacc_data.get_bandpower_windows(idx)
-        combs.append(
-            (_camb_spectrum_index(sacc_data, comb), np.asarray(bpw.values), bpw.weight.T)
-        )
-    return combs
-
-
 # spec_meta polarisation -> CAMB lensed-Cl derivative row (TT=0, EE=1, BB=2, TE=3).
 _POL_TO_CAMB = {"tt": 0, "ee": 1, "bb": 2, "te": 3}
 
@@ -96,22 +50,27 @@ def cmb_combs_from_spec_meta(spec_meta):
 
 
 def cmb_lensing_crosscov(
-    mflike_sacc, lensing, *, fsky=None, cosmo=None, accuracy=None, lmax=None,
-    derivatives=None, combs=None,
+    mflike_sacc,
+    lensing,
+    combs,
+    *,
+    fsky=None,
+    cosmo=None,
+    accuracy=None,
+    lmax=None,
+    derivatives=None,
 ):
     """Compute the CMB-primary x CMB-lensing cross-covariance block.
 
     Low-level entry point. ``mflike_sacc`` is the MFLike SACC (with covariance
-    metadata); ``lensing`` is an evaluated ``LensingLikelihood``. ``fsky``,
-    ``cosmo``, ``accuracy`` and ``lmax`` default to the values stored in the
-    MFLike SACC metadata and may be overridden. ``derivatives`` optionally supplies
-    a precomputed ``camb_lensing_derivatives`` bundle (see
-    :func:`camb_lensing_derivatives_from_sacc`) so a joint covariance shares one
-    CAMB run across blocks; when omitted it is computed here. ``combs`` optionally
-    supplies the per-spectrum ``(ind_camb, support, weight)`` triples -- pass
-    :func:`cmb_combs_from_spec_meta` so the block rows match the MFLike
-    auto-covariance order; by default they are derived from the SACC's tracer
-    combinations (full, natural order).
+    metadata); ``lensing`` is an evaluated ``LensingLikelihood``. ``combs`` are the
+    per-spectrum ``(ind_camb, support, weight)`` triples for the CMB rows -- build
+    them with :func:`cmb_combs_from_spec_meta`, which keeps the block rows in
+    MFLike's own data-vector order. ``fsky``, ``cosmo``, ``accuracy`` and ``lmax``
+    default to the values stored in the MFLike SACC metadata and may be overridden.
+    ``derivatives`` optionally supplies a precomputed ``camb_lensing_derivatives``
+    bundle (see :func:`camb_lensing_derivatives_from_sacc`) so a joint covariance
+    shares one CAMB run across blocks; when omitted it is computed here.
     """
     fsky, cosmo, accuracy, lmax = _resolve_inputs(
         mflike_sacc.metadata, fsky, cosmo, accuracy, lmax
@@ -124,8 +83,6 @@ def cmb_lensing_crosscov(
 
     lmax_kk = lensing.binning_matrix.shape[1]
     cl_kk = np.pi / 2 * lensing.provider.get_Cl(ell_factor=True)["pp"][:lmax_kk]
-    if combs is None:
-        combs = cmb_combs_from_sacc(mflike_sacc)
     return cmb_lensing_block(dCllens, clp, cl_kk, fsky, combs, lensing.binning_matrix)
 
 
@@ -171,24 +128,22 @@ def camb_lensing_derivatives_from_sacc(
 
 def lensing_induced_cov(
     mflike_sacc,
+    combs,
     *,
     fsky=None,
     cosmo=None,
     accuracy=None,
     lmax=None,
     derivatives=None,
-    combs=None,
 ):
     """Compute the lensing-induced covariance within the MFLike CMB block.
 
-    Low-level entry point mirroring :func:`cmb_lensing_crosscov`; ``fsky``,
+    Low-level entry point mirroring :func:`cmb_lensing_crosscov`; ``combs`` are the
+    per-spectrum triples (see :func:`cmb_combs_from_spec_meta`), and ``fsky``,
     ``cosmo``, ``accuracy`` and ``lmax`` default to the MFLike SACC metadata.
     ``derivatives`` optionally supplies a precomputed ``camb_lensing_derivatives``
     bundle to share one CAMB run across blocks. Returns the symmetric
-    ``(n_cmb_data, n_cmb_data)`` matrix. ``combs`` optionally supplies the
-    per-spectrum triples -- pass :func:`cmb_combs_from_spec_meta` so this block
-    matches the MFLike auto-covariance order it is added to; by default they are
-    the SACC's tracer combinations (full, natural order).
+    ``(n_cmb_data, n_cmb_data)`` matrix.
     """
     fsky, cosmo, accuracy, lmax = _resolve_inputs(
         mflike_sacc.metadata, fsky, cosmo, accuracy, lmax
@@ -198,8 +153,6 @@ def lensing_induced_cov(
         if derivatives is not None
         else camb_lensing_derivatives(cosmo, accuracy, lmax)
     )
-    if combs is None:
-        combs = cmb_combs_from_sacc(mflike_sacc)
     return lensing_induced_block(dCllens, fsky, combs)
 
 
@@ -214,8 +167,7 @@ def shear_kappa_limber(shearkappa_like, params_values):
     sklike = shearkappa_like
     cl_unbinned_list = sklike.get_unbinned_theory(**params_values)
     w_bins_list = [
-        sklike.get_binning(comb)[1]
-        for comb in sklike.sacc_data.get_tracer_combinations()
+        sklike.get_binning(comb)[1] for comb in sklike.sacc_data.get_tracer_combinations()
     ]
     return cl_unbinned_list, w_bins_list
 
@@ -224,23 +176,22 @@ def shear_kappa_crosscov(
     mflike_sacc,
     shearkappa_like,
     params_values,
+    combs,
     *,
     fsky=None,
     cosmo=None,
     accuracy=None,
     lmax=None,
     derivatives=None,
-    combs=None,
 ):
     """Compute the CMB-primary x shear/galaxy-kappa cross-covariance block.
 
     Low-level entry point; ``fsky``/``cosmo``/``accuracy``/``lmax`` default to the
     MFLike SACC metadata. ``params_values`` are the nuisance parameters the LSS
-    Limber spectra depend on. ``derivatives`` optionally supplies a precomputed
-    ``camb_lensing_derivatives`` bundle to share one CAMB run across blocks.
-    ``combs`` optionally supplies the per-spectrum triples for the CMB (row) side --
-    pass :func:`cmb_combs_from_spec_meta` so the rows match the MFLike
-    auto-covariance order; by default they are the SACC's tracer combinations.
+    Limber spectra depend on. ``combs`` are the per-spectrum triples for the CMB
+    (row) side -- see :func:`cmb_combs_from_spec_meta`. ``derivatives`` optionally
+    supplies a precomputed ``camb_lensing_derivatives`` bundle to share one CAMB run
+    across blocks.
     """
     fsky, cosmo, accuracy, lmax = _resolve_inputs(
         mflike_sacc.metadata, fsky, cosmo, accuracy, lmax
@@ -251,6 +202,4 @@ def shear_kappa_crosscov(
         else camb_lensing_derivatives(cosmo, accuracy, lmax)
     )
     cl_list, w_list = shear_kappa_limber(shearkappa_like, params_values)
-    if combs is None:
-        combs = cmb_combs_from_sacc(mflike_sacc)
     return shear_kappa_block(dCllens, clp, cl_list, w_list, fsky, combs)

@@ -7,15 +7,12 @@ regression against the committed reference products lives separately and is
 gated on data availability.
 """
 
-import os
 from types import SimpleNamespace
 
 import numpy as np
-import pytest
 
 from soliket.cross_covariance import (
     camb_lensing_derivatives,
-    cmb_combs_from_sacc,
     cmb_combs_from_spec_meta,
     cmb_lensing_block,
     lensing_induced_block,
@@ -23,16 +20,6 @@ from soliket.cross_covariance import (
     n1_crosscov_block,
     shear_kappa_block,
 )
-
-
-def _mflike_cov_sacc_path():
-    from cobaya.tools import resolve_packages_path
-
-    path = resolve_packages_path()
-    if not path:
-        return None
-    f = os.path.join(path, "data", "MFLike", "v0.8", "data_sacc_w_covar_and_Bbl.fits")
-    return f if os.path.isfile(f) else None
 
 
 def _tiny_mflike_sacc():
@@ -80,7 +67,7 @@ def test_cmb_lensing_crosscov_runs_end_to_end_on_tiny_data():
     Confirms the code path works without the full-accuracy (multi-GB) derivative;
     exact reproduction of the published reference is a separate, heavy check.
     """
-    from soliket.cross_covariance import cmb_lensing_crosscov
+    from soliket.cross_covariance import cmb_combs_from_spec_meta, cmb_lensing_crosscov
 
     lmax_kk = 25
     binning = np.zeros((2, lmax_kk))
@@ -93,7 +80,9 @@ def test_cmb_lensing_crosscov_runs_end_to_end_on_tiny_data():
         ),
     )
 
-    block = cmb_lensing_crosscov(_tiny_mflike_sacc(), lensing)
+    sacc_data = _tiny_mflike_sacc()
+    combs = cmb_combs_from_spec_meta(_tiny_spec_meta(sacc_data))
+    block = cmb_lensing_crosscov(sacc_data, lensing, combs)
 
     assert block.shape == (3, 2)  # 3 CMB bins x 2 kappa bins
     assert np.all(np.isfinite(block))
@@ -108,6 +97,7 @@ def test_shared_derivatives_match_per_block_computation():
     """
     from soliket.cross_covariance import (
         camb_lensing_derivatives_from_sacc,
+        cmb_combs_from_spec_meta,
         cmb_lensing_crosscov,
         lensing_induced_cov,
     )
@@ -124,24 +114,23 @@ def test_shared_derivatives_match_per_block_computation():
     )
 
     sacc_data = _tiny_mflike_sacc()
+    combs = cmb_combs_from_spec_meta(_tiny_spec_meta(sacc_data))
     derivs = camb_lensing_derivatives_from_sacc(sacc_data)
 
     np.testing.assert_array_equal(
-        cmb_lensing_crosscov(sacc_data, lensing, derivatives=derivs),
-        cmb_lensing_crosscov(sacc_data, lensing),
+        cmb_lensing_crosscov(sacc_data, lensing, combs, derivatives=derivs),
+        cmb_lensing_crosscov(sacc_data, lensing, combs),
     )
     np.testing.assert_array_equal(
-        lensing_induced_cov(sacc_data, derivatives=derivs),
-        lensing_induced_cov(sacc_data),
+        lensing_induced_cov(sacc_data, combs, derivatives=derivs),
+        lensing_induced_cov(sacc_data, combs),
     )
 
 
 def _tiny_spec_meta(sacc_data):
     """A one-TT-spectrum ``spec_meta`` for ``_tiny_mflike_sacc``, in mflike's shape
     (``pol``, ``hasYX_xsp``, ``t1``, ``t2``, ``bpw``, ``leff``, ``ids``)."""
-    ell, _, ind = sacc_data.get_ell_cl(
-        "cl_00", "LAT_93_s0", "LAT_93_s0", return_ind=True
-    )
+    ell, _, ind = sacc_data.get_ell_cl("cl_00", "LAT_93_s0", "LAT_93_s0", return_ind=True)
     bpw = sacc_data.get_bandpower_windows(ind)
     return [
         {
@@ -189,11 +178,17 @@ def test_from_cmb_lensing_roundtrips_into_multigaussian(tmp_path):
     le_ids = [("pp", ("kappa", "kappa"), float(i)) for i in range(n_kk)]
     # the assembled components carry the same ids the saved block is labelled with
     mf_data = GaussianData(
-        "mflike", np.arange(n_cmb), np.zeros(n_cmb), np.eye(n_cmb),
+        "mflike",
+        np.arange(n_cmb),
+        np.zeros(n_cmb),
+        np.eye(n_cmb),
         ids=_mflike_ids(spec_meta),
     )
     le_data = GaussianData(
-        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15,
+        "CMB Lensing",
+        np.arange(n_kk),
+        np.zeros(n_kk),
+        np.eye(n_kk) * 1e-15,
         ids=le_ids,
     )
 
@@ -254,12 +249,19 @@ def test_from_cmb_lensing_trims_lensing_axis_to_used_bandpowers(tmp_path):
     kk_ids = [("pp", ("kappa", "kappa"), float(i)) for i in range(n_kk_full)]
     kept_mask = np.array([True, False])
     mf_data = GaussianData(
-        "mflike", np.arange(n_cmb), np.zeros(n_cmb), np.eye(n_cmb),
+        "mflike",
+        np.arange(n_cmb),
+        np.zeros(n_cmb),
+        np.eye(n_cmb),
         ids=_mflike_ids(spec_meta),
     )
     le_data = GaussianData(
-        "CMB Lensing", np.arange(n_kept), np.zeros(n_kept), np.eye(n_kept) * 1e-15,
-        indices=kept_mask, ids=kk_ids,
+        "CMB Lensing",
+        np.arange(n_kept),
+        np.zeros(n_kept),
+        np.eye(n_kept) * 1e-15,
+        indices=kept_mask,
+        ids=kk_ids,
     )
 
     lmax_kk = 25
@@ -314,7 +316,10 @@ def test_from_cmb_lensing_aligns_reordered_block_in_joint_cov(tmp_path):
         "mflike", np.arange(n_cmb), np.zeros(n_cmb), np.eye(n_cmb), ids=rev_ids
     )
     le_data = GaussianData(
-        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15,
+        "CMB Lensing",
+        np.arange(n_kk),
+        np.zeros(n_kk),
+        np.eye(n_kk) * 1e-15,
         ids=le_ids,
     )
 
@@ -378,9 +383,7 @@ def test_from_cmb_lensing_labels_block_by_bandpower_identity(tmp_path):
 
     sacc_data = _tiny_mflike_sacc()
     sacc_data.save_fits(str(tmp_path / "mflike_cov.fits"), overwrite=True)
-    ell, _, ind = sacc_data.get_ell_cl(
-        "cl_00", "LAT_93_s0", "LAT_93_s0", return_ind=True
-    )
+    ell, _, ind = sacc_data.get_ell_cl("cl_00", "LAT_93_s0", "LAT_93_s0", return_ind=True)
     bpw = sacc_data.get_bandpower_windows(ind)
     spec_meta = [
         {
@@ -398,7 +401,10 @@ def test_from_cmb_lensing_labels_block_by_bandpower_identity(tmp_path):
     le_ids = [("pp", ("kappa", "kappa"), float(i)) for i in range(n_kk)]
     mf_data = GaussianData("mflike", ell, np.zeros(n_cmb), np.eye(n_cmb))
     le_data = GaussianData(
-        "CMB Lensing", np.arange(n_kk), np.zeros(n_kk), np.eye(n_kk) * 1e-15,
+        "CMB Lensing",
+        np.arange(n_kk),
+        np.zeros(n_kk),
+        np.eye(n_kk) * 1e-15,
         ids=le_ids,
     )
     lmax_kk = 25
@@ -430,64 +436,6 @@ def test_from_cmb_lensing_labels_block_by_bandpower_identity(tmp_path):
     expected_rows = [("tt", False, ("LAT_93", "LAT_93"), float(leff)) for leff in ell]
     assert row_ids == expected_rows
     assert col_ids == le_ids
-
-
-@pytest.mark.skipif(_mflike_cov_sacc_path() is None, reason="MFLike data not installed")
-def test_cmb_combs_from_sacc_extracts_well_formed_triples():
-    import sacc
-
-    s = sacc.Sacc.load_fits(_mflike_cov_sacc_path())
-    combs = cmb_combs_from_sacc(s)
-
-    assert len(combs) == len(s.get_tracer_combinations())
-    for ind_camb, support, weight in combs:
-        assert ind_camb in (0, 1, 3)  # TT, EE, TE
-        assert support.ndim == 1
-        assert weight.shape[1] == support.shape[0]  # weight is (n_bins, n_support)
-
-
-def _tt_sacc(*, interleave):
-    """Two TT spectra (two channels). With ``interleave=True`` the first pair's
-    bandpowers are split across two ``add_ell_cl`` calls with the second pair in
-    between, so its data points are non-contiguous in the flat data vector."""
-    import sacc
-
-    s = sacc.Sacc()
-    for name in ("LAT_93_s0", "LAT_145_s0"):
-        s.add_tracer("Misc", name, quantity="cmb_temperature", spin=0)
-    support = np.arange(2, 8)
-    weight = np.ones((len(support), 2)) / len(support)
-    bpw = sacc.BandpowerWindow(support, weight)
-    lo, hi = np.array([3.0, 6.0]), np.array([9.0, 12.0])
-    if interleave:
-        s.add_ell_cl("cl_00", "LAT_93_s0", "LAT_93_s0", lo, np.zeros(2), window=bpw)
-        s.add_ell_cl("cl_00", "LAT_145_s0", "LAT_145_s0", lo, np.zeros(2), window=bpw)
-        s.add_ell_cl("cl_00", "LAT_93_s0", "LAT_93_s0", hi, np.zeros(2), window=bpw)
-    else:
-        for t in ("LAT_93_s0", "LAT_145_s0"):
-            s.add_ell_cl("cl_00", t, t, lo, np.zeros(2), window=bpw)
-    return s
-
-
-def test_cmb_combs_from_sacc_accepts_contiguous_multi_spectrum():
-    # Two contiguously-stored spectra: per-combination order equals the natural
-    # flat order, so the builder accepts it and yields one triple per spectrum.
-    combs = cmb_combs_from_sacc(_tt_sacc(interleave=False))
-
-    assert len(combs) == 2
-    assert [ind_camb for ind_camb, _, _ in combs] == [0, 0]  # both TT -> CAMB row 0
-
-
-def test_cmb_combs_from_sacc_accepts_non_contiguous_spectra():
-    # Storage order no longer matters: blocks are aligned to the data by bandpower
-    # identity (CrossCov.to_canonical), not by position, so the builder accepts a
-    # non-contiguously-stored SACC and just yields one triple per tracer combination.
-    combs = cmb_combs_from_sacc(_tt_sacc(interleave=True))
-
-    assert len(combs) == 2
-    assert [ind_camb for ind_camb, _, _ in combs] == [0, 0]  # both TT -> CAMB row 0
-
-
 
 
 def test_camb_lensing_derivatives_returns_consistent_shapes():
@@ -666,9 +614,7 @@ def test_lensing_induced_cov_honours_explicit_combs():
     dCllens = np.random.default_rng(0).random((4, L, L))
     combs = _two_cmb_combs()  # support max 5 < L
 
-    out = lensing_induced_cov(
-        sacc_data, derivatives=(None, None, dCllens), combs=combs
-    )
+    out = lensing_induced_cov(sacc_data, derivatives=(None, None, dCllens), combs=combs)
 
     np.testing.assert_allclose(out, lensing_induced_block(dCllens, fsky, combs))
     assert out.shape == (4, 4)  # 2 combs x 2 bins, from the given combs not the SACC
