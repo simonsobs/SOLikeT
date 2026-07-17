@@ -1,0 +1,12 @@
+# Cobaya info template for the `lensing` preset (SOLikeT CMB lensing).
+# Params are supplied separately by the loader (cosmo group only).
+likelihood:
+  soliket.LensingLikelihood:
+    theory_lmax: 5000
+theory:
+  camb:
+    extra_args:
+      kmax: 0.9
+    stop_at_error: true
+sampler:
+  evaluate:

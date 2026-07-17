@@ -470,6 +470,33 @@ def test_get_ia_bias_variants():
     assert isinstance(res3, tuple)
 
 
+def test_check_buildable_tracers_rejects_unbuildable_allowed_quantity():
+    """A subclass allowing a quantity _get_tracer cannot build fails at init-time
+    validation, regardless of the data — not silently at first evaluation."""
+    import logging
+
+    from cobaya.log import LoggedError
+
+    from soliket.ccl_tracers import ShearKappaLikelihood
+
+    lk = ShearKappaLikelihood.__new__(ShearKappaLikelihood)
+    lk.log = logging.getLogger("test_buildable")
+    lk._allowable_tracers = ["cmb_convergence", "not_a_real_quantity"]
+    with pytest.raises(LoggedError):
+        lk._check_buildable_tracers()
+
+
+def test_check_buildable_tracers_accepts_supported_quantities():
+    import logging
+
+    from soliket.ccl_tracers import ShearKappaLikelihood
+
+    lk = ShearKappaLikelihood.__new__(ShearKappaLikelihood)
+    lk.log = logging.getLogger("test_buildable")
+    lk._allowable_tracers = ["cmb_convergence", "galaxy_shear"]
+    lk._check_buildable_tracers()  # must not raise
+
+
 # --- merged small cross-correlation unit tests (previously in separate files) ---
 def _make_fake_sacc_for_merging():
     class Tracer:
@@ -489,6 +516,9 @@ def _make_fake_sacc_for_merging():
 
         def get_tracer_combinations(self):
             return [("g1", "k"), ("k", "g1")]
+
+        def get_data_types(self, tracers=None):
+            return ["cl_0e"]  # one spectrum per pair, as get_binning requires
 
         def indices(self, tracers=None):
             return [0]
@@ -574,3 +604,52 @@ def test_get_tracer_both_types_merged():
     t_shear = lk._get_tracer(ccl, cosmo, "g1", {})
     assert t_shear is not None
     assert hasattr(t_shear, "dndz") or isinstance(t_shear, str)
+
+
+def test_get_binning_rejects_multi_data_type_tracer_pair():
+    """A tracer pair carrying several data types must be rejected in get_binning.
+
+    The window is looked up by tracers alone (shear cross-spectra are cl_0e/cl_e0,
+    not cl_00), so a multi-data-type pair would yield a window spanning all of them.
+    The guard belongs in the shared lookup: _get_unbinned_theory reads the ell
+    support from here too, and would otherwise run Limber on the doubled grid
+    before _get_theory's shape check noticed.
+    """
+    import sacc
+
+    from soliket.ccl_tracers import ShearKappaLikelihood
+
+    s = sacc.Sacc()
+    s.add_tracer("Misc", "gs_x", quantity="galaxy_shear", spin=2)
+    s.add_tracer("Misc", "ck_y", quantity="cmb_convergence", spin=0)
+    support = np.arange(2, 8)
+    bpw = sacc.BandpowerWindow(support, np.ones((len(support), 2)) / len(support))
+    ell = np.array([3.0, 6.0])
+    for dtype in ("cl_0e", "cl_00"):  # same tracer pair, two data types
+        s.add_ell_cl(dtype, "gs_x", "ck_y", ell, np.zeros(2), window=bpw)
+
+    lk = ShearKappaLikelihood.__new__(ShearKappaLikelihood)
+    lk.sacc_data = s
+
+    with pytest.raises(ValueError, match="carry data types"):
+        lk.get_binning(("gs_x", "ck_y"))
+
+
+def test_get_binning_accepts_single_data_type_pair():
+    import sacc
+
+    from soliket.ccl_tracers import ShearKappaLikelihood
+
+    s = sacc.Sacc()
+    s.add_tracer("Misc", "gs_x", quantity="galaxy_shear", spin=2)
+    s.add_tracer("Misc", "ck_y", quantity="cmb_convergence", spin=0)
+    support = np.arange(2, 8)
+    bpw = sacc.BandpowerWindow(support, np.ones((len(support), 2)) / len(support))
+    s.add_ell_cl("cl_0e", "gs_x", "ck_y", np.array([3.0, 6.0]), np.zeros(2), window=bpw)
+
+    lk = ShearKappaLikelihood.__new__(ShearKappaLikelihood)
+    lk.sacc_data = s
+
+    ells_theory, w_bins = lk.get_binning(("gs_x", "ck_y"))
+    np.testing.assert_array_equal(ells_theory, support)
+    assert w_bins.shape == (2, len(support))

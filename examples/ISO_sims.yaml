@@ -1,0 +1,232 @@
+# ISO_sims joint analysis -- YAML twin of analyse_datasets.ipynb.
+# Replace <REPO> with your SOLikeT checkout and <PACKAGES> with your cobaya
+# packages path, regenerate the sims/ twins (create_datasets.ipynb +
+# create_cross_covariance.ipynb), then run:  cobaya-run examples/ISO_sims.yaml
+
+likelihood:
+  soliket.gaussian.MultiGaussianLikelihood:
+    components:
+    - mflike.TTTEEE
+    - soliket.LensingLikelihood
+    stop_at_error: true
+    options:
+    - input_file: <REPO>/notebooks/ISO_sims/sims/mflike_smooth.fits
+      cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
+    - theory_lmax: 5000
+      data_folder: <REPO>/notebooks/ISO_sims/sims
+      data_filename: lensing_smooth.sacc.fits
+      correction_filename: <PACKAGES>/data/LensingLikelihood/corrections_lensing.sacc.fits
+      fiducial_filename: <PACKAGES>/data/LensingLikelihood/fiducial_lensing.sacc.fits
+    cross_cov_path: <REPO>/notebooks/ISO_sims/sims/XCov_mflike_lensing.fits
+theory:
+  camb:
+    extra_args:
+      lens_potential_accuracy: 1
+      WantTransfer: true
+      Transfer.high_precision: true
+      Transfer.kmax: 1.2
+      kmax: 0.9
+      num_nu_massless: 1.044
+      num_nu_massive: 2
+      nu_mass_eigenstates: 2
+      nu_mass_fractions:
+      - 0.14763410387308012
+      - 0.8523658961269198
+      nu_mass_numbers:
+      - 1
+      - 1
+      share_delta_neff: true
+    stop_at_error: false
+  mflike.BandpowerForeground:
+    stop_at_error: true
+sampler:
+  mcmc:
+    max_samples: 50
+    Rminus1_stop: 0.1
+params:
+  H0:
+    latex: H_0
+    value: 67.7
+  logA:
+    drop: true
+    latex: \log(10^{10} A_\mathrm{s})
+    value: 3.05
+  As:
+    value: 'lambda logA: 1e-10*np.exp(logA)'
+    latex: A_\mathrm{s}
+  ombh2:
+    latex: \Omega_\mathrm{b} h^2
+    value: 0.0224
+    renames:
+    - omegabh2
+  omch2:
+    latex: \Omega_c h^2
+    value: 0.1202
+    renames:
+    - omegach2
+  ns:
+    latex: n_s
+    value: 0.9649
+  tau:
+    prior:
+      dist: norm
+      loc: 0.0544
+      scale: 0.0073
+    ref:
+      dist: norm
+      loc: 0.0544
+      scale: 0.0073
+    proposal: 0.0073
+    latex: \tau_\mathrm{reio}
+  Alens:
+    value: 1.0
+    latex: A_\mathrm{lens}
+  omega_de:
+    derived: true
+    latex: \Omega_\Lambda
+    renames:
+    - omegal
+  omegam:
+    derived: true
+    latex: \Omega_\mathrm{m}
+  omegamh2:
+    derived: 'lambda omegam, H0: omegam*(H0/100)**2'
+    latex: \Omega_\mathrm{m} h^2
+  sigma8:
+    derived: true
+    latex: \sigma_8
+  mnu1:
+    value: 0.0
+    drop: true
+  mnu2:
+    value: 'lambda: np.sqrt(7.5e-5)'
+    drop: true
+  mnu3:
+    value: 'lambda: np.sqrt(2.5e-3)'
+    drop: true
+  mnu:
+    value: 'lambda mnu1, mnu2, mnu3: mnu1 + mnu2 + mnu3'
+    latex: \sum m_\nu
+  nnu:
+    value: 3.044
+    latex: N_\mathrm{eff}
+  a_tSZ:
+    latex: a_\mathrm{tSZ}
+    value: 3.3
+  a_kSZ:
+    latex: a_\mathrm{kSZ}
+    value: 1.6
+  a_p:
+    latex: a_p
+    value: 6.9
+  beta_p:
+    latex: \beta_p
+    value: 2.2
+  a_c:
+    latex: a_c
+    value: 4.9
+  beta_c:
+    latex: \beta_c
+    value: 2.2
+  a_s:
+    latex: a_s
+    value: 3.1
+  a_gtt:
+    latex: a_\mathrm{dust}^\mathrm{TT}
+    value: 2.8
+  a_gte:
+    latex: a_\mathrm{dust}^\mathrm{TE}
+    value: 0.1
+  a_gee:
+    latex: a_\mathrm{dust}^\mathrm{EE}
+    value: 0.1
+  a_psee:
+    latex: a_\mathrm{ps}^\mathrm{EE}
+    value: 0
+  a_pste:
+    latex: a_\mathrm{ps}^\mathrm{TE}
+    value: 0
+  xi:
+    latex: \xi
+    value: 0.1
+  alpha_tSZ:
+    latex: \alpha_\mathrm{tSZ}
+    value: 0
+  beta_s:
+    latex: \beta_s
+    value: -2.5
+    renames:
+    - nrunrun
+  T_d:
+    value: 9.7
+    latex: T_d
+  T_effd:
+    value: 19.6
+    latex: T_{\mathrm{dust},\mathrm{eff}}
+  beta_d:
+    value: 1.5
+    latex: \beta_\mathrm{dust}
+  alpha_s:
+    value: 1.0
+    latex: \alpha_s
+    renames:
+    - nrun
+  alpha_p:
+    value: 1.0
+    latex: \alpha_p
+  alpha_dT:
+    value: -0.6
+    latex: \alpha_{\mathrm{dust},T}
+  alpha_dE:
+    value: -0.4
+    latex: \alpha_{\mathrm{dust},E}
+  bandint_shift_LAT_93:
+    latex: \Delta_{\rm band}^{93}
+    value: 0.0
+  bandint_shift_LAT_145:
+    latex: \Delta_{\rm band}^{145}
+    value: 0.0
+  bandint_shift_LAT_225:
+    latex: \Delta_{\rm band}^{225}
+    value: 0.0
+  cal_LAT_93:
+    latex: \mathrm{Cal}^{93}
+    value: 1
+  cal_LAT_145:
+    latex: \mathrm{Cal}^{145}
+    value: 1
+  cal_LAT_225:
+    latex: \mathrm{Cal}^{225}
+    value: 1
+  calT_LAT_93:
+    value: 1
+    latex: \mathrm{Cal}_{\rm T}^{93}
+  calE_LAT_93:
+    latex: \mathrm{Cal}_{\rm E}^{93}
+    value: 1
+  calT_LAT_145:
+    value: 1
+    latex: \mathrm{Cal}_{\rm T}^{145}
+  calE_LAT_145:
+    latex: \mathrm{Cal}_{\rm E}^{145}
+    value: 1
+  calT_LAT_225:
+    value: 1
+    latex: \mathrm{Cal}_{\rm T}^{225}
+  calE_LAT_225:
+    latex: \mathrm{Cal}_{\rm E}^{225}
+    value: 1
+  calG_all:
+    value: 1
+    latex: \mathrm{Cal}_{\rm G}^{\rm All}
+  alpha_LAT_93:
+    value: 0
+    latex: \alpha^{93}
+  alpha_LAT_145:
+    value: 0
+    latex: \alpha^{145}
+  alpha_LAT_225:
+    value: 0
+    latex: \alpha^{225}
+packages_path: <PACKAGES>
+output: chains/ISO_sims

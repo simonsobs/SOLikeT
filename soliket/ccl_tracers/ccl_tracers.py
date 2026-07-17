@@ -47,11 +47,8 @@ class CCLTracersLikelihood(GaussianLikelihood):
     ) -> np.ndarray:
         if self.z_nuisance_mode == "deltaz":
             bias = params_values[f"{tracer_name}_deltaz"]
-            nz_biased = tracer.get_dndz(z - bias)
-
-        # nz_biased /= np.trapezoid(nz_biased, z)
-
-        return nz_biased
+            return tracer.get_dndz(z - bias)
+        raise ValueError(f"Unknown z_nuisance_mode {self.z_nuisance_mode!r}")
 
     def _get_ia_bias(
         self,
@@ -65,7 +62,13 @@ class CCLTracersLikelihood(GaussianLikelihood):
         elif self.ia_mode == "nla":
             A_IA = params_values["A_IA"]
             eta_IA = params_values["eta_IA"]
-            z0_IA = trapezoid(z_tracer * nz_tracer)
+            # n(z)-weighted mean redshift of this tracer, used as the NLA pivot.
+            # CCL's WeakLensingTracer (use_A_ia=True, the default) supplies the
+            # C1·rho_crit·Omega_m/D(z) normalization (Joachimi 2011 Eq. 6), so we
+            # pass only the dimensionless ((1+z)/(1+z0))^eta evolution shape.
+            z0_IA = trapezoid(z_tracer * nz_tracer, x=z_tracer) / trapezoid(
+                nz_tracer, x=z_tracer
+            )
             return (z_tracer, A_IA * ((1 + z_tracer) / (1 + z0_IA)) ** eta_IA)
         elif self.ia_mode == "nla-perbin":
             A_IA = params_values[f"{tracer_name}_A_IA"]
@@ -86,9 +89,36 @@ class CCLTracersCrossLikelihood(CCLTracersLikelihood):
     ncovsims: int | None
     provider: Provider
 
+    # Physical quantities :meth:`_get_tracer` knows how to build. The base
+    # ``_check_tracers`` restricts the SACC data to ``_allowable_tracers``;
+    # ``_check_buildable_tracers`` then guarantees ``_allowable_tracers`` itself
+    # stays within this set, so every quantity reaching ``_get_tracer`` is buildable.
+    _BUILDABLE_QUANTITIES: ClassVar[list[str]] = [
+        "cmb_convergence",
+        "galaxy_density",
+        "galaxy_shear",
+    ]
+
     def initialize(self):
         super().initialize()
         self._check_is_cross()
+        self._check_buildable_tracers()
+
+    def _check_buildable_tracers(self):
+        """Reject (at init) any allowed quantity ``_get_tracer`` cannot build.
+
+        Catches the developer-side mismatch where a subclass lists a quantity in
+        ``_allowable_tracers`` that ``_get_tracer`` has no branch for -- regardless
+        of whether the current SACC data happens to exercise it.
+        """
+        unbuildable = set(self._allowable_tracers or ()) - set(self._BUILDABLE_QUANTITIES)
+        if unbuildable:
+            raise LoggedError(
+                self.log,
+                f"{self.__class__.__name__} allows tracer quantities "
+                f"{sorted(unbuildable)} that it cannot build; _get_tracer supports "
+                f"only {list(self._BUILDABLE_QUANTITIES)}.",
+            )
 
     def _check_is_cross(self):
         for tracer_comb in self.sacc_data.get_tracer_combinations():
@@ -103,6 +133,69 @@ class CCLTracersCrossLikelihood(CCLTracersLikelihood):
                                    likelihood. Please check your tracer selection in the \
                                    ini file.".format(self.__class__.__name__),
                 )
+
+    def _get_tracer(self, ccl: CCL, cosmo: dict, tracer_name: str, params_values: dict):
+        """Build the CCL tracer for a SACC tracer, by its physical quantity."""
+        quantity = self.sacc_data.tracers[tracer_name].quantity
+        if quantity == "cmb_convergence":
+            return ccl.CMBLensingTracer(cosmo, z_source=self.provider.get_param("zstar"))
+
+        z = self.sacc_data.tracers[tracer_name].z
+        nz = self.sacc_data.tracers[tracer_name].nz
+        if quantity == "galaxy_density":
+            return ccl.NumberCountsTracer(
+                cosmo,
+                has_rsd=False,
+                dndz=(z, nz),
+                bias=(z, params_values["b1"] * np.ones(len(z))),
+                mag_bias=(z, params_values["s1"] * np.ones(len(z))),
+            )
+        if quantity == "galaxy_shear":
+            ia_z = self._get_ia_bias(z, nz, tracer_name, params_values)
+            tracer = ccl.WeakLensingTracer(cosmo, dndz=(z, nz), ia_bias=ia_z)
+            if getattr(self, "z_nuisance_mode", None) is not None:
+                nz = self._get_nz(z, tracer, tracer_name, **params_values)
+                tracer = ccl.WeakLensingTracer(cosmo, dndz=(z, nz), ia_bias=ia_z)
+            return tracer
+        raise ValueError(
+            f"Tracer {tracer_name!r} has unsupported quantity {quantity!r}; "
+            f"{self.__class__.__name__} can build tracers only for "
+            f"{list(self._BUILDABLE_QUANTITIES)}."
+        )
+
+    def _get_unbinned_theory(self, **params_values) -> list[np.ndarray]:
+        """Unbinned Limber spectra per tracer combination (binning done by base).
+
+        Shared by all CCL cross-correlation likelihoods: build both tracers from
+        their physical quantity, take the Limber ``angular_cl`` on each tracer
+        pair's bandpower-window support, and apply shear multiplicative bias.
+        """
+        ccl, cosmo = self._get_CCL_results()
+        cl_unbinned_list: list[np.ndarray] = []
+
+        for tracer_comb in self.sacc_data.get_tracer_combinations():
+            tracer1 = self._get_tracer(ccl, cosmo, tracer_comb[0], params_values)
+            tracer2 = self._get_tracer(ccl, cosmo, tracer_comb[1], params_values)
+            ells_theory, _ = self.get_binning(tracer_comb)
+
+            cl_unbinned = ccl.cells.angular_cl(cosmo, tracer1, tracer2, ells_theory)
+
+            shear_name = next(
+                (
+                    name
+                    for name in tracer_comb
+                    if self.sacc_data.tracers[name].quantity == "galaxy_shear"
+                ),
+                None,
+            )
+            if shear_name is not None and (
+                getattr(self, "m_nuisance_mode", None) is not None
+            ):
+                # note shear x shear (both tracers) is not handled here
+                cl_unbinned = (1 + params_values[f"{shear_name}_m"]) * cl_unbinned
+
+            cl_unbinned_list.append(cl_unbinned)
+        return cl_unbinned_list
 
 
 class CCLTracersAutoLikelihood(CCLTracersLikelihood):
@@ -143,37 +236,7 @@ class GalaxyKappaLikelihood(CCLTracersCrossLikelihood):
     _allowable_tracers: ClassVar[list[str]] = ["cmb_convergence", "galaxy_density"]
     params: dict
 
-    def _get_theory(self, **params_values) -> np.ndarray:
-        ccl, cosmo = self._get_CCL_results()
-
-        tracer_comb = self.sacc_data.get_tracer_combinations()
-
-        for tracer in np.unique(tracer_comb):
-            if self.sacc_data.tracers[tracer].quantity == "cmb_convergence":
-                cmbk_tracer = tracer
-            elif self.sacc_data.tracers[tracer].quantity == "galaxy_density":
-                gal_tracer = tracer
-
-        z_gal_tracer = self.sacc_data.tracers[gal_tracer].z
-        nz_gal_tracer = self.sacc_data.tracers[gal_tracer].nz
-
-        # this should use the bias theory!
-        tracer_g = ccl.NumberCountsTracer(
-            cosmo,
-            has_rsd=False,
-            dndz=(z_gal_tracer, nz_gal_tracer),
-            bias=(z_gal_tracer, params_values["b1"] * np.ones(len(z_gal_tracer))),
-            mag_bias=(z_gal_tracer, params_values["s1"] * np.ones(len(z_gal_tracer))),
-        )
-        tracer_k = ccl.CMBLensingTracer(cosmo, z_source=self.provider.get_param("zstar"))
-
-        ells_theory_gk, w_bins_gk = self.get_binning((gal_tracer, cmbk_tracer))
-
-        cl_gk_unbinned = ccl.cells.angular_cl(cosmo, tracer_k, tracer_g, ells_theory_gk)
-
-        cl_gk_binned = np.dot(w_bins_gk, cl_gk_unbinned)
-
-        return cl_gk_binned
+    # Theory comes from the shared CCLTracersCrossLikelihood._get_unbinned_theory.
 
 
 class ShearKappaLikelihood(CCLTracersCrossLikelihood):
@@ -189,102 +252,6 @@ class ShearKappaLikelihood(CCLTracersCrossLikelihood):
     ia_mode: str | None
     params: dict
 
-    def _get_theory(self, **params_values) -> np.ndarray:
-        ccl, cosmo = self._get_CCL_results()
-        cl_binned_list: list[np.ndarray] = []
-
-        for tracer_comb in self.sacc_data.get_tracer_combinations():
-            if self.sacc_data.tracers[tracer_comb[0]].quantity == "cmb_convergence":
-                tracer1 = ccl.CMBLensingTracer(
-                    cosmo, z_source=self.provider.get_param("zstar")
-                )
-
-            elif self.sacc_data.tracers[tracer_comb[0]].quantity == "galaxy_shear":
-                sheartracer_name = tracer_comb[0]
-
-                z_tracer1 = self.sacc_data.tracers[tracer_comb[0]].z
-                nz_tracer1 = self.sacc_data.tracers[tracer_comb[0]].nz
-
-                ia_z = self._get_ia_bias(
-                    z_tracer1, nz_tracer1, sheartracer_name, params_values
-                )
-
-                tracer1 = ccl.WeakLensingTracer(
-                    cosmo, dndz=(z_tracer1, nz_tracer1), ia_bias=ia_z
-                )
-
-                if self.z_nuisance_mode is not None:
-                    nz_tracer1 = self._get_nz(
-                        z_tracer1, tracer1, tracer_comb[0], **params_values
-                    )
-
-                    tracer1 = ccl.WeakLensingTracer(
-                        cosmo, dndz=(z_tracer1, nz_tracer1), ia_bias=ia_z
-                    )
-
-            if self.sacc_data.tracers[tracer_comb[1]].quantity == "cmb_convergence":
-                tracer2 = ccl.CMBLensingTracer(
-                    cosmo, z_source=self.provider.get_param("zstar")
-                )
-
-            elif self.sacc_data.tracers[tracer_comb[1]].quantity == "galaxy_shear":
-                sheartracer_name = tracer_comb[1]
-
-                z_tracer2 = self.sacc_data.tracers[tracer_comb[1]].z
-                nz_tracer2 = self.sacc_data.tracers[tracer_comb[1]].nz
-
-                ia_z = self._get_ia_bias(
-                    z_tracer2, nz_tracer2, sheartracer_name, params_values
-                )
-
-                tracer2 = ccl.WeakLensingTracer(
-                    cosmo, dndz=(z_tracer2, nz_tracer2), ia_bias=ia_z
-                )
-
-                if self.z_nuisance_mode is not None:
-                    nz_tracer2 = self._get_nz(
-                        z_tracer2, tracer2, tracer_comb[1], **params_values
-                    )
-
-                    tracer2 = ccl.WeakLensingTracer(
-                        cosmo, dndz=(z_tracer2, nz_tracer2), ia_bias=ia_z
-                    )
-
-            bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
-            bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
-            ells_theory = np.asarray(bpw.values, dtype=int)
-            w_bins = bpw.weight.T
-
-            cl_unbinned = ccl.cells.angular_cl(cosmo, tracer1, tracer2, ells_theory)
-            if self.m_nuisance_mode is not None:
-                # note this allows wrong calculation, as we can do
-                # shear x shear if the spectra are in the sacc
-                # but then we would want (1 + m1) * (1 + m2)
-                m_bias = params_values[f"{sheartracer_name}_m"]
-                cl_unbinned = (1 + m_bias) * cl_unbinned
-
-            cl_binned = np.dot(w_bins, cl_unbinned)
-            cl_binned_list.append(cl_binned)
-
-        cl_binned_total = np.concatenate(cl_binned_list)
-        return cl_binned_total
-
-    def _get_tracer(self, ccl: CCL, cosmo: dict, tracer_name: str, params_values: dict):
-        tracer_data = self.sacc_data.tracers[tracer_name]
-        if tracer_data.quantity == "cmb_convergence":
-            return ccl.CMBLensingTracer(cosmo, z_source=self.provider.get_param("zstar"))
-        elif tracer_data.quantity == "galaxy_shear":
-            z_tracer = self.sacc_data.tracers[tracer_name].z
-            nz_tracer = self.sacc_data.tracers[tracer_name].nz
-            ia_z = self._get_ia_bias(z_tracer, nz_tracer, tracer_name, params_values)
-
-            tracer = ccl.WeakLensingTracer(
-                cosmo, dndz=(z_tracer, nz_tracer), ia_bias=ia_z
-            )
-            if self.z_nuisance_mode is not None:
-                nz_tracer = self._get_nz(z_tracer, tracer, tracer_name, **params_values)
-                tracer = ccl.WeakLensingTracer(
-                    cosmo, dndz=(z_tracer, nz_tracer), ia_bias=ia_z
-                )
-            return tracer
-        return None
+    # Theory comes from the shared CCLTracersCrossLikelihood._get_unbinned_theory,
+    # which builds shear tracers (with IA / redshift nuisance) and applies the
+    # multiplicative-bias nuisance.

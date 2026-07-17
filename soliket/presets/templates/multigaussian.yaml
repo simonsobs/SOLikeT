@@ -1,0 +1,18 @@
+# Cobaya info template for the `multigaussian` preset (MFLike + lensing combined).
+# Only joint-level concerns live here. Each component's options and precision come
+# from its member preset template (mflike.yaml / lensing.yaml), composed by
+# build_info -- so they have a single source of truth and a folder override on a
+# member (templates/<member>.yaml) reaches this preset too. The composed `options`
+# list is emitted in `components` order. The `theory` block below is the joint-level
+# override, applied last over the composed member theory (last wins).
+likelihood:
+  soliket.gaussian.MultiGaussianLikelihood:
+    components:
+      - mflike.TTTEEE
+      - soliket.LensingLikelihood
+    stop_at_error: true
+theory:
+  camb:
+    stop_at_error: false  # a single camb failure shouldn't halt the joint run
+sampler:
+  evaluate:
