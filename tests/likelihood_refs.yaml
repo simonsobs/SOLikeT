@@ -68,7 +68,7 @@ shearkappa_ia_nla_noevo:
   rtol: *rtol
   atol: *atol
 shearkappa_ia_nla:
-  value: -114145.55021412153
+  value: -111630.58132304
   rtol: *rtol
   atol: *atol
 shearkappa_ia_perbin:

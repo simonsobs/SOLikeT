@@ -848,9 +848,7 @@ def test_mflike_style_component_assembles_to_dcov_untrimmed():
     )
     # Simulate mflike's mismatched, LONGER kept-mask (len nM+2 != len(ids_M)).
     d_M.indices = np.array([True] * nM + [False, True])
-    d_L = GaussianData(
-        "CMBk", np.arange(nL, dtype=float), np.zeros(nL), cov_L, ids=ids_L
-    )
+    d_L = GaussianData("CMBk", np.arange(nL, dtype=float), np.zeros(nL), cov_L, ids=ids_L)
 
     # _kept_order must use the data-vector ids, not zip-truncate the mask.
     assert MultiGaussianData._kept_order(d_M) == ids_M
@@ -900,9 +898,7 @@ def test_save_reconciles_conflicting_same_set_orders():
     cc.add_component("B", cov_BB, ids=[b0, b1])
     # Cross block stored with A's axis PERMUTED -> [a2, a0, a1] (same set).
     perm = [2, 0, 1]
-    cc.add_cross_covariance(
-        "A", "B", cross_AB[perm, :], ids1=[a2, a0, a1], ids2=[b0, b1]
-    )
+    cc.add_cross_covariance("A", "B", cross_AB[perm, :], ids1=[a2, a0, a1], ids2=[b0, b1])
 
     path = os.path.join(gettempdir(), "reconcile_cross_cov.sacc.fits")
     cc.save(path)  # must NOT raise
@@ -932,9 +928,7 @@ def test_save_raises_on_genuine_set_mismatch():
     cc = CrossCov()
     cc.add_component("A", full[:3, :3], ids=[a0, a1, a2])
     cc.add_component("B", full[3:, 3:], ids=[b0, b1])
-    cc.add_cross_covariance(
-        "A", "B", full[:3, 3:], ids1=[a0, a1, aX], ids2=[b0, b1]
-    )
+    cc.add_cross_covariance("A", "B", full[:3, 3:], ids1=[a0, a1, aX], ids2=[b0, b1])
 
     path = os.path.join(gettempdir(), "mismatch_cross_cov.sacc.fits")
     with pytest.raises(ValueError, match="different|bandpower|set"):
@@ -1015,8 +1009,9 @@ def test_save_keeps_cross_only_components_when_mixed_with_add_component():
     # B is cross-only: assembling with a live B falls back to B's own covariance,
     # and the cross block is placed by identity.
     cov_B = np.diag([10.0, 20.0])
-    d_A = GaussianData("A", np.arange(3.0), np.zeros(3), np.diag([1.0, 2.0, 3.0]),
-                       ids=ids_A)
+    d_A = GaussianData(
+        "A", np.arange(3.0), np.zeros(3), np.diag([1.0, 2.0, 3.0]), ids=ids_A
+    )
     d_B = GaussianData("B", np.arange(2.0), np.zeros(2), cov_B, ids=ids_B)
     cov = MultiGaussianData([d_A, d_B], loaded).cov
     assert np.allclose(cov[3:, 3:], cov_B)  # B auto from the live likelihood

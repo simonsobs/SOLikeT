@@ -1,0 +1,51 @@
+# ISO sims — local cosmology override for soliket.presets.
+# Unlike the bundled soliket/presets/defaults/cosmo.yaml (which uses cobaya's
+# single-massive neutrino default), this file deliberately keeps the SO
+# 2-eigenstate NORMAL-HIERARCHY neutrino params (mnu1/mnu2/mnu3 + the mnu sum).
+# The matching camb extra_args (num_nu_massive, nu_mass_eigenstates, ...) live in
+# this folder's theory.yaml, applied by build_info -- no inline Python needed.
+# Passed to build_info(..., defaults_dir="defaults").
+# Only the groups present here override; foreground/systematics fall back to the package.
+H0:
+  prior: {min: 40, max: 100}
+  ref: {dist: norm, loc: 67.7, scale: 0.1}
+  latex: 'H_0'
+logA:
+  drop: true
+  prior: {min: 1.6, max: 4.0}
+  ref: {dist: norm, loc: 3.05, scale: 0.001}
+  latex: '\log(10^{10} A_\mathrm{s})'
+As:
+  value: 'lambda logA: 1e-10*np.exp(logA)'
+  latex: 'A_\mathrm{s}'
+ombh2:
+  prior: {min: 0.022, max: 0.023}
+  ref: {dist: norm, loc: 0.0224, scale: 0.0001}
+  latex: '\Omega_\mathrm{b} h^2'
+omch2:
+  prior: {min: 0.09, max: 0.15}
+  ref: {dist: norm, loc: 0.1202, scale: 0.001}
+  latex: '\Omega_c h^2'
+ns:
+  prior: {min: 0.9, max: 1.1}
+  ref: {dist: norm, loc: 0.9649, scale: 0.001}
+  latex: 'n_s'
+tau:
+  prior: {dist: norm, loc: 0.0544, scale: 0.0073}
+  ref: {dist: norm, loc: 0.0544, scale: 0.0073}
+  proposal: 0.0073
+  latex: '\tau_\mathrm{reio}'
+Alens:
+  value: 1.0
+  latex: 'A_\mathrm{lens}'
+omega_de: {derived: true, latex: '\Omega_\Lambda'}
+omegam: {derived: true, latex: '\Omega_\mathrm{m}'}
+omegamh2:
+  derived: 'lambda omegam, H0: omegam*(H0/100)**2'
+  latex: '\Omega_\mathrm{m} h^2'
+sigma8: {derived: true, latex: '\sigma_8'}
+mnu1: {value: 0.0, drop: true}
+mnu2: {value: 'lambda: np.sqrt(7.5e-5)', drop: true}
+mnu3: {value: 'lambda: np.sqrt(2.5e-3)', drop: true}
+mnu: {value: 'lambda mnu1, mnu2, mnu3: mnu1 + mnu2 + mnu3', latex: '\sum m_\nu'}
+nnu: {value: 3.044, latex: 'N_\mathrm{eff}'}

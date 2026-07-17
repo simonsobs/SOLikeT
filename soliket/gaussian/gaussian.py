@@ -277,16 +277,73 @@ class GaussianLikelihood(Likelihood):
         return self.y
 
     def get_binning(self, tracer_comb: tuple) -> tuple[np.ndarray, np.ndarray]:
-        bpw_idx = self.sacc_data.indices(data_type="cl_00", tracers=tracer_comb)
-        bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
-        ells_theory = bpw.values
-        ells_theory = np.asarray(ells_theory, dtype=int)
-        w_bins = bpw.weight.T
+        """Bandpower support multipoles and window matrix for a tracer pair.
 
-        return ells_theory, w_bins
+        The result depends only on the (fixed) SACC file, so it is memoised per
+        tracer combination: each likelihood evaluation would otherwise re-derive it
+        twice -- once in :meth:`_get_unbinned_theory` for the theory's ell support
+        and once in :meth:`_get_theory` to bin -- each time hitting the SACC index
+        and bandpower-window lookups.
 
-    def _get_theory(self, **kwargs) -> np.ndarray:
+        The window is looked up by tracers alone (not by data type: the shear
+        cross-correlations are ``cl_0e``/``cl_e0``, not ``cl_00``), so a pair
+        carrying several data types would silently yield a window spanning all of
+        them. Rejected here, in the shared lookup, rather than in each caller --
+        :meth:`_get_unbinned_theory` reads the ell support from here too, and would
+        otherwise spend a Limber calculation on the doubled grid before
+        :meth:`_get_theory` noticed.
+        """
+        cache = self.__dict__.setdefault("_binning_cache", {})
+        if tracer_comb not in cache:
+            dtypes = self.sacc_data.get_data_types(tracers=tracer_comb)
+            if len(dtypes) != 1:
+                raise ValueError(
+                    f"tracers {tracer_comb} carry data types {dtypes}; a likelihood "
+                    "using the default binning assumes exactly one spectrum per "
+                    "tracer pair and must otherwise override _get_theory."
+                )
+            bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
+            bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
+            ells_theory = np.asarray(bpw.values, dtype=int)
+            w_bins = bpw.weight.T
+            cache[tracer_comb] = (ells_theory, w_bins)
+        return cache[tracer_comb]
+
+    def _get_unbinned_theory(self, **kwargs) -> list[np.ndarray]:
+        """Unbinned theory spectra on the fine multipole grid, one per tracer
+        combination.
+
+        Subclasses that compute a finely-sampled theory and then bin it (e.g. the
+        Limber cross-correlations) override this and inherit binning from the
+        default :meth:`_get_theory`. Subclasses that produce binned theory
+        directly override :meth:`_get_theory` instead.
+        """
         raise NotImplementedError
+
+    def get_unbinned_theory(self, **params_values) -> list[np.ndarray]:
+        """The unbinned theory spectra, one array per tracer combination.
+
+        Public accessor used by cross-covariance computations that need the theory
+        before bandpower binning.
+        """
+        return self._get_unbinned_theory(**params_values)
+
+    def _get_theory(self, **params_values) -> np.ndarray:
+        """Bin the unbinned theory per tracer combination via :meth:`get_binning`."""
+        cl_unbinned = self.get_unbinned_theory(**params_values)
+        combs = self.sacc_data.get_tracer_combinations()
+        binned = []
+        for comb, cl in zip(combs, cl_unbinned):
+            w_bins = self.get_binning(comb)[1]
+            if w_bins.shape[1] != len(cl):
+                raise ValueError(
+                    f"Binning for tracers {comb} expects {w_bins.shape[1]} "
+                    f"multipoles but the unbinned theory has {len(cl)}. The tracer "
+                    "pair likely carries more than one data type; such a likelihood "
+                    "must override _get_theory rather than use the default binning."
+                )
+            binned.append(np.dot(w_bins, cl))
+        return np.concatenate(binned)
 
     def logp(self, **params_values) -> float:
         theory = self._get_theory(**params_values)
