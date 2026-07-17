@@ -1,9 +1,10 @@
 # ISO sims — local cosmology override for soliket.presets.
-# Unlike the bundled soliket/presets/params/cosmo.yaml (which uses cobaya's
+# Unlike the bundled soliket/presets/defaults/cosmo.yaml (which uses cobaya's
 # single-massive neutrino default), this file deliberately keeps the SO
 # 2-eigenstate NORMAL-HIERARCHY neutrino params (mnu1/mnu2/mnu3 + the mnu sum).
-# The matching camb extra_args (num_nu_massive, nu_mass_eigenstates, ...) are set
-# inline in analyse_datasets.ipynb. Passed to build_info(..., params_dir="params").
+# The matching camb extra_args (num_nu_massive, nu_mass_eigenstates, ...) live in
+# this folder's theory.yaml, applied by build_info -- no inline Python needed.
+# Passed to build_info(..., defaults_dir="defaults").
 # Only the groups present here override; foreground/systematics fall back to the package.
 H0:
   prior: {min: 40, max: 100}

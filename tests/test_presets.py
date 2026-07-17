@@ -309,7 +309,7 @@ def _mflike_fg_defaults():
 def test_presets_foreground_matches_mflike_defaults(check_skip_mflike):
     """Drift tripwire: presets foreground priors must match mflike's defaults.
 
-    ``soliket/presets/params/foreground.yaml`` DUPLICATES the ``prior``,
+    ``soliket/presets/defaults/foreground.yaml`` DUPLICATES the ``prior``,
     ``proposal`` and ``latex`` values from mflike's shipped foreground defaults
     (``fg_TT.yaml``, ``fg_TE.yaml``, ``fg_EE.yaml`` and the ``params:`` block of
     ``Foreground.yaml``), adding an SO-specific ``ref`` that mflike does not ship.
@@ -318,7 +318,7 @@ def test_presets_foreground_matches_mflike_defaults(check_skip_mflike):
     default we copied, this fails loudly instead of silently shifting our priors.
 
     When it fails: review mflike's change and deliberately re-pin
-    ``soliket/presets/params/foreground.yaml`` to match (or, if the deviation is
+    ``soliket/presets/defaults/foreground.yaml`` to match (or, if the deviation is
     an intentional SO choice, add a documented exclusion here). Do NOT just
     force it green.
 
@@ -347,7 +347,7 @@ def test_presets_foreground_matches_mflike_defaults(check_skip_mflike):
         "Presets foreground priors have DRIFTED from mflike's shipped defaults. "
         "This tripwire guards against an mflike bump silently changing the "
         "foreground priors we duplicated in "
-        "soliket/presets/params/foreground.yaml. Review mflike's change and "
+        "soliket/presets/defaults/foreground.yaml. Review mflike's change and "
         "deliberately re-pin that file (or add a documented exclusion). "
         "Mismatches (name, field, presets_value, mflike_value): "
         + "; ".join(
