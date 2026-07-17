@@ -8,21 +8,24 @@ likelihood:
     components:
     - mflike.TTTEEE
     - soliket.LensingLikelihood
+    stop_at_error: true
     options:
     - input_file: <REPO>/notebooks/ISO_sims/sims/mflike_smooth.fits
       cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
     - theory_lmax: 5000
-      stop_at_error: true
       data_folder: <REPO>/notebooks/ISO_sims/sims
       data_filename: lensing_smooth.sacc.fits
       correction_filename: <PACKAGES>/data/LensingLikelihood/corrections_lensing.sacc.fits
       fiducial_filename: <PACKAGES>/data/LensingLikelihood/fiducial_lensing.sacc.fits
-    stop_at_error: true
     cross_cov_path: <REPO>/notebooks/ISO_sims/sims/XCov_mflike_lensing.fits
 theory:
   camb:
     extra_args:
       lens_potential_accuracy: 1
+      WantTransfer: true
+      Transfer.high_precision: true
+      Transfer.kmax: 1.2
+      kmax: 0.9
       num_nu_massless: 1.044
       num_nu_massive: 2
       nu_mass_eigenstates: 2
