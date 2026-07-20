@@ -107,6 +107,117 @@ def smooth_twin_sacc(src, data_type, tracer1, tracer2, theory, *, out_path=None)
     return out
 
 
+def build_lensing_sacc(ell, bandpowers, cov, *, windows=None, tracer_name="ck",
+                       beam_lmax=3000, out_path=None):
+    """Assemble a CMB-lensing (``ck x ck``) data SACC from binned bandpowers.
+
+    Stores ``bandpowers`` (already binned to the bin-centre multipoles ``ell``) as
+    the ``cl_00`` spectrum of a single ``cmb_convergence`` tracer, with covariance
+    ``cov`` and optional bandpower ``windows``. This is the ``data_filename`` the
+    lensing likelihoods read -- the "bring your own bandpowers" entry point.
+
+    The caller bins the theory (``w_bins @ clkk``); for the *full*
+    ``LensingLikelihood``, which compares against binned-theory *plus* the N0/N1
+    correction, add that correction to ``bandpowers`` before calling (e.g. via
+    :meth:`~soliket.lensing._corrections.LensingCorrections.compute`) so the stored
+    vector matches what the likelihood recomputes and chi^2 = 0 at the imprint
+    cosmology. The bare binned spectrum (no correction) is the ``LensingLite``
+    target. Returns the :class:`sacc.Sacc`.
+    """
+    import sacc
+
+    s = sacc.Sacc()
+    s.add_tracer(
+        "Map", tracer_name, quantity="cmb_convergence", spin=0,
+        ell=np.arange(beam_lmax), beam=np.ones(beam_lmax),
+    )
+    s.add_ell_cl("cl_00", tracer_name, tracer_name, ell, np.asarray(bandpowers),
+                 window=windows)
+    s.add_covariance(np.asarray(cov))
+    if out_path is not None:
+        s.save_fits(str(out_path), overwrite=True)
+    return s
+
+
+# Tracer/data-type layout the full LensingLikelihood reads its fiducial spectra and
+# N0/N1 correction matrices from (mirrors LensingLikelihood._set_fiducial_Cls and
+# LensingCorrections.from_sacc). Kept local so sacc_tools stays import-light.
+_LENS_FID = (  # (key, tracer1, tracer2, data_type) for the fiducial spectra
+    ("tt", "ct", "ct", "cl_00"),
+    ("te", "ct", "ce", "cl_0e"),
+    ("ee", "ce", "ce", "cl_ee"),
+    ("bb", "cb", "cb", "cl_bb"),
+    ("kk", "ck", "ck", "cl_00"),
+)
+_LENS_N0 = {"tt": ("ct", "ct", "N0_00"), "te": ("ct", "ce", "N0_0e"),
+            "ee": ("ce", "ce", "N0_ee"), "bb": ("cb", "cb", "N0_bb")}
+_LENS_N1 = {"tt": ("ct", "ct", "N1_00"), "te": ("ct", "ce", "N1_0e"),
+            "ee": ("ce", "ce", "N1_ee"), "bb": ("cb", "cb", "N1_bb")}
+_LENS_Q = {"ct": "cmb_temperature", "ce": "cmb_polarization",
+           "cb": "cmb_polarization", "cp": "cmb_lens_potential",
+           "ck": "cmb_convergence", "n0": "cmb_convergence"}
+
+
+def build_lensing_corrections_sacc(*, fiducial, n0_response, n1_response, n1_clpp,
+                                   n0, fiducial_out=None, corrections_out=None):
+    """Write the fiducial + N0/N1 correction SACC files the full LensingLikelihood loads.
+
+    The inverse of ``LensingLikelihood._set_fiducial_Cls`` /
+    ``LensingCorrections.from_sacc``: lays a user's own estimator inputs into the
+    exact tracer/data-type layout those readers expect, so the full likelihood can
+    be pointed at custom ``fiducial_filename`` / ``correction_filename``. Use when
+    you have your own reconstruction's biases (e.g. from ``so-lenspipe``); most
+    users bringing only a spectrum want the correction-free ``LensingLite`` instead.
+
+    Parameters
+    ----------
+    fiducial : dict
+        Unbinned fiducial spectra to ``lmax``, keyed ``"tt"/"te"/"ee"/"bb"/"kk"``.
+    n0_response, n1_response : dict
+        ``(lmax, lmax)`` response matrices per spectrum (``"tt"/"te"/"ee"/"bb"``).
+    n1_clpp : ndarray, shape (lmax, lmax)
+        N1 response to ``(Clkk - fiducial Clkk)``.
+    n0 : ndarray, shape (lmax,)
+        Estimator normalisation. Stored as a matrix whose row 0 is ``n0`` -- the
+        shipped file's layout, which ``from_sacc`` reads back via ``[0]``.
+    fiducial_out, corrections_out : path-like, optional
+        Save destinations for the two files.
+
+    Returns ``(fiducial_sacc, corrections_sacc)``.
+    """
+    import sacc
+
+    lmax = len(np.asarray(fiducial["kk"]))
+    ell = np.arange(lmax)
+
+    def _add_tracer(s, name):
+        s.add_tracer("Map", name, quantity=_LENS_Q[name], spin=0,
+                     ell=ell, beam=np.ones(lmax))
+
+    fid = sacc.Sacc()
+    for name in ("ct", "ce", "cb", "ck"):
+        _add_tracer(fid, name)
+    for key, t1, t2, dtype in _LENS_FID:
+        fid.add_ell_cl(dtype, t1, t2, ell, np.asarray(fiducial[key]))
+    if fiducial_out is not None:
+        fid.save_fits(str(fiducial_out), overwrite=True)
+
+    cor = sacc.Sacc()
+    for name in ("ct", "ce", "cb", "cp", "n0"):
+        _add_tracer(cor, name)
+    for key in ("tt", "te", "ee", "bb"):
+        t1, t2, dtype = _LENS_N0[key]
+        cor.add_ell_cl(dtype, t1, t2, ell, np.asarray(n0_response[key]))
+        t1, t2, dtype = _LENS_N1[key]
+        cor.add_ell_cl(dtype, t1, t2, ell, np.asarray(n1_response[key]))
+    cor.add_ell_cl("N1_00", "cp", "cp", ell, np.asarray(n1_clpp))
+    # from_sacc reads the normalisation as spec("n0","n0","N0_00")[0], i.e. row 0.
+    cor.add_ell_cl("N0_00", "n0", "n0", ell, np.tile(np.asarray(n0), (lmax, 1)))
+    if corrections_out is not None:
+        cor.save_fits(str(corrections_out), overwrite=True)
+    return fid, cor
+
+
 # Multipole/spin spelling MFLike uses in SACC: T is a spin-0 (s0) map, E/B are
 # spin-2 (s2); the data_type code spells each field as 0 (T), e (E), b (B).
 _MAP_TYPE = {"T": "0", "E": "e", "B": "b"}
