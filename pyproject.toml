@@ -66,6 +66,7 @@ all = [
 ]
 jupyter = [
     "jupyter>=1.1.1",
+    "notebook>=7",
 ]
 
 [build-system]
