@@ -488,13 +488,21 @@ name = "camb"
 version = "1.6.6"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
+    "python_full_version >= '3.12' and sys_platform == 'win32'",
+    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version == '3.11.*' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
+    "python_full_version == '3.11.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.10.*'",
 ]
 dependencies = [
-    { name = "numpy", version = "1.24.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "packaging", marker = "python_full_version == '3.10.*'" },
-    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "sympy", marker = "python_full_version == '3.10.*'" },
+    { name = "numpy", version = "1.24.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' and python_full_version < '3.12'" },
+    { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "packaging", marker = "python_full_version >= '3.10'" },
+    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10' and python_full_version < '3.12'" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "sympy", marker = "python_full_version >= '3.10'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6d/ad/f2e6446fbd94f7adc1474e1f4e40d2e7fa7e5e7143640cb8557d492f0a73/camb-1.6.6.tar.gz", hash = "sha256:9856202a5c05570256e52377b20431891c7b08b2e9c334e141fd08d2a085516f", size = 799344, upload-time = "2026-03-11T16:46:55.819Z" }
 wheels = [
@@ -502,34 +510,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c9/f6/9131f388386c50982b1b2992424deca857e7c019f4014dab0770de690a84/camb-1.6.6-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:eded2dd7f19226ed4717535c07a029fc958b7c581549250da33a768e12c87b13", size = 1592029, upload-time = "2026-03-11T16:46:44.925Z" },
     { url = "https://files.pythonhosted.org/packages/41/53/9d0b3cf1a2a07a882adac9565074ac6974fb8b031c31da438d407db22c89/camb-1.6.6-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:bb8e0c85b3e33d78ca0676c84b0b60b54dfa72d4e520a805166cab0458e81094", size = 2258716, upload-time = "2026-03-11T16:46:46.458Z" },
     { url = "https://files.pythonhosted.org/packages/24/0c/c7b33bf752f1d39340fa0f12fd9c5dfda00cb7c1e5bc883e6909a3a99138/camb-1.6.6-py3-none-win_amd64.whl", hash = "sha256:0307b751b6b0b5d7d0636f6ce45165d03a4f6a3c7925fd56bf202858fa73babd", size = 1488070, upload-time = "2026-03-11T16:46:48.53Z" },
-]
-
-[[package]]
-name = "camb"
-version = "2.0.0"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.12' and sys_platform == 'win32'",
-    "python_full_version >= '3.12' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and sys_platform == 'emscripten'",
-    "python_full_version == '3.11.*' and sys_platform != 'emscripten' and sys_platform != 'win32'",
-]
-dependencies = [
-    { name = "numpy", version = "1.24.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "packaging", marker = "python_full_version >= '3.11'" },
-    { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "sympy", marker = "python_full_version >= '3.11'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/2f/6f761cd933a6f9216d6ddc2c5c78e7210642ce3d9c3e6c5440367d198c2e/camb-2.0.0.tar.gz", hash = "sha256:abaf5973431aad9ce728ad8c800a9399fa37d7c090ae173e3d939137240b510b", size = 911276, upload-time = "2026-07-16T08:23:47.152Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/b6/56904f6647511f422ab4ad43625b716700ed64071f6a44784ec3ee65b716/camb-2.0.0-py3-none-macosx_14_0_arm64.whl", hash = "sha256:8656bc1d0732188bac6f88f359400cc4558d51596b43d394e063db83ea60de77", size = 1469973, upload-time = "2026-07-16T08:23:36.093Z" },
-    { url = "https://files.pythonhosted.org/packages/22/04/39e2bc2444e73f5ed7c25b7a1e02217f30e4c716730e222b15b592ce5b36/camb-2.0.0-py3-none-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a30a403bd8024e807fb2d8fb6bc4531aeafe1f591b42135a47f2c410460f2ea0", size = 1723762, upload-time = "2026-07-16T08:23:37.772Z" },
-    { url = "https://files.pythonhosted.org/packages/b8/ba/5672c174e19fb8eced011757e7f289ccf58e1493384cea605296f8f31c6f/camb-2.0.0-py3-none-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:dedf8b2d1791bc92c372d60fa6772496b058406a2c6c6f84735ca484165b4883", size = 2404758, upload-time = "2026-07-16T08:23:39.199Z" },
-    { url = "https://files.pythonhosted.org/packages/d0/0f/175b898e34455748d101588c47d63d947e54358b386a3bc139e721972887/camb-2.0.0-py3-none-win_amd64.whl", hash = "sha256:548167e87319163c334de661a8a86d3d2a482b9ae105090f79c23d3d74425573", size = 1639071, upload-time = "2026-07-16T08:23:40.634Z" },
 ]
 
 [[package]]
@@ -5758,8 +5738,7 @@ dependencies = [
     { name = "astropy", version = "6.1.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
     { name = "astropy", version = "7.2.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "camb", version = "1.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "camb", version = "1.6.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "camb", version = "2.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "camb", version = "1.6.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "cobaya", version = "3.5.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "cobaya", version = "3.6.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "getdist", version = "1.6.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -5834,7 +5813,7 @@ pyhalomodel = [
 [package.metadata]
 requires-dist = [
     { name = "astropy", specifier = ">=5.3.4" },
-    { name = "camb", specifier = ">=1.5" },
+    { name = "camb", specifier = "<2" },
     { name = "cobaya", specifier = ">=3.5.5" },
     { name = "cosmocnc", marker = "extra == 'all'", specifier = ">=1.2" },
     { name = "cosmocnc", marker = "extra == 'cosmocnc'", specifier = ">=1.2" },
