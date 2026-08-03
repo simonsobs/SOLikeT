@@ -33,16 +33,23 @@ jobs:
         run: |
           VERSION=$(grep -A1 '^name = "mflike"$' uv.lock | grep '^version' | head -1 | sed -E 's/version = "(.*)"/\1/')
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-      - name: Cache cobaya_packages
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+      - name: Restore cobaya_packages
+        # Restore-only, on purpose. This job installs with --latest, so the
+        # mflike version it ends up with is not known until after the sync and
+        # may differ from the one this key was derived from. Saving here could
+        # therefore store mismatched data under a key testing.yml also uses, so
+        # we only ever read. A miss just means a fresh download.
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: ./cobaya_packages
-          # Same key as testing.yml, so the weekly run reuses the data cache
-          # populated on master instead of re-downloading from portal.nersc.gov.
           key: cobaya_packages-${{ runner.os }}-${{ matrix.python-version }}-mflike-${{ steps.mflike-version.outputs.version }}
       - name: Install dependencies
+        # --extras dev all: install_likelihoods.sh installs mflike data, which
+        # needs the mflike extra; 'emulator' alone does not provide it.
+        # --latest: re-resolve instead of using the lockfile, so this run can
+        # actually catch upstream releases breaking us.
         run: |
-          bash ci_scripts/install_deps.sh --extras dev emulator
+          bash ci_scripts/install_deps.sh --extras dev all --latest
       - name: Run tests
         run: |
           uv run pytest -vv --durations=10
