@@ -1,4 +1,5 @@
 import importlib
+import pathlib
 
 import numpy as np
 import pytest
@@ -73,6 +74,42 @@ def test_lensing(theory):
     lnl = model.loglike({ns_param: 0.965, "H0": 70})[0]
 
     assert np.isfinite(lnl)
+
+
+_ACT_DR6_DATA = str(pathlib.Path(__file__).parent / "data" / "act_dr6_lensing.sacc.fits")
+
+fiducial_params = {
+    "omch2": 0.1203058,
+    "ombh2": 0.02219218,
+    "H0": 67.02393,
+    "ns": 0.9625356,
+    "As": 2.15086031154146e-9,
+    "mnu": 0.06,
+    "tau": 0.06574325,
+    "nnu": 3.04,
+}
+
+
+def test_lensing_lite_act_dr6(likelihood_refs):
+    """Unit test: LensingLiteLikelihood on ACT DR6 data at SO fiducial cosmology."""
+    ref = likelihood_refs["lensing_lite_act_dr6"]
+
+    info = {
+        "likelihood": {
+            "soliket.LensingLiteLikelihood": {
+                "stop_at_error": True,
+                "datapath": _ACT_DR6_DATA,
+                "ncovsims": 792,
+            }
+        },
+        "theory": {"camb": {"extra_args": {"lens_potential_accuracy": 1}}},
+        "params": fiducial_params,
+    }
+
+    model = get_model(info)
+    loglikes, derived = model.loglikes()
+
+    assert np.isclose(loglikes[0], ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
 class DummyProviderCl:
