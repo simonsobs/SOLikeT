@@ -85,6 +85,11 @@ lensing:
   rtol: *rtol
   atol: *atol
 
+lensing_lite_act_dr6:
+  value: 174.77635355223597
+  rtol: *rtol
+  atol: *atol
+
 multi:
   value: -503.395
   rtol: *rtol
