@@ -1,5 +1,4 @@
 import os
-import sys
 from tempfile import gettempdir
 
 import numpy as np
@@ -49,13 +48,6 @@ class ToyLikelihood(GaussianLikelihood):
         return np.zeros(n)
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="astropy FITS write crashes on Windows when sacc emits a zero-width "
-    "column: _array_to_file does `_WIN_WRITE_LIMIT // arr.itemsize` with no "
-    "itemsize==0 guard (ZeroDivisionError). Still unfixed on astropy main as of "
-    "7.2.0; skip until an upstream fix ships.",
-)
 def test_toy():
     n1, n2, n3 = [10, 20, 30]
     full_cov = make_spd_matrix(n1 + n2 + n3, random_state=1234) * 1e-1
