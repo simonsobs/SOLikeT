@@ -286,8 +286,8 @@ searching for tests that match the string 'my_new_module'.
 
 .. code-block:: bash
 
-  uv python install 3.10 # install Python 3.10 or any other version you want to test
-  uv python pin 3.10 # pin the current environment to Python 3.10
+  uv python install 3.12 # install Python 3.12 or any other version you want to test
+  uv python pin 3.12 # pin the current environment to Python 3.12
 
 Then, provided that the version is compatible with SOLikeT, you can run the tests with that version:
 
