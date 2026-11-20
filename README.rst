@@ -25,7 +25,7 @@ For more extensive details please see our main documentation pages at: `http://s
 Installation
 ============
 
-For a set of detailed requirements and installation instructions for different machines (e.g. NERSC, M1 Mac), please see `the installation page <INSTALL.rst>`_.
+For a set of detailed requirements and installation instructions for different machines (e.g. NERSC), please see `the installation page <INSTALL.rst>`_.
 
 SOLikeT can be installed using any of three methods: `uv`, `pip`, or `conda`, with the recommended method being `uv`.
 
@@ -54,16 +54,18 @@ Then, after activating an existing environment (both `conda` or `venv` environme
 
 At this point, you can forget about `uv`, if you want to, and continue using SOLikeT as desired. If you want to re-sync your environment with the lockfile, you can re-run that command.
 
-We define extra dependencies for SOLikeT, which allow you to install additional features or functionalities as needed. In particuar, we define `emulator`, `pyccl`, `mflike`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the MFLike primary CMB likelihood. The last one will install all of them. These can be specified when running `uv sync` to install the corresponding dependencies.
+We define extra dependencies for SOLikeT, which allow you to install additional features or functionalities as needed. In particuar, we define `pyccl`, `mflike`, `cosmocnc`, and `all`. Respectively, these extras will install the PyCCL library for cosmological calculations, the MFLike primary CMB likelihood, and the cosmocnc cluster number counts code. The last one will install all of them. These can be specified when running `uv sync` to install the corresponding dependencies.
 
 .. code-block:: bash
 
-   uv sync --locked --extra emulator    # for CosmoPower emulator
    uv sync --locked --extra pyccl       # for PyCCL library
    uv sync --locked --extra mflike      # for MFLike likelihood
+   uv sync --locked --extra cosmocnc    # for cosmocnc cluster counts
    uv sync --locked --extra all         # for all extras
 
 Of course, you can combine multiple extras as needed. Note that these extra dependencies come with extra constraints, so these may not be compatible with all Python versions or platforms. These are reported in the `pyproject.toml` file, which is used by `uv` to manage dependencies.
+
+The CosmoPower theories need no extra: SOLikeT evaluates trained CosmoPower networks with numpy, so neither `cosmopower` nor TensorFlow is required.
 
 If you are less worried about reproducibility, you can also install SOLikeT without the lockfile by using `pip` after cloning the repository:
 
@@ -73,11 +75,11 @@ If you are less worried about reproducibility, you can also install SOLikeT with
    cd soliket
    pip install .
   
-In this case, you can also specify extras, such as the `emulator` to install the dependencies related to `CosmoPower`:
+In this case, you can also specify extras, such as `pyccl` to install the dependencies related to `CCL`:
 
 .. code-block:: bash
 
-   pip install .[emulator]
+   pip install .[pyccl]
 
 For further details on `uv` and alternatives ways to install SOLikeT, please refer to `the installation page <INSTALL.rst>`_.
 

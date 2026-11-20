@@ -45,7 +45,7 @@ jobs:
           key: cobaya_packages-${{ runner.os }}-${{ matrix.python-version }}-mflike-${{ steps.mflike-version.outputs.version }}
       - name: Install dependencies
         # --extras dev all: install_likelihoods.sh installs mflike data, which
-        # needs the mflike extra; 'emulator' alone does not provide it.
+        # needs the mflike extra.
         # --latest: re-resolve instead of using the lockfile, so this run can
         # actually catch upstream releases breaking us.
         run: |

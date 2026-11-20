@@ -67,11 +67,11 @@ info_dict = {
 }
 
 
-def test_cosmopower_import(check_skip_cosmopower):
+def test_cosmopower_import():
     _ = importlib.import_module("soliket.cosmopower").CosmoPower
 
 
-def test_wrong_types(check_skip_cosmopower):
+def test_wrong_types():
     from soliket.cosmopower import CosmoPower
 
     base_case = {
@@ -97,16 +97,14 @@ def test_wrong_types(check_skip_cosmopower):
             _ = CosmoPower(**case)
 
 
-def test_cosmopower_theory(request, check_skip_cosmopower, install_planck_lite):
+def test_cosmopower_theory(request, install_planck_lite):
     info_dict["theory"]["soliket.CosmoPower"]["network_path"] = os.path.join(
         request.config.rootdir, "soliket/cosmopower/data/CP_paper"
     )
     _ = get_model(info_dict)
 
 
-def test_cosmopower_loglike(
-    request, check_skip_cosmopower, install_planck_lite, likelihood_refs
-):
+def test_cosmopower_loglike(request, install_planck_lite, likelihood_refs):
     ref = likelihood_refs["cosmopower"]
     info_dict["theory"]["soliket.CosmoPower"]["network_path"] = os.path.join(
         request.config.rootdir, "soliket/cosmopower/data/CP_paper"
@@ -118,7 +116,7 @@ def test_cosmopower_loglike(
     assert np.isclose(logL_cp, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
 
 
-def test_cosmopower_against_camb(request, check_skip_cosmopower, install_planck_lite):
+def test_cosmopower_against_camb(request, install_planck_lite):
     info_dict["theory"] = {"camb": {"stop_at_error": True}}
     model_camb = get_model(info_dict)
     logL_camb = np.float64(model_camb.loglikes({})[0]).item()
@@ -156,7 +154,7 @@ def test_cosmopower_against_camb(request, check_skip_cosmopower, install_planck_
     assert np.isclose(logL_camb, logL_cp, rtol=1.0e-1)
 
 
-def test_ell_factor_values(check_skip_cosmopower):
+def test_ell_factor_values():
     from soliket.cosmopower import CosmoPower
 
     cp = CosmoPower.__new__(CosmoPower)
@@ -170,7 +168,7 @@ def test_ell_factor_values(check_skip_cosmopower):
     assert np.allclose(pp, expected_pp)
 
 
-def test_cmb_unit_factor_monkeypatched(check_skip_cosmopower):
+def test_cmb_unit_factor_monkeypatched():
     from soliket.cosmopower import CosmoPower
 
     cp = CosmoPower.__new__(CosmoPower)
@@ -187,7 +185,7 @@ def test_cmb_unit_factor_monkeypatched(check_skip_cosmopower):
     assert np.isclose(res2, 10.0 * (1.0 / np.sqrt(2.0 * np.pi)))
 
 
-def test_get_Cl_basic_behavior(check_skip_cosmopower):
+def test_get_Cl_basic_behavior():
     from soliket.cosmopower import CosmoPower
 
     # create a lightweight dummy object that provides the attributes used by get_Cl
@@ -211,7 +209,7 @@ def test_get_Cl_basic_behavior(check_skip_cosmopower):
     assert cls["tt"][2] == obj.current_state["tt"][1]
 
 
-def test_get_can_support_parameters_simple(check_skip_cosmopower):
+def test_get_can_support_parameters_simple():
     from soliket.cosmopower import CosmoPower
 
     cp = CosmoPower.__new__(CosmoPower)
@@ -220,7 +218,7 @@ def test_get_can_support_parameters_simple(check_skip_cosmopower):
     assert set(out) == {"A", "B"}
 
 
-def test_cosmopowerderived_basic_flow(check_skip_cosmopower):
+def test_cosmopowerderived_basic_flow():
     from soliket.cosmopower import CosmoPowerDerived
 
     # Build a dummy network that mimics the minimal interface used by CosmoPowerDerived

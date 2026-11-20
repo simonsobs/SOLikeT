@@ -36,17 +36,9 @@ updates:
           - "numpy"
           - "astropy"
           - "pandas"
-      python-emulator:
-        patterns:
-          - "cosmopower"
-          - "tensorflow*"
-          - "tensorflow-probability"
       python-pyccl:
         patterns:
           - "pyccl"
-      python-pyhalomodel:
-        patterns:
-          - "pyhalomodel"
       python-mflike:
         patterns:
           - "mflike"
