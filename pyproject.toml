@@ -35,7 +35,7 @@ mflike = [
     "syslibrary (>=0.2.0)", # from mflike
 ]
 cosmocnc = [
-    "cosmocnc (>=1.2)",
+    "cosmocnc (>=1.2); python_version < '3.14'", # 1.2 reads instance __annotations__, broken by PEP 649 on 3.14
 ]
 docs = [
     "sphinx",
