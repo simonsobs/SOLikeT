@@ -2,6 +2,11 @@ name: Compatibility
 on:
   schedule:
     - cron: '0 4 * * SUN'
+  workflow_dispatch:
+
+env:
+  COBAYA_PACKAGES_PATH: ./cobaya_packages
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -12,21 +17,39 @@ jobs:
         python-version: ['3.10', '3.11']
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install uv and set the Python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
-      - name: Install dependencies
+      - name: Resolve MFLike version for cache key
+        id: mflike-version
+        shell: bash
         run: |
-          bash ci_scripts/install_deps.sh --extras dev emulator
+          VERSION=$(grep -A1 '^name = "mflike"$' uv.lock | grep '^version' | head -1 | sed -E 's/version = "(.*)"/\1/')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+      - name: Restore cobaya_packages
+        # Restore-only, on purpose. This job installs with --latest, so the
+        # mflike version it ends up with is not known until after the sync and
+        # may differ from the one this key was derived from. Saving here could
+        # therefore store mismatched data under a key testing.yml also uses, so
+        # we only ever read. A miss just means a fresh download.
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        with:
+          path: ./cobaya_packages
+          key: cobaya_packages-${{ runner.os }}-${{ matrix.python-version }}-mflike-${{ steps.mflike-version.outputs.version }}
+      - name: Install dependencies
+        # --extras dev all: install_likelihoods.sh installs mflike data, which
+        # needs the mflike extra; 'emulator' alone does not provide it.
+        # --latest: re-resolve instead of using the lockfile, so this run can
+        # actually catch upstream releases breaking us.
+        run: |
+          bash ci_scripts/install_deps.sh --extras dev all --latest
       - name: Run tests
-        env:
-          COBAYA_PACKAGES_PATH: ./cobaya_packages
         run: |
           uv run pytest -vv --durations=10

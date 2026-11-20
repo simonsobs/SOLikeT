@@ -16,7 +16,7 @@ jobs:
       skip: ${{ steps.check.outputs.skip }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Run skip-check
         id: check
@@ -34,12 +34,20 @@ jobs:
             tags: []
 
           - os: ubuntu-latest
+            python-version: '3.13'
+            tags: []
+
+          - os: ubuntu-latest
             python-version: '3.12'
             tags: []
 
           - os: ubuntu-latest
-            python-version: '3.10'
+            python-version: '3.11'
             tags: cov
+
+          - os: ubuntu-latest
+            python-version: '3.10'
+            tags: []
 
           - os: macos-latest
             python-version: '3.11'
@@ -53,10 +61,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -72,7 +80,7 @@ jobs:
           fi
 
       - name: Install uv and set the Python version
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
@@ -81,6 +89,13 @@ jobs:
             pyproject.toml
             uv.lock
 
+      - name: Cache virtual environment
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
+        id: cache-venv
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('uv.lock') }}
+
       - name: Resolve MFLike version for cache key
         id: mflike-version
         shell: bash
@@ -88,23 +103,19 @@ jobs:
           VERSION=$(grep -A1 '^name = "mflike"$' uv.lock | grep '^version' | head -1 | sed -E 's/version = "(.*)"/\1/')
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-      - name: Restore cobaya_packages
+      - name: Cache cobaya_packages
         id: cache-cobaya
-        uses: actions/cache/restore@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: ./cobaya_packages
+          # Keyed on the MFLike version (which determines the downloaded data
+          # version), not the whole lockfile, so unrelated dependency bumps no
+          # longer invalidate the data cache and force a flaky NERSC download.
           key: cobaya_packages-${{ runner.os }}-${{ matrix.python-version }}-mflike-${{ steps.mflike-version.outputs.version }}
 
       - name: Install SOLikeT dependencies and likelihoods
         run: |
           bash ci_scripts/install_deps.sh --extras dev all
-
-      - name: Save cobaya_packages
-        if: always() && steps.cache-cobaya.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v5
-        with:
-          path: ./cobaya_packages
-          key: cobaya_packages-${{ runner.os }}-${{ matrix.python-version }}-mflike-${{ steps.mflike-version.outputs.version }}
 
       - name: Run tests (coverage)
         if: contains(matrix.tags, 'cov')
@@ -122,7 +133,7 @@ jobs:
 
       - if: contains(matrix.tags, 'cov')
         name: Report Coverage
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 

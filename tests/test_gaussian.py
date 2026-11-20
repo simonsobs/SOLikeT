@@ -47,16 +47,20 @@ def test_gaussian():
 
     multi = MultiGaussianData(datalist, cross_cov)
 
-    name1, name2, name3 = (d.name for d in datalist)
     data1, data2, data3 = datalist
+    n1, n2, n3 = (len(d) for d in datalist)
 
-    assert (multi.cross_covs[(name1, name2)] == multi.cross_covs[(name2, name1)].T).all()
-    assert (multi.cross_covs[(name1, name3)] == multi.cross_covs[(name3, name1)].T).all()
-    assert (multi.cross_covs[(name2, name3)] == multi.cross_covs[(name3, name2)].T).all()
-
-    assert (multi.cross_covs[(name1, name1)] == data1.cov).all()
-    assert (multi.cross_covs[(name2, name2)] == data2.cov).all()
-    assert (multi.cross_covs[(name3, name3)] == data3.cov).all()
+    cov = multi.cov
+    # Assembled joint covariance is symmetric.
+    assert np.allclose(cov, cov.T)
+    # Diagonal blocks are each likelihood's own covariance.
+    assert np.allclose(cov[:n1, :n1], data1.cov)
+    assert np.allclose(cov[n1 : n1 + n2, n1 : n1 + n2], data2.cov)
+    assert np.allclose(cov[n1 + n2 :, n1 + n2 :], data3.cov)
+    # Off-diagonal blocks are the supplied cross-covariances.
+    assert np.allclose(cov[:n1, n1 : n1 + n2], cross_cov[("A", "B")])
+    assert np.allclose(cov[:n1, n1 + n2 :], cross_cov[("A", "C")])
+    assert np.allclose(cov[n1 : n1 + n2, n1 + n2 :], cross_cov[("B", "C")])
 
 
 def test_gaussian_hartlap():

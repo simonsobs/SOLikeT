@@ -109,12 +109,14 @@ def _get_cosmocnc_clusters_info(mode="unbinned"):
             likelihood_type="unbinned",
             stacked_likelihood=False,
         )
-        params.update({
-            "bias_cmblens": 0.8,
-            "a_lens": 1.0,
-            "sigma_lnp": 0.2,
-            "corr_lnq_lnp": 0.0,
-        })
+        params.update(
+            {
+                "bias_cmblens": 0.8,
+                "a_lens": 1.0,
+                "sigma_lnp": 0.2,
+                "corr_lnq_lnp": 0.0,
+            }
+        )
     elif mode == "stacked_lensing":
         cnc_like = dict(
             **cnc_common,
@@ -125,12 +127,14 @@ def _get_cosmocnc_clusters_info(mode="unbinned"):
             stacked_data=["p_so_sim_stacked"],
             compute_stacked_cov=True,
         )
-        params.update({
-            "bias_cmblens": 0.8,
-            "a_lens": 1.0,
-            "sigma_lnp": 0.2,
-            "corr_lnq_lnp": 0.0,
-        })
+        params.update(
+            {
+                "bias_cmblens": 0.8,
+                "a_lens": 1.0,
+                "sigma_lnp": 0.2,
+                "corr_lnq_lnp": 0.0,
+            }
+        )
 
     return {
         "likelihood": {"cosmocnc.CNCLike": cnc_like},
@@ -196,6 +200,7 @@ def test_clusters_n_expected(
     assert np.isclose(lnl, ref["value"], rtol=ref["rtol"], atol=ref["atol"])
     assert like._get_n_expected() > 40
 
+
 class FakeTable:
     def __init__(self, data):
         # data is dict of arrays
@@ -260,7 +265,6 @@ def test_SurveyData_Q_property():
 
     sd.tiles = False
     assert sd.Q == sd.tckQFit["PRIMARY"]
-
 
 
 def test_tinker_params_and_radius():

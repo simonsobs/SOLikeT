@@ -122,7 +122,6 @@ def test_ccl_A_mod(check_skip_pyccl, evaluate_one_info, test_cosmology_params):
     pk_lin = cosmo.linear_matter_power(k, a=1.0)
     pk_nonlin = cosmo.nonlin_matter_power(k, a=1.0)
 
-
     evaluate_one_info["params"]["A_mod"] = A_mod
     evaluate_one_info.update(ccl_like_and_theory)
 

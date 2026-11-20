@@ -1,0 +1,23 @@
+# SOLikeT Fiducial map — theory group (the neutrino sector).
+# Split by KIND from the param groups: this file carries the `theory` fragment
+# (Boltzmann `extra_args`) of the neutrino setup, keyed by code. It composes with
+# cosmo.yaml's `mnu` at runtime — together they are the "neutrino group".
+# build_info overlays the selected code's `extra_args` onto the preset skeleton's
+# theory block (recursive_update; the skeleton owns the precision extra_args).
+# Folder-overridable like the param groups: an analysis (e.g. ISO normal
+# hierarchy) ships its own theory.yaml that REPLACES this file wholesale, so the
+# single-massive keys below never collide with a different neutrino setup.
+#
+# Single massive neutrino, Neff = 3.044 (cobaya `one_heavy_planck`).
+camb:
+  extra_args:
+    num_massive_neutrinos: 1
+    nnu: 3.044
+classy:
+  # classy's neutrino mass param is `m_ncdm`, not camb's `mnu`; carried here
+  # (with the `mnu` alias) because it is a code-specific spelling of the same mass.
+  extra_args:
+    N_ncdm: 1
+    N_ur: 2.0328
+  params:
+    m_ncdm: {value: 0.06, renames: mnu}

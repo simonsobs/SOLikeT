@@ -1,0 +1,18 @@
+# Cobaya info template for the `mflike` preset (MFLike TT/TE/EE).
+# Params are supplied separately by the loader from the Fiducial map.
+likelihood:
+  mflike.TTTEEE:
+    input_file: LAT_simu_sacc_00044.fits
+    cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits
+theory:
+  camb:
+    extra_args:
+      lens_potential_accuracy: 1
+      WantTransfer: true
+      Transfer.high_precision: true
+      Transfer.kmax: 1.2
+    stop_at_error: true
+  mflike.BandpowerForeground:
+    stop_at_error: true
+sampler:
+  evaluate:

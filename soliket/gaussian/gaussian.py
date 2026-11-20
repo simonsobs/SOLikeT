@@ -13,6 +13,60 @@ from soliket.gaussian.gaussian_data import CrossCov, GaussianData, MultiGaussian
 from soliket.utils import get_likelihood
 
 
+def _sacc_point_ids(sacc_data: sacc.Sacc) -> list[tuple]:
+    """Per-bandpower identity ``(data_type, tracers, ell)`` for each data point,
+    in storage order.
+
+    This is the single definition of what identifies a bandpower; everything
+    that aligns covariance blocks to data by identity goes through it.
+    """
+    return [(dp.data_type, tuple(dp.tracers), dp.get_tag("ell")) for dp in sacc_data.data]
+
+
+def bandpower_ids(like) -> list | None:
+    """Per-bandpower identity keys for a likelihood's data vector.
+
+    Returns one hashable key per element of the data vector, uniquely labelling
+    each bandpower by ``(field/spectrum, channel/tracer pair, ell)``. These keys
+    let ``MultiGaussianData`` align cross-covariance blocks to the data by
+    identity rather than position. Returns ``None`` if no adapter applies.
+
+    Adapters:
+
+    * ``mflike``-style: reconstructed from ``spec_meta`` (``pol``,
+      ``hasYX_xsp``, ``t1``, ``t2``, ``leff``), at the (compressed) data-vector
+      granularity. ``hasYX_xsp`` is required to tell apart the two same-``pol``
+      spectra of a cross-frequency pair (e.g. TE vs ET), which otherwise share
+      ``(pol, t1, t2, ell)``.
+    * SOLikeT ``GaussianLikelihood``: the full-range keys it already computed,
+      or, failing that, its sacc ``(data_type, tracers, ell)``.
+    """
+    spec_meta = getattr(like, "spec_meta", None)
+    if spec_meta:
+        data_vec = getattr(like, "data_vec", None)
+        n = (
+            len(data_vec)
+            if data_vec is not None
+            else int(max(int(np.max(m["ids"])) for m in spec_meta if len(m["ids"]))) + 1
+        )
+        ids: list = [None] * n
+        for m in spec_meta:
+            leff = np.asarray(m["leff"])
+            key_head = (m["pol"], bool(m["hasYX_xsp"]), (m["t1"], m["t2"]))
+            for k, p in enumerate(np.asarray(m["ids"], dtype=int)):
+                ids[int(p)] = (*key_head, float(leff[k]))
+        return None if any(c is None for c in ids) else ids
+
+    full_ids = getattr(like, "_full_ids", None)
+    if full_ids is not None:
+        return list(full_ids)
+
+    sacc_data = getattr(like, "sacc_data", None)
+    if sacc_data is not None:
+        return _sacc_point_ids(sacc_data)
+    return None
+
+
 class GaussianLikelihood(Likelihood):
     """Base class for Gaussian likelihoods in SOLikeT.
 
@@ -116,26 +170,72 @@ class GaussianLikelihood(Likelihood):
             self.log.warning(
                 "You have provided sacc_data directly, so datapath will be ignored!"
             )
+            # Work on a copy so the reordering/cuts below do not mutate the
+            # object the caller handed us.
+            sacc_data = self.sacc_data.copy()
         else:
             self.log.info(f"Loading data from {self.datapath}...")
             sacc_data = sacc.Sacc.load_fits(self.datapath)
 
-        if self.use_spectra == "all":
-            pass
-        else:
+        # Canonicalise to "combo-major" order (grouped by tracer combination, as
+        # returned by ``get_tracer_combinations``). This is the order in which
+        # ``_construct_ell_bins`` and every ``_get_theory`` build their vectors,
+        # so reordering the data once here keeps x, y, cov and theory aligned
+        # with no per-call reordering.
+        self._reorder_to_combo_major(sacc_data)
+
+        # Identity of every bandpower in the full (pre-cut) data vector, used to
+        # record which ones survive the scale cuts applied below.
+        full_ids = _sacc_point_ids(sacc_data)
+
+        if self.use_spectra != "all":
             for tracer_comb in sacc_data.get_tracer_combinations():
                 if tracer_comb not in self.use_spectra:
                     sacc_data.remove_selection(tracers=tracer_comb)
+            # Cuts preserve relative order, but re-canonicalise to be safe.
+            self._reorder_to_combo_major(sacc_data)
+
         tracer_combs = sacc_data.get_tracer_combinations()
         assert tracer_combs != [], "No tracer was found!"
+
+        # Per-bandpower identity of the full (pre-cut) range, in data order. Used
+        # by ``MultiGaussianData`` to align cross-covariance blocks by identity.
+        self._full_ids = full_ids
+
+        # Boolean mask over the full (pre-cut) range, True for kept bandpowers.
+        # ``MultiGaussianLikelihood`` uses this to trim cross-covariances stored
+        # on the full range when probes have different scale cuts.
+        kept = set(_sacc_point_ids(sacc_data))
+        self._kept_indices = np.array([pid in kept for pid in full_ids], dtype=bool)
+
         return sacc_data
+
+    def _reorder_to_combo_major(self, sacc_data: sacc.Sacc) -> None:
+        """Reorder ``sacc_data`` in place so its data points are grouped by
+        tracer combination, matching the order in which the theory vector is
+        built. ``sacc.reorder`` permutes the data and covariance together, so
+        the data vector and covariance can never desynchronise."""
+        combos = sacc_data.get_tracer_combinations()
+        if not combos:
+            return
+        perm = np.concatenate([sacc_data.indices(tracers=comb) for comb in combos])
+        if not np.array_equal(perm, np.arange(len(perm))):
+            sacc_data.reorder(perm)
 
     def _get_gauss_data(self, **params_values):
         self.x = self._construct_ell_bins()
         self.y = self.sacc_data.mean
         self.cov = self.sacc_data.covariance.covmat
 
-        data = GaussianData(self.name, self.x, self.y, self.cov, self.ncovsims)
+        data = GaussianData(
+            self.name,
+            self.x,
+            self.y,
+            self.cov,
+            self.ncovsims,
+            indices=getattr(self, "_kept_indices", None),
+            ids=getattr(self, "_full_ids", None),
+        )
         return data
 
     def _check_tracers(self):
@@ -177,16 +277,73 @@ class GaussianLikelihood(Likelihood):
         return self.y
 
     def get_binning(self, tracer_comb: tuple) -> tuple[np.ndarray, np.ndarray]:
-        bpw_idx = self.sacc_data.indices(data_type="cl_00", tracers=tracer_comb)
-        bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
-        ells_theory = bpw.values
-        ells_theory = np.asarray(ells_theory, dtype=int)
-        w_bins = bpw.weight.T
+        """Bandpower support multipoles and window matrix for a tracer pair.
 
-        return ells_theory, w_bins
+        The result depends only on the (fixed) SACC file, so it is memoised per
+        tracer combination: each likelihood evaluation would otherwise re-derive it
+        twice -- once in :meth:`_get_unbinned_theory` for the theory's ell support
+        and once in :meth:`_get_theory` to bin -- each time hitting the SACC index
+        and bandpower-window lookups.
 
-    def _get_theory(self, **kwargs) -> np.ndarray:
+        The window is looked up by tracers alone (not by data type: the shear
+        cross-correlations are ``cl_0e``/``cl_e0``, not ``cl_00``), so a pair
+        carrying several data types would silently yield a window spanning all of
+        them. Rejected here, in the shared lookup, rather than in each caller --
+        :meth:`_get_unbinned_theory` reads the ell support from here too, and would
+        otherwise spend a Limber calculation on the doubled grid before
+        :meth:`_get_theory` noticed.
+        """
+        cache = self.__dict__.setdefault("_binning_cache", {})
+        if tracer_comb not in cache:
+            dtypes = self.sacc_data.get_data_types(tracers=tracer_comb)
+            if len(dtypes) != 1:
+                raise ValueError(
+                    f"tracers {tracer_comb} carry data types {dtypes}; a likelihood "
+                    "using the default binning assumes exactly one spectrum per "
+                    "tracer pair and must otherwise override _get_theory."
+                )
+            bpw_idx = self.sacc_data.indices(tracers=tracer_comb)
+            bpw = self.sacc_data.get_bandpower_windows(bpw_idx)
+            ells_theory = np.asarray(bpw.values, dtype=int)
+            w_bins = bpw.weight.T
+            cache[tracer_comb] = (ells_theory, w_bins)
+        return cache[tracer_comb]
+
+    def _get_unbinned_theory(self, **kwargs) -> list[np.ndarray]:
+        """Unbinned theory spectra on the fine multipole grid, one per tracer
+        combination.
+
+        Subclasses that compute a finely-sampled theory and then bin it (e.g. the
+        Limber cross-correlations) override this and inherit binning from the
+        default :meth:`_get_theory`. Subclasses that produce binned theory
+        directly override :meth:`_get_theory` instead.
+        """
         raise NotImplementedError
+
+    def get_unbinned_theory(self, **params_values) -> list[np.ndarray]:
+        """The unbinned theory spectra, one array per tracer combination.
+
+        Public accessor used by cross-covariance computations that need the theory
+        before bandpower binning.
+        """
+        return self._get_unbinned_theory(**params_values)
+
+    def _get_theory(self, **params_values) -> np.ndarray:
+        """Bin the unbinned theory per tracer combination via :meth:`get_binning`."""
+        cl_unbinned = self.get_unbinned_theory(**params_values)
+        combs = self.sacc_data.get_tracer_combinations()
+        binned = []
+        for comb, cl in zip(combs, cl_unbinned):
+            w_bins = self.get_binning(comb)[1]
+            if w_bins.shape[1] != len(cl):
+                raise ValueError(
+                    f"Binning for tracers {comb} expects {w_bins.shape[1]} "
+                    f"multipoles but the unbinned theory has {len(cl)}. The tracer "
+                    "pair likely carries more than one data type; such a likelihood "
+                    "must override _get_theory rather than use the default binning."
+                )
+            binned.append(np.dot(w_bins, cl))
+        return np.concatenate(binned)
 
     def logp(self, **params_values) -> float:
         theory = self._get_theory(**params_values)
@@ -290,6 +447,15 @@ class MultiGaussianLikelihood(GaussianLikelihood):
         self.cross_cov: CrossCov | None = CrossCov.load(self.cross_cov_path)
 
         data_list = [like._get_gauss_data() for like in self.likelihoods]
+        # Ensure every component carries per-bandpower identity keys so the
+        # cross-covariance can be aligned to the data by identity (not position).
+        # SOLikeT likelihoods already populate them; external ones (e.g. mflike)
+        # are handled by the adapter below.
+        for like, data in zip(self.likelihoods, data_list):
+            if data.ids is None:
+                ids = bandpower_ids(like)
+                if ids is not None:
+                    data.ids = ids
         self.data = MultiGaussianData(data_list, self.cross_cov)
 
         self.log.info("Initialized.")

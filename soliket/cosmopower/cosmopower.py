@@ -108,6 +108,9 @@ except ImportError:
 class CosmoPower(BoltzmannBase):
     """A CosmoPower Network wrapper for Cobaya."""
 
+    network_path: str
+    network_settings: dict | None
+
     _enforce_types: bool = True
 
     def initialize(self):
@@ -303,6 +306,13 @@ class CosmoPower(BoltzmannBase):
 
 class CosmoPowerDerived(Theory):
     """A theory class that can calculate derived parameters from CosmoPower networks."""
+
+    network_path: str
+    network_settings: dict | None
+    derived_parameters: list[str]
+    renames: dict
+
+    _enforce_types: bool = True
 
     def initialize(self):
         super().initialize()

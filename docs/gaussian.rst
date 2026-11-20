@@ -51,6 +51,13 @@ To combine multiple likelihoods (e.g., CMB TT and lensing) with cross-covariance
 The ``cross_cov_path`` parameter is optional. If not provided, the likelihoods
 are assumed to be independent (zero cross-covariance).
 
+Component likelihoods may apply different scale cuts, so their data vectors need
+not share the same range: the cross-covariance is automatically trimmed to each
+probe's retained bandpowers. Blocks are also aligned to the data by *identity*
+(per-bandpower keys) rather than by position, so the order in which the
+cross-covariance was built need not match the order produced at run time. See
+`Identity alignment`_ below.
+
 CrossCov
 --------
 
@@ -112,6 +119,30 @@ To load a previously saved cross-covariance:
 
     # Access blocks
     mflike_lensing_block = cross_cov[("mflike", "lensing")]
+
+Identity alignment
+^^^^^^^^^^^^^^^^^^
+
+Each component may carry per-bandpower *identity keys* -- a unique label for
+every data point (e.g. ``(field, channel pair, ell)``). When present,
+``MultiGaussianData`` aligns each covariance block to the data by matching these
+keys instead of relying on position, so a cross-covariance keeps working even if
+the data is reordered or scale-cut differently at run time. Missing or duplicate
+keys raise a clear error rather than silently corrupting the joint covariance.
+
+Identity keys are optional, supplied via ``ids`` and persisted by ``save()`` /
+``load()``:
+
+.. code-block:: python
+
+    cross_cov.add_component("mflike", mflike_cov, ids=mflike_ids)
+    cross_cov.add_component("lensing", lensing_cov, ids=lensing_ids)
+    cross_cov.add_cross_covariance("mflike", "lensing", mflike_lensing_cov)
+
+SOLikeT ``GaussianLikelihood`` subclasses populate these keys automatically from
+their SACC file, and ``MultiGaussianLikelihood`` also sources them for external
+components such as ``mflike`` (via ``soliket.gaussian.gaussian.bandpower_ids``).
+If keys are omitted, blocks fall back to positional alignment.
 
 GaussianData
 ------------
