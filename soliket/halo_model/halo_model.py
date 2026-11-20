@@ -21,7 +21,8 @@ in your run settings. e.g.:
 
   theory:
     camb:
-    soliket.halo_model.HaloModel_pyhm:
+    soliket.CCL:
+    soliket.halo_model.HaloModel_ccl:
 
 
 Implementing your own halo model
@@ -29,15 +30,12 @@ Implementing your own halo model
 
 If you want to add your own halo model, you can do so by inheriting from the
 ``soliket.HaloModel`` theory class and implementing your own custom ``calculate()``
-function (have a look at the simple pyhalomodel model for ideas).
+function (have a look at the simple ``HaloModel_ccl`` model for ideas).
 """
 
 import numpy as np
-import pyhalomodel as halo
+from cobaya.log import LoggedError
 from cobaya.theory import Provider, Theory
-
-# from cobaya.theories.cosmo.boltzmannbase import PowerSpectrumInterpolator
-from scipy.interpolate import RectBivariateSpline
 
 
 class HaloModel(Theory):
@@ -78,24 +76,63 @@ class HaloModel(Theory):
         return self.current_state["Pk_gm_grid"]
 
 
-class HaloModel_pyhm(HaloModel):
-    """Halo Model wrapping the simple pyhalomodel code of Asgari, Mead & Heymans (2023)
+class HaloModel_ccl(HaloModel):
+    """Simple halo model for the non-linear matter power spectrum, built on the CCL
+    halo-model framework (:mod:`pyccl.halos`).
 
-    We include this simple halo model for the non-linear matter-matter power spectrum with
-    NFW profiles. This is calculated via the `pyhalomodel
-    <https://github.com/alexander-mead/pyhalomodel>`_ code.
+    A minimal demonstration of how to obtain a halo-model matter power spectrum using
+    CCL. The mass function, halo bias, concentration and mass definition are exposed as
+    configuration options so the basic ingredients of a halo model can be varied. It is
+    built on the CCL cosmology supplied by the :class:`soliket.ccl.CCL` theory, which
+    already carries the linear power spectrum computed by the Boltzmann code, so the
+    result is consistent with the rest of the pipeline.
     """
 
-    hmf_name: str
-    hmf_Dv: float
+    mass_function: str
+    halo_bias: str
+    concentration: str
+    mass_def: str
     Mmin: float
     Mmax: float
     nM: int
+    sigma_kmax: float
+    zmax: float
 
     def initialize(self):
         super().initialize()
-        self.Ms: np.ndarray = np.logspace(
-            np.log10(self.Mmin), np.log10(self.Mmax), self.nM
+        import pyccl as ccl
+
+        # These ingredients depend only on configuration, not on cosmology, so build
+        # them once here rather than on every calculate() call.
+        try:
+            self._mass_function = ccl.halos.MassFunc.from_name(self.mass_function)(
+                mass_def=self.mass_def
+            )
+            self._halo_bias = ccl.halos.HaloBias.from_name(self.halo_bias)(
+                mass_def=self.mass_def
+            )
+            concentration = ccl.halos.Concentration.from_name(self.concentration)(
+                mass_def=self.mass_def
+            )
+        except (KeyError, ValueError) as e:
+            raise LoggedError(
+                self.log,
+                f"Could not build the CCL halo model with mass_function="
+                f"'{self.mass_function}', halo_bias='{self.halo_bias}', "
+                f"concentration='{self.concentration}', mass_def='{self.mass_def}'. "
+                f"Note that some concentration models are only defined for specific "
+                f"mass definitions. Original error: {e}",
+            ) from e
+        self._profile = ccl.halos.HaloProfileNFW(
+            mass_def=self.mass_def, concentration=concentration
+        )
+        self._hmc = ccl.halos.HMCalculator(
+            mass_function=self._mass_function,
+            halo_bias=self._halo_bias,
+            mass_def=self.mass_def,
+            log10M_min=np.log10(self.Mmin),
+            log10M_max=np.log10(self.Mmax),
+            nM=self.nM,
         )
 
     def get_requirements(self):
@@ -106,7 +143,6 @@ class HaloModel_pyhm(HaloModel):
         self._var_pairs.update(
             {(x, y) for x, y in options.get("vars_pairs", [("delta_tot", "delta_tot")])}
         )
-
         self.kmax = max(self.kmax, options.get("kmax", self.kmax))
         self.z = np.unique(
             np.concatenate(
@@ -116,87 +152,33 @@ class HaloModel_pyhm(HaloModel):
                 )
             )
         )
-
-        needs = {}
-
-        needs["Pk_grid"] = {
-            "vars_pairs": self._var_pairs,
-            "nonlinear": (False, False),
-            "z": self.z,
-            "k_max": self.kmax,
+        # The halo model is only meaningful where haloes have collapsed; CCL's mass
+        # function fails at very high z, so cap the sampling.
+        self.z = self.z[self.z <= self.zmax]
+        # CCL computes sigma(M) by integrating the linear power, so the spectrum must
+        # extend well beyond the output kmax to converge for low-mass haloes.
+        pk_kmax = max(self.kmax, self.sigma_kmax)
+        return {
+            "CCL": {"kmax": pk_kmax, "z": self.z, "nonlinear": False},
+            "Pk_grid": {
+                "vars_pairs": self._var_pairs,
+                "nonlinear": False,
+                "z": self.z,
+                "k_max": pk_kmax,
+            },
         }
-
-        needs["sigma_R"] = {
-            "vars_pairs": self._var_pairs,
-            "z": self.z,
-            "k_max": self.kmax,
-            "R": np.linspace(0.14, 66, 256),  # list of radii required
-        }
-
-        return needs
 
     def calculate(self, state: dict, want_derived: bool = True, **params_values_dict):
-        pk_mm_lin: np.ndarray = self._get_Pk_mm_lin()
+        ccl = self.provider.get_CCL()["ccl"]
+        cosmo = self.provider.get_CCL()["cosmo"]
 
-        # now wish to interpolate sigma_R to these Rs
-        zinterp, rinterp, sigma_r_interp = self.provider.get_sigma_R()
-        sigma_rs = RectBivariateSpline(zinterp, rinterp, sigma_r_interp)
+        for pair in self._var_pairs:
+            self.k, self.z, _ = self.provider.get_Pk_grid(var_pair=pair, nonlinear=False)
 
         output_pk_hm_mm = np.empty([len(self.z), len(self.k)])
-
         for iz, z_eval in enumerate(self.z):
-            hmod = halo.model(
-                z_eval,
-                self.provider.get_param("omegam"),
-                name=self.hmf_name,
-                Dv=self.hmf_Dv,
+            output_pk_hm_mm[iz] = ccl.halos.halomod_power_spectrum(
+                cosmo, self._hmc, self.k, 1.0 / (1.0 + z_eval), self._profile
             )
-
-            lagrangian_radii = hmod.Lagrangian_radius(self.Ms)
-            virial_radii = hmod.virial_radius(self.Ms)
-
-            concentrations = 7.85 * (self.Ms / 2e12) ** -0.081 * (1.0 + z_eval) ** -0.71
-            uk = self._win_NFW(self.k, virial_radii, concentrations)
-            matter_profile = halo.profile.Fourier(
-                self.k,
-                self.Ms,
-                uk,
-                amplitude=self.Ms,
-                normalisation=hmod.rhom,
-                mass_tracer=True,
-            )
-
-            pk_2h, pk_1h, pk_hm = hmod.power_spectrum(
-                self.k,
-                pk_mm_lin[iz],
-                self.Ms,
-                sigma_rs(z_eval, lagrangian_radii)[0],
-                {"m": matter_profile},
-                verbose=False,
-            )
-
-            output_pk_hm_mm[iz] = pk_hm["m-m"]
 
         state["Pk_mm_grid"] = output_pk_hm_mm
-        # state['Pk_gm_grid'] = pk_hm['g-m']
-        # state['Pk_gg_grid'] = pk_hm['g-g']
-
-    def _win_NFW(
-        self,
-        k: np.ndarray,
-        virial_radius: np.ndarray,
-        concentration: np.ndarray,
-    ) -> np.ndarray:
-        from scipy.special import sici
-
-        rs = virial_radius / concentration
-        kv = np.outer(k, virial_radius)
-        ks = np.outer(k, rs)
-        sisv, cisv = sici(ks + kv)
-        sis, cis = sici(ks)
-        f1 = np.cos(ks) * (cisv - cis)
-        f2 = np.sin(ks) * (sisv - sis)
-        f3 = np.sin(kv) / (ks + kv)
-        f4 = np.log(1.0 + concentration) - concentration / (1.0 + concentration)
-        wk = (f1 + f2 - f3) / f4
-        return wk

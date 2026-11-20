@@ -111,9 +111,9 @@ class ClusterLikelihood(PoissonLikelihood):
 
         return pd.DataFrame(
             {
-                "z": self.survey.clst_z.byteswap().newbyteorder(),
-                "tsz_signal": self.survey.clst_y0.byteswap().newbyteorder(),
-                "tsz_signal_err": self.survey.clst_y0err.byteswap().newbyteorder(),
+                "z": np.asarray(self.survey.clst_z, dtype=np.float64),
+                "tsz_signal": np.asarray(self.survey.clst_y0, dtype=np.float64),
+                "tsz_signal_err": np.asarray(self.survey.clst_y0err, dtype=np.float64),
             }
         )
 

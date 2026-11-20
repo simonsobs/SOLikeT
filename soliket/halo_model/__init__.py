@@ -1,1 +1,1 @@
-from .halo_model import HaloModel, HaloModel_pyhm
+from .halo_model import HaloModel, HaloModel_ccl

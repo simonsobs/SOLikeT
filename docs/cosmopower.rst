@@ -1,7 +1,7 @@
 Cosmopower (Boltzmann Emulator)
-==========
+===============================
 
-.. automodule:: soliket.cosmopower
+.. automodule:: soliket.cosmopower.cosmopower
 
 Cosmopower Emulators
 --------------------
@@ -16,3 +16,11 @@ Derived Parameters Emulators
 .. autoclass:: soliket.CosmoPowerDerived
     :exclude-members: initialize
     :members:
+
+Trained Networks
+----------------
+
+.. autoclass:: soliket.cosmopower.CosmoPowerNetwork
+    :members: from_npz, predictions_np, ten_to_predictions_np, kind
+
+.. autoclass:: soliket.cosmopower.PCABasis

@@ -5,7 +5,7 @@ build:
     python: "3.11"
   commands:
     - pip install uv
-    - uv sync --extra dev --extra docs --extra emulator
+    - uv sync --extra dev --extra docs
     - uv run sphinx-build -T -b html -d docs/_build/doctrees -D language=en docs $READTHEDOCS_OUTPUT/html
 
 formats: all

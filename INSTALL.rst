@@ -21,7 +21,7 @@ To install SOLikeT using `uv` and following the preferred procedure, you can fol
 
 .. code-block:: bash
 
-   conda create -n my_env python=3.x # create a fresh conda environment with Python 3.x (check supported versions)
+   conda create -n my_env python=3.12 # create a fresh conda environment (SOLikeT supports Python 3.11 to 3.14)
    conda activate my_env
    pip install uv  # if you don't have uv already
    uv sync --locked # sync the environment with the uv.lock file
@@ -36,16 +36,18 @@ If instead you prefer `venv` to be created automatically, you can use:
    source .venv/bin/activate
    uv sync --locked
 
-On top of this, we define sets of extra dependencies that can be installed to extend the functionality of SOLikeT. They are: `emulator`, `pyccl`, `pyhalomodel`, and `all`. Repsectively, these extras will install the CosmoPower emulator, the PyCCL library for cosmological calculations, and the PyHaloModel library for halo modeling. The last one will install all of them. Note that these extras are not installed by default, as they are not strictly necessary for running SOLikeT and they introduce additional constraints on the environment. You can install them by adding the `--extra` flag to the `uv sync` command:
+On top of this, we define sets of extra dependencies that can be installed to extend the functionality of SOLikeT. They are: `pyccl`, `mflike`, `cosmocnc`, and `all`. Respectively, these extras will install the PyCCL library for cosmological calculations, the MFLike primary CMB likelihood, and the cosmocnc cluster number counts code. The last one will install all of them. Note that these extras are not installed by default, as they are not strictly necessary for running SOLikeT and they introduce additional constraints on the environment. You can install them by adding the `--extra` flag to the `uv sync` command:
 
 .. code-block:: bash
 
-   uv sync --locked --extra emulator    # for CosmoPower emulator
    uv sync --locked --extra pyccl       # for PyCCL library
-   uv sync --locked --extra pyhalomodel # for PyHaloModel library
+   uv sync --locked --extra mflike      # for MFLike likelihood
+   uv sync --locked --extra cosmocnc    # for cosmocnc cluster counts
    uv sync --locked --extra all         # for all extras
 
 Of course, you can combine multiple extras as needed.
+
+The CosmoPower theories need no extra: SOLikeT evaluates trained CosmoPower networks with numpy, so neither `cosmopower` nor TensorFlow is required.
 
 If you ask to install some extra that is not compatible with your current environment, `uv` will not install it, so you should not be surprised if you do not see the expected packages installed.
    
@@ -56,11 +58,6 @@ Install with pip
 
 Alternatively, you can use pip to install SOLikeT. This method is straightforward but does not provide the same level of reproducibility as `uv` since it does not use a lockfile. Nonetheless, the `pyproject.toml` file specifies the required dependencies, so you can still install a consistent set of packages. The procedure is as follows:
 
-In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation). To achieve this (see below for M1 Mac specific guide), you can add the `emulator` extra to your install command to install all necessary dependencies:
-
-.. code-block:: bash
-
-   uv sync --locked --extra emulator
 .. code-block:: bash
 
   git clone https://github.com/simonsobs/soliket
@@ -77,16 +74,16 @@ In these cases, you can also install extras to include optional features:
 
 .. code-block:: bash
 
-   pip install .[emulator,pyccl,pyhalomodel,all] # without PyPI release after cloning or
-   pip install soliket[emulator,pyccl,pyhalomodel,all] # with PyPI release
+   pip install .[pyccl,mflike,all] # without PyPI release after cloning or
+   pip install soliket[pyccl,mflike,all] # with PyPI release
 
-Of course, you can install any of the extras individually, e.g. `pip install soliket[emulator]` to install only the CosmoPower emulator.
+Of course, you can install any of the extras individually, e.g. `pip install soliket[pyccl]` to install only the PyCCL library.
 
 Install with conda
 ------------------
 
-Another way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <soliket-tests.yml>`_. After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a the latest released version of SOLikeT using pip::
-In order to use the CosmoPower Theories within SOLikeT you will need to additionally install CosmoPower (and with it tensorflow, which is rather heavy and hence left out of the default installation)
+Another way to install SOLikeT and its dependents is through using the conda environment defined in `soliket-tests.yml <soliket-tests.yml>`_. After installing an anaconda distribution (e.g. as described `here <https://docs.anaconda.com/free/anaconda/install/index.html>`_), you can create the environment and install a the latest released version of SOLikeT using pip:
+
 .. code-block:: bash
 
   git clone https://github.com/simonsobs/soliket
@@ -108,15 +105,16 @@ As the `pip` installation, this will not provide the same level of reproducibili
 Installing for development
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you wish to actively develop the code you can instead install the in-development version of SOLikeT from the github repository in editable mode. Also, we prepared an extra set of dependencies for development, which you can install using the `dev` extra. This will allow you to run tests and use the development tools provided by SOLikeT. To do this, you can sunstitute the relevenat commands in the previous section with the following (we assume you are in the `soliket` directory, cloned the repository and you want the `emulator` extra for `CosmoPower`` support):
+If you wish to actively develop the code you can instead install the in-development version of SOLikeT from the github repository in editable mode. Also, we prepared an extra set of dependencies for development, which you can install using the `dev` extra. This will allow you to run tests and use the development tools provided by SOLikeT. To do this, you can sunstitute the relevenat commands in the previous section with the following (we assume you are in the `soliket` directory, cloned the repository and you want all the optional extras):
 
 .. code-block:: bash
+
    # uv case
-   uv sync --locked --extra emulator --extra dev 
+   uv sync --locked --extra all --extra dev
    # or pip case without PyPI release
-   pip install -e .[emulator,dev]
+   pip install -e .[all,dev]
    # or pip case with PyPI release
-   pip install soliket[emulator,dev]
+   pip install soliket[all,dev]
 
 Harder Way: Preparing your own environment
 ------------------------------------------
@@ -131,7 +129,7 @@ Based on `cobaya documentation <https://cobaya.readthedocs.io/en/latest/cluster_
    $ bash miniconda.sh -b -p $HOME/miniconda
    $ export PATH="$HOME/miniconda/bin:$PATH"
    $ conda config --set always_yes yes --set changeps1 no
-   $ conda create -q -n cobaya-env python=3.7 scipy matplotlib cython PyYAML pytest pytest-forked flaky
+   $ conda create -q -n cobaya-env python=3.12 scipy matplotlib cython PyYAML pytest pytest-forked flaky
    $ source activate cobaya-env
    $ pip install mpi4py
 
@@ -187,12 +185,11 @@ Please, make sure to load cmake as your last command, so that the path to cmake 
    cd soliket
    pip install -e .
 
-**BONUS: install cosmopower (optional)**
-cosmopower is not automatically installed (see above). However, if you want to use this option, do the following:
+**BONUS: CosmoPower tests (optional)**
+The CosmoPower tests compare against the Planck lite likelihood, which you can install with:
 
 ::
 
-   pip install cosmopower
    cobaya-install planck_2018_highl_plik.TTTEEE_lite_native
 
 **Run soliket**
@@ -202,50 +199,6 @@ Create your job script following `cobaya docs <https://cobaya.readthedocs.io/en/
 NOTE: Any time you log in to a new perlmutter shell, remember to always load the relevant modules (in particular, those needed for pyccl). A good option is to create an alias in your bashrc with all the relevant commands.
 
 Please, don't hesitate to open issues and/or be in touch with us, should you find any problems. Many thanks to Luca Pagano, Serena Giardiello, Massimiliano Lattanzi, Pablo Lemos, +++
-
-On M1 Mac
---------
-There is an issue with installing tensorflow (needed for cosmopower) on M1 Mac that is likely to be solved in the future. For the moment, if you want to couple SOLikeT to cosmopower, please follow this guidance:
-
-1. Download latest miniconda installer (e.g., `here: Download Conda environment <https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh>`_) and properly rename it (e.g., -> miniconda.sh)
-2. Install miniconda and tensor flow-deps
-
-::
-
-   bash ~/miniconda.sh -b -p $HOME/miniconda
-   source ~/miniconda/bin/activate
-   conda install -c apple tensorflow-deps
-
-3. git clone soliket and create your virtual env
-
-::
-
-   git clone https://github.com/simonsobs/soliket
-   cd soliket
-   conda env create -n my_env -f soliket-tests.yml
-   conda activate my_env 
-
-4. Install tensorflow-macos and metal with correct versioning
-
-::
-
-   pip install tensorflow-macos
-   pip install tensorflow-metal
-
-5. Download and install cosmopower manually
-
-::
-
-   git clone https://github.com/alessiospuriomancini/cosmopower
-   cd cosmopower
-   pip install .
-
-6. Go back to soliket folder and install it
-
-::
-
-   cd path/to/your/soliket
-   pip install -e .
 
 Running Tests
 =============
@@ -260,7 +213,7 @@ Irrespectively of the installation method you choose, you can run tests to ensur
 `-vv` will give you verbose output.
 
 Checking code in development
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------
 
 If you are developing new features or making changes to the SOLikeT codebase, running tests is also essential to ensure that your changes do not break existing functionality.
 
@@ -278,6 +231,7 @@ If the current environment does not have the required dependencies, `uv` will in
 You can also test a subset of tests or run specific tests by passing additional arguments to `pytest`. For example, if you want to run only the tests in a specific module, you can do
 
 .. code-block:: bash
+
   uv run pytest -vv --durations=10 -k my_new_module
 
 searching for tests that match the string 'my_new_module'.
@@ -286,8 +240,8 @@ searching for tests that match the string 'my_new_module'.
 
 .. code-block:: bash
 
-  uv python install 3.10 # install Python 3.10 or any other version you want to test
-  uv python pin 3.10 # pin the current environment to Python 3.10
+  uv python install 3.12 # install Python 3.12 or any other version you want to test
+  uv python pin 3.12 # pin the current environment to Python 3.12
 
 Then, provided that the version is compatible with SOLikeT, you can run the tests with that version:
 
