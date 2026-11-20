@@ -31,7 +31,7 @@ emulator = [
     "tf-keras; python_version < '3.14' and sys_platform != 'win32'", # needed by tensorflow-probability>=0.25
 ]
 pyccl = [
-    "pyccl>=3.3.4 ; sys_platform != 'win32' and python_version >= '3.10' and python_version < '3.13'", # for stability
+    "pyccl>=3.3.4 ; sys_platform != 'win32'", # first release with PyPI wheels (cp310-cp314)
 ]
 mflike = [
     "mflike (>=1.0.1)", # breaking change
