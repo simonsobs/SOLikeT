@@ -1,0 +1,4 @@
+# Analyse the smooth galaxy x kappa twin (cross-spectrum only).
+likelihood:
+  soliket.GalaxyKappaLikelihood:
+    datapath: '{galaxy_kappa_smooth}'

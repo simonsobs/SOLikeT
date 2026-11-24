@@ -1,0 +1,6 @@
+# SO CMB lensing, reading the data shipped with the cobaya packages.
+# (sims.yaml switches the data vector to the smooth twin built by create_datasets.)
+likelihood:
+  soliket.LensingLikelihood:
+    theory_lmax: 5000
+    stop_at_error: true

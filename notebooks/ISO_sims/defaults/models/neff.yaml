@@ -1,0 +1,8 @@
+# Varying Neff: nnu becomes a free parameter.
+# Neutrino masses stay at the normal-hierarchy baseline of cosmo.yaml.
+params:
+  nnu:
+    prior: {min: 0.0, max: 5.0}
+    ref: {dist: norm, loc: 3.044, scale: 0.05}
+    proposal: 0.01
+    latex: 'N_\mathrm{eff}'

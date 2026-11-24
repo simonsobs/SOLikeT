@@ -1,0 +1,13 @@
+# Galaxy x CMB-lensing cross-correlation (unWISE-like galaxies x SO kappa).
+# Reads the CCL simulation built in section 1 of create_datasets.ipynb, which
+# provides the bandpower windows and covariance the smooth twin is built from.
+# (sims.yaml switches the data vector to that smooth twin.)
+#
+# GalaxyKappaLikelihood only accepts cross-spectra, so the gg and kk spectra of the
+# simulation are left out with use_spectra.
+likelihood:
+  soliket.GalaxyKappaLikelihood:
+    datapath: '{galaxy_kappa}'
+    use_spectra: [[gc_unwise, ck_so]]
+    ncovsims: null
+    stop_at_error: true

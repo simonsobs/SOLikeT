@@ -1,0 +1,6 @@
+# MFLike TT/TE/EE, reading the data shipped with the cobaya packages.
+# (sims.yaml switches the data vector to the smooth twin built by create_datasets.)
+likelihood:
+  mflike.TTTEEE:
+    input_file: LAT_simu_sacc_00044.fits
+    cov_Bbl_file: data_sacc_w_covar_and_Bbl.fits

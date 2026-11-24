@@ -1,0 +1,4 @@
+# Analyse the smooth CMB + foreground twin; covariance and Bbl stay the shipped ones.
+likelihood:
+  mflike.TTTEEE:
+    input_file: '{mflike_smooth}'

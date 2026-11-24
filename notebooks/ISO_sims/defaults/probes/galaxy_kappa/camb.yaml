@@ -1,0 +1,11 @@
+# camb precision needed by the galaxy x kappa likelihood (non-linear P(k) to high k).
+theory:
+  camb:
+    extra_args:
+      kmax: 10
+      k_per_logint: 130
+      nonlinear: true
+      lens_potential_accuracy: 8
+      lAccuracyBoost: 1.2
+      min_l_logl_sampling: 6000
+      DoLateRadTruncation: false

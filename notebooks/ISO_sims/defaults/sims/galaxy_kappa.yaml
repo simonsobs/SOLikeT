@@ -1,0 +1,13 @@
+# Survey and binning settings of the unWISE-like galaxy x SO CMB-lensing simulation
+# (create_datasets.ipynb). The cosmology is the base fiducial of cosmo.yaml, the
+# galaxy biases b1 and s1 the fiducial of probes/galaxy_kappa/bias.yaml, and the
+# redshift distribution is read from `galaxy_nz_reference` (paths.yaml).
+ngal_per_arcmin2: 1.0
+fsky: 0.4
+ell_max: 600
+n_bins: 20
+z_source_cmb: 1086.0
+matter_power_spectrum: linear
+# How CCL splits the neutrino mass sum of cosmo.yaml. CCL's `normal` split needs
+# mnu >= 0.0592 eV, above the fiducial; `single` matches what camb does there.
+neutrino_mass_split: single

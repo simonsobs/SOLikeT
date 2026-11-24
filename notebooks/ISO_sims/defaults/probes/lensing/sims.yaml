@@ -1,0 +1,8 @@
+# Analyse the smooth lensing twin. Corrections and fiducial stay the shipped ones
+# (absolute filenames are not joined to data_folder).
+likelihood:
+  soliket.LensingLikelihood:
+    data_folder: '{sims_dir}'
+    data_filename: '{lensing_smooth}'
+    correction_filename: '{packages}/data/LensingLikelihood/corrections_lensing.sacc.fits'
+    fiducial_filename: '{packages}/data/LensingLikelihood/fiducial_lensing.sacc.fits'

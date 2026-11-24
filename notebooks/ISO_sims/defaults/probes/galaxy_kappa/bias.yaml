@@ -1,0 +1,12 @@
+# Galaxy nuisance parameters: linear bias b1 (sampled) and magnification bias s1.
+# The fiducial values are also the ones the simulation in create_datasets.ipynb
+# is built with.
+params:
+  b1:
+    prior: {min: 0.0, max: 10.0}
+    ref: {dist: norm, loc: 1.0, scale: 0.1}
+    proposal: 0.1
+    latex: 'b_1'
+  s1:
+    value: 0.4
+    latex: 's_1'
