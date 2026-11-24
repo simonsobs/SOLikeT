@@ -1,5 +1,0 @@
-# camb precision needed by the lensing likelihood.
-theory:
-  camb:
-    extra_args:
-      kmax: 0.9
