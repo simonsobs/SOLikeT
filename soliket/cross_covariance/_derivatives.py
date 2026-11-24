@@ -19,7 +19,6 @@ def camb_lensing_derivatives(cosmo, accuracy, lmax):
     from camb.correlations import lensed_cl_derivatives
 
     pars = camb.set_params(lmax=lmax, **cosmo, **accuracy)
-    pars.set_for_lmax(lmax)
     results = camb.get_results(pars)
     cls = results.get_unlensed_total_cls(CMB_unit="muK")[: lmax + 1, :]
     clp = results.get_lens_potential_cls(CMB_unit="muK")[: lmax + 1, 0]
