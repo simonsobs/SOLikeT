@@ -13,7 +13,8 @@ the ISO mocks, the cross-covariance between the probes, and run the joint fits.
 These notebooks hold no configuration and no data. Everything comes from two
 places outside this repository, given by environment variables:
 
-- `ISO_CONFIG`: a checkout of the private ISO configuration repository (YAML files:
+- `ISO_CONFIG`: a checkout of the private configuration repository
+  [`simonsobs/soliket-config-files`](https://github.com/simonsobs/soliket-config-files) (YAML files:
   fiducial values, priors, modelling choices, data file names). Its README
   describes its layout.
 - `ISO_DATA`: the root of the data files, laid out as
@@ -43,7 +44,9 @@ places outside this repository, given by environment variables:
 ## Setup
 
 ```bash
-export ISO_CONFIG=/path/to/iso-config
+# clone the configuration outside the SOLikeT checkout
+git clone git@github.com:simonsobs/soliket-config-files.git ~/soliket-config-files
+export ISO_CONFIG=~/soliket-config-files
 export ISO_DATA=/path/to/iso_data
 
 # create the data folders listed in the configuration's paths.yaml, and runs/

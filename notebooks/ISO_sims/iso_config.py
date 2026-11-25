@@ -58,7 +58,7 @@ def _folder_from_env(variable, what):
 
 def config_dir():
     """The checkout of the private ISO configuration repository (``$ISO_CONFIG``)."""
-    return _folder_from_env("ISO_CONFIG", "iso-config")
+    return _folder_from_env("ISO_CONFIG", "soliket-config-files")
 
 
 def data_dir():
