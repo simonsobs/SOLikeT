@@ -20,11 +20,25 @@ places outside this repository, given by environment variables:
 
   ```
   $ISO_DATA/
-  ├── mocks/v1/     the ISO mocks, downloaded (treat as read-only)
-  ├── twins/v1/     smooth twins and cross-covariance, written by the notebooks
-  ├── real/         the ISO data, later
-  └── runs/         chains, grid yaml and grid folder, generated yaml
+  ├── mocks/v1/             the ISO mocks, downloaded (treat as read-only)
+  │   ├── mflike/           bandpowers, cov_Bbl, ...
+  │   ├── lensing/          bandpowers, N0/N1 corrections, fiducial, ...
+  │   ├── galaxy_kappa/
+  │   └── README.md         where and when each file came from (+ checksums)
+  ├── twins/v1/             made from mocks/v1 by the notebooks
+  │   ├── mflike/           same layout as the mocks
+  │   ├── lensing/
+  │   ├── galaxy_kappa/
+  │   └── cross/            products spanning several probes (cross-covariance)
+  ├── real/                 the ISO data, later (same per-probe layout)
+  └── runs/                 chains, grid yaml and grid folder, generated yaml
   ```
+
+  One folder per probe keeps each probe's files together (a data vector next to
+  its covariance and windows), lets one probe's files be replaced without touching
+  the others, and puts each twin at the same relative path as its mock. Files can
+  keep the names they were delivered with. The code does not depend on this
+  layout: every file is reached through `paths.yaml`.
 
 ## Setup
 
