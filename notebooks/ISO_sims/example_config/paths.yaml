@@ -1,21 +1,9 @@
-# Data files of the public example configuration, one section per level. This is
-# the layout of the private ISO configuration, with public files as "mocks":
-#
-#   mock  the data shipped with the likelihoods (installed in the cobaya packages
-#         path by create_datasets.ipynb) and a galaxy x kappa test file of SOLikeT
-#   twin  smooth twins of those, written by create_datasets.ipynb under $ISO_DATA
-#
-# Paths are relative to $ISO_DATA; {packages} is the cobaya packages path and
-# {soliket} the SOLikeT checkout. The likelihood files of probes/ refer to these
-# keys as {key}.
-#
-# A twin only replaces the data vector of its mock: it shares the mock's
-# covariance, bandpower windows and lensing corrections, so those keys point to the
-# same files in both sections.
-#
-# The galaxy x kappa test file was not made at the fiducial of this configuration:
-# fitting it (level mock) gives a large chi-square; its twin is what the example
-# checks.
+# Data files, one section per level (mock, twin, real), relative to $ISO_DATA;
+# {packages} is the cobaya packages path, {soliket} the SOLikeT checkout. The
+# likelihood files refer to these keys as {key}. A twin shares its mock's
+# covariance, windows and corrections.
+# Here the mocks are public: the data shipped with the likelihoods, and a galaxy x
+# kappa test file (not made at this fiducial: only its twin fits it).
 
 mock:
   mflike_data: '{packages}/data/MFLike/v0.8/LAT_simu_sacc_00044.fits'

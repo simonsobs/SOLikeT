@@ -1,24 +1,8 @@
-"""Read the ISO configuration and locate the ISO data files.
+"""Cobaya ``info`` of the ISO_sims notebooks, from the configuration folder
+``$ISO_CONFIG`` (e.g. ``example_config/``) and the data files under ``$ISO_DATA``.
 
-The configuration (YAML files only) is a folder given by the ``ISO_CONFIG``
-environment variable: a checkout of the private ISO configuration repository
-(simonsobs/soliket-config-files), or the public ``example_config/`` of this folder,
-which runs on the data shipped with the likelihoods. The data files live under
-``ISO_DATA``; nothing is written into this SOLikeT checkout. See README.md in this
-folder for the setup.
-
-Every ISO notebook goes through this module, so they all share the same fiducial,
-priors and modelling choices. A run's Cobaya ``info`` is built exactly like
-``cobaya-grid`` builds a job::
-
-    info = merge_info(base_info(), model_info(model), dataset_info(dataset, level))
-
-so ``build_info(dataset, model, level=...)`` in a notebook equals the input of
-that grid job.
-
-The data are used at three levels, which are sections of ``paths.yaml`` and only
-differ by the files loaded: ``mock`` (realistic simulations of the ISO data),
-``twin`` (smooth twins of the mocks) and ``real`` (the ISO data).
+``build_info(dataset, model, level=...)`` merges the pieces like ``cobaya-grid``
+does, so it equals the input of the matching grid job. See README.md.
 """
 
 import os
@@ -58,14 +42,14 @@ def _folder_from_env(variable, example):
 
 
 def config_dir():
-    """The configuration folder (``$ISO_CONFIG``): the private ISO repository, or
-    ``example_config/``."""
-    example = "~/soliket-config-files (or notebooks/ISO_sims/example_config)"
-    return _folder_from_env("ISO_CONFIG", example)
+    """The configuration folder (``$ISO_CONFIG``), e.g. ``example_config/``."""
+    return _folder_from_env(
+        "ISO_CONFIG", "/path/to/SOLikeT/notebooks/ISO_sims/example_config"
+    )
 
 
 def data_dir():
-    """The root of the ISO data files (``$ISO_DATA``)."""
+    """The root of the data files (``$ISO_DATA``)."""
     return _folder_from_env("ISO_DATA", "/path/to/iso_data")
 
 

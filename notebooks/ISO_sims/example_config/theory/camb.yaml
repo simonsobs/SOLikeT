@@ -1,9 +1,6 @@
-# camb setup shared by every run: camb's built-in normal hierarchy.
-# camb splits the sum `mnu` (cosmo.yaml) with its own mass splittings, using two
-# eigenstates (the two lighter neutrinos degenerate). Below mnu ~ 0.060 eV, which
-# includes the fiducial minimal sum, it uses a single massive neutrino carrying the
-# whole sum. N_eff follows `nnu`.
-# Precision settings a probe needs are in probes/<probe>/camb.yaml.
+# camb setup shared by every run: camb's normal hierarchy for the sum `mnu` of
+# cosmo.yaml (a single massive neutrino below mnu ~ 0.060 eV, as at the fiducial).
+# Precision settings of each probe are in probes/<probe>/camb.yaml.
 theory:
   camb:
     extra_args:

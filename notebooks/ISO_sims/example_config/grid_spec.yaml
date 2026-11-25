@@ -1,5 +1,5 @@
-# What the example analysis is made of. Read by iso_config.py; generate_grid.ipynb turns
-# it into the cobaya-grid yaml.
+# Models, datasets and grid groups; generate_grid.ipynb turns them into the
+# cobaya-grid yaml.
 
 # Boltzmann code: camb or classy (picks theory/<code>.yaml and probes/*/<code>.yaml).
 theory: camb

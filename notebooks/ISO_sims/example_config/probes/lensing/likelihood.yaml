@@ -1,5 +1,4 @@
-# SO CMB lensing. Every file comes from paths.yaml, for the level being analysed
-# (mock, twin or real); absolute file names are not joined to data_folder.
+# SO CMB lensing; files from paths.yaml (absolute, so not joined to data_folder).
 likelihood:
   soliket.LensingLikelihood:
     data_folder: '{data}'

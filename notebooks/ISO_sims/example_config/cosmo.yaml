@@ -1,12 +1,7 @@
-# Base cosmology shared by every run: fiducial values and priors.
-# Parameters with a `prior` are sampled in the grid; in the notebooks they are fixed
-# to their fiducial value (ref.loc) unless listed in `sample`.
-#
-# The smooth twins are built at these fiducial values (and at those of the probes'
-# nuisance parameters), so they must be the values the mocks were generated at.
-#
-# Neutrinos: normal hierarchy at its minimal mass sum; how camb splits the sum
-# between eigenstates is set in theory/camb.yaml.
+# Base cosmology: fiducial values (ref.loc) and priors. Parameters with a `prior`
+# are sampled in the grid and fixed to their fiducial in the notebooks, unless
+# listed in `sample`. The twins are built at these fiducial values.
+# Neutrinos: normal hierarchy at its minimal mass sum (split in theory/camb.yaml).
 params:
   H0:
     prior: {min: 40, max: 100}

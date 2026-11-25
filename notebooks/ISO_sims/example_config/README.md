@@ -1,25 +1,23 @@
 # Example configuration
 
-A public configuration for the `ISO_sims` notebooks, so they can be run without
-access to the private ISO configuration (`simonsobs/soliket-config-files`). It has
-the same layout and the same modelling choices; only `paths.yaml` differs. Its
-"mocks" are public files:
+A configuration for the `ISO_sims` notebooks that runs on public data. Its mocks
+are the MFLike and CMB-lensing data shipped with the likelihoods (installed by
+`create_datasets.ipynb`) and the galaxy x kappa test file of `tests/data/`; the
+twins are written to `$ISO_DATA/twins/example/`.
 
-- the MFLike and CMB-lensing data shipped with the likelihoods (in the cobaya
-  packages path, installed by `create_datasets.ipynb`);
-- the galaxy x kappa test file `tests/data/unwise_g-so_kappa.sim.sacc.fits`. It was
-  not made at this configuration's fiducial, so fitting it directly gives a large
-  chi-square; its smooth twin is what the example checks.
+Another configuration is a folder with the same layout. It usually only changes
+`paths.yaml` (its data files) and the fiducial values.
 
-The smooth twins and the cross-covariance are written to `$ISO_DATA/twins/example/`.
+| File | Holds |
+| --- | --- |
+| `cosmo.yaml` | base cosmology: fiducial values and priors |
+| `sampler.yaml` | sampler settings |
+| `theory/<code>.yaml` | setup of the Boltzmann code (camb or classy) |
+| `models/*.yaml` | parameters each model extension adds |
+| `probes/<probe>/` | likelihood, nuisance parameters, `<code>.yaml` precision |
+| `grid_spec.yaml` | models, datasets, grid groups, theory code, default level |
+| `paths.yaml` | the data files of each level |
 
-```bash
-export ISO_CONFIG=/path/to/SOLikeT/notebooks/ISO_sims/example_config
-export ISO_DATA=/path/to/scratch_folder
-```
-
-See `notebooks/ISO_sims/README.md` for the rest of the setup. Each file of
-`probes/<probe>/` is merged into the likelihood's Cobaya `info`; `camb.yaml` /
-`classy.yaml` only when that Boltzmann code is used.
-
-This folder is public: never copy files of the private configuration into it.
+Every file except `grid_spec.yaml` and `paths.yaml` is a piece of a Cobaya
+`info`; the files of `probes/<probe>/` are merged in alphabetical order, and
+`camb.yaml` / `classy.yaml` only when that code is used.

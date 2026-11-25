@@ -1,7 +1,5 @@
-# MFLike TT/TE/EE. Every file comes from paths.yaml, for the level being analysed
-# (mock, twin or real); absolute file names are not joined to data_folder.
-# The experiment names in the data must match the calibration and bandpass
-# parameters of systematics.yaml (LAT_93, LAT_145, LAT_225).
+# MFLike TT/TE/EE; files from paths.yaml. The experiment names in the data must
+# match the calibration and bandpass parameters of systematics.yaml.
 likelihood:
   mflike.TTTEEE:
     input_file: '{mflike_data}'
