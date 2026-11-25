@@ -1,5 +1,6 @@
 """Cobaya ``info`` of the ISO_sims notebooks, from the configuration folder
-``$ISO_CONFIG`` (e.g. ``example_config/``) and the data files under ``$ISO_DATA``.
+``$ISO_CONFIG`` and the data files under ``$ISO_DATA`` (by default
+``example_config/`` and the git-ignored ``iso_data/`` of this folder).
 
 ``build_info(dataset, model, level=...)`` merges the pieces like ``cobaya-grid``
 does, so it equals the input of the matching grid job. See README.md.
@@ -28,13 +29,14 @@ SAMPLING_KEYS = ["prior", "ref", "proposal"]
 # ------------------------------------------------------------------ locations
 
 
-def _folder_from_env(variable, example):
-    """The folder given by the environment variable ``variable``."""
+# This folder (notebooks/ISO_sims/), where the defaults live.
+HERE = Path(__file__).resolve().parent
+
+
+def _folder(variable, default):
+    """The folder given by the environment variable ``variable``, else ``default``."""
     if variable not in os.environ:
-        raise RuntimeError(
-            f"${variable} is not set: export {variable}={example} "
-            "(see notebooks/ISO_sims/README.md)"
-        )
+        return default
     folder = Path(os.environ[variable]).expanduser().resolve()
     if not folder.is_dir():
         raise FileNotFoundError(f"${variable} points to a missing folder: {folder}")
@@ -42,24 +44,24 @@ def _folder_from_env(variable, example):
 
 
 def config_dir():
-    """The configuration folder (``$ISO_CONFIG``), e.g. ``example_config/``."""
-    return _folder_from_env(
-        "ISO_CONFIG", "/path/to/SOLikeT/notebooks/ISO_sims/example_config"
-    )
+    """The configuration folder: ``$ISO_CONFIG``, by default ``example_config/``."""
+    return _folder("ISO_CONFIG", HERE / "example_config")
 
 
 def data_dir():
-    """The root of the data files (``$ISO_DATA``)."""
-    return _folder_from_env("ISO_DATA", "/path/to/iso_data")
+    """The root of the data files: ``$ISO_DATA``, by default ``iso_data/``."""
+    folder = _folder("ISO_DATA", HERE / "iso_data")
+    folder.mkdir(exist_ok=True)  # only creates the default; $ISO_DATA must exist
+    return folder
 
 
 def runs_dir():
-    """Where runs write their products: chains, grid yaml, grid folder."""
-    return data_dir() / "runs"
+    """Where runs write chains, grids and generated yaml, one folder per configuration."""
+    return data_dir() / "runs" / config_dir().name
 
 
-# The SOLikeT checkout this module belongs to (notebooks/ISO_sims/ -> root).
-SOLIKET_ROOT = Path(__file__).resolve().parents[2]
+# The SOLikeT checkout this module belongs to.
+SOLIKET_ROOT = HERE.parents[1]
 
 
 def _packages_path():

@@ -3,7 +3,7 @@
 A configuration for the `ISO_sims` notebooks that runs on public data. Its mocks
 are the MFLike and CMB-lensing data shipped with the likelihoods (installed by
 `create_datasets.ipynb`) and the galaxy x kappa test file of `tests/data/`; the
-twins are written to `$ISO_DATA/twins/example/`.
+twins are written to `twins/example/` of the data folder.
 
 Another configuration is a folder with the same layout. It usually only changes
 `paths.yaml` (its data files) and the fiducial values.

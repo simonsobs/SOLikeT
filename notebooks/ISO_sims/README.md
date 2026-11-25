@@ -10,24 +10,32 @@ mocks, the cross-covariance between the probes, and run the joint fits.
 | [`analyse_datasets.ipynb`](analyse_datasets.ipynb) | evaluates and samples the joint likelihood, on the twins or the mocks |
 | [`generate_grid.ipynb`](generate_grid.ipynb) | writes and creates the cobaya grid of every model x dataset |
 
-The notebooks hold no configuration and no data. They read two folders, given by
-environment variables:
+The notebooks hold no configuration and no data. They read two folders:
 
-- `ISO_CONFIG`: the configuration (YAML files), e.g. [`example_config/`](example_config),
-  which runs on the data shipped with the likelihoods. Any folder with the same
-  layout can be used instead;
-- `ISO_DATA`: the data files, and everything the notebooks write.
+- the configuration (YAML files): `$ISO_CONFIG`, by default
+  [`example_config/`](example_config), which runs on the data shipped with the
+  likelihoods. Any folder with the same layout can be used instead;
+- the data files, and everything the notebooks write: `$ISO_DATA`, by default
+  `iso_data/` in this folder (git-ignored, so nothing in it is committed).
 
 ## Setup
 
-```bash
-export ISO_CONFIG=/path/to/SOLikeT/notebooks/ISO_sims/example_config
-export ISO_DATA=/path/to/data_folder
+With the defaults, there is nothing to set: run the notebooks in the order of the
+table above. `create_datasets.ipynb` creates the data folders listed in the
+configuration's `paths.yaml` (by hand:
+`python -c "import iso_config; iso_config.make_data_dirs()"` in this folder).
+
+To use another configuration, or a data folder elsewhere (e.g. shared on a
+cluster), set the variables before starting Jupyter, or in a first cell:
+
+```python
+%env ISO_CONFIG=/path/to/configuration
+%env ISO_DATA=/path/to/data_folder
 ```
 
-`create_datasets.ipynb` creates the data folders listed in the configuration's
-`paths.yaml` (or run `python -c "import iso_config; iso_config.make_data_dirs()"`
-in this folder); then run the notebooks in the order of the table above.
+and restart the kernel after changing them. Several configurations can share one
+data folder: their files are in different folders of `paths.yaml`, and each writes
+its runs to `runs/<configuration folder name>/`.
 
 ## Data levels
 
@@ -38,12 +46,12 @@ the default is `level` in `grid_spec.yaml`.
 
 ## Data folder
 
-Files are given in `paths.yaml` relative to `$ISO_DATA` (`{packages}` and
+Files are given in `paths.yaml` relative to the data folder (`{packages}` and
 `{soliket}` stand for the cobaya packages path and this SOLikeT checkout). A
 suggested layout, one folder per probe:
 
 ```
-$ISO_DATA/
+iso_data/                 (or $ISO_DATA)
 ├── mocks/<version>/      the mocks (treat as read-only)
 │   ├── mflike/
 │   ├── lensing/
@@ -51,13 +59,12 @@ $ISO_DATA/
 ├── twins/<version>/      written by the notebooks, same layout as the mocks
 │   └── cross/            products spanning several probes (cross-covariance)
 ├── real/                 the data, later
-└── runs/                 chains, grid yaml and grid folder, generated yaml
+└── runs/<configuration>/ chains, grid yaml and grid folder, generated yaml
 ```
 
 ## Before committing
 
 Notebook outputs print file names and values: clear them before committing
 (`jupyter nbconvert --clear-output --inplace notebooks/ISO_sims/*.ipynb`, or
-`nbstripout --install` once in your checkout). Nothing is written into this
-checkout: twins, cross-covariance, chains, grid and generated yaml all go under
-`$ISO_DATA`.
+`nbstripout --install` once in your checkout). Everything the notebooks write goes
+to the data folder, which git ignores by default; never `git add -f` it.

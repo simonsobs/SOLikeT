@@ -5,6 +5,9 @@ chains/
 .claude/
 .worktrees/
 
+# ISO_sims default data folder (mocks, twins, runs; never committed)
+notebooks/ISO_sims/iso_data/
+
 # macos
 .DS_Store
 .tmp
