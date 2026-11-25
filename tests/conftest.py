@@ -32,31 +32,11 @@ def evaluate_one_info():
 
 
 @pytest.fixture
-def check_skip_cosmopower():
-    """
-    Check if the CosmoPower module can be imported, otherwise skip the tests.
-    """
-    pytest.importorskip(
-        modname="cosmopower", reason="Couldn't import 'cosmopower' module"
-    )
-
-
-@pytest.fixture
 def check_skip_pyccl():
     """
     Check if the pyCCL module can be imported, otherwise skip the tests.
     """
     pytest.importorskip(modname="pyccl", reason="Couldn't import 'pyccl' module")
-
-
-@pytest.fixture
-def check_skip_pyhalomodel():
-    """
-    Check if the pyhalomodel module can be imported, otherwise skip the tests.
-    """
-    pytest.importorskip(
-        modname="pyhalomodel", reason="Couldn't import 'pyhalomodel' module"
-    )
 
 
 @pytest.fixture

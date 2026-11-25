@@ -22,24 +22,47 @@ r"""
 Usage
 -----
 
-After installing SOLikeT and cosmopower, you can use the ``CosmoPower`` theory
-codes by adding the ``soliket.CosmoPower`` code as a block in your parameter
-files.
+You can use the ``CosmoPower`` theory codes by adding the ``soliket.CosmoPower``
+code as a block in your parameter files. SOLikeT only evaluates networks that have
+already been trained: it reads them with its own numpy reader
+(:class:`~soliket.cosmopower.CosmoPowerNetwork`), so neither ``cosmopower`` nor
+TensorFlow is a SOLikeT dependency.
+
+Training your own networks
+--------------------------
+
+Training happens outside SOLikeT, in a separate environment with ``cosmopower``
+installed. The workflow is:
+
+1. Train an ``NN`` or ``PCAplusNN`` emulator with ``cosmopower``, following its
+   documentation.
+2. Save it with the network's ``save`` method, using a ``cosmopower`` version that
+   writes the ``.npz`` format (for example
+   `this fork <https://github.com/HTJense/cosmopower>`_). This produces
+   ``<name>.npz``.
+3. Put the ``.npz`` files in one directory, set ``network_path`` to it, and list
+   each network under ``network_settings`` with its ``filename`` (without the
+   suffix) and ``type``.
+
+SOLikeT reads the network type from the file and raises an error if it does not
+match ``type``. Networks saved in the older pickle (``.pkl``) format, as the
+CP_paper networks originally were, cannot be read: restore them once with a
+``cosmopower`` version that can load them, and save them again as ``.npz``.
 
 Example: CMB emulators
 ----------------------
 
-You can get the example CMB emulators from the
+SOLikeT ships the example CMB emulators from the
 `cosmopower release repository
-<https://github.com/alessiospuriomancini/cosmopower/tree/main/cosmopower/trained_models/CP_paper>`_.
-After downloading these, you should have a directory structure like:
+<https://github.com/alessiospuriomancini/cosmopower/tree/main/cosmopower/trained_models/CP_paper>`_
+in ``soliket/cosmopower/data/CP_paper``. A network directory looks like:
 
 .. code-block:: bash
 
   /path/to/cosmopower/data
-    ├── cmb_TT_NN.pkl
-    ├── cmb_TE_PCAplusNN.pkl
-    └── cmb_EE_NN.pkl
+    ├── cmb_TT_NN.npz
+    ├── cmb_TE_PCAplusNN.npz
+    └── cmb_EE_NN.npz
 
 With these and with ``soliket.CosmoPower`` installed and visible to cobaya, you
 can add it as a theory block to your run yaml as:
@@ -99,10 +122,7 @@ from cobaya.log import LoggedError
 from cobaya.theories.cosmo import BoltzmannBase
 from cobaya.theory import Theory
 
-try:
-    import cosmopower as cp
-except ImportError:
-    pass
+from ._network import CosmoPowerNetwork
 
 
 class CosmoPower(BoltzmannBase):
@@ -127,10 +147,8 @@ class CosmoPower(BoltzmannBase):
             nettype = self.network_settings[spectype]
             netpath = os.path.join(self.network_path, nettype["filename"])
 
-            if nettype["type"] == "NN":
-                network = cp.cosmopower_NN(restore=True, restore_filename=netpath)
-            elif nettype["type"] == "PCAplusNN":
-                network = cp.cosmopower_PCAplusNN(restore=True, restore_filename=netpath)
+            if nettype["type"] in ("NN", "PCAplusNN"):
+                network = CosmoPowerNetwork.from_npz(netpath, kind=nettype["type"])
             elif self.stop_at_error:  # pragma: no cover
                 raise ValueError(
                     f"Unknown network type {nettype['type']} for network {spectype}."
@@ -140,6 +158,7 @@ class CosmoPower(BoltzmannBase):
                     f"Unknown network type {nettype['type']}\
                                                 for network {spectype}: skipped!"
                 )
+                continue
 
             netdata["type"] = nettype["type"]
             netdata["log"] = nettype.get("log", True)
@@ -150,8 +169,7 @@ class CosmoPower(BoltzmannBase):
 
             self.all_parameters = self.all_parameters | set(network.parameters)
 
-            if network is not None:
-                self.networks[spectype.lower()] = netdata
+            self.networks[spectype.lower()] = netdata
 
         if "lmax" not in self.extra_args:  # pragma: no cover
             self.extra_args["lmax"] = None
@@ -318,10 +336,10 @@ class CosmoPowerDerived(Theory):
 
         netpath = os.path.join(self.network_path, self.network_settings["filename"])
 
-        if self.network_settings["type"] == "NN":
-            self.network = cp.cosmopower_NN(restore=True, restore_filename=netpath)
-        elif self.network_settings["type"] == "PCAplusNN":
-            self.network = cp.cosmopower_PCAplusNN(restore=True, restore_filename=netpath)
+        if self.network_settings["type"] in ("NN", "PCAplusNN"):
+            self.network = CosmoPowerNetwork.from_npz(
+                netpath, kind=self.network_settings["type"]
+            )
         else:
             raise LoggedError(f"Unknown network type {self.network_settings['type']}.")
 

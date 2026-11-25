@@ -27,7 +27,7 @@ jobs:
 
       - name: Update uv.lock
         run: |
-          uv sync --extra emulator --extra dev --extra docs --upgrade
+          uv sync --extra dev --extra docs --upgrade
           uv lock
 
       - name: Commit, push to test branch and open PR (draft)
