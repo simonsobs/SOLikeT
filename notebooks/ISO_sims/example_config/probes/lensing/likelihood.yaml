@@ -1,0 +1,10 @@
+# SO CMB lensing. Every file comes from paths.yaml, for the level being analysed
+# (mock, twin or real); absolute file names are not joined to data_folder.
+likelihood:
+  soliket.LensingLikelihood:
+    data_folder: '{data}'
+    data_filename: '{lensing_data}'
+    correction_filename: '{lensing_corrections}'
+    fiducial_filename: '{lensing_fiducial}'
+    theory_lmax: 5000
+    stop_at_error: true

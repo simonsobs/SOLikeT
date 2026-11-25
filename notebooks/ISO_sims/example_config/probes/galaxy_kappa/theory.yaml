@@ -1,0 +1,5 @@
+# CCL computes the Limber spectra from the camb matter power spectrum.
+theory:
+  soliket.CCL:
+    kmax: 10.0
+    nonlinear: true

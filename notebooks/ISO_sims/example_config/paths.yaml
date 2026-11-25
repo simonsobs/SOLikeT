@@ -1,0 +1,36 @@
+# Data files of the public example configuration, one section per level. This is
+# the layout of the private ISO configuration, with public files as "mocks":
+#
+#   mock  the data shipped with the likelihoods (installed in the cobaya packages
+#         path by create_datasets.ipynb) and a galaxy x kappa test file of SOLikeT
+#   twin  smooth twins of those, written by create_datasets.ipynb under $ISO_DATA
+#
+# Paths are relative to $ISO_DATA; {packages} is the cobaya packages path and
+# {soliket} the SOLikeT checkout. The likelihood files of probes/ refer to these
+# keys as {key}.
+#
+# A twin only replaces the data vector of its mock: it shares the mock's
+# covariance, bandpower windows and lensing corrections, so those keys point to the
+# same files in both sections.
+#
+# The galaxy x kappa test file was not made at the fiducial of this configuration:
+# fitting it (level mock) gives a large chi-square; its twin is what the example
+# checks.
+
+mock:
+  mflike_data: '{packages}/data/MFLike/v0.8/LAT_simu_sacc_00044.fits'
+  mflike_cov_Bbl: '{packages}/data/MFLike/v0.8/data_sacc_w_covar_and_Bbl.fits'
+  lensing_data: '{packages}/data/LensingLikelihood/lensing.sacc.fits'
+  lensing_corrections: '{packages}/data/LensingLikelihood/corrections_lensing.sacc.fits'
+  lensing_fiducial: '{packages}/data/LensingLikelihood/fiducial_lensing.sacc.fits'
+  galaxy_kappa_data: '{soliket}/tests/data/unwise_g-so_kappa.sim.sacc.fits'
+  cross_cov: twins/example/cross/XCov_mflike_lensing.fits
+
+twin:
+  mflike_data: twins/example/mflike/mflike_smooth.fits
+  mflike_cov_Bbl: '{packages}/data/MFLike/v0.8/data_sacc_w_covar_and_Bbl.fits'
+  lensing_data: twins/example/lensing/lensing_smooth.sacc.fits
+  lensing_corrections: '{packages}/data/LensingLikelihood/corrections_lensing.sacc.fits'
+  lensing_fiducial: '{packages}/data/LensingLikelihood/fiducial_lensing.sacc.fits'
+  galaxy_kappa_data: twins/example/galaxy_kappa/galaxy_kappa_smooth.sacc.fits
+  cross_cov: twins/example/cross/XCov_mflike_lensing.fits

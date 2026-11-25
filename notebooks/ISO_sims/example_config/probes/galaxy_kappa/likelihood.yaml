@@ -1,0 +1,12 @@
+# Galaxy x CMB-lensing cross-correlation. The data file comes from paths.yaml, for
+# the level being analysed (mock, twin or real).
+#
+# GalaxyKappaLikelihood only accepts cross-spectra: use_spectra keeps the galaxy x
+# kappa spectrum and leaves out any gg or kk spectra in the file. The tracer names
+# must match the ones in the data file.
+likelihood:
+  soliket.GalaxyKappaLikelihood:
+    datapath: '{galaxy_kappa_data}'
+    use_spectra: [[gc_unwise, ck_so]]
+    ncovsims: null
+    stop_at_error: true

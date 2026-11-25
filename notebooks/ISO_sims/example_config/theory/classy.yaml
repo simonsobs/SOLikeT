@@ -1,0 +1,15 @@
+# classy setup shared by every run: normal hierarchy with the fiducial sum of
+# cosmo.yaml split exactly (0, sqrt(7.5e-5), sqrt(2.5e-3) eV), as two massive species.
+# N_ur = 3.044 - 2 * 1.0132 keeps Neff = 3.044.
+#
+# Masses are FIXED here: classy reads them as a list, so the camb-specific neutrino
+# params of cosmo.yaml (mnu, nnu) are removed by iso_config.py when classy is used,
+# and the mnu / neff models are not available with classy.
+# Note that camb (theory/camb.yaml) approximates this fiducial with one massive
+# neutrino. Not validated against camb yet.
+theory:
+  classy:
+    extra_args:
+      N_ncdm: 2
+      m_ncdm: '0.008660254037844387, 0.05'
+      N_ur: 1.0176

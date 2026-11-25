@@ -1,0 +1,8 @@
+# camb precision needed by MFLike.
+theory:
+  camb:
+    extra_args:
+      lens_potential_accuracy: 1
+      WantTransfer: true
+      Transfer.high_precision: true
+      Transfer.kmax: 1.2

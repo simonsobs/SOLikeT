@@ -1,10 +1,11 @@
 """Read the ISO configuration and locate the ISO data files.
 
-The configuration (YAML files only) lives in a separate private repository, whose
-checkout is given by the ``ISO_CONFIG`` environment variable; the data files live
-under ``ISO_DATA``. Nothing is read from, or written to, this SOLikeT checkout.
-See the README of the configuration repository for its layout, and README.md in
-this folder for the setup.
+The configuration (YAML files only) is a folder given by the ``ISO_CONFIG``
+environment variable: a checkout of the private ISO configuration repository
+(simonsobs/soliket-config-files), or the public ``example_config/`` of this folder,
+which runs on the data shipped with the likelihoods. The data files live under
+``ISO_DATA``; nothing is written into this SOLikeT checkout. See README.md in this
+folder for the setup.
 
 Every ISO notebook goes through this module, so they all share the same fiducial,
 priors and modelling choices. A run's Cobaya ``info`` is built exactly like
@@ -43,11 +44,11 @@ SAMPLING_KEYS = ["prior", "ref", "proposal"]
 # ------------------------------------------------------------------ locations
 
 
-def _folder_from_env(variable, what):
+def _folder_from_env(variable, example):
     """The folder given by the environment variable ``variable``."""
     if variable not in os.environ:
         raise RuntimeError(
-            f"${variable} is not set: export {variable}=/path/to/{what} "
+            f"${variable} is not set: export {variable}={example} "
             "(see notebooks/ISO_sims/README.md)"
         )
     folder = Path(os.environ[variable]).expanduser().resolve()
@@ -57,18 +58,24 @@ def _folder_from_env(variable, what):
 
 
 def config_dir():
-    """The checkout of the private ISO configuration repository (``$ISO_CONFIG``)."""
-    return _folder_from_env("ISO_CONFIG", "soliket-config-files")
+    """The configuration folder (``$ISO_CONFIG``): the private ISO repository, or
+    ``example_config/``."""
+    example = "~/soliket-config-files (or notebooks/ISO_sims/example_config)"
+    return _folder_from_env("ISO_CONFIG", example)
 
 
 def data_dir():
     """The root of the ISO data files (``$ISO_DATA``)."""
-    return _folder_from_env("ISO_DATA", "iso_data")
+    return _folder_from_env("ISO_DATA", "/path/to/iso_data")
 
 
 def runs_dir():
     """Where runs write their products: chains, grid yaml, grid folder."""
     return data_dir() / "runs"
+
+
+# The SOLikeT checkout this module belongs to (notebooks/ISO_sims/ -> root).
+SOLIKET_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _packages_path():
@@ -79,6 +86,13 @@ def _packages_path():
             "(set COBAYA_PACKAGES_PATH or run cobaya-install)"
         )
     return str(packages)
+
+
+def _fill_locations(text):
+    """Replace ``{packages}`` (cobaya packages path) and ``{soliket}`` (this checkout)."""
+    if "{packages}" in text:
+        text = text.replace("{packages}", _packages_path())
+    return text.replace("{soliket}", str(SOLIKET_ROOT))
 
 
 # ---------------------------------------------------------------- reading files
@@ -107,7 +121,7 @@ def paths(level=None):
     """Absolute path of every file of ``level``, from its section of ``paths.yaml``.
 
     Paths in ``paths.yaml`` are relative to ``$ISO_DATA``; absolute paths and the
-    ``{packages}`` placeholder are also allowed.
+    ``{packages}`` and ``{soliket}`` placeholders are also allowed.
     """
     level = _check_level(level)
     sections = load_yaml("paths.yaml")
@@ -115,9 +129,7 @@ def paths(level=None):
         raise KeyError(f"no '{level}' section in paths.yaml; found: {sorted(sections)}")
     files = {}
     for key, value in (sections[level] or {}).items():
-        if "{packages}" in value:
-            value = value.replace("{packages}", _packages_path())
-        files[key] = (data_dir() / value).resolve()
+        files[key] = (data_dir() / _fill_locations(value)).resolve()
     return files
 
 
@@ -168,8 +180,7 @@ def _fill_placeholders(item, values):
     if isinstance(item, list):
         return [_fill_placeholders(value, values) for value in item]
     if isinstance(item, str):
-        if "{packages}" in item:
-            item = item.replace("{packages}", _packages_path())
+        item = _fill_locations(item)
         for name, value in values.items():
             item = item.replace("{" + name + "}", value)
     return item

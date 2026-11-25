@@ -1,0 +1,7 @@
+# Sampler settings shared by every run.
+sampler:
+  mcmc:
+    learn_proposal_Rminus1_max: 1000.0
+    learn_proposal_Rminus1_max_early: 1000.0
+    max_tries: 10000
+    # covmat: path/to/covmat  # set once first runs are available
