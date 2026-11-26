@@ -227,9 +227,10 @@ _POLS = ("T", "E", "B")
 def _bin_modified_theory(mflike, dls, fg_totals, params):
     """Bin the CMB+foreground+systematics theory through MFLike's bandpower windows.
 
-    Returns ``(ps_dic, ps_vec)``: ``ps_dic[f"{t1}x{t2}"][pol]`` holds the binned
-    bandpowers per frequency pair and polarisation (``"tt"``/``"te"``/``"ee"``)
-    plus ``"lbin"``; ``ps_vec`` is the flat data vector in MFLike's own ordering.
+    Returns ``(ps_dic, ps_vec)``: ``ps_dic[(t1, t2)][pol]`` holds the binned
+    bandpowers per pair of experiments of the data and polarisation
+    (``"tt"``/``"te"``/``"ee"``) plus ``"lbin"``; ``ps_vec`` is the flat data vector
+    in MFLike's own ordering.
     """
     dls_cut = {s: dls[s][mflike.l_bpws] for s in mflike.lcuts}
     obs = mflike.get_modified_theory(dls_cut, fg_totals, **params)
@@ -238,7 +239,7 @@ def _bin_modified_theory(mflike, dls, fg_totals, params):
     ps_dic = {}
     for m in mflike.spec_meta:
         pol, ids, window = m["pol"], m["ids"], m["bpw"]
-        key = f"{m['t1']}x{m['t2']}"
+        key = (m["t1"], m["t2"])
         ps_dic.setdefault(key, {"lbin": m["leff"]})
         t1, t2 = (m["t2"], m["t1"]) if m["hasYX_xsp"] else (m["t1"], m["t2"])
         spec = obs[pol, t1, t2]
@@ -252,11 +253,11 @@ def smooth_mflike_sacc(mflike, dls, fg_totals, params, *, out_path=None, beam_lm
     """Build a smooth (theory) MFLike data SACC and return it.
 
     Bins the CMB + foreground + systematics theory through MFLike's own bandpower
-    windows and writes one ``NuMap`` tracer per ``(frequency, spin)`` channel plus
+    windows and writes one ``NuMap`` tracer per ``(experiment, spin)`` channel plus
     an ``add_ell_cl`` per cross-spectrum -- the ``input_file`` format MFLike reads.
     Evaluating the likelihood on it at the same fiducial gives chi^2 = 0.
 
-    The intricate per-frequency plumbing is MFLike-specific, so this stays a helper
+    The intricate per-experiment plumbing is MFLike-specific, so this stays a helper
     rather than living in the notebook; it takes the concrete handles (not a
     ``Session``) so the caller keeps the model in view:
 
@@ -276,26 +277,24 @@ def smooth_mflike_sacc(mflike, dls, fg_totals, params, *, out_path=None, beam_lm
     -----
     The covariance and bandpower-window (Bbl) matrices are *not* written here;
     MFLike reads them separately via ``cov_Bbl_file``, so reuse the shipped one.
-    Cross-frequency ``ET`` reuses the pair's ``TE`` and any B-mode spectrum is
+    Cross-experiment ``ET`` reuses the pair's ``TE`` and any B-mode spectrum is
     written as zeros; MFLike selects only the requested TT/TE/ET/EE within its
     scale cuts, so these extras are ignored.
     """
     import sacc
 
     ps_dic, _ = _bin_modified_theory(mflike, dls, fg_totals, params)
-    freqs = sorted(
-        {t for key in ps_dic for t in key.split("x")},
-        key=lambda name: int(name.split("_")[1]),
-    )
 
     s = sacc.Sacc()
     beam = {"ell": np.arange(beam_lmax), "beam": np.ones(beam_lmax)}
-    for freq in freqs:
+    # One tracer per (experiment, spin), in MFLike's order of experiments: their
+    # names need not follow any pattern.
+    for exp in mflike.experiments:
         for spin, quantity in (("s0", "cmb_temperature"), ("s2", "cmb_polarization")):
-            band = mflike.bands[f"{freq}_{spin}"]
+            band = mflike.bands[f"{exp}_{spin}"]
             s.add_tracer(
                 "NuMap",
-                f"{freq}_{spin}",
+                f"{exp}_{spin}",
                 quantity=quantity,
                 spin=0 if spin == "s0" else 2,
                 nu=band["nu"],
@@ -303,26 +302,23 @@ def smooth_mflike_sacc(mflike, dls, fg_totals, params, *, out_path=None, beam_lm
                 **beam,
             )
 
-    for ia, fa in enumerate(freqs):
-        for ib, fb in enumerate(freqs):
-            if ia > ib:
-                continue
-            for ipa, pa in enumerate(_POLS):
-                for pb in _POLS[ipa:] if fa == fb else _POLS:
-                    ta = f"{fa}_s0" if pa == "T" else f"{fa}_s2"
-                    tb = f"{fb}_s0" if pb == "T" else f"{fb}_s2"
-                    cl_type = "cl_" + (
-                        _MAP_TYPE[pb] + _MAP_TYPE[pa]
-                        if pb == "T"
-                        else _MAP_TYPE[pa] + _MAP_TYPE[pb]
-                    )
-                    pair = ps_dic[f"{fa}x{fb}"]
-                    lbin = pair["lbin"]
-                    values = pair.get(
-                        (pa + pb).lower(),
-                        pair.get((pb + pa).lower(), np.zeros(len(lbin))),
-                    )
-                    s.add_ell_cl(cl_type, ta, tb, lbin, values)
+    # The spectra of each pair of experiments of the data, as MFLike lists them.
+    for (fa, fb), pair in ps_dic.items():
+        for ipa, pa in enumerate(_POLS):
+            for pb in _POLS[ipa:] if fa == fb else _POLS:
+                ta = f"{fa}_s0" if pa == "T" else f"{fa}_s2"
+                tb = f"{fb}_s0" if pb == "T" else f"{fb}_s2"
+                cl_type = "cl_" + (
+                    _MAP_TYPE[pb] + _MAP_TYPE[pa]
+                    if pb == "T"
+                    else _MAP_TYPE[pa] + _MAP_TYPE[pb]
+                )
+                lbin = pair["lbin"]
+                values = pair.get(
+                    (pa + pb).lower(),
+                    pair.get((pb + pa).lower(), np.zeros(len(lbin))),
+                )
+                s.add_ell_cl(cl_type, ta, tb, lbin, values)
 
     if out_path is not None:
         s.save_fits(str(out_path), overwrite=True)
