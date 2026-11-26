@@ -17,7 +17,8 @@ Another configuration is a folder with the same layout. It usually only changes
 | `probes/<probe>/` | likelihood, nuisance parameters, `<code>.yaml` precision |
 | `grid_spec.yaml` | models, datasets, grid groups, theory code, default level |
 | `paths.yaml` | the data files of each level |
+| `cross_cov.yaml` (optional) | `fsky` and `lmax` of the cross-covariance, if the MFLike data file's metadata lacks them |
 
-Every file except `grid_spec.yaml` and `paths.yaml` is a piece of a Cobaya
-`info`; the files of `probes/<probe>/` are merged in alphabetical order, and
+Every file except `grid_spec.yaml`, `paths.yaml` and `cross_cov.yaml` is a piece of a
+Cobaya `info`; the files of `probes/<probe>/` are merged in alphabetical order, and
 `camb.yaml` / `classy.yaml` only when that code is used.
