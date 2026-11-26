@@ -472,6 +472,15 @@ class MultiGaussianLikelihood(GaussianLikelihood):
 
         return helpers
 
+    def get_can_support_params(self) -> list[str]:
+        # Parameters a component declares this way (e.g. MFLike's nuisance parameters
+        # for the experiments of its data) must be declared by this likelihood too,
+        # since cobaya only sees it, not its components.
+        params = []
+        for like in self.likelihoods:
+            params += like.get_can_support_params()
+        return params
+
     def _get_theory(self, **kwargs) -> np.ndarray:
         return np.concatenate([like._get_theory(**kwargs) for like in self.likelihoods])
 
