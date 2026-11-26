@@ -227,10 +227,10 @@ _POLS = ("T", "E", "B")
 def _bin_modified_theory(mflike, dls, fg_totals, params):
     """Bin the CMB+foreground+systematics theory through MFLike's bandpower windows.
 
-    Returns ``(ps_dic, ps_vec)``: ``ps_dic[(t1, t2)][pol]`` holds the binned
-    bandpowers per pair of experiments of the data and polarisation
-    (``"tt"``/``"te"``/``"ee"``) plus ``"lbin"``; ``ps_vec`` is the flat data vector
-    in MFLike's own ordering.
+    Returns ``(ps_dic, ps_vec)``: ``ps_dic[(t1, t2)][pol]`` is ``(ell, bandpowers)``
+    for each pair of experiments of the data and each of its polarisations, named as
+    in the data (``"TT"``, ``"TE"``, ``"ET"``, ``"EE"``, ...): each has its own scale
+    cuts. ``ps_vec`` is the flat data vector in MFLike's own ordering.
     """
     dls_cut = {s: dls[s][mflike.l_bpws] for s in mflike.lcuts}
     obs = mflike.get_modified_theory(dls_cut, fg_totals, **params)
@@ -239,13 +239,13 @@ def _bin_modified_theory(mflike, dls, fg_totals, params):
     ps_dic = {}
     for m in mflike.spec_meta:
         pol, ids, window = m["pol"], m["ids"], m["bpw"]
-        key = (m["t1"], m["t2"])
-        ps_dic.setdefault(key, {"lbin": m["leff"]})
         t1, t2 = (m["t2"], m["t1"]) if m["hasYX_xsp"] else (m["t1"], m["t2"])
         spec = obs[pol, t1, t2]
         for i, nonzero, weights in zip(ids, window.nonzeros, window.sliced_weights):
             ps_vec[i] = weights @ spec[nonzero]
-        ps_dic[key][pol] = ps_vec[ids]
+        # MFLike stores e.g. ET as "te" with hasYX_xsp: name it as in the data.
+        data_pol = pol.upper()[::-1] if m["hasYX_xsp"] else pol.upper()
+        ps_dic.setdefault((m["t1"], m["t2"]), {})[data_pol] = (m["leff"], ps_vec[ids])
     return ps_dic, ps_vec
 
 
@@ -277,9 +277,10 @@ def smooth_mflike_sacc(mflike, dls, fg_totals, params, *, out_path=None, beam_lm
     -----
     The covariance and bandpower-window (Bbl) matrices are *not* written here;
     MFLike reads them separately via ``cov_Bbl_file``, so reuse the shipped one.
-    Cross-experiment ``ET`` reuses the pair's ``TE`` and any B-mode spectrum is
-    written as zeros; MFLike selects only the requested TT/TE/ET/EE within its
-    scale cuts, so these extras are ignored.
+    Each spectrum of the data is written with its own scale cuts. A cross-experiment
+    ``ET`` missing from the data (symmetrized ``TE``) reuses the pair's ``TE``, and
+    any B-mode spectrum is written as zeros; MFLike selects only the spectra of its
+    data within their scale cuts, so these extras are ignored.
     """
     import sacc
 
@@ -303,7 +304,7 @@ def smooth_mflike_sacc(mflike, dls, fg_totals, params, *, out_path=None, beam_lm
             )
 
     # The spectra of each pair of experiments of the data, as MFLike lists them.
-    for (fa, fb), pair in ps_dic.items():
+    for (fa, fb), spectra in ps_dic.items():
         for ipa, pa in enumerate(_POLS):
             for pb in _POLS[ipa:] if fa == fb else _POLS:
                 ta = f"{fa}_s0" if pa == "T" else f"{fa}_s2"
@@ -313,12 +314,15 @@ def smooth_mflike_sacc(mflike, dls, fg_totals, params, *, out_path=None, beam_lm
                     if pb == "T"
                     else _MAP_TYPE[pa] + _MAP_TYPE[pb]
                 )
-                lbin = pair["lbin"]
-                values = pair.get(
-                    (pa + pb).lower(),
-                    pair.get((pb + pa).lower(), np.zeros(len(lbin))),
-                )
-                s.add_ell_cl(cl_type, ta, tb, lbin, values)
+                pol = pa + pb
+                if pol in spectra:
+                    ell, values = spectra[pol]
+                elif pol[::-1] in spectra:  # e.g. ET when the data symmetrize TE
+                    ell, values = spectra[pol[::-1]]
+                else:  # not in the data (e.g. B modes): zeros, which MFLike ignores
+                    ell = list(spectra.values())[0][0]
+                    values = np.zeros(len(ell))
+                s.add_ell_cl(cl_type, ta, tb, ell, values)
 
     if out_path is not None:
         s.save_fits(str(out_path), overwrite=True)
